@@ -1,0 +1,211 @@
+---
+id: transform
+title: "Transform: translate, rotate, scale (2D e 3D)"
+resources:
+  - title: "transform (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/transform
+    type: doc
+    lang: pt
+    free: true
+  - title: "Usando transform (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_transforms/Using_transforms
+    type: doc
+    lang: pt
+    free: true
+---
+
+`transform` é a propriedade que **moda a forma, posição e orientação**
+de um elemento **sem afetar o layout ao redor**. É a base de animações
+performáticas (a GPU acelera transform) e o caminho para efeitos 3D
+sem JavaScript.
+
+### `translate(x, y)`: mover o elemento
+
+```css
+.caixa {
+  transform: translate(20px, -10px);
+  /*                X    Y */
+}
+```
+
+Diferente de `top`/`left`, `translate` **não afeta o fluxo** dos
+outros elementos. O `.caixa` se move 20px pra direita e 10px pra
+cima, mas os elementos ao redor continuam onde estavam.
+
+Você também pode usar **`translateX(20px)`** só no eixo X, ou
+**`translateY(-10px)`** só no Y, ou **porcentagens** (relativas ao
+**próprio elemento**, não ao pai). `translate(50%)` move o elemento
+em metade do seu próprio tamanho.
+
+### `scale(n)`: aumentar ou diminuir
+
+```css
+.botao         { transform: scale(1); }
+.botao:hover   { transform: scale(1.05); }   /* cresce 5% no hover */
+.botao:active  { transform: scale(0.95); }   /* encolhe 5% ao clicar */
+```
+
+`scale(2)` dobra o tamanho; `scale(0.5)` reduz à metade. **Aceita
+dois valores** para X e Y independentes:
+`transform: scale(1.2, 0.8)` "engorda" horizontalmente e
+"achata" verticalmente.
+
+Detalhe: `scale` **aumenta a partir do centro** por padrão. Para
+escalar a partir de outro ponto, use `transform-origin`:
+
+```css
+.card {
+  transform-origin: top left;  /* escala a partir do canto superior esquerdo */
+}
+```
+
+### `rotate(angulo)`: girar
+
+```css
+.seta { transform: rotate(45deg); }  /* meia volta em 45 graus = diagonal */
+```
+
+Aceita `deg` (graus), `rad` (radianos), `turn` (voltas) e `grad`
+(gradians). `rotate(0.25turn)` é igual a `rotate(90deg)` - escolha
+o que for mais legível.
+
+Para rotação 3D: `rotateX(45deg)`, `rotateY(45deg)`, `rotateZ(45deg)`
+(equivalente ao `rotate` simples). `rotate3d(x, y, z, angulo)` para
+um eixo arbitrário.
+
+### `skew(x, y)`: inclinar (menos usado)
+
+```css
+.titulo { transform: skew(-10deg); }  /* "italico" manual */
+```
+
+Distorce o elemento em um ângulo. Era popular antes do Flexbox pra
+fazer layouts "diagonais". Hoje em dia, `skew` tem usos pontuais
+(efeito de botão clicado, texto em destaque).
+
+### Combinando transformações
+
+```css
+.card {
+  transform: translate(20px, 0) rotate(15deg) scale(1.1);
+}
+```
+
+A ordem importa! A transformação mais à direita é aplicada **primeiro**
+(na ordem da leitura da direita pra esquerda, como uma função
+matemática composta). `translate rotate` é diferente de
+`rotate translate` - o ponto de origem muda depois do translate.
+
+### `transform-origin`: o "ponto âncora"
+
+```css
+.botao {
+  transform-origin: center;     /* default - centro do elemento */
+}
+.botao {
+  transform-origin: top left;   /* canto superior esquerdo */
+}
+.botao {
+  transform-origin: 50% 100%;   /* centro horizontal, base inferior */
+}
+```
+
+`transform-origin` muda o **ponto a partir do qual** transformações
+são aplicadas. Por padrão é o centro. Para `scale`, isso significa
+"cresce pra fora do centro". Para `rotate`, "gira em torno desse
+ponto".
+
+### Entrando no 3D
+
+```css
+.cena {
+  perspective: 800px;  /* quanto menor, mais "dramático" o efeito 3D */
+  transform-style: preserve-3d;  /* filhos mantêm posição 3D */
+}
+
+.cubo {
+  transform: rotateY(45deg) translateZ(50px);
+  /* gira 45 graus e "empurra pra frente" no eixo Z */
+}
+```
+
+`perspective` define a "distância do olho do espectador" - quanto
+menor, mais extremo o efeito. `transform-style: preserve-3d` faz os
+filhos serem posicionados no espaço 3D em vez de "achatados" no plano.
+
+Eixos em CSS 3D:
+
+```
+      Y (cima)
+      |
+      |
+      |________ X (direita)
+     /
+    /
+   Z (saindo da tela, perto do usuário)
+```
+
+- **`translateZ(100px)`** "aproxima" o elemento do usuário.
+- **`rotateX(45deg)`** gira em torno do eixo X (como uma porta se
+  abrindo pra frente).
+- **`rotateY(45deg)`** gira em torno do eixo Y (como uma porta
+  lateral).
+
+Caso clássico: card flip 3D (virar carta):
+
+```html
+<div class="carta">
+  <div class="frente">Frente</div>
+  <div class="verso">Verso</div>
+</div>
+```
+
+```css
+.carta {
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+.carta:hover { transform: rotateY(180deg); }
+.frente, .verso {
+  position: absolute;
+  backface-visibility: hidden;  /* esconde o lado de "trás" */
+}
+.verso { transform: rotateY(180deg); }  /* começa virado */
+```
+
+O `.verso` começa virado de cabeça pra baixo; ao girar a carta 180°,
+ele vira pra frente. O `backface-visibility: hidden` esconde o lado
+opaco quando está virado.
+
+### `will-change`: otimização proativa
+
+```css
+.cubo {
+  will-change: transform;  /* avisa o navegador: vou animar isso */
+}
+```
+
+`will-change` é um **conselho pro navegador** de que uma propriedade
+vai mudar em breve. Ele promove o elemento para a GPU antes,
+deixando a animação mais suave.
+
+Use com parcimônia: aplicar `will-change` em **muitos** elementos
+consome memória. Aplique, anime, remova. Não é algo pra "ficar
+ligado pra sempre".
+
+- **`translate(x, y)`:** move. **Não afeta o fluxo** (vantagem sobre
+  `top`/`left`).
+- **`scale(n)`:** cresce/encolhe a partir do `transform-origin`.
+- **`rotate(graus)`:** gira.
+- **`skew(graus)`:** inclina.
+- **Combinação:** `transform: translate rotate scale` - ordem importa.
+- **`perspective` + `preserve-3d`** ativa o 3D de verdade.
+- **`will-change`** avisa a GPU, mas use com parcimônia.
+
+> Dica: a regra "use transform em vez de top/left" é quase sempre
+> certa. Mas em layouts onde o elemento **precisa empurrar outros**
+> (ex: sidebar que aparece e empurra conteúdo), `transform` não
+> serve - use `margin-left` ou `width`. Cada ferramenta no seu caso.
+
+No próximo nó, vamos ver as **funções modernas** do CSS que
+simplificam cálculos: `clamp()`, `min()`, `max()` e `calc()`.

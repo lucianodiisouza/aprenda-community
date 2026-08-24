@@ -1,0 +1,167 @@
+---
+id: responsividade
+title: "Responsividade: Media Queries e Mobile-first"
+resources:
+  - title: "Media queries (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_media_queries/Using_media_queries
+    type: doc
+    lang: pt
+    free: true
+  - title: "Design responsivo (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/CSS_layout/Responsive_Design
+    type: doc
+    lang: pt
+    free: true
+---
+
+Responsividade é o que faz o **mesmo site** funcionar bem no celular
+de 360px de largura, no tablet, no notebook e no monitor 4K. Não é
+"site separado para mobile" - é o **mesmo HTML, mesmo CSS, regras
+diferentes dependendo do tamanho da tela**.
+
+### A meta tag essencial
+
+Antes de qualquer CSS, o HTML precisa ter:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1">
+```
+
+Sem ela, o celular **finge que a tela tem 980px de largura** e
+"diminui" tudo para caber - o site parece minúsculo e zoom inútil.
+Coloca isso no `<head>` em **todo** projeto. É inegociável.
+
+### Media queries: regras condicionais
+
+```css
+/* Padrão - mobile */
+.card { padding: 16px; font-size: 14px; }
+
+/* A partir de 768px de largura (tablet em diante) */
+@media (min-width: 768px) {
+  .card { padding: 24px; font-size: 16px; }
+}
+
+/* A partir de 1024px (desktop em diante) */
+@media (min-width: 1024px) {
+  .card { padding: 32px; font-size: 18px; }
+}
+```
+
+A regra dentro de `@media` só vale **quando a condição é verdadeira**.
+`min-width: 768px` significa "se a tela tem **pelo menos** 768px".
+
+Você pode combinar condições:
+
+```css
+/* Tela entre 768 e 1023, paisagem (mais alta que larga) */
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+  /* ... */
+}
+
+/* Suporte a hover (mouse presente) */
+@media (hover: hover) {
+  .botao:hover { background: #1557b0; }
+}
+
+/* Tela escura (sem ser tema do site) */
+@media (prefers-color-scheme: dark) {
+  body { background: #111; color: #eee; }
+}
+```
+
+### Mobile-first: comece pequeno
+
+O fluxo recomendado é **escrever primeiro para a tela menor**, e ir
+adicionando complexidade com `min-width`. Vantagens:
+
+- O CSS mais simples (mobile) é o **default** - todo mundo recebe
+  uma experiência boa.
+- Você evita "esquecer" do mobile - é fácil esquecer o que **não
+  existe**.
+- Performance: mobile não baixa regras que não vai usar.
+
+```css
+/* Mobile (default) */
+.container { padding: 16px; }
+.grid { display: flex; flex-direction: column; gap: 16px; }
+
+/* Tablet em diante */
+@media (min-width: 768px) {
+  .container { padding: 32px; }
+  .grid { flex-direction: row; flex-wrap: wrap; }
+  .grid > * { flex: 1 1 300px; }
+}
+
+/* Desktop em diante */
+@media (min-width: 1024px) {
+  .container { max-width: 1200px; margin: 0 auto; }
+}
+```
+
+### Breakpoints comuns (mas não universais)
+
+| Tamanho | Quando |
+|---|---|
+| 320-480px | celulares pequenos |
+| 481-768px | celulares grandes |
+| 769-1024px | tablets |
+| 1025-1440px | notebooks |
+| 1441px+ | monitores grandes |
+
+Esses são **pontos de partida**. Os breakpoints **reais** do seu site
+dependem de **quando o layout começa a quebrar** - abra o site, vá
+redimensionando, e anote a largura em que algo fica esquisito. Aí
+cria o breakpoint ali.
+
+### Unidades que escalam com a tela
+
+A gente viu unidades no nível iniciante; vale reforçar as responsivas:
+
+```css
+h1 { font-size: clamp(1.5rem, 4vw, 3rem); }
+/*         mínimo   ideal   máximo */
+```
+
+- **`vw` / `vh`:** % da viewport. 1vw = 1% da largura da tela.
+- **`clamp(min, ideal, max)`:** o tamanho "ideal" cresce com a tela
+  mas respeita um mínimo e um máximo. **A função mais útil de
+  responsividade moderna**.
+- **`%`:** % do pai, não da tela. Útil para layouts.
+- **Evite** `width: 1000px` em container - não escala. Prefira
+  `max-width: 1000px` com `width: 100%`.
+
+### Imagens responsivas
+
+```html
+<img
+  src="foto-800.jpg"
+  srcset="foto-400.jpg 400w, foto-800.jpg 800w, foto-1600.jpg 1600w"
+  sizes="(max-width: 600px) 100vw, 50vw"
+  alt="Descrição"
+/>
+```
+
+O navegador escolhe o **menor arquivo que ainda fica bom** na tela
+do usuário. Economiza banda em celular, mantém qualidade em monitor
+grande.
+
+- **Meta viewport** é inegociável em todo projeto.
+- **Mobile-first** é a forma padrão: começa simples, adiciona com
+  `min-width`.
+- **Breakpoints reais** vêm de quando o layout quebra, não de um
+  número "padrão".
+- **`clamp()`** para tipografia fluida é o jeito moderno.
+- **`srcset` + `sizes`** para imagens que pesam diferente em telas
+  diferentes.
+
+> Dica: não confie só no devtools pra simular. **Abra o site no
+> celular de verdade** - o devtools não reproduz 100% da experiência
+> (latência de toque, barra de URL, gestos, etc.). Emulador é pra
+> iteração rápida; teste real é pra validação.
+
+Você fechou o nível intermediário. Sabe especificidade, cascata,
+combinadores, pseudo-elementos, position, flexbox, backgrounds,
+sombras, transições e responsividade. No próximo tópico, **CSS
+Avançado**: layouts em duas dimensões, animações, container queries
+e o que o CSS moderno trouxe nos últimos anos.

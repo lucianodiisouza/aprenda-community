@@ -1,0 +1,231 @@
+---
+id: projeto-final
+title: "Projeto Final: Landing Page Completa e Responsiva"
+resources:
+  - title: "Dribbble - landing pages para se inspirar"
+    url: https://dribbble.com/tags/landing-page
+    type: artigo
+    lang: en
+    free: true
+  - title: "Awwwards - sites premiados (para se inspirar)"
+    url: https://www.awwwards.com/
+    type: artigo
+    lang: en
+    free: true
+---
+
+Você percorreu a trilha inteira: do "o que é CSS" até container
+queries, animações e performance. Hora de juntar tudo em **uma
+landing page completa**, **sem framework**, **do zero**. Esse é
+o tipo de projeto que vale mais que qualquer curso - porque você
+vai **errar, debugar, pesquisar, ajustar**. É aí que o CSS vira
+seu.
+
+---
+
+## O que construir
+
+Uma **landing page de um produto fictício** com:
+
+1. **Header fixo** com logo, menu de navegação e botão de CTA.
+2. **Hero** com título, subtítulo, dois CTAs e imagem (ou
+   ilustração) de fundo.
+3. **Seção de features** com 3 a 6 cards em grade responsiva.
+4. **Seção "depoimentos"** com 2 a 3 citações de clientes.
+5. **Seção de preços** com 2 a 3 planos (cards lado a lado).
+6. **CTA final** com formulário de email.
+7. **Footer** com links, copyright e ícones de redes sociais.
+
+A página deve:
+
+- Ser **totalmente responsiva** (mobile, tablet, desktop).
+- Ter **tema escuro** respeitando `prefers-color-scheme: dark`.
+- Usar **Flexbox ou Grid** para os layouts principais.
+- Ter **transições suaves** em hover/foco.
+- Respeitar **`prefers-reduced-motion`**.
+- Ter **`box-sizing: border-box`** no reset.
+- Usar **variáveis CSS** para cores, espaçamentos e tipografia.
+- Ter **foco visível** (`:focus-visible`) em todos os interativos.
+- Ter um **HTML semântico** (`<header>`, `<main>`, `<section>`,
+  `<article>`, `<nav>`, `<footer>`).
+
+---
+
+## Sugestão de organização
+
+```
+landing-page/
+├── index.html
+├── css/
+│   ├── reset.css        # reset moderno
+│   ├── variables.css    # cores, fontes, espaçamentos
+│   ├── base.css         # tipografia, body, links
+│   ├── layout.css       # header, footer, hero, seções
+│   ├── components.css   # botões, cards, inputs
+│   └── main.css         # importa todos
+└── assets/
+    └── (imagens)
+```
+
+Esse split é opinativo - use a organização que fizer sentido pra
+você. O importante é **separar por responsabilidade** e **não ter
+um arquivo de 2.000 linhas**.
+
+---
+
+## Passo a passo sugerido
+
+### Fase 1 - Estrutura
+
+1. Crie o `index.html` com o esqueleto semântico (header, main,
+   sections, footer).
+2. Crie o `reset.css` com `box-sizing: border-box` no `*` e os
+   resets básicos.
+3. Crie o `variables.css` com as cores, fontes e espaçamentos
+   (incluindo o bloco de dark mode dentro de `@media
+   (prefers-color-scheme: dark)`).
+4. **Valide o esqueleto**: veja se a página renderiza sem estilo
+   "estranho" - é comum achar HTML quebrado nesta fase.
+
+### Fase 2 - Tipografia e base
+
+5. Defina `font-family`, `line-height`, `color` e `background` no
+   `body`.
+6. Estilize os títulos (`h1`, `h2`, `h3`) com tipografia fluida
+   usando `clamp()`.
+7. Estilize parágrafos e links.
+8. **Valide**: a página deve estar legível, com hierarquia
+   visual, mesmo sem layout.
+
+### Fase 3 - Layout principal
+
+9. Estilize o **header** com `display: flex; justify-content:
+   space-between; align-items: center;`. Adicione `position:
+   sticky; top: 0` para fixar no topo.
+10. Estilize o **hero** com Flexbox ou Grid, centralizando o
+    conteúdo. Use `min-height: 100vh` se quiser "tela cheia".
+    Adicione um overlay com `linear-gradient` sobre a imagem de
+    fundo.
+11. Estilize a **seção de features** com `display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))`.
+    Cada feature é um `<article>` com ícone (pode ser emoji ou
+    SVG), título e texto.
+12. Estilize a **seção de preços** com Flexbox ou Grid.
+    Geralmente o plano "popular" tem destaque (borda colorida,
+    badge).
+13. Estilize o **footer** com Flexbox ou Grid, separando colunas
+    com `gap`.
+
+### Fase 4 - Componentes
+
+14. Estilize o **botão** (`.botao`) como componente reutilizável:
+    padding, cor, border-radius, transição. Adicione `:hover`,
+    `:active` e `:focus-visible`.
+15. Estilize o **input de email** (`.input`) com borda, focus
+    visível, e estado `:user-invalid` (se quiser ir além).
+16. Estilize o **card** (`.card`) com padding, borda, sombra e
+    hover suave (`transform: translateY(-2px)` no hover).
+
+### Fase 5 - Responsividade e refinamento
+
+17. Teste em **três tamanhos** no DevTools: 360px (celular
+    pequeno), 768px (tablet), 1280px (desktop).
+18. Ajuste o que quebrar. Adicione media queries se algo não
+    escalar naturalmente.
+19. Adicione **transições** em hover de botões, cards e links
+    (200-300ms, `ease-out`).
+20. Adicione o **reset de prefers-reduced-motion** (zera
+    animações/transições quando o usuário pedir).
+
+### Fase 6 - Acessibilidade e validação final
+
+21. Abra a página apenas com **teclado** (Tab, Enter, setas).
+    O foco está visível em todos os interativos? Você consegue
+    usar tudo?
+22. Ative **High Contrast** no Windows ou emule no DevTools.
+    Texto continua legível? Botões continuam visíveis?
+23. Rode o **Lighthouse** (DevTools → Lighthouse). Veja a nota
+    de acessibilidade, performance e boas práticas.
+24. Rode o **Validador do W3C** no HTML. Veja se tem erros de
+    markup.
+25. Abra o site em **celular de verdade** (ou emulador real).
+    Touch funciona? Texto está legível? Sem scroll horizontal?
+
+---
+
+## Critérios de aceitação
+
+A página está pronta quando:
+
+- [ ] Renderiza corretamente em **3 tamanhos** (360, 768, 1280).
+- [ ] Tema escuro funciona via `prefers-color-scheme: dark`.
+- [ ] Todos os botões e links têm **foco visível** ao navegar com
+      teclado.
+- [ ] Animações respeitam `prefers-reduced-motion: reduce`.
+- [ ] Lighthouse marca **90+** em acessibilidade, performance e
+      boas práticas.
+- [ ] O HTML passa no validador do W3C sem erros críticos.
+- [ ] Você consegue **explicar cada regra** que escreveu (não
+      copie código que não entende).
+- [ ] O CSS está **organizado** (variáveis, separação por arquivo,
+      nomes claros).
+
+---
+
+## Desafios extras (se sobrar fôlego)
+
+- **Animações de scroll:** use `IntersectionObserver` em JavaScript
+  para adicionar uma classe quando o elemento entra na viewport, e
+  anime com `@keyframes` no CSS.
+- **Dark mode toggle:** adicione um botão que troca o tema
+  manualmente, **além** do automático. Salve a preferência em
+  `localStorage`.
+- **Container queries:** transforme o card de feature em um
+  **componente autônomo** que se adapta se for usado em
+  sidebars estreitas.
+- **Acessibilidade avançada:** adicione `aria-label` em botões
+  só com ícone, `alt` em imagens, e `<label>` em todos os
+  inputs.
+- **Performance:** meça o tempo de carregamento com a aba Network
+  aberta. Tente ficar abaixo de 100KB de CSS total.
+
+---
+
+## Pra quem nunca programou
+
+Vai travar. **Vai travar muito.** É normal. Quando travar:
+
+1. **Abra o DevTools** e inspecione o elemento. O que o CSS está
+   dizendo? O que o Computed diz?
+2. **Pesquise a propriedade** no MDN. Leia os exemplos.
+3. **Isole o problema**: tire o elemento do layout e teste
+   sozinho. Voltou a funcionar? O problema é o contexto (pai,
+   irmãos, container).
+4. **Leia o erro em voz alta**: "esperava um card roxo, mas veio
+   um card cinza". Cinza = cor não foi aplicada. Por quê?
+   Seletor errado? Variável não declarada? Specificidade?
+5. **Comente regras** para descobrir qual está atrapalhando.
+
+CSS é uma das áreas onde **depurar é mais rápido que prevenir**.
+Abrace a investigação.
+
+## Pra quem já programa
+
+Vai ser mais rápido, mas tem um detalhe: a tentação de **pular
+etapas e meter framework**. Resista. Esse projeto é sobre
+**CSS puro, na unha**, para você **dominar o que existe por
+baixo** dos frameworks que você usa no dia-a-dia. Quando o
+Tailwind não resolver (e ele tem limite), esse conhecimento
+vai te salvar.
+
+---
+
+## Quando você terminar
+
+Esse projeto é seu portfólio. Publique no GitHub Pages, Vercel,
+Netlify, ou onde preferir. Adicione um README com screenshot.
+**É a primeira peça concreta de portfólio de CSS de muita gente
+que começou do zero.** E olha o quanto você evoluiu desde o
+"o que é CSS" lá no início.
+
+Parabéns por chegar até aqui. Agora vai lá e faz.

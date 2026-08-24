@@ -1,0 +1,172 @@
+---
+id: flexbox
+title: "Flexbox: O Layout que Destrava a Web"
+resources:
+  - title: "Flexbox - conceitos básicos (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox
+    type: doc
+    lang: pt
+    free: true
+  - title: "Flexbox Froggy - jogo pra aprender"
+    url: https://flexboxfroggy.com/
+    type: exercicio
+    lang: en
+    free: true
+  - title: "Guia visual de Flexbox (CSS-Tricks, em inglês)"
+    url: https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes do Flexbox, centralizar uma caixa na vertical, distribuir colunas
+com larguras iguais, ou alinhar itens com alturas diferentes era um
+**inferno** de `position: absolute`, `margin: auto` e números mágicos.
+O Flexbox chegou em 2009 e virou **o jeito padrão** de organizar
+elementos em uma dimensão (linha **ou** coluna).
+
+### Ativando o Flexbox
+
+```css
+.container {
+  display: flex;
+}
+```
+
+Só isso. Pronto, todos os **filhos diretos** viram "flex items" e
+obedecem a um conjunto novo de regras. O HTML continua o mesmo.
+
+### Os dois eixos
+
+Flexbox sempre trabalha com **dois eixos**:
+
+- **Eixo principal (main axis):** a direção em que os itens se
+  distribuem. Por padrão, é **horizontal** (esquerda → direita).
+- **Eixo cruzado (cross axis):** perpendicular ao principal. Por
+  padrão, **vertical** (topo → baixo).
+
+Trocar o eixo principal é uma linha:
+
+```css
+.container {
+  display: flex;
+  flex-direction: column; /* agora o eixo principal é vertical */
+}
+```
+
+### As propriedades do **container** (pai)
+
+```css
+.container {
+  display: flex;
+  flex-direction: row;            /* row | row-reverse | column | column-reverse */
+  flex-wrap: wrap;                /* nowrap | wrap | wrap-reverse */
+  justify-content: flex-start;    /* alinha no eixo principal */
+  align-items: stretch;           /* alinha no eixo cruzado */
+  align-content: stretch;        /* alinha múltiplas linhas */
+  gap: 16px;                      /* espaço entre itens (horizontal e vertical) */
+}
+```
+
+**`justify-content`** é provavelmente a que você mais vai usar. Os
+valores principais:
+
+```
+flex-start      ← itens no começo
+flex-end        → itens no final
+center          ● itens centralizados
+space-between   [1]      [2]      [3]   (espaço entre eles)
+space-around    [1]   [2]   [3]   [4]   (espaço em volta, com metade nas pontas)
+space-evenly    [1]   [2]   [3]   [4]   (espaço idêntico em todo lugar)
+```
+
+**`align-items`** alinha **no eixo cruzado**:
+
+```
+stretch     │       │       │   (itens esticam pra preencher)
+flex-start  ████    ████    ████
+center      ████    ████    ████   (centralizado no eixo cruzado)
+flex-end                ████    ████    ████
+baseline   ← alinhado pela linha de base do texto
+```
+
+**`gap`** é o jeito moderno de espaçar itens. Aceita um valor
+(`gap: 16px`) ou dois (`gap: 16px 24px` - vertical e horizontal).
+Funciona também em Grid e em colunas CSS. Lembre: `gap` é a forma
+certa de espaçar - não use `margin` entre flex items (a última/primeira
+vaza e fica desigual).
+
+### As propriedades dos **itens** (filhos)
+
+```css
+.item {
+  flex-grow: 0;      /* cresce? 0 = não */
+  flex-shrink: 1;    /* encolhe? 1 = sim (default) */
+  flex-basis: auto;  /* tamanho base antes de crescer/encolher */
+  flex: 1;           /* atalho: grow=1, shrink=1, basis=0 */
+  align-self: center; /* sobrescreve o align-items do container */
+  order: 2;          /* muda a ordem visual (sem mudar o HTML) */
+}
+```
+
+O atalho `flex: 1` é o mais útil: faz o item **crescer** para ocupar
+todo o espaço disponível. É o que faz uma sidebar de 240px ao lado de
+um conteúdo que preenche o resto:
+
+```css
+.sidebar { flex: 0 0 240px; }  /* grow=0, shrink=0, basis=240px - não mexe */
+.conteudo { flex: 1; }         /* cresce pra preencher o resto */
+```
+
+### Casos clássicos
+
+**Centralizar uma caixa (horizontal e vertical):**
+
+```css
+.pai {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+```
+
+**Navbar com itens espaçados:**
+
+```css
+.navbar { display: flex; justify-content: space-between; align-items: center; }
+```
+
+**Cards em grade responsiva sem media query:**
+
+```css
+.cards { display: flex; flex-wrap: wrap; gap: 16px; }
+.card  { flex: 1 1 250px; } /* base 250px, cresce e encolhe */
+```
+
+**Coluna de formulário com label em cima do input:**
+
+```css
+.campo { display: flex; flex-direction: column; gap: 4px; }
+```
+
+### `flex` vs `flex-basis` - a pegadinha
+
+`flex: 1` é o mesmo que `flex: 1 1 0`. O **`basis: 0`** é o que permite
+três itens `flex: 1` dividirem o espaço **exatamente igual**. Se você
+usar `flex: 1 1 auto`, o tamanho "natural" do conteúdo conta, e a
+divisão fica desigual. **Quase sempre você quer `flex: 1` puro.**
+
+- **Ative com** `display: flex` no container.
+- **Eixo principal:** controlado por `flex-direction` e
+  `justify-content`.
+- **Eixo cruzado:** controlado por `align-items`.
+- **`gap`** para espaçar (não use `margin`).
+- **`flex: 1`** no item para ele crescer e preencher.
+
+> Dica: [Flexbox Froggy](https://flexboxfroggy.com/) é um joguinho onde
+> você posiciona sapos usando Flexbox. 15 minutos resolvem e
+> solidificam o conceito. Vale mais que 5 textos.
+
+No próximo nó, vamos colorir o fundo da página: **`backgrounds`** -
+imagens, gradientes, e como empilhar vários backgrounds.

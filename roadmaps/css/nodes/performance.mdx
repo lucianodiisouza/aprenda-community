@@ -1,0 +1,231 @@
+---
+id: performance
+title: "Performance: will-change, Reflow, Repaint e Critical CSS"
+resources:
+  - title: "O que é renderização? (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/Performance/How_browsers_work
+    type: doc
+    lang: pt
+    free: true
+  - title: "will-change (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/will-change
+    type: doc
+    lang: pt
+    free: true
+---
+
+CSS não é só "como a página se parece" - é também "**como o
+navegador pinta ela**". Algumas escolhas de CSS tornam a
+página **visivelmente mais rápida** (ou mais lenta) sem mudar
+nada visualmente. Esse nó é sobre isso.
+
+### Como o navegador renderiza (resumo)
+
+Quando algo muda na página (clique, animação, resize), o
+navegador passa por (potencialmente) **três etapas**:
+
+1. **Layout (reflow):** recalcula o tamanho e posição de **cada
+   elemento** que possa ter sido afetado. Custo: alto.
+2. **Paint (repaint):** redesenha os pixels que mudaram. Custo:
+   médio.
+3. **Composite:** compõe as camadas pintadas em uma única
+   imagem. Custo: baixo (acelerado por GPU).
+
+A regra de ouro: **pinte e componha, nunca recalcule layout se
+der pra evitar**.
+
+### O que dispara reflow
+
+Propriedades que mudam a **geometria** do elemento forçam
+recalculação de layout:
+
+- `width`, `height`
+- `padding`, `margin`, `border`
+- `top`, `right`, `bottom`, `left`
+- `display`
+- `font-size`, `font-family` (muda o tamanho de caixas filhas
+  também)
+- Conteúdo de texto (muda altura de linhas)
+
+E é **em cadeia**: reflow em um elemento pode forçar reflow em
+todos os descendentes, e em todos os elementos que vêm depois no
+fluxo. Mexer em `width` de um `<body>` pode custar **centenas
+de milissegundos** em uma página complexa.
+
+### O que dispara só repaint
+
+Propriedades que mudam a **aparência** mas não a geometria:
+
+- `color`, `background-color`, `background-image`
+- `border-color`, `border-style` (mas não `border-width`)
+- `box-shadow`
+- `visibility`
+
+Custo médio. Ainda requer redesenhar pixels, mas não recalcular
+posições.
+
+### O que só requer composite (sem repaint)
+
+Propriedades que o navegador **delega pra GPU**:
+
+- `transform` (translate, rotate, scale, etc.)
+- `opacity`
+- `filter` (alguns valores)
+
+Custo baixo, executado pela GPU em paralelo. **É aqui que
+animações performáticas vivem**.
+
+### A regra prática
+
+```css
+/* Bom: anima transform/opacity - composite only */
+.botao {
+  transition: transform 0.2s, opacity 0.2s;
+}
+.botao:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* Caro: anima width e margin - força reflow */
+.botao {
+  transition: width 0.2s, margin 0.2s;
+}
+.botao:hover {
+  width: 110%;
+  margin-left: -5%;
+}
+```
+
+**Resultado:** o primeiro botão é suave a 60fps. O segundo
+engasga em listas grandes.
+
+### `will-change`: avise antes
+
+```css
+.cubo {
+  will-change: transform;
+}
+```
+
+`will-change` é uma **dica pro navegador** de que uma propriedade
+vai mudar em breve. Ele promove o elemento para sua própria
+**camada de composição** (GPU), deixando a animação mais suave.
+
+**Mas use com parcimônia:**
+
+```css
+/* Ruim: aplica will-change em TUDO - come RAM */
+* { will-change: transform; }
+
+/* Bom: aplica só no elemento que vai animar */
+.cubo-que-vai-girar { will-change: transform; }
+```
+
+Cada elemento com `will-change` ganha uma camada. Dezenas de
+camadas = muita RAM usada. Aplique **antes** da animação, remova
+**depois** (via JavaScript, idealmente).
+
+```js
+// Exemplo de uso correto
+elemento.addEventListener("mouseenter", () => {
+  elemento.style.willChange = "transform";
+});
+elemento.addEventListener("animationend", () => {
+  elemento.style.willChange = "auto";
+});
+```
+
+### Critical CSS: o CSS que carrega antes do resto
+
+O navegador **bloqueia a renderização** até baixar e processar o
+CSS. Se o CSS for grande e estiver no `<head>`, o usuário vê uma
+**tela em branco** até o download terminar.
+
+**Critical CSS** é a estratégia de **extrair o CSS mínimo** para
+renderizar o "above the fold" (o que aparece sem scroll) e
+**embutir no `<head>`**:
+
+```html
+<head>
+  <style>
+    /* CSS crítico - inline, ~5-10KB */
+    body { margin: 0; font-family: sans-serif; }
+    .hero { /* ... */ }
+    .navbar { /* ... */ }
+  </style>
+
+  <!-- CSS completo - carrega assíncrono -->
+  <link rel="preload" href="estilo.css" as="style"
+        onload="this.rel='stylesheet'">
+</head>
+```
+
+A primeira impressão (hero, navbar) aparece em **milissegundos**.
+O resto da página estiliza depois. Ferramentas como
+[Critical](https://github.com/addyosmani/critical) automatizam
+a extração.
+
+### Outras otimizações comuns
+
+**`content-visibility`:** pular renderização de conteúdo fora da
+viewport.
+
+```css
+.secao-longe {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px; /* reserva espaço pra evitar layout shift */
+}
+```
+
+A seção só é renderizada quando o usuário rola até perto.
+**Reduz drasticamente** o tempo de renderização em páginas
+longas.
+
+**`contain`:** isolar o elemento pra que mudanças nele não
+afetem o resto da página.
+
+```css
+.card {
+  contain: layout;   /* nada dentro afeta o layout externo */
+  contain: paint;    /* nada dentro pinta fora da caixa */
+  contain: strict;   /* tudo isolado */
+}
+```
+
+**`@import` em arquivo CSS:** cada `@import` é um request HTTP
+extra. Use `@import` em tempo de **build** (o bundler concatena),
+nunca em runtime.
+
+**Imagens:** CSS não pode comprimir imagens, mas o **tamanho
+correto** e formatos modernos (WebP, AVIF) são responsabilidade
+do desenvolvedor. Não use uma imagem de 1920px num card de
+300px.
+
+### DevTools: onde achar os problemas
+
+- **Performance tab:** grave uma interação. Veja a "flame chart"
+  - tarefas longas (>50ms) são candidatas a otimização.
+- **Rendering tab:** ative "Paint flashing" - tudo que está
+  sendo repintado fica verde. Se pisca muito sem necessidade,
+  há repaint desnecessário.
+- **Layers tab:** veja quantas camadas o navegador está
+  gerenciando. Se há dezenas, tem `will-change` demais.
+
+- **Reflow** (recalcula layout) - o mais caro.
+- **Repaint** (redesenha pixels) - custo médio.
+- **Composite** (GPU) - barato.
+- Anime `transform` e `opacity` de preferência.
+- **`will-change`** com moderação (um elemento, remova depois).
+- **Critical CSS** inline no `<head>`.
+- **`content-visibility: auto`** para páginas longas.
+
+> Dica: o **maior ganho** de performance em CSS quase sempre vem
+> de **reduzir o que é repintado**. Animações em `width`/`height`
+> em listas grandes são o vilão clássico. Substituir por
+> `transform: scaleX()` ou `transform: translateX()` muda a
+> experiência de "engasga" para "suave".
+
+No próximo nó, vamos fechar o nível avançado falando do **mundo
+além do CSS puro** - frameworks, ferramentas, e por que é bom
+saber que existem.

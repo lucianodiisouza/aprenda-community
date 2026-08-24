@@ -1,0 +1,92 @@
+---
+id: unidades
+title: "Unidades: px, em, rem, %, vh e vw"
+resources:
+  - title: "Valores e unidades CSS (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Values_and_units
+    type: doc
+    lang: pt
+    free: true
+  - title: "Referência completa de unidades (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_Values_and_Units
+    type: doc
+    lang: pt
+    free: true
+---
+
+CSS não usa só pixels. Tem **unidades relativas** (que escalam com o
+contexto) e **unidades absolutas** (tamanho fixo). Escolher a unidade
+certa é a diferença entre um site que funciona em qualquer tela e um
+site que "quebra" no celular do usuário.
+
+### Absolutas: o tamanho é fixo
+
+```css
+.borda { border: 1px solid #000; }
+.titulo { font-size: 24px; }
+```
+
+- **`px` (pixel):** a mais usada. Tecnicamente é um "pixel de referência"
+  (não o pixel físico do monitor, mas próximo). **Use para** bordas,
+  sombras, e quando você quer um controle exato.
+- `cm`, `mm`, `in`, `pt`: existem mas são raras - CSS não é pra impressão
+  (e mesmo pra impressão, o normal é `px` ou `rem`).
+
+### Relativas: o tamanho depende de algo
+
+```css
+.titulo { font-size: 2rem; }       /* 2x o tamanho base */
+.container { width: 80%; }          /* 80% da largura do pai */
+.hero { height: 100vh; }            /* 100% da altura da tela */
+```
+
+- **`rem` (root em):** o **mais importante** das unidades relativas.
+  Sempre relativo ao tamanho da fonte do elemento raiz (`<html>`), que
+  por padrão é 16px. Se o usuário aumenta o zoom do navegador ou troca
+  a preferência de tamanho de fonte, **`rem` escala junto**. Por isso é
+  a melhor escolha para `font-size` e para a maioria dos espaçamentos.
+- **`em`:** relativo ao `font-size` do **elemento pai**. A pegadinha é
+  que ele é "compounding": se o pai tem 2em e o filho tem 2em, o filho
+  vale 4em. Útil em casos específicos (margem proporcional ao próprio
+  texto); confuso se você não souber o que está fazendo.
+- **`%` (porcentagem):** relativo ao **pai direto**. Largura 50% num
+  container de 1000px vira 500px. Altura em % é traiçoeiro - só funciona
+  se o pai tem altura definida.
+- **`vh` (viewport height):** 1% da **altura** da tela visível.
+  `100vh` = tela inteira. Perfeito para "hero" que ocupa a tela cheia.
+- **`vw` (viewport width):** 1% da **largura** da tela visível.
+  `100vw` = largura inteira. Cuidado: `100vw` pode causar scroll
+  horizontal se a tela tem scrollbar - é um detalhe clássico.
+- **`vmin` / `vmax`:** 1% do menor/maior lado da tela. Útil em jogos
+  ou layouts muito responsivos.
+
+### Como escolher: regra prática
+
+- **Texto (`font-size`):** `rem`. Sempre.
+- **Espaçamentos (`padding`, `margin`, `gap`):** `rem` (acompanha o
+  tamanho da fonte) ou `px` (controle exato).
+- **Larguras/alturas de container:** `%`, `vh`/`vw`, ou `px` quando
+  realmente quer fixar.
+- **Borda:** `px`. Borda de 0.5rem é exagero.
+- **Sombras:** `px`. Idem.
+
+### E o `0`?
+
+Zero é zero em qualquer unidade. `margin: 0` é o mesmo que `margin: 0px`,
+`margin: 0rem`, etc. CSS é esperto o suficiente pra não se importar.
+
+- **`px`:** fixo, exato. Bom para bordas, sombras.
+- **`rem`:** relativo ao root. Bom para fonte e espaçamentos.
+- **`em`:** relativo ao pai. Compounding confuso; use com cuidado.
+- **`%`:** relativo ao pai. Bom para larguras.
+- **`vh` / `vw`:** relativo à tela. Bom para heros e "tela cheia".
+- **`vmin` / `vmax`:** relativo ao menor/maior lado da tela.
+
+> Dica: comece com `rem` e `px`. Eles cobrem 95% dos casos. Quando se sentir
+> confortável, vá experimentando os outros. E se um `100vh` parecer ter
+> "altura errada" no celular, procure por `dvh` (dynamic viewport height) -
+> é o "irmão mais novo" do `vh` que resolve a barra de URL que some/aparece
+> no mobile.
+
+No próximo nó, vamos dar vida ao botão do usuário: **pseudo-classes** que
+mudam o estilo quando o mouse passa, quando o campo recebe foco, etc.

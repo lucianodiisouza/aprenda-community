@@ -1,0 +1,59 @@
+---
+id: introducao
+title: "Introdução: O que é CSS"
+resources:
+  - title: "Primeiros passos com CSS (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/First_steps
+    type: doc
+    lang: pt
+    free: true
+  - title: "O que é CSS? (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/First_steps/What_is_CSS
+    type: artigo
+    lang: pt
+    free: true
+---
+
+HTML é o **esqueleto** de uma página: títulos, parágrafos, imagens, links. Mas
+sozinho, ele é cinza, sem espaçamento, sem personalidade. CSS é a **roupa** -
+e também o **cenário**, a **iluminação** e o **palco**.
+
+**CSS** vem de *Cascading Style Sheets* - "folhas de estilo em cascata". É uma
+linguagem separada do HTML, com uma única missão: dizer **como cada elemento
+se parece**. Cor, tamanho, posição, espaçamento, animação. Só isso. Nenhuma
+lógica de programação.
+
+Um exemplo mínimo:
+
+```css
+h1 {
+  color: #1a73e8;
+  font-size: 32px;
+  text-align: center;
+}
+```
+
+Isso diz: "todo `<h1>` da página fica azul, com fonte de 32 pixels, centralizado".
+Três linhas, três decisões visuais. Esse é o tamanho de um passo de cada vez.
+
+A palavra **"cascata"** importa mais do que parece. O CSS não escolhe um
+estilo por elemento isolado - ele aplica uma **cascata de regras**, e a regra
+que vale é a que está "mais forte" (ou mais específica, ou a última). A gente
+entra em detalhe nesse tema no nível intermediário, mas já vale guardar:
+**ordem e contexto importam**.
+
+- **CSS é a linguagem de estilo da web.** Sem ela, todo site seria um
+  documento Word de 1995.
+- **Você escreve regras** (`seletor { propriedade: valor; }`) e o navegador
+  desenha.
+- **HTML e CSS vivem em arquivos separados** na maioria dos casos - o HTML
+  diz *o que* é, o CSS diz *como aparece*.
+- A "cascata" é o sistema que decide quem ganha quando duas regras brigam.
+
+> Dica: CSS **não é uma linguagem de programação** (não tem loops, condições,
+> variáveis - pelo menos não as clássicas). É uma linguagem de **declaração**:
+> você declara como algo deve ser, e o navegador resolve. Isso muda a forma
+> de pensar: você descreve o estado final, não os passos pra chegar lá.
+
+No próximo nó, a gente vê as **três formas de incluir CSS** numa página - e
+quando cada uma faz sentido.

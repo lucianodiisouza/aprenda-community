@@ -1,0 +1,126 @@
+---
+id: especificidade
+title: "Especificidade: Por que 'esse CSS não funciona'"
+resources:
+  - title: "Especificidade (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/Specificity
+    type: doc
+    lang: pt
+    free: true
+  - title: "Calculadora visual de especificidade (Specifishity)"
+    url: https://specifishity.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você escreve uma regra, ela não pega. Você escreve outra, idêntica, com
+mais detalhe, e agora pega. A diferença é a **especificidade**: um
+"sistema de pontos" que diz quem ganha quando duas regras se aplicam
+ao mesmo elemento.
+
+Cada tipo de seletor vale uma quantidade de pontos. A regra com mais
+pontos ganha. Se empatar, **a última no código** ganha (essa é a cascata
+que vimos no próximo nó).
+
+### A "tabela de pontos"
+
+Cada seletor contribui para a pontuação. A pontuação é uma tupla de
+quatro números, comparada da esquerda pra a direita:
+
+```
+(a, b, c, d)
+
+a = !important e estilos inline (caso especial)
+b = IDs (#alguma-coisa)
+c = classes (.alguma-coisa), atributos ([type="text"]), pseudo-classes (:hover)
+d = elementos (p, h1, div) e pseudo-elementos (::before)
+```
+
+Exemplos:
+
+| Seletor | a | b | c | d | Pontuação |
+|---|---|---|---|---|---|
+| `p` | 0 | 0 | 0 | 1 | (0,0,0,1) |
+| `.botao` | 0 | 0 | 1 | 0 | (0,0,1,0) |
+| `p.botao` | 0 | 0 | 1 | 1 | (0,0,1,1) |
+| `#menu` | 0 | 1 | 0 | 0 | (0,1,0,0) |
+| `header .menu a.ativo` | 0 | 0 | 2 | 2 | (0,0,2,2) |
+| `style="..."` (inline) | 1 | 0 | 0 | 0 | (1,0,0,0) |
+| `!important` | inverte tudo | | | | |
+
+Comparação é **lexicográfica**: (0,1,0,0) ganha de (0,0,99,99). ID
+sempre ganha de classe, mesmo com mil classes.
+
+### Quem ganha na prática?
+
+```css
+/* Pontuação: (0,0,1,0) - 1 classe */
+.botao { background: blue; }
+
+/* Pontuação: (0,1,0,0) - 1 ID - GANHA */
+#confirmar { background: red; }
+```
+
+```html
+<button class="botao" id="confirmar">Clique</button>
+```
+
+O botão fica vermelho. Não porque `.botao` "falhou" - é que
+`#confirmar` é **mais específico**.
+
+### "Cascata" e "especificidade" não são a mesma coisa
+
+- **Cascata:** o algoritmo que decide a regra final. Leva em conta
+  origem (autor vs usuário), especificidade, e **ordem no código**.
+- **Especificidade:** apenas uma das três variáveis da cascata. A
+  regra mais específica **ganha**, mas se duas regras têm a mesma
+  especificidade, **a que aparece por último no CSS vence**.
+
+### Por que `!important` é problemático
+
+```css
+.botao { background: blue !important; }
+#confirmar { background: red; } /* perdeu! */
+```
+
+`!important` **inverte** a regra da cascata - vence qualquer coisa
+**exceto outro `!important` mais específico ou posterior**. É a
+bomba nuclear do CSS. Use em último caso, porque:
+
+- Dificulta sobrescrever depois (você vai precisar de `!important`
+  também).
+- Torna a leitura do CSS confusa ("por que essa regra não ganha?").
+- Atrapalha acessibilidade (estilos do usuário com `!important` perdem
+  para os do site).
+
+**Antes de usar `!important`:** será que a regra deveria ser mais
+específica? Ou mudada de lugar (depois da que está ganhando)?
+
+### Dica prática: mantenha a especificidade BAIXA
+
+```css
+/* Bom: pontuação (0,0,1,0) - reutilizável */
+.botao { ... }
+
+/* Evite: pontuação (0,1,0,0) - não dá pra sobrescrever sem ID novo */
+#header .nav .lista .item .link { ... }
+```
+
+Quanto mais baixa a especificidade, mais **fácil de estender e
+sobrescrever** o CSS depois. Seletores muito aninhados são cheiro de
+"estou brigando com o CSS" - em vez de aumentar a especificidade,
+volte e reorganize.
+
+- **Especificidade** é uma pontuação: ID > classe/attr > elemento.
+- **Inline e `!important`** vencem quase tudo (mas são perigosos).
+- **Cascata** desempata quando a especificidade é igual (última vence).
+- Seletores muito aninhados são sintoma de CSS brigando com você.
+
+> Dica: a [Specifishity](https://specifishity.com/) é uma calculadora
+> visual de seletores - boa pra debugar. E a maioria dos browsers mostra
+> a especificidade da regra que está ganhando no painel Styles.
+
+No próximo nó, a gente aprofunda a **cascata e herança** - duas regras
+que explicam por que, às vezes, a cor "vaza" para elementos que você
+nem pensou em estilizar.
