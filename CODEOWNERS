@@ -1,0 +1,15 @@
+# CODEOWNERS — quem revisa o quê
+#
+# Cada linha é um padrão de arquivo seguido do(s) owner(s) (GitHub user/team).
+# O PR pede review automaticamente do(s) owner(s) listado(s) em qualquer
+# arquivo que case com o padrão. O último match vence.
+#
+# Mantenedor principal:
+*       @lucianodiisouza
+
+# Mudanças em trilhas pedem review do mantenedor (no início, a gente centraliza).
+# Quando a comunidade crescer, dá pra afinar (ex: owners específicos por trilha).
+/roadmaps/    @lucianodiisouza
+/docs/        @lucianodiisouza
+/meta/        @lucianodiisouza
+/.github/     @lucianodiisouza

@@ -1,0 +1,38 @@
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Editor / IDE
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# Node (caso alguém rode scripts de validação localmente)
+node_modules/
+.pnp.*
+.yarn/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.turbo/
+.next/
+
+# Variáveis de ambiente (não commitar nada disso)
+.env
+.env.local
+.env.*.local
+
+# Pasta temporária de trabalho
+tmp/
+.tmp/

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions (perguntas, ideias, show & tell)
+    url: https://github.com/lucianodiisouza/aprenda-community/discussions
+    about: Para conversas que ainda não são bug/proposta concreta.
+  - name: 📖 Style Guide
+    url: https://github.com/lucianodiisouza/aprenda-community/blob/main/docs/style-guide.md
+    about: Como escrever um nó (voz, tom, curadoria de recursos).
+  - name: 🤝 Contributing
+    url: https://github.com/lucianodiisouza/aprenda-community/blob/main/CONTRIBUTING.md
+    about: Passo a passo de como abrir PR.
