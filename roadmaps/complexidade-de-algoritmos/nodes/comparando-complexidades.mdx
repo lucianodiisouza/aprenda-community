@@ -1,0 +1,71 @@
+---
+id: comparando-complexidades
+title: "Comparando Complexidades na Prática"
+resources:
+  - title: "Big-O Cheat Sheet (bigocheatsheet.com)"
+    url: https://www.bigocheatsheet.com/
+    type: artigo
+    lang: en
+    free: true
+---
+
+Você já conhece O(1), O(log n), O(n), O(n log n) e O(n²). Agora é hora de
+**enxergar a diferença na prática** - com números reais - e entender por
+que a escolha do algoritmo é frequentemente mais importante que o
+hardware.
+
+Imagine que cada operação leve **1 microssegundo** (1 µs = 0,000001
+segundo). Para cada complexidade, quanto tempo o algoritmo leva conforme
+a entrada cresce?
+
+| n              | O(1) | O(log n) | O(n)     | O(n log n) | O(n²)         |
+| -------------- | ---- | -------- | -------- | ---------- | ------------- |
+| 10             | 1 µs | 3 µs     | 10 µs    | 33 µs      | 100 µs        |
+| 100            | 1 µs | 7 µs     | 100 µs   | 700 µs     | 10.000 µs     |
+| 1.000          | 1 µs | 10 µs    | 1 ms     | 10 ms      | 1 segundo     |
+| 10.000         | 1 µs | 13 µs    | 10 ms    | 130 ms     | 100 segundos  |
+| 100.000        | 1 µs | 17 µs    | 100 ms   | 1,7 seg    | ~3 horas      |
+| 1.000.000      | 1 µs | 20 µs    | 1 seg    | 20 seg     | ~12 dias      |
+| 1.000.000.000  | 1 µs | 30 µs    | 17 min   | 8,3 horas  | ~32 mil anos  |
+
+Olha o que acontece: O(n²) com 1 bilhão de itens levaria **milênios**.
+O(n) com 1 bilhão leva **minutos**. O(log n) com 1 bilhão leva o tempo
+de um piscar de olhos. **Hardware melhor não resolve o problema
+fundamental** - a curva de crescimento é o que manda.
+
+Quando usar cada um (resumo prático):
+
+- **O(1)** - acessos diretos em arrays, hash maps, leitura de variável.
+  Use quando puder: é o "instantâneo".
+- **O(log n)** - busca binária, operações em árvores balanceadas. Use
+  quando os dados estão **ordenados** (ou dá para manter assim).
+- **O(n)** - percorrer a lista uma vez, busca sem ordem. É o "esperado"
+  para a maioria dos problemas.
+- **O(n log n)** - **ordenação eficiente** (merge sort, quick sort, tim
+  sort). É o melhor que dá para fazer ordenando por comparação.
+- **O(n²)** - loops aninhados, algoritmos de ordenação didáticos. OK
+  para entradas pequenas ou como ponto de partida.
+- **O(2ⁿ) ou O(n!)** - algoritmos de força bruta com combinações
+  (ex: caixeiro-viajante,某些 subconjuntos). Inviáveis para n grande
+  sem heurística.
+
+A regra de ouro: **a diferença entre as complexidades explode conforme n
+cresce.** Um algoritmo O(n²) pode ser aceitável com 100 itens e virar
+inútil com 100.000.
+
+> Dica: na dúvida, **pergunte "qual é o n aqui?"** (quantos registros, quantos
+> usuários, quantos pixels). Às vezes "O(n²) com n=10" é mais rápido na
+> prática do que "O(n log n) com n=1.000.000", porque constantes e
+> overhead importam - mas isso é ajuste fino. A ordem de grandeza é o que
+> decide a viabilidade.
+
+- **O(n) escala 1:1, O(n²) escala com o quadrado, O(log n) quase não escala.**
+  Para entradas grandes, a diferença é dramática.
+- **Hardware ajuda, mas não muda a curva.** Um servidor 100× mais rápido
+  move a barra de viabilidade, mas a forma da curva continua a mesma.
+- **Use a maior complexidade que cabe no requisito.** Se O(n²) com n=1.000
+  resolve em 1 segundo e é o suficiente, não gaste tempo otimizando.
+
+Você fechou o nível **intermediário**: sabe nomear, formalizar e analisar
+complexidades. No próximo nó, abrimos o nível **avançado** com Big Ω e Big
+Θ - as outras letras gregas que completam a notação assintótica.

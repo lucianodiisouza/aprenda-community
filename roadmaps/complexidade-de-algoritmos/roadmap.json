@@ -1,0 +1,105 @@
+{
+  "slug": "complexidade-de-algoritmos",
+  "title": "Complexidade de Algoritmos",
+  "description": "Trilha completa sobre complexidade - do zero absoluto (o que é um algoritmo 'lento' vs 'rápido') até análise amortizada, Big Omega, complexidade de espaço e análise de algoritmos recursivos. Cobre básico, intermediário e avançado, com exemplos em Python e JavaScript, prática em cada nível e um projeto final de análise comparativa.",
+  "difficulty": "iniciante",
+  "creators": [
+    {
+      "name": "Luciano de Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "Introdução: O que é Complexidade",
+      "type": "topic",
+      "recommended": true,
+      "children": ["contando-operacoes"]
+    },
+    {
+      "id": "contando-operacoes",
+      "title": "Contando Operações (Sem Matemática)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["constante-linear"]
+    },
+    {
+      "id": "constante-linear",
+      "title": "Constante e Linear: O(1) e O(n)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["quadratico"]
+    },
+    {
+      "id": "quadratico",
+      "title": "Quadrático: O(n²) - Loops Dentro de Loops",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["notacao-big-o"]
+    },
+    {
+      "id": "notacao-big-o",
+      "title": "Notação Big O (Formal, Mas Sem Medo)",
+      "type": "topic",
+      "recommended": true,
+      "children": ["logaritmico"]
+    },
+    {
+      "id": "logaritmico",
+      "title": "Logaritmo: O(log n) e a Busca Binária",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["analisando-loops"]
+    },
+    {
+      "id": "analisando-loops",
+      "title": "Analisando Loops: Regras Práticas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["comparando-complexidades"]
+    },
+    {
+      "id": "comparando-complexidades",
+      "title": "Comparando Complexidades na Prática",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["big-omega-big-theta"]
+    },
+    {
+      "id": "big-omega-big-theta",
+      "title": "Big Ω e Big Θ: Pior Caso, Melhor Caso, Caso Justo",
+      "type": "topic",
+      "recommended": true,
+      "children": ["complexidade-espaco"]
+    },
+    {
+      "id": "complexidade-espaco",
+      "title": "Complexidade de Espaço: Memória Também Conta",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["recursao"]
+    },
+    {
+      "id": "recursao",
+      "title": "Recursão: Analisando Algoritmos Que Se Chamam",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["analise-amortizada"]
+    },
+    {
+      "id": "analise-amortizada",
+      "title": "Análise Amortizada: O Pior Caso Não é a Média",
+      "type": "subtopic",
+      "recommended": false,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Comparando Algoritmos do Mundo Real",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

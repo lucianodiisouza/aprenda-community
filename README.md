@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-4-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-5-success.svg)](./roadmaps)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Discussions](https://img.shields.io/badge/💬-Discussions-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/discussions)
 
@@ -33,8 +33,14 @@ Trilhas hoje:
   commits, branches, merge, remotos, rebase, reflog, workflows e uma
   primeira contribuição open source. **23 nós**, cobrindo básico,
   intermediário e avançado com prática.
+- 📊 [**Complexidade de Algoritmos**](./roadmaps/complexidade-de-algoritmos)
+  - do "o que é um algoritmo lento" à análise amortizada e Master
+  Theorem. **13 nós**, cobrindo básico (O(1), O(n), O(n²)),
+  intermediário (Big O formal, O(log n), análise de loops) e
+  avançado (Big Ω/Θ, complexidade de espaço, recursão, análise
+  amortizada) com prática de medição no projeto final.
 
-> Mais trilhas chegando: Programação do Zero, Frontend, Backend, Python…
+> Mais trilhas chegando: Backend, Python, Estruturas de Dados…
 > Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).
 
 ## 🎯 Para quem é

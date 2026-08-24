@@ -1,0 +1,99 @@
+---
+id: complexidade-espaco
+title: "Complexidade de Espaço: Memória Também Conta"
+resources:
+  - title: "Space complexity (GeeksforGeeks, EN)"
+    url: https://www.geeksforgeeks.org/g-fact-86/
+    type: artigo
+    lang: en
+    free: true
+---
+
+Até agora falamos de **tempo** (quantas operações). Mas todo algoritmo
+também usa **memória** - e em alguns casos, a escolha de poupar tempo
+custa caro de RAM. A notação é a mesma (Big O), mas o que estamos
+medindo muda: agora é o **espaço extra** que o algoritmo precisa além
+da entrada.
+
+**O(1) de espaço - constante.** Não importa o tamanho da entrada, o
+algoritmo usa a mesma quantidade de memória extra:
+
+```js
+function soma(lista) {
+  let total = 0;          // 1 variável
+  for (const n of lista) {
+    total += n;           // reusa 'total' - não cria mais nada
+  }
+  return total;
+}
+// Espaço extra: O(1) - só a variável 'total'
+```
+
+Outros O(1) de espaço: trocar dois elementos, leitura de um array,
+contadores, busca sequencial (sem estruturas auxiliares).
+
+**O(n) de espaço - linear.** O algoritmo precisa de memória extra
+**proporcional à entrada**:
+
+```js
+function copia(lista) {
+  const nova = [];         // cresce até o tamanho de 'lista'
+  for (const item of lista) {
+    nova.push(item);
+  }
+  return nova;
+}
+// Espaço extra: O(n) - a array 'nova' tem n elementos
+```
+
+**O(n²) de espaço - quadrático.** Acontece com matrizes 2D, certas
+tabelas de memoização ingênuas, ou pares de elementos combinados:
+
+```js
+function matrizDePares(lista) {
+  const m = [];
+  for (const a of lista) {
+    const linha = [];
+    for (const b of lista) {
+      linha.push([a, b]);
+    }
+    m.push(linha);
+  }
+  return m;
+}
+// Espaço: O(n²) - 'm' tem n linhas, cada uma com n pares
+```
+
+A relação tempo × espaço é central: **muitas vezes, você troca um pelo
+outro**. Dois exemplos clássicos:
+
+- **Hash table / dicionário:** O(1) de tempo para busca, O(n) de espaço
+  (precisa guardar a estrutura). Vale a pena quando você vai buscar
+  **muitas vezes**.
+- **Memoização (cache de resultados):** troca O(n) de espaço por
+  economia de tempo - se a função é cara e é chamada várias vezes com
+  os mesmos argumentos, vale o preço da memória.
+
+Em entrevistas e em sistemas reais, **os dois importam**. Uma função
+O(log n) de tempo que precisa de O(n) de espaço pode ser pior do que
+uma O(n) de tempo que usa O(1) de espaço - depende do contexto
+(memória cara? entradas enormes? várias chamadas?).
+
+> Dica: ao analisar um algoritmo, sempre se pergunte: **"alocou alguma
+> estrutura nova que cresce com a entrada?"** Se sim, some isso à conta
+> de espaço. É o mesmo raciocínio do tempo: contar o que cresce, descartar
+> o que é fixo.
+
+- **Complexidade de espaço** mede a **memória extra** (além da entrada)
+  que o algoritmo precisa.
+- **A notação é a mesma do tempo** (O(1), O(n), O(n²)...), mas o que conta
+  é alocação, não execução.
+- **Tempo e espaço são permutáveis:** cache e memoização usam memória
+  para economizar tempo; ordenação in-place usa tempo para economizar
+  memória.
+- **Olhe para os dois juntos.** Em sistemas com restrição de RAM, O(n)
+  de espaço pode ser pior que O(n²) de tempo - contexto decide.
+
+No próximo nó, vamos atacar um dos pontos que mais confunde gente em
+entrevistas: **análise de algoritmos recursivos**, onde a recursão
+esconde o custo em uma "pilha" que também precisa ser analisada.
