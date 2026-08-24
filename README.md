@@ -9,7 +9,7 @@
 [![Trilhas](https://img.shields.io/badge/trilhas-9-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
-[![Discussions](https://img.shields.io/badge/💬-Discussions-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/discussions)
+[![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
 
 ---
 
@@ -62,7 +62,7 @@ Trilhas hoje:
     projeto final de landing page.
 
 > Mais trilhas chegando: Backend, Python, Estruturas de Dados…
-> Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).
+> Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
 
 ## 🛠️ Projetos práticos
 
@@ -106,7 +106,7 @@ Contribuir com conteúdo é simples e **não exige saber programar**:
    → Abra uma [issue do tipo "trilha nova"](./.github/ISSUE_TEMPLATE/trilha-nova.md)
    e a gente discute antes.
 4. **Tem dúvida?**
-   → [Discussions / Q&A](https://github.com/lucianodiisouza/aprenda-community/discussions/categories/q-a).
+   → [Abra uma issue de dúvida (Q&A)](https://github.com/lucianodiisouza/aprenda-community/issues).
 
 Leia o [**CONTRIBUTING.md**](./CONTRIBUTING.md) - é curto e mostra o passo a
 passo. Se for editar texto, dê uma olhada no
@@ -173,10 +173,8 @@ contribuidores da release.
 
 ## 📣 Onde nos encontrar
 
-- [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions) -
-  perguntas, sugestões, show & tell.
-- [Issues](https://github.com/lucianodiisouza/aprenda-community/issues) - bugs
-  e propostas concretas.
+- [Issues](https://github.com/lucianodiisouza/aprenda-community/issues) -
+  perguntas, sugestões, show & tell, bugs e propostas concretas.
 - O app (em breve): aprenda.oprimo.dev.
 
 ---

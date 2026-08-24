@@ -300,7 +300,7 @@ exame - é conversa.
 
 ## Dúvidas?
 
-- 💬 [Discussions / Q&A](https://github.com/lucianodiisouza/aprenda-community/discussions/categories/q-a)
+- 💬 [Dúvidas / Q&A (Issues)](https://github.com/lucianodiisouza/aprenda-community/issues)
 - 🐞 [Issue de bug](./.github/ISSUE_TEMPLATE/bug-report.md)
 - 💡 [Sugestão de recurso/trilha](./.github/ISSUE_TEMPLATE/trilha-nova.md)
 - 📧 Se for algo sensível: abra uma issue privada via security advisory.

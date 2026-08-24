@@ -161,4 +161,4 @@ qualidade que permeia o trabalho. O nó dedicado funciona como
 ---
 
 Aberto a discussão: abra issue ou comente em
-[Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).
+[Issues](https://github.com/lucianodiisouza/aprenda-community/issues).

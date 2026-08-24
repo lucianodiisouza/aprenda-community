@@ -93,4 +93,4 @@ por aí. Menos ambíguo para quem está começando.
 ---
 
 Aberto a discussão: abra issue ou comente em
-[Discussions](https://github.com/lucianodiisouza/primo-academy/discussions).
+[Issues](https://github.com/lucianodiisouza/aprenda-community/issues).

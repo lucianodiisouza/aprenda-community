@@ -33,8 +33,8 @@ inclusivo e livre de assédio** - independente de:
 Casos de violação podem ser reportados em privado para os mantenedores via
 **GitHub Security Advisory** deste repositório
 ([link aqui](https://github.com/lucianodiisouza/aprenda-community/security/advisories/new))
-ou pelas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions)
-(mensagem direta para `@lucianodiisouza`).
+ou por uma [Issue](https://github.com/lucianodiisouza/aprenda-community/issues)
+(mencionando `@lucianodiisouza`).
 
 Todas as reclamações serão revisadas e investigadas, resultando em resposta
 considerada necessária e apropriada às circunstâncias. Mantenedores têm o
