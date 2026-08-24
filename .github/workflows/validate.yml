@@ -1,0 +1,65 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancelar execuções anteriores em PRs atualizados — economiza minutos de CI.
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-content:
+    name: Validar conteúdo das trilhas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validar estrutura (script local)
+        run: |
+          node scripts/validate.mjs
+
+      - name: Resumo
+        if: success()
+        run: echo "✅ Conteúdo validado."
+
+  lint-markdown:
+    name: Lint .mdx
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint
+        run: |
+          node scripts/lint.mjs
+
+  check-links:
+    name: Checar links (best-effort)
+    runs-on: ubuntu-latest
+    # Permite falha — links externos quebram o tempo todo por motivos alheios
+    # ao PR. O log fica como aviso.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Checar URLs dos recursos
+        run: |
+          node scripts/check-links.mjs
