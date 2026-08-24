@@ -1,0 +1,129 @@
+---
+id: pseudo-elementos
+title: "Pseudo-elementos: ::before, ::after e ::placeholder"
+resources:
+  - title: "Pseudo-elementos (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Selectors/Pseudo-classes_and_pseudo-elements
+    type: doc
+    lang: pt
+    free: true
+---
+
+Pseudo-elemento é um **conteúdo virtual** que o CSS cria antes,
+depois ou dentro de um elemento — **sem precisar mexer no HTML**.
+A sintaxe usa **dois** dois-pontos (`::`) pra distinguir de
+pseudo-classe.
+
+### `::before` e `::after` — conteúdo injetado
+
+```html
+<button class="btn">Enviar</button>
+```
+
+```css
+.btn::after {
+  content: " →";
+  margin-left: 4px;
+}
+```
+
+Resultado: `Enviar →`. O `content` é **obrigatório** (mesmo que
+vazio: `content: ""`) — sem ele, o pseudo-elemento não existe.
+
+Casos clássicos:
+
+```css
+/* Aspas decorativas em citação */
+blockquote::before { content: "“"; font-size: 2em; }
+blockquote::after  { content: "”"; font-size: 2em; }
+
+/* Linha decorativa antes de um título de seção */
+.secao-titulo::before {
+  content: "";
+  display: inline-block;
+  width: 32px;
+  height: 3px;
+  background: #6366f1;
+  vertical-align: middle;
+  margin-right: 12px;
+}
+
+/* Tooltip simples com atributo data- */
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  bottom: 100%;
+  left: 0;
+  white-space: nowrap;
+}
+```
+
+A função `attr(nome-do-atributo)` puxa o valor de um **atributo
+HTML** pro `content` — útil pra tooltips, legendas, contadores.
+
+### `::placeholder` — estilo do texto de exemplo do input
+
+```css
+input::placeholder {
+  color: #999;
+  font-style: italic;
+  opacity: 1; /* Firefox reduz opacidade por padrão */
+}
+```
+
+Estiliza o texto que **some quando você digita**. Importante: o
+`opacity: 1` é necessário no Firefox porque ele reduz a opacidade
+do placeholder por padrão, ignorando parcialmente suas cores.
+
+### `::selection` — quando o usuário seleciona texto
+
+```css
+::selection {
+  background: #fef08a;   /* amarelo claro */
+  color: #333;
+}
+```
+
+Aparece quando o usuário **arrasta o mouse** selecionando um texto.
+Toque sutil mas que faz diferença em sites com identidade visual
+forte (a seleção padrão é azul).
+
+### `::first-letter` e `::first-line` — ênfase tipográfica
+
+```css
+.artigo p::first-letter {
+  font-size: 3em;
+  float: left;
+  line-height: 0.8;
+  margin-right: 8px;
+}
+```
+
+Cria o efeito de **"capitular"** (primeira letra grande, clássica de
+revistas). `::first-line` faz a primeira linha em negrito ou outra
+cor — útil pra destaque de parágrafo.
+
+### Acessibilidade: conteúdo precisa ser real?
+
+Conteúdo de `::before`/`::after` **não é lido por leitores de tela**
+em todos os navegadores, e **não é selecionável**. Por isso, **nunca
+use pra informação essencial** — o ícone de "novo" ou o indicador
+de erro tem que estar no HTML.
+
+- **`::before` e `::after`** injetam conteúdo virtual. Sempre
+  declare `content`.
+- **`::placeholder`** estiliza o texto de ajuda do input.
+- **`::selection`** personaliza a seleção de texto.
+- **`attr(nome)`** dentro de `content` puxa valor de atributo HTML.
+- Conteúdo de pseudo-elemento é **decorativo**, não informação.
+
+> Dica: o truque do "ícone sem imagem" é
+> `content: "✓"` (ou outro caractere Unicode). Pra ícones mais
+> complexos, **SVG inline ou fonte de ícones** é mais robusto.
+
+No próximo, vamos entender **quem ganha quando dois CSS brigam**:
+cascata, especificidade e herança.

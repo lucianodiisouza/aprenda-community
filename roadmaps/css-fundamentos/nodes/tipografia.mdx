@@ -1,0 +1,108 @@
+---
+id: tipografia
+title: "Tipografia: Famílias, Tamanhos e Espaçamento"
+resources:
+  - title: "Fundamentos de tipografia para web (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Styling_text/Fundamentals
+    type: doc
+    lang: pt
+    free: true
+  - title: "Google Fonts - fontes gratuitas e prontas"
+    url: https://fonts.google.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Tipografia é o que faz um site parecer **profissional ou amador**.
+Quatro propriedades cobrem 80% do uso.
+
+### `font-family` — qual fonte
+
+```css
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+```
+
+Liste várias, separadas por vírgula. O navegador usa a **primeira que
+estiver disponível** no sistema. As entre aspas têm o nome exato.
+
+- **Sem aspas**: nomes de famílias com uma palavra (`Arial`).
+- **Com aspas**: nomes com espaço (`"Segoe UI"`, `"Times New Roman"`).
+
+**Padrão recomendado** (lê bem em qualquer sistema):
+
+```css
+font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+```
+
+`system-ui` usa a fonte do sistema operacional (San Francisco no Mac,
+Segoe UI no Windows, Roboto no Android) — rápido e familiar pro
+usuário.
+
+### `font-size` e `line-height` — tamanho e respiro
+
+```css
+body { font-size: 1rem; }      /* 16px */
+h1   { font-size: 2.5rem; }    /* 40px */
+p    { font-size: 1rem; line-height: 1.6; }  /* texto com respiro */
+```
+
+**`line-height` sem unidade** (`1.6` em vez de `1.6rem`) é
+intencional: o navegador multiplica pelo `font-size`. Em texto
+corrido, `1.5` a `1.7` é confortável. Em títulos, `1.1` a `1.3` —
+mais compactos.
+
+### `font-weight` — peso (da leve à pesada)
+
+```css
+p { font-weight: 400; }    /* normal */
+strong { font-weight: 700; } /* negrito clássico */
+.titulo { font-weight: 800; } /* extra-bold */
+```
+
+Valores: `100` (Thin) a `900` (Black). `400` é normal, `700` é
+bold. Use **palavras-chave** (`normal`, `bold`) quando só precisa
+do básico. Pra valores intermediários, a fonte precisa ter那些
+variações (algumas só têm 400 e 700).
+
+### `letter-spacing` e `font-style` — os acabamentos
+
+```css
+h1   { letter-spacing: -0.02em; }  /* títulos grandes: levemente apertado */
+.topo { letter-spacing: 0.1em; text-transform: uppercase; } /* headings em caps */
+em   { font-style: italic; }        /* itálico */
+```
+
+- **`letter-spacing`**: negativo aperta (ótimo pra títulos grandes),
+  positivo afasta (ótimo pra letras maiúsculas).
+- **`text-transform: uppercase`**: deixa tudo em maiúscula sem
+  precisar digitar assim no HTML.
+
+### @font-face e Google Fonts (carregando fonte externa)
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+```
+
+```css
+body { font-family: "Inter", sans-serif; }
+```
+
+`display=swap` é importante: o navegador usa uma fonte do sistema
+enquanto a do Google carrega (evita o "flash" de texto invisível).
+
+- **`font-family`** com lista de fallback (system-ui é o padrão
+  moderno).
+- **`font-size` + `line-height`** controlam tamanho e respiro.
+- **`font-weight`** de 100 a 900; 400 = normal, 700 = bold.
+- **`letter-spacing`** aperta ou afasta; **`font-style`** italic.
+
+> Dica: pra corpo de texto, não passe de `75 caracteres por linha`.
+> Em telas largas, isso significa `max-width: 65ch` no container
+> (`ch` = largura do "0" da fonte).
+
+No próximo, vamos entender a **caixa** que envolve todo elemento:
+margin, border, padding e content.

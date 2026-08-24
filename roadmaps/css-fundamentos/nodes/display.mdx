@@ -1,0 +1,95 @@
+---
+id: display
+title: "Display: block, inline, inline-block e none"
+resources:
+  - title: "display (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/display
+    type: doc
+    lang: pt
+    free: true
+---
+
+`display` é a propriedade que define **como a caixa se comporta** no
+fluxo da página. Os quatro valores a seguir cobrem 95% do uso.
+
+### `block` — ocupa a linha toda
+
+```css
+div, p, h1, h2, section { display: block; }
+```
+
+- Quebra **antes e depois** (uma caixa por linha).
+- Aceita `width`, `height`, `margin`, `padding` em todos os lados.
+- Por padrão, ocupa **toda a largura** do pai (mesmo sem `width: 100%`).
+
+Tags naturalmente block: `<div>`, `<p>`, `<h1>`–`<h6>`, `<section>`,
+`<article>`, `<ul>`, `<li>`, `<header>`, `<footer>`.
+
+### `inline` — flui no meio do texto
+
+```css
+span, a, strong, em { display: inline; }
+```
+
+- **Não** quebra linha. Flui junto com o texto.
+- **Não** aceita `width` nem `height` (a caixa é do tamanho do
+  conteúdo).
+- Aceita `margin` e `padding` **só horizontal** (vertical é ignorado
+  em alguns casos).
+
+Tags naturalmente inline: `<span>`, `<a>`, `<strong>`, `<em>`,
+`<img>`, `<input>`, `<button>`.
+
+### `inline-block` — o melhor dos dois mundos
+
+```css
+.botao { display: inline-block; }
+```
+
+- Flui como inline (vários na mesma linha).
+- **Aceita** width e height (como block).
+- Aceita margin e padding em todos os lados.
+
+Perfeito pra **botões lado a lado**, badges, ícones que precisam de
+tamanho fixo. Antes do Flexbox, era o jeito padrão de "alinhar
+caixas pequenas".
+
+### `none` — some completamente
+
+```css
+.escondido { display: none; }
+.modal-fechado { display: none; }
+```
+
+O elemento é **removido do layout** (não ocupa espaço, não é
+anunciado por leitores de tela). Diferente de `visibility: hidden`,
+que **esconde mas mantém o espaço**.
+
+```css
+.placeholder { visibility: hidden; }  /* some visualmente, mas ocupa espaço */
+```
+
+### Tabela mental
+
+| Valor           | Quebra linha? | Aceita width/height? | Ocupa espaço quando "escondido"? |
+| --------------- | ------------- | -------------------- | --------------------------------- |
+| `block`         | sim           | sim                  | —                                 |
+| `inline`        | não           | **não**              | —                                 |
+| `inline-block`  | não           | sim                  | —                                 |
+| `none`          | —             | —                    | **não**                           |
+| `visibility: hidden` | —        | —                    | **sim**                           |
+
+- **`block`** empilha. **`inline`** flui no texto. **`inline-block`**
+  é o meio-termo.
+- **`display: none`** tira do layout. **`visibility: hidden`** só
+  esconde visualmente.
+- A maioria das outras tags (flex, grid, table) **muda o display
+  dos filhos** — é o que vem nos próximos nós.
+
+> Dica: quer ver o box model de um elemento ao vivo? Abra o
+> DevTools (F12) e passe o mouse. Aparece um diagrama colorido
+> mostrando content, padding, border e margin em pixels. Vale mais
+> que mil explicações.
+
+No próximo, vamos colorir o **fundo** dos elementos: cor sólida,
+imagem, gradiente.

@@ -1,0 +1,66 @@
+---
+id: introducao
+title: "Introdução: O que é CSS"
+resources:
+  - title: "O que é CSS? (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/First_steps/What_is_CSS
+    type: doc
+    lang: pt
+    free: true
+---
+
+CSS é a linguagem que diz **como o HTML aparece na tela**: cores,
+espaçamentos, fontes, tamanhos, posições. O HTML é o esqueleto; o CSS
+é a roupa, o cabelo, a maquiagem.
+
+### A sintaxe mais simples do mundo
+
+```css
+h1 {
+  color: tomato;
+  font-size: 32px;
+}
+```
+
+Lê-se assim: "todos os `<h1>` da página ficam com cor de tomate e fonte
+de 32 pixels". Três partes:
+
+- **`h1`** é o **seletor** (o que você quer estilizar).
+- **`color`** e **`font-size`** são as **propriedades** (o que mudar).
+- **`tomato`** e **`32px`** são os **valores** (pra quanto mudar).
+
+A chave `{ ... }` agrupa as propriedades de um seletor. O `;` separa
+uma propriedade da outra. Acabou o básico da sintaxe.
+
+### Propriedades e valores
+
+Existem **centenas** de propriedades. Você não precisa decorar: o
+navegador autocomplete, o MDN, e a busca salvam. Com o tempo as mais
+comuns (cor, fonte, margem, padding, display) viram automática.
+
+```css
+p {
+  color: #333;          /* cinza escuro, bom pra texto */
+  line-height: 1.6;     /* altura de linha - 1.6 é confortável */
+  margin-bottom: 16px;  /* espaço embaixo do parágrafo */
+}
+```
+
+### CSS é "em cascata" (já vamos aprofundar)
+
+Se dois seletores mexem na mesma propriedade, **um vence**. O último
+declarado geralmente ganha, mas a regra real (especificidade) é mais
+rica. No fim dessa trilha tem um nó só sobre isso.
+
+- **Seletor** é o alvo. **Propriedade** é o que mudar. **Valor** é
+  pra quanto mudar.
+- Bloco de regras = seletor + `{ ... }` com propriedades dentro.
+- CSS puro mora em **arquivos `.css`** (a forma profissional) — o
+  próximo nó mostra as três formas de incluir.
+
+> Dica: o autocomplete do editor (VS Code, etc.) sugere propriedades
+> enquanto você digita. Use. Decorar vem com o uso, não com força de
+> vontade.
+
+No próximo, vamos botar o CSS pra rodar de verdade: as três formas de
+**incluir** CSS numa página.

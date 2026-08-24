@@ -1,0 +1,119 @@
+{
+  "slug": "css-fundamentos",
+  "title": "CSS Fundamentos: a Base que Tudo Sustenta",
+  "description": "Trilha para quem nunca escreveu CSS ou quer consolidar a base. Cobre sintaxe, inclusão, seletores, cores, unidades, tipografia, box model, display, pseudo-classes, pseudo-elementos, cascata/especificidade e DevTools. Pré-requisito pras trilhas de layout, animações e CSS moderno.",
+  "difficulty": "iniciante",
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "Introdução: O que é CSS",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["incluindo-css"]
+    },
+    {
+      "id": "incluindo-css",
+      "title": "Incluindo CSS: Inline, Interno e Externo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seletores-basicos"]
+    },
+    {
+      "id": "seletores-basicos",
+      "title": "Seletores Básicos: Tag, Classe, ID e Atributo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["combinadores"]
+    },
+    {
+      "id": "combinadores",
+      "title": "Combinadores: Descendente, Filho e Irmão",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cores"]
+    },
+    {
+      "id": "cores",
+      "title": "Cores: Nome, Hex, RGB e HSL",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["unidades"]
+    },
+    {
+      "id": "unidades",
+      "title": "Unidades: px, em, rem, %, vh e vw",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tipografia"]
+    },
+    {
+      "id": "tipografia",
+      "title": "Tipografia: Famílias, Tamanhos e Espaçamento",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["box-model"]
+    },
+    {
+      "id": "box-model",
+      "title": "Box Model: Margin, Border, Padding e Content",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["display"]
+    },
+    {
+      "id": "display",
+      "title": "Display: block, inline, inline-block e none",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["backgrounds"]
+    },
+    {
+      "id": "backgrounds",
+      "title": "Backgrounds: Cor, Imagem e Gradiente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["sombras"]
+    },
+    {
+      "id": "sombras",
+      "title": "Sombras: box-shadow e text-shadow",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pseudo-classes-basicas"]
+    },
+    {
+      "id": "pseudo-classes-basicas",
+      "title": "Pseudo-classes Básicas: :hover, :focus e :active",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pseudo-elementos"]
+    },
+    {
+      "id": "pseudo-elementos",
+      "title": "Pseudo-elementos: ::before, ::after e ::placeholder",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cascata-especificidade"]
+    },
+    {
+      "id": "cascata-especificidade",
+      "title": "Cascata, Especificidade e Herança",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["devtools"]
+    },
+    {
+      "id": "devtools",
+      "title": "DevTools: Inspecionar e Testar Estilos ao Vivo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+---
+id: incluindo-css
+title: "Incluindo CSS: Inline, Interno e Externo"
+resources:
+  - title: "Como adicionar CSS a uma página (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/First_steps/Getting_started
+    type: doc
+    lang: pt
+    free: true
+---
+
+Existem **três jeitos** de colocar CSS numa página. Você vai usar o
+externo 99% das vezes — os outros dois existem pra casos específicos.
+
+### 1. CSS externo (o padrão profissional)
+
+Um arquivo `.css` separado, linkado no `<head>` do HTML:
+
+```html
+<!-- index.html -->
+<head>
+  <link rel="stylesheet" href="estilo.css">
+</head>
+```
+
+```css
+/* estilo.css */
+body { font-family: system-ui, sans-serif; }
+h1   { color: tomato; }
+```
+
+**Por que é o padrão:** o navegador **cacheia** o arquivo e não precisa
+baixar de novo nas próximas páginas. Reaproveita em N páginas. Equipes
+inteiras conseguem trabalhar sem pisar no HTML.
+
+### 2. CSS interno (no `<style>` do HTML)
+
+```html
+<head>
+  <style>
+    h1 { color: tomato; }
+  </style>
+</head>
+```
+
+Útil pra **página única** pequena ou protótipo rápido. Em projeto
+real, evite — o CSS vira parte do HTML e o navegador não cacheia.
+
+### 3. Inline (no atributo `style` do elemento)
+
+```html
+<h1 style="color: tomato;">Olá</h1>
+```
+
+Vale pra **ajuste pontual** (um e-mail marketing, uma correção de
+emergência). Em código de produto, evite: misturar estrutura (HTML) e
+aparência (CSS) no mesmo lugar dificulta manutenção e testes.
+
+### Como o navegador escolhe?
+
+Todos os três se aplicam, e o navegador **combina** tudo. A ordem de
+"força" (do mais forte pro mais fraco) é:
+
+1. Inline (`style="..."`)
+2. Interno (`<style>`) e Externo (`<link>`) — empate técnico
+3. Padrão do navegador
+
+Mas a regra real é a **especificidade** (tema do nó
+`cascata-especificidade`). Por enquanto: externo na maioria das vezes,
+interno pra protótipo, inline com moderação.
+
+- **Externo** é o padrão. `<link rel="stylesheet" href="...">` no
+  `<head>`.
+- **Interno** em `<style>` pra protótipo de página única.
+- **Inline** em `style="..."` só pra ajuste pontual.
+
+> Dica: organize seus arquivos assim pra projetos pequenos:
+> `index.html`, `style.css` na mesma pasta. Pra projetos maiores, uma
+> pasta `css/` com um arquivo por "seção" da interface.
+
+No próximo, vamos aprender a **selecionar** o que estilizar: tag,
+classe, ID e atributo.
