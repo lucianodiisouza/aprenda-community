@@ -10,10 +10,11 @@ Este guia cobre:
 1. [Os 4 jeitos de contribuir](#os-4-jeitos-de-contribuir)
 2. [O fluxo na prática (passo a passo)](#o-fluxo-na-prática-passo-a-passo)
 3. [Anatomia de um nó `.mdx`](#anatomia-de-um-nó-mdx)
-4. [Anatomia de um `roadmap.json`](#anatomia-de-um-roadmapjson)
-5. [Critérios de aceite do CI](#critérios-de-aceite-do-ci)
-6. [Como é o processo de review](#como-é-o-processo-de-review)
-7. [Glossário rápido](#glossário-rápido)
+4. [Imagens e vídeos](#imagens-e-vídeos)
+5. [Anatomia de um `roadmap.json`](#anatomia-de-um-roadmapjson)
+6. [Critérios de aceite do CI](#critérios-de-aceite-do-ci)
+7. [Como é o processo de review](#como-é-o-processo-de-review)
+8. [Glossário rápido](#glossário-rápido)
 
 > Antes de começar a editar texto, vale 5 minutos no
 > [Style Guide](./docs/style-guide.md). É o que mantém a voz do projeto
@@ -137,6 +138,75 @@ aprofundar cada parte.
 
 ---
 
+## Imagens e vídeos
+
+O corpo de um nó (ou de um projeto) pode ter **imagens** e **embeds de vídeo do
+YouTube**. Ambos funcionam igual em `roadmaps/<trilha>/nodes/<id>.mdx` e em
+`projects/<slug>.mdx`.
+
+### Imagens
+
+As imagens moram **neste repositório**, na pasta `imgs/` (crie subpastas por
+trilha se ajudar, ex: `imgs/html/`). O app não serve os arquivos direto do
+GitHub - ele usa o **jsDelivr**, um CDN gratuito na frente do repo, que é rápido
+e cacheado. Você não precisa configurar nada: é só referenciar com o prefixo
+`gh:`.
+
+**1. Suba a imagem** em `imgs/` (pelo GitHub: "Add file" → "Upload files", ou
+arrastando o arquivo).
+
+**2. Referencie no `.mdx`** com o prefixo `gh:` seguido do caminho dentro do
+repo:
+
+```mdx
+![Diagrama do modelo de caixa do CSS](gh:imgs/css/box-model.png)
+```
+
+O prefixo `gh:<caminho>` é reescrito para
+`https://cdn.jsdelivr.net/gh/lucianodiisouza/aprenda-community@main/<caminho>`.
+URLs completas (`https://…`) também funcionam e passam direto - útil pra imagens
+já hospedadas em outro lugar oficial.
+
+Para uma imagem com **legenda visível**, use `<Figure>` numa **linha própria**:
+
+```mdx
+<Figure src="gh:imgs/css/box-model.png" alt="Modelo de caixa" caption="As 4 camadas da caixa CSS." />
+```
+
+> `![…]()` fica **inline** (sem legenda); `<Figure>` é um **bloco** com legenda.
+> Sempre coloque `<Figure>` sozinho na linha.
+
+**Convenções para arquivos de imagem:**
+
+- Nome em **kebab-case, sem acento** (ex: `box-model.png`, não `Box Model.png`).
+- Formatos: **`.png`**, **`.jpg`**, **`.svg`** ou **`.webp`**.
+- **Otimize o peso**: largura máx. ~1200px e, de preferência, abaixo de ~300 KB.
+  Imagem é o que mais pesa numa aula.
+- **`alt` é obrigatório** (o texto entre `[ ]`, ou o atributo `alt` do
+  `<Figure>`): é o que leitores de tela leem e o que aparece se a imagem falhar.
+  Descreva o conteúdo, não escreva "imagem de…".
+- Só suba imagens que você tem direito de usar (autoral, ou licença livre com
+  crédito). Nada de print de conteúdo pago/protegido.
+
+### Vídeos do YouTube
+
+Use `<YouTube>` com o `id` do vídeo. O vídeo só carrega quando a pessoa clica -
+até lá aparece só a miniatura, então não pesa no carregamento da aula:
+
+```mdx
+<YouTube id="8aGhZQkoFbQ" title="O que é HTML" />
+```
+
+- **`id`** (obrigatório): o trecho depois de `v=` na URL. Em
+  `youtube.com/watch?v=8aGhZQkoFbQ`, o id é `8aGhZQkoFbQ`.
+- **`title`** (recomendado): descrição curta, pra acessibilidade.
+- **`start`** (opcional): segundo inicial do vídeo (ex: `start={90}`).
+
+Prefira vídeos em **PT-BR** e de canais estáveis (evite vídeos que sabidamente
+vão sair do ar).
+
+---
+
 ## Anatomia de um `roadmap.json`
 
 Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
@@ -218,8 +288,9 @@ exame - é conversa.
 - **Slug** - o identificador kebab-case de uma trilha ou nó. Ex: `html`, `estrutura-basica`.
 - **Frontmatter** - o bloco de metadados no topo de um `.mdx` (entre `---`).
 - **Recurso (`resource`)** - link externo curado que aparece no fim de cada nó.
-- **MDX** - Markdown + JSX. Por enquanto, a gente só usa o subconjunto
-  Markdown; o `.mdx` é só a extensão.
+- **MDX** - Markdown + JSX. Na prática você escreve Markdown normal; os únicos
+  componentes JSX que usamos no conteúdo são `<Figure>` e `<YouTube>` (ver
+  [Imagens e vídeos](#imagens-e-vídeos)).
 - **CI** - GitHub Actions. Roda automaticamente em todo PR.
 - **Tag semântica** - `v1.0.0`, `v1.1.0` etc. Marca versões do conteúdo.
 - **Submodule** - forma como o app consome este repo. Você não precisa
