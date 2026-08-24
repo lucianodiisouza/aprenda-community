@@ -1,0 +1,41 @@
+{
+  // Slug da trilha. kebab-case, sem acentos, sem espaços.
+  // Ex: "programacao-do-zero", "frontend".
+  // Aparece na URL e é referenciado no banco de progresso.
+  "slug": "<slug-da-trilha>",
+
+  // Título exibido na home da trilha. Curto, claro, em PT-BR.
+  "title": "<Título da trilha>",
+
+  // 1-2 frases. Pra quem é essa trilha, o que ela cobre, em que nível.
+  "description": "<Descrição da trilha>",
+
+  // Dificuldade inicial. Pode evoluir pra "intermediario"/"avancado" depois.
+  "difficulty": "iniciante",
+
+  "nodes": [
+    {
+      // ID único dentro da trilha. kebab-case. Vira o nome do arquivo .mdx.
+      "id": "<id-do-primeiro-no>",
+
+      // Título exibido na UI.
+      "title": "<Título do primeiro nó>",
+
+      // "topic" = módulo grande; "subtopic" = parte de um topic;
+      // "milestone" = projeto/checkpoint (ganha XP, conta como "concluído").
+      "type": "topic",
+
+      // true = essencial na trilha; false = opcional / aprofundamento.
+      "recommended": true,
+
+      // IDs dos nós seguintes (kebab-case, matching `id` de outros nodes).
+      // Array vazio [] = nó terminal.
+      "children": ["<id-do-segundo-no>"]
+    }
+
+    // ... adicione mais nós aqui. Lembre:
+    // - Todo `id` em `children` precisa existir como `id` em algum node acima.
+    // - `id` é único dentro da trilha.
+    // - A primeira posição é o ponto de entrada; a última tem `children: []`.
+  ]
+}

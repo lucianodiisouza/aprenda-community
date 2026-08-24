@@ -1,0 +1,49 @@
+---
+slug: dashboard-analitico
+title: "Dashboard Analítico"
+description: "Um painel com gráficos e métricas em React, com foco em performance e organização de estado."
+difficulty: avancado
+skills:
+  - react
+  - performance
+  - dataviz
+  - typescript
+trilhas:
+  - frontend
+estimate: "1-2 semanas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Um dashboard que mostra métricas em cards, gráficos e uma tabela filtrável — o tipo
+de tela de produto real. O desafio é manter tudo **rápido e organizado** conforme
+cresce.
+
+## Objetivo
+
+Praticar composição de componentes, gerenciamento de estado mais complexo e
+**otimização de performance** em React (evitar re-renders desnecessários).
+
+## Requisitos
+
+- [ ] Cards de métricas no topo (ex.: total, média, variação)
+- [ ] Ao menos um gráfico (barras ou linha) alimentado pelos dados
+- [ ] Uma tabela com ordenação e filtro por período
+- [ ] Filtro global (ex.: intervalo de datas) que afeta cards, gráfico e tabela
+- [ ] Estados de carregando e vazio bem tratados
+
+## Desafios extras
+
+- [ ] Memoização estratégica (`useMemo`/`memo`) e comprovar o ganho no DevTools
+- [ ] Dark mode consistente em todos os gráficos
+- [ ] Exportar a visão atual como CSV
+- [ ] Virtualização da tabela se ela tiver muitas linhas
+
+## Dicas
+
+- Derive os números (totais, médias) dos dados brutos com `useMemo`; não guarde
+  agregações no estado — elas ficam dessincronizadas.
+- Antes de otimizar, **meça** com o React DevTools Profiler. Otimização sem medição
+  costuma ser esforço no lugar errado.
+- Comece com dados fixos (mock). Trocar por uma API depois é o menor dos problemas.

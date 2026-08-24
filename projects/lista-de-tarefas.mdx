@@ -1,0 +1,47 @@
+---
+slug: lista-de-tarefas
+title: "Lista de Tarefas"
+description: "Um app de to-do que salva suas tarefas mesmo depois de fechar o navegador."
+difficulty: iniciante
+skills:
+  - javascript
+  - dom
+  - localstorage
+  - css
+trilhas:
+  - frontend
+estimate: "3-5 horas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+O clássico que todo dev faz uma vez: adicionar tarefas, marcar como feitas e
+removê-las — e o mais importante, **manter tudo salvo** ao recarregar a página.
+
+## Objetivo
+
+Praticar criar e remover elementos do DOM dinamicamente e **persistir estado** no
+`localStorage`. É a base de qualquer app que "lembra" das coisas.
+
+## Requisitos
+
+- [ ] Adicionar uma tarefa por um campo de texto + botão (ou Enter)
+- [ ] Marcar/desmarcar uma tarefa como concluída (com estilo diferente)
+- [ ] Remover uma tarefa
+- [ ] Salvar a lista no `localStorage` e recarregar ela ao abrir a página
+- [ ] Não deixar adicionar tarefa vazia
+
+## Desafios extras
+
+- [ ] Contador de "X de Y concluídas"
+- [ ] Filtros: todas / pendentes / concluídas
+- [ ] Editar o texto de uma tarefa com duplo clique
+
+## Dicas
+
+- Guarde os dados como um **array de objetos** (`{ id, texto, feita }`) e re-desenhe
+  a lista a partir dele. Não tente sincronizar o DOM na mão — é mais fácil redesenhar.
+- `localStorage` só guarda texto: use `JSON.stringify` pra salvar e `JSON.parse`
+  pra ler.
+- Um `id` único por tarefa (ex.: `crypto.randomUUID()`) facilita remover a certa.

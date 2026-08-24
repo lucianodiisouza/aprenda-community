@@ -1,0 +1,49 @@
+---
+slug: encurtador-de-url
+title: "Encurtador de URL"
+description: "Um serviço estilo bit.ly: recebe uma URL longa, devolve uma curta e redireciona — do zero, pensando na arquitetura."
+difficulty: avancado
+skills:
+  - system-design
+  - api
+  - backend
+  - banco-de-dados
+trilhas:
+  - frontend
+estimate: "1-2 semanas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+O projeto onde você deixa de pensar só em telas e começa a pensar em **sistema**:
+gerar códigos únicos, guardar no banco, redirecionar e contar cliques.
+
+## Objetivo
+
+Praticar **design de sistema** num escopo pequeno mas real: modelar dados, expor
+uma API, tratar colisões de código e pensar em escala e leitura vs. escrita.
+
+## Requisitos
+
+- [ ] Endpoint que recebe uma URL longa e devolve um código curto único
+- [ ] Rota `GET /:codigo` que redireciona (HTTP 301/302) para a URL original
+- [ ] Persistir os links num banco de dados
+- [ ] Validar a URL de entrada (tem que ser uma URL válida)
+- [ ] Uma página simples pra colar a URL e receber a curta
+
+## Desafios extras
+
+- [ ] Contador de cliques por link
+- [ ] Códigos personalizados (`/meu-link`) com verificação de disponibilidade
+- [ ] Expiração de links e/ou rate limiting por IP
+- [ ] Escreva um pequeno documento de design: como escalar pra milhões de links?
+
+## Dicas
+
+- Pense na geração do código: sequência + base62? Hash? Aleatório com checagem de
+  colisão? Cada escolha tem um trade-off — anote o porquê da sua.
+- Leitura (redirect) é muito mais frequente que escrita (criar link). Isso muda
+  onde você otimiza (índices, cache).
+- Não precisa de infra sofisticada pra começar: SQLite ou até um JSON já provam a
+  ideia. A arquitetura importa mais que a stack aqui.

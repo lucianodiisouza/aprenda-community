@@ -1,0 +1,48 @@
+---
+slug: clima-agora
+title: "Clima Agora"
+description: "Um app que mostra a previsão do tempo de qualquer cidade consumindo uma API pública."
+difficulty: intermediario
+skills:
+  - javascript
+  - api
+  - fetch
+  - async
+trilhas:
+  - frontend
+estimate: "4-6 horas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Digite uma cidade e veja a temperatura, a condição do céu e a umidade. É o projeto
+onde você para de inventar dados e começa a **consumir dados de verdade** de uma API.
+
+## Objetivo
+
+Aprender a fazer requisições HTTP com `fetch`, lidar com **código assíncrono**
+(`async/await`) e tratar os estados de carregando, sucesso e erro.
+
+## Requisitos
+
+- [ ] Campo de busca por nome da cidade
+- [ ] Buscar dados de uma API pública de clima (ex.: Open-Meteo, que não exige chave)
+- [ ] Mostrar temperatura, condição e mais um dado (umidade, vento…)
+- [ ] Estado de "carregando" enquanto a requisição não volta
+- [ ] Mensagem de erro amigável quando a cidade não é encontrada
+
+## Desafios extras
+
+- [ ] Ícone/emoji diferente conforme a condição do tempo
+- [ ] Guardar a última cidade buscada e carregar ela ao abrir
+- [ ] Previsão dos próximos dias, não só o agora
+
+## Dicas
+
+- Toda chamada de rede pode falhar. Envolva o `fetch` em `try/catch` e sempre
+  cheque `response.ok` antes de usar os dados.
+- Muitas APIs de clima pedem **latitude/longitude**, não o nome da cidade. Talvez
+  você precise de uma API de geocoding antes — leia a doc.
+- Comece jogando a resposta no `console.log` pra entender o formato do JSON antes
+  de tentar montar a tela.

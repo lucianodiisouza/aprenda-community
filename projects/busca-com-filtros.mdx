@@ -1,0 +1,49 @@
+---
+slug: busca-com-filtros
+title: "Busca com Filtros"
+description: "Uma lista pesquisável e filtrável, com atenção ao custo das operações conforme os dados crescem."
+difficulty: intermediario
+skills:
+  - javascript
+  - algoritmos
+  - big-o
+  - dom
+trilhas:
+  - frontend
+  - complexidade-de-algoritmos
+estimate: "4-6 horas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Uma lista de itens (produtos, filmes, o que você quiser) com uma barra de busca e
+alguns filtros. Além de funcionar, o objetivo é **pensar no custo** de cada busca.
+
+## Objetivo
+
+Juntar manipulação de listas com uma primeira noção prática de **complexidade**:
+buscar, filtrar e ordenar, percebendo o que fica caro quando a lista cresce.
+
+## Requisitos
+
+- [ ] Uma lista com pelo menos 30 itens (pode ser um array fixo)
+- [ ] Busca por texto que filtra a lista enquanto o usuário digita
+- [ ] Ao menos um filtro por categoria e uma opção de ordenação
+- [ ] Mostrar quantos resultados a busca atual retornou
+- [ ] Estado vazio ("nenhum resultado") tratado
+
+## Desafios extras
+
+- [ ] `debounce` na busca pra não filtrar a cada tecla
+- [ ] Medir e comparar tempo de busca com 30 vs. 10.000 itens (`performance.now()`)
+- [ ] Índice por categoria (um `Map`) pra filtrar sem varrer tudo — compare o antes/depois
+
+## Dicas
+
+- `Array.prototype.filter` é O(n): a cada tecla você varre a lista inteira. Para
+  30 itens é nada; para 100 mil, já pesa. Sinta essa diferença medindo.
+- Buscar dentro de um `Map`/`Set` é ~O(1); varrer um array é O(n). Onde dá pra
+  trocar um pelo outro?
+- Mantenha os **dados originais** intactos e sempre derive a lista exibida a partir
+  deles — não filtre "em cima" do resultado anterior.
