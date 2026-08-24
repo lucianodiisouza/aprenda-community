@@ -1,0 +1,193 @@
+---
+id: html-deprecated
+title: "HTML Deprecated: O Que Não Usar"
+resources:
+  - title: "Elementos HTML deprecated (MDN EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Element#obsolete_and_deprecated_elements
+    type: doc
+    lang: en
+    free: true
+  - title: "Por que <marquee> é ruim (MDN EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/marquee
+    type: doc
+    lang: en
+    free: true
+---
+
+Você vai encontrar esses elementos em **código antigo** — em projetos
+legados, em tutoriais ultrapassados, em stackoverflow de 2009. É
+importante **reconhecê-los** para entender código velho, mas não use
+em código novo. Todos têm alternativa melhor, e a maioria é
+explicitamente marcada como **deprecated** (não recomendada) ou
+**obsolete** (removida das especificações, pode parar de funcionar).
+
+### O que **não** usar (e o que usar no lugar)
+
+#### `<center>` → CSS
+
+```html
+<!-- ❌ Antigo -->
+<center>Texto centralizado</center>
+
+<!-- ✅ Moderno -->
+<p style="text-align: center">Texto centralizado</p>
+<!-- ou, melhor, no CSS: -->
+<style>.centralizado { text-align: center; }</style>
+<p class="centralizado">Texto centralizado</p>
+```html
+#### `<font>` → CSS
+
+```html
+<!-- ❌ Antigo -->
+<font color="red" size="5" face="Arial">Texto estilizado</font>
+
+<!-- ✅ Moderno -->
+<p style="color: red; font-size: 1.5em; font-family: Arial">
+  Texto estilizado
+</p>
+```html
+#### `<marquee>` → CSS animation (com `prefers-reduced-motion`)
+
+`<marquee>` fazia texto deslizar pela tela. Nativamente. Foi engraçado
+em 1998. Hoje é considerado prejudicial à legibilidade e à
+acessibilidade (pessoas com sensibilidade a movimento, foco, TDAH).
+
+```html
+<!-- ❌ Antigo -->
+<marquee>Bem-vindo!</marquee>
+
+<!-- ✅ Moderno (com cuidado de acessibilidade) -->
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    .rolando { animation: rolar 10s linear infinite; }
+    @keyframes rolar {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(-100%); }
+    }
+  }
+</style>
+<p class="rolando">Bem-vindo!</p>
+```html
+Note o `prefers-reduced-motion: no-preference` — quem tem
+sensibilidade a movimento configurou "reduzir animações" no sistema
+operacional; respeitamos.
+
+#### `<frame>`, `<frameset>`, `<noframes>` → `<iframe>` (e melhor, recarregue a página)
+
+```html
+<!-- ❌ Antigo (navegação em frames) -->
+<frameset cols="20%, 80%">
+  <frame src="menu.html">
+  <frame src="conteudo.html">
+</frameset>
+
+<!-- ✅ Moderno -->
+<a href="menu.html">Ir para o menu</a>
+<!-- ou se for embed de outro site -->
+<iframe src="https://exemplo.com/embed" title="Conteúdo embutido"></iframe>
+```html
+A navegação por frames foi abolida há décadas. Hoje em dia é `<iframe>`
+só para embed de outros sites (vídeos, mapas), nunca para navegação.
+
+#### `<bgsound>` → `<audio>` (e provavelmente nem use)
+
+```html
+<!-- ❌ Antigo (som de fundo no IE) -->
+<bgsound src="musica.mid" loop="infinite">
+
+<!-- ✅ Moderno -->
+<audio src="musica.mp3" autoplay loop muted></audio>
+```html
+Música automática na página é fortemente desencorajada hoje em dia.
+Mas se você precisar, é `<audio>`, não `<bgsound>`.
+
+#### `<blink>` → nem existe mais, era Netscape
+
+```html
+<!-- ❌ Antigo (Netscape 1996) -->
+<blink>OLHA EU PISCANDO</blink>
+
+<!-- ✅ Moderno: não pisque texto. Não faça isso. -->
+<p>Texto normal.</p>
+```html
+Piscar texto é hostil à leitura, inaccessible, e ninguém vai agradecer.
+Não faça.
+
+### Atributos deprecated em tags que ainda existem
+
+Mais comum que elementos inteiros deprecated são **atributos deprecated
+em tags válidas**. Exemplos clássicos:
+
+```html
+<!-- ❌ Antigo -->
+<table border="1" bgcolor="#fff" cellpadding="5" cellspacing="0">
+  <tr>
+    <td align="center" valign="middle" width="100" height="50">
+      Texto
+    </td>
+  </tr>
+</table>
+
+<!-- ✅ Moderno -->
+<style>
+  table { border-collapse: collapse; }
+  td { padding: 5px; text-align: center; vertical-align: middle; }
+</style>
+<table>
+  <tr>
+    <td style="width: 100px; height: 50px">Texto</td>
+  </tr>
+</table>
+```html
+Os atributos `border`, `bgcolor`, `align`, `valign`, `width`, `height`,
+`cellpadding`, `cellspacing` em `<table>` / `<td>` / `<tr>` foram
+substituídos por CSS. A maioria é "tolerada" pelo navegador
+(compatibilidade), mas geram warning no validador.
+
+Outros exemplos:
+
+```html
+<!-- ❌ Antigo -->
+<body bgcolor="#fff" text="#000" link="blue" vlink="purple">
+
+<!-- ✅ Moderno -->
+<style>
+  body { background: #fff; color: #000; }
+  a    { color: blue; }
+  a:visited { color: purple; }
+</style>
+```html
+### Como saber o que é deprecated?
+
+- **W3C Validator** (`validator.w3.org`) — cola o HTML, lista o que é
+  obsolete. Sinal de "este código precisa ser modernizado".
+- **MDN** — em cada página de elemento, tem uma seção "obsolete" ou
+  aviso de deprecação.
+- **Lighthouse / DevTools** — o painel "Issues" sinaliza uso de
+  elementos deprecated.
+
+### Política: ao ver código legado
+
+Se você está **mantendo** código antigo com `<center>`, `<font>`,
+`<marquee>`: não precisa reescrever tudo agora. Faça um plano de
+remoção gradual — primeiro nas páginas mais vistas, depois no resto.
+Mas **não escreva código novo** com esses elementos.
+
+Se você está **aprendendo**: ótimo — agora você sabe que viu essas tags
+em código antigo e que existe um jeito melhor. Adiante.
+
+- **`<center>`, `<font>`, `<marquee>`, `<frame>`, `<bgsound>`, `<blink>`**
+  são deprecated. Não use em código novo.
+- **Atributos de apresentação** (`bgcolor`, `align`, `valign`,
+  `border` em `<table>`, etc.) foram substituídos por CSS.
+- **Use CSS** (e `prefers-reduced-motion` para animações) como
+  alternativa.
+- **MDN marca** elementos deprecated com aviso claro.
+- **W3C Validator** lista tudo que é obsolete no seu HTML.
+
+> Dica: encontrar `<center>` ou `<font>` em código de 2026 é o equivalente
+> digital de encontrar uma fita cassete. Não é motivo de vergonha
+> (código envelhece), mas é motivo pra atualizar.
+
+No próximo (e último!) nó, vamos juntar **tudo** num projeto final: uma
+landing page completa, semântica, acessível, e validada.

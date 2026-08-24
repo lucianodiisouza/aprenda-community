@@ -1,0 +1,116 @@
+---
+id: i18n-basico
+title: "i18n Básico: HTML para Vários Idiomas"
+resources:
+  - title: "Atributo lang (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Global_attributes/lang
+    type: doc
+    lang: pt
+    free: true
+  - title: "Elemento <bdi> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/bdi
+    type: doc
+    lang: pt
+    free: true
+  - title: "Anotações ruby para idiomas asiáticos (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/ruby
+    type: doc
+    lang: pt
+    free: true
+---
+
+HTML foi pensado desde o começo para conteúdo em **vários idiomas**. A
+maioria das páginas em PT-BR nunca vai precisar das tags deste nó — mas
+é bom saber que elas existem, especialmente se o seu conteúdo vai
+receber audiência multilíngue ou tem palavras em outros alfabetos.
+
+### `lang` em qualquer elemento
+
+Você já viu `<html lang="pt-BR">`. Esse atributo pode (e deve) ir em
+**qualquer elemento** cujo conteúdo está em outro idioma que o resto da
+página:
+
+```html
+<p>A banda favorita da minha irmã é <span lang="en">Led Zeppelin</span>,
+mas ela também curte <span lang="ja">凛として時雨</span>.</p>
+```html
+Por que importa? Leitores de tela usam `lang` para escolher a pronúncia
+e a voz certas. Mecanismos de busca usam para indexar por idioma.
+
+### `<bdi>` — isolamento bidirecional
+
+`<bdi>` (*bidirectional isolation*) isola um trecho de texto do algoritmo
+bidirecional do Unicode. O caso clássico: nome de usuário em árabe
+dentro de texto em PT-BR.
+
+```html
+<p>Usuários vencedores desta semana: Ahmad, Maria, 7amada, João.</p>
+
+<p>Sem bdi (bagunçado):</p>
+<p>Direto: usuários: ahmad, maria, 7amada, joão</p>
+
+<p>Com bdi (correto):</p>
+<ul>
+  <li>Usuário: <bdi>أحمد</bdi> — 100 pontos</li>
+  <li>Usuário: <bdi>maria</bdi> — 80 pontos</li>
+  <li>Usuário: <bdi>7amada</bdi> — 70 pontos</li>
+</ul>
+```html
+O número `7` antes de "amada" é um trecho em árabe onde a ordem natural
+é da direita pra esquerda. Sem `<bdi>`, o navegador pode renderizar
+"7amada" como se a palavra fosse "amada7" (com o 7 à direita). Com
+`<bdi>`, ele isola o trecho e renderiza certo.
+
+### `<bdo>` — sobrescreve a direção
+
+`<bdo>` (*bidirectional override*) **força** a direção. Mais agressivo
+que `<bdi>` — use com cuidado.
+
+```html
+<p>Em árabe, "Olá" escreve-se:
+  <bdo dir="rtl">مرحبا</bdo>
+</p>
+```html
+`dir="rtl"` (direita→esquerda) ou `dir="ltr"`. Útil em casos muito
+específicos, como trechos de texto que você quer mostrar "ao contrário"
+intencionalmente.
+
+### `<ruby>` — anotações sobre texto (kanji, kana)
+
+Usado para anotações pequenas em cima (ou ao lado) de um trecho — o caso
+clássico é o **furigana** japonês (pronúncia de kanji):
+
+```html
+<ruby>
+  漢字 <rt>かんじ</rt>
+</ruby>
+```html
+- `<ruby>` é o container.
+- `<rt>` (*ruby text*) é a anotação.
+- `<rp>` (*ruby parenthesis*) é o fallback para navegadores que não
+  suportam — mostra parênteses:
+
+  ```html
+  <ruby>
+    漢字 <rp>(</rp><rt>かんじ</rt><rp>)</rp>
+  </ruby>
+  ```
+
+Pode parecer exótico se você só escreve em português. Mas é a tag
+certa sempre que precisar de anotação sobre texto em um idioma que use
+caracteres compostos.
+
+### Outras tags úteis (menção rápida)
+
+- **`<bdi>`** isola um trecho do algoritmo bidirecional.
+- **`<bdo>`** força a direção (use com cuidado).
+- **`<ruby>` + `<rt>` + `<rp>`** faz anotações sobre o texto.
+- **`lang` em qualquer elemento** marca trechos em outros idiomas.
+
+> Dica: para projetos PT-BR, o mais útil do nó é mesmo o `lang` em
+> elementos. As outras tags são raras — saber que existem evita aquela
+> hora em que você olha código estrangeiro e pensa "que tag estranha é
+> essa?".
+
+No próximo nó, vamos ver `<template>` — uma forma de **declarar HTML
+que não renderiza**, para ser usado depois por JavaScript.

@@ -21,7 +21,8 @@ sugerindo trilhas, corrigindo erros, melhorando recursos e adicionando conteúdo
 Trilhas hoje:
 
 - 📘 [**HTML**](./roadmaps/html) — a linguagem de marcação que estrutura toda a web.
-  Ideal para **começar do zero absoluto**, antes mesmo de CSS ou JavaScript.
+  **18 nós**, do zero absoluto até projeto final. Ideal como primeira
+  trilha antes de CSS ou JavaScript.
 
 > Mais trilhas chegando: Programação do Zero, Frontend, Backend, Python…
 > Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).

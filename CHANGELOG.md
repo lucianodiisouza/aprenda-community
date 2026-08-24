@@ -6,6 +6,29 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.1.0] — 2026-08-23
+
+### Adicionado
+- ➕ 4 nós novos na trilha HTML (14 → 18 nós):
+  - `i18n-basico` (após `textos`) — `lang` em elementos, `<bdi>`, `<bdo>`,
+    `<ruby>` para conteúdo multilíngue.
+  - `atributos-globais` (após `semantica`) — `hidden`, `data-*`,
+    `tabindex`, `contenteditable`, `draggable`, `spellcheck`, `dir`,
+    `translate`, `role`.
+  - `template-clone` (após `midia`) — `<template>` e `cloneNode(true)`,
+    base de Web Components e renderização de frameworks.
+  - `html-deprecated` (antes de `projeto-final`) — elementos
+    (`<center>`, `<font>`, `<marquee>`, `<frame>`, `<bgsound>`,
+    `<blink>`) e atributos que caíram em desuso, com alternativas
+    modernas.
+
+### Mudanças editoriais
+- Trilha permanece no escopo **iniciante**, mas cobre agora
+  aproximadamente **90%+ do HTML que devs usam no dia-a-dia**.
+- `template-clone` é introdutório (conceito simples, fica na trilha),
+  mas abre a porta para **Web Components** que serão tema de trilha
+  intermediária no futuro.
+
 ## [1.0.0] — 2026-08-23
 
 ### Adicionado

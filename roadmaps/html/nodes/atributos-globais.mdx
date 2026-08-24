@@ -1,0 +1,96 @@
+---
+id: atributos-globais
+title: "Atributos Globais: O Que Vale Para Qualquer Tag"
+resources:
+  - title: "Atributos globais (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Reference/Global_attributes
+    type: doc
+    lang: pt
+    free: true
+  - title: "data-* attributes (MDN EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/data-*
+    type: doc
+    lang: en
+    free: true
+---
+
+A maioria dos atributos que você viu até aqui é específica de uma tag: `src`
+em `<img>`, `href` em `<a>`, `type` em `<input>`. Mas existe um conjunto que
+funciona em **qualquer** tag HTML — os **atributos globais**. São pequenos
+ajustes que valem para quase tudo.
+
+```html
+<p id="aviso" class="destaque" hidden>Você não me vê.</p>
+
+<button data-id="42" data-action="comprar" tabindex="1">
+  Comprar
+</button>
+
+<p lang="en-us">Hello, world!</p>
+```html
+Vamos aos mais úteis:
+
+- **`id`** — identificador único na página. Já vimos no link âncora (`#id`).
+  Use para conectar labels, ancorar links, identificar elementos via JS.
+  **Nunca repita o mesmo `id` na página.**
+- **`class`** — agrupa elementos para estilizar com CSS ou selecionar com
+  JS. Pode repetir (vários elementos compartilham a mesma classe).
+- **`hidden`** — esconde o elemento. Semântica: "isto não é relevante
+  agora". Diferente de `display: none` do CSS em alguns detalhes (anuncia
+  mudança para leitor de tela). Use-o em vez de `style="display: none"`
+  quando puder.
+- **`data-*`** — você cria o atributo. `data-id`, `data-user-id`,
+  `data-qualquer-coisa`. É o canal oficial para guardar dados extras no
+  HTML sem inventar atributo não-padrão. JS lê com
+  `elemento.dataset.id` (transforma `data-id` em `.id`).
+- **`tabindex`** — controla a ordem do foco com **Tab**.
+  - `tabindex="0"` — entra no fluxo de Tab na ordem natural.
+  - `tabindex="-1"` — removido do fluxo (só foca via JS).
+  - `tabindex="1"` (ou maior) — força foco antes de elementos com
+    `tabindex` menor. **Evite valores positivos** — bagunça a ordem
+    natural e confunde quem navega por teclado.
+- **`lang`** — idioma do conteúdo **deste elemento** (sobrescreve o `<html lang>`).
+  Essencial para conteúdo multilíngue na mesma página:
+
+  ```html
+  <p>Hoje eu quero dizer <span lang="en">"I love you"</span> em inglês.</p>
+  ```
+- **`title`** — tooltip nativo ao passar o mouse. **Use com moderação**:
+  leitores de tela nem sempre leem, e muita info importante aqui é uma
+  armadilha de acessibilidade.
+- **`style`** — CSS inline. Funciona em qualquer tag, mas evite: misturar
+  estilo com estrutura dificulta manutenção. Prefira arquivo `.css`.
+- **`contenteditable="true"`** — torna o conteúdo **editável** no
+  navegador. É como o Google Docs faz. Raramente usado por iniciantes,
+  mas é bom saber que existe.
+- **`draggable="true"`** — permite arrastar o elemento. Combinado com a
+  API de drag-and-drop do JavaScript.
+- **`spellcheck="false"`** — desabilita o sublinhado de erro ortográfico
+  em `<input>` e `<textarea>`. Útil em campos de slug, código, etc.
+- **`translate`** — dica para ferramentas de tradução automática (`"yes"`
+  ou `"no"`). Pouco usado, mas existe.
+- **`dir`** — direção do texto: `ltr` (esquerda→direita, padrão) ou `rtl`
+  (direita→esquerda, para árabe, hebraico, persa). Veremos mais no nó de
+  i18n.
+
+E o atributo que não é exatamente um atributo, mas vive com eles:
+
+- **`role`** — faz parte da ARIA (Accessible Rich Internet Applications).
+  Diz a leitores de tela **que papel** o elemento tem. Usado quando o
+  HTML semântico não basta (ex: `<div role="alert">` para anunciar
+  dinamicamente uma mensagem). Veremos mais no nó de acessibilidade.
+
+- **`hidden`** esconde semântica (anuncia para leitor de tela).
+- **`data-*`** é o canal oficial para dados extras.
+- **`tabindex`** controla a ordem do foco com Tab.
+- **`lang`** pode ir em **qualquer** elemento, não só no `<html>`.
+- **`title`**, **`style`**, **`contenteditable`**, **`draggable`**,
+  **`spellcheck`** completam o kit.
+
+> Dica: a maioria dos atributos globais pode ser lida ou modificada com
+> JavaScript. `elemento.id`, `elemento.classList`, `elemento.dataset.*`,
+> `elemento.hidden = true` — tudo direto, sem `getAttribute` (que
+> também funciona, mas é mais verboso).
+
+No próximo nó, vamos olhar **i18n básico** — HTML para conteúdo em
+vários idiomas na mesma página.

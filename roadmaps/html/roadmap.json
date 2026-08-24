@@ -23,6 +23,13 @@
       "title": "Textos: Títulos, Parágrafos e Ênfase",
       "type": "subtopic",
       "recommended": true,
+      "children": ["i18n-basico"]
+    },
+    {
+      "id": "i18n-basico",
+      "title": "i18n Básico: HTML para Vários Idiomas",
+      "type": "subtopic",
+      "recommended": true,
       "children": ["links"]
     },
     {
@@ -72,11 +79,25 @@
       "title": "HTML Semântico: Dando Significado à Página",
       "type": "subtopic",
       "recommended": true,
+      "children": ["atributos-globais"]
+    },
+    {
+      "id": "atributos-globais",
+      "title": "Atributos Globais: O Que Vale Para Qualquer Tag",
+      "type": "subtopic",
+      "recommended": true,
       "children": ["midia"]
     },
     {
       "id": "midia",
       "title": "Áudio, Vídeo e Embeds",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["template-clone"]
+    },
+    {
+      "id": "template-clone",
+      "title": "<template>: HTML Para Reutilizar Depois",
       "type": "subtopic",
       "recommended": true,
       "children": ["acessibilidade"]
@@ -91,6 +112,13 @@
     {
       "id": "meta-seo",
       "title": "Meta Tags, Open Graph e Favicon",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["html-deprecated"]
+    },
+    {
+      "id": "html-deprecated",
+      "title": "HTML Deprecated: O Que Não Usar",
       "type": "subtopic",
       "recommended": true,
       "children": ["projeto-final"]

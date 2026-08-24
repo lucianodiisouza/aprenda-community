@@ -1,0 +1,111 @@
+---
+id: template-clone
+title: "<template>: HTML Para Reutilizar Depois"
+resources:
+  - title: "Elemento <template> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/template
+    type: doc
+    lang: pt
+    free: true
+  - title: "cloneNode (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/API/Node/cloneNode
+    type: doc
+    lang: pt
+    free: true
+---
+
+Às vezes você quer **declarar** um pedaço de HTML, mas **não**
+renderizá-lo imediatamente — ele vai ser usado depois, possivelmente
+muitas vezes, por JavaScript. É para isso que existe `<template>`.
+
+```html
+<template id="card-template">
+  <article class="card">
+    <h3 class="card-titulo"></h3>
+    <p class="card-descricao"></p>
+  </article>
+</template>
+```html
+Diferente de qualquer outra tag que vimos até aqui, **o conteúdo de
+`<template>` não aparece na página**. Você pode vê-lo no DevTools, mas
+ele não é renderizado, não tem `display`, não é clicável, não é
+lido por leitor de tela como conteúdo visível. Existe apenas como
+**modelo** (template) para ser clonado depois.
+
+### Como usar com JavaScript
+
+O conteúdo está disponível em `template.content`, que é um
+`DocumentFragment` (um pedaço de DOM desconectado da página).
+
+```javascript
+const template = document.getElementById("card-template");
+const fragment = template.content;  // DocumentFragment com o <article>
+
+// Clonar uma vez
+const card1 = fragment.cloneNode(true);
+card1.querySelector(".card-titulo").textContent = "Olá";
+card1.querySelector(".card-descricao").textContent = "Primeiro card.";
+document.body.appendChild(card1);
+
+// Clonar de novo, sem repetir HTML
+const card2 = fragment.cloneNode(true);
+card2.querySelector(".card-titulo").textContent = "Outro";
+card2.querySelector(".card-descricao").textContent = "Segundo card.";
+document.body.appendChild(card2);
+```html
+O ponto chave: você escreveu o HTML uma vez. Para cada card novo,
+**clona** o template e preenche. Sem repetir marcação.
+
+### `cloneNode(true)` vs `cloneNode(false)`
+
+```javascript
+template.content.cloneNode(true);   // clona o template E seus filhos
+template.content.cloneNode(false);  // só o container, sem conteúdo
+```html
+Quase sempre você quer `true` (clone profundo). `false` é raramente
+útil nesse contexto.
+
+### `<template>` vs `<script type="text/html">`
+
+Você pode ter visto isso em código antigo:
+
+```html
+<script type="text/html" id="tpl">
+  <article>...</article>
+</script>
+```html
+Funciona (o navegador ignora conteúdo de `<script>` com `type` que não
+reconhece), mas é gambiarra. **Use `<template>`** — é a forma oficial,
+acessível e indexável.
+
+### Por que isso importa (além do clone)
+
+`<template>` é a base de duas tecnologias grandes:
+
+- **Web Components** — `<template>` + **custom elements** + Shadow DOM.
+  Você define seu próprio `<meu-componente>` com HTML, CSS e JS
+  encapsulados. Está cada vez mais comum em apps grandes.
+- **Renderização client-side** — frameworks como Vue, Svelte, Lit e
+  (até certo ponto) React usam a ideia de "template HTML + dados" para
+  gerar interface. O `<template>` do navegador é uma das engrenagens
+  por baixo.
+
+Você não precisa aprender Web Components agora. Mas saber que
+`<template>` existe — e o que faz — é a fundação para entender essas
+coisas no futuro.
+
+- **`<template>`** declara HTML que **não renderiza** — fica guardado
+  como modelo.
+- **`template.content`** é um `DocumentFragment` com o conteúdo.
+- **`cloneNode(true)`** duplica o conteúdo para usar na página.
+- É a base de **Web Components** e da renderização de frameworks
+  modernos.
+
+> Dica: o conteúdo de `<template>` fica acessível via JS, mas não
+> aparece no `document.body`. Isso é proposital: ele é "morto" até ser
+> clonado. Não confunda com `<div hidden>` ou `style="display: none"`
+> — esses elementos estão no DOM visível (só não aparecem); `<template>`
+> literalmente não está renderizado.
+
+No próximo nó, vamos cobrir **acessibilidade** — um nó que amarra
+vários conceitos que vimos até aqui.
