@@ -1,0 +1,54 @@
+---
+id: bisect
+title: "Bisect: Caçando o Commit que Quebrou"
+resources:
+  - title: "Depurando com o Git - git bisect (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Depurando-com-o-Git
+    type: doc
+    lang: pt
+    free: true
+---
+
+"Funcionava na semana passada e agora quebrou, mas foram 200 commits desde
+então." Testar um por um é insano. O **`git bisect`** faz uma **busca binária** no
+histórico: ele te leva ao meio, você diz se ali já estava quebrado, e ele elimina
+metade dos commits a cada rodada. 200 commits viram ~8 testes.
+
+Você inicia a caça dizendo um commit **bom** (onde funcionava) e um **ruim** (o
+atual, quebrado):
+
+```bash
+git bisect start
+git bisect bad                 # o commit atual está quebrado
+git bisect good v1.2.0         # nesta tag/commit ainda funcionava
+```
+
+O Git faz **checkout** de um commit no meio do caminho. Você testa o programa e
+responde:
+
+```bash
+git bisect good    # este commit está ok -> o bug está depois
+git bisect bad     # este commit está quebrado -> o bug está aqui ou antes
+```
+
+Ele repete, sempre cortando o espaço pela metade, até apontar o **commit
+culpado** exato. No fim, você encerra e volta ao normal:
+
+```bash
+git bisect reset
+```
+
+- **Bisect = busca binária pelo commit que introduziu um bug.** Rápido mesmo em
+  históricos enormes.
+- **Marque um `good` e um `bad`;** o Git te leva ao meio a cada passo.
+- **Você julga cada checkout** (`good`/`bad`); ele isola o culpado em ~log₂(N)
+  testes.
+- **`git bisect reset`** encerra e devolve você à branch original.
+
+> Dica: dá para **automatizar** com `git bisect run ./script-de-teste.sh` - o Git
+> roda seu script (que sai com 0 = ok, 1 = quebrado) em cada passo e encontra o
+> commit sozinho. Combinar bisect com um teste que reproduz o bug é uma das
+> técnicas de depuração mais subestimadas que existem.
+
+Reflog e bisect lidam com história existente. Agora um nó de **cuidado**: quando
+(e como) é seguro **reescrever** história de fato.

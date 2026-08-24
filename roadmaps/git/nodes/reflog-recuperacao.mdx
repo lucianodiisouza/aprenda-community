@@ -1,0 +1,54 @@
+---
+id: reflog-recuperacao
+title: "Reflog: Recuperando o Que Você \"Perdeu\""
+resources:
+  - title: "git reflog (documentação oficial)"
+    url: https://git-scm.com/docs/git-reflog
+    type: doc
+    lang: en
+    free: true
+  - title: "Oh Shit, Git!?! - saindo de enrascadas (referência clássica)"
+    url: https://ohshitgit.com/
+    type: artigo
+    lang: en
+    free: true
+---
+
+Este é o nó que tira o medo do Git. Aquele `reset --hard` que apagou seu commit,
+aquele rebase que deu errado, aquela branch deletada - **quase nada some de
+verdade**. O Git mantém um diário secreto de para onde o `HEAD` apontou: o
+**reflog**.
+
+O reflog registra **cada movimento** do `HEAD` na sua máquina - commits, resets,
+checkouts, rebases - mesmo os que "sumiram" do histórico normal:
+
+```bash
+git reflog
+# a1b2c3d HEAD@{0}: reset: moving to HEAD~1
+# f4e5d6c HEAD@{1}: commit: A feature importante que "perdi"   <- ele ainda existe!
+```
+
+Achou o commit perdido? Você o traz de volta apontando uma branch para ele, ou
+resetando de volta:
+
+```bash
+git reset --hard f4e5d6c          # volta o HEAD para aquele estado
+git branch recuperada f4e5d6c     # ou cria uma branch a partir dele, mais seguro
+```
+
+O truque: mesmo commits "órfãos" (sem branch apontando) continuam no banco do Git
+por semanas antes de serem realmente coletados. O reflog é o mapa para achá-los.
+
+- **Reflog = diário de todos os movimentos do `HEAD`** na sua máquina.
+- **Commits "perdidos" costumam estar lá** - reset, rebase e branch deletada
+  incluídos.
+- **Recupere** apontando uma branch nova (`git branch nome <hash>`) para o commit.
+- É **local**: o reflog é da sua máquina, não sobe para o remoto.
+
+> Dica: a existência do reflog é o que autoriza você a **experimentar sem medo**
+> com rebase, reset e afins. Sabendo que dá para voltar, o Git deixa de ser um
+> campo minado. Só lembre: ele salva o que foi **comitado** - não o que você
+> nunca comitou.
+
+Reflog salva o passado. O **bisect** ajuda a entender o presente: descobrir
+**qual** commit introduziu um bug.

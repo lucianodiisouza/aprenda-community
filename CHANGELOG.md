@@ -6,6 +6,32 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Adicionado
+- 🆕 Trilha **Git** completa (23 nós, do controle de versão do zero ao
+  avançado), cobrindo básico, intermediário e avançado com prática em cada
+  nível e um projeto final de contribuição open source:
+  - **Básico** (`introducao` → `desfazer`): o que é controle de versão,
+    instalação/config, repositório (`init`/`clone`), ciclo `add`/`commit`,
+    `.gitignore`, histórico (`log`/`show`/`diff`), desfazer
+    (`restore`/`reset`/`revert`).
+  - **Intermediário** (`branches` → `tags-releases`): branches, merge,
+    conflitos, remotos (`fetch`/`pull`/`push`), GitHub (fork/PR/`upstream`),
+    stash, tags + SemVer.
+  - **Avançado** (`rebase` → `workflows`): rebase e rebase interativo,
+    cherry-pick, reflog, bisect, reescrita de história
+    (`--force-with-lease`, `filter-repo`), git hooks, workflows
+    (Git Flow / Trunk-Based / Conventional Commits).
+  - **Projeto final** (`projeto-final`): abrir um Pull Request real em
+    open source, do fork ao merge.
+- 📜 `roadmaps/git/meta/editorial-decisions.md` com as decisões de escopo
+  e curadoria da trilha.
+- 👤 Campo `creators` no `roadmap.json` da trilha Git (autor creditado na
+  página inicial da trilha no app).
+
+### Mudado
+- 📘 `README.md` - lista a nova trilha Git e atualiza o badge de contagem
+  de trilhas (3 → 4).
+
 ## [1.2.0] - 2026-08-23
 
 ### Adicionado

@@ -1,0 +1,56 @@
+---
+id: remotos
+title: "Remotos: fetch, pull e push"
+resources:
+  - title: "Trabalhando com remotos (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Trabalhando-com-Remotos
+    type: doc
+    lang: pt
+    free: true
+  - title: "Sobre remotos e conexão via HTTPS/SSH (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/get-started/git-basics/managing-remote-repositories
+    type: doc
+    lang: pt
+    free: true
+---
+
+Até agora tudo viveu na sua máquina. Um **remoto** é uma cópia do repositório em
+outro lugar - normalmente no GitHub - que serve de backup e ponto de encontro
+com outras pessoas. O remoto padrão, criado no `clone`, se chama **`origin`**.
+
+Se você começou com `git init` (sem clonar), conecta o remoto assim:
+
+```bash
+git remote add origin git@github.com:usuario/projeto.git
+git remote -v            # lista os remotos configurados
+```
+
+Três verbos movem dados entre você e o remoto. **`push`** envia seus commits:
+
+```bash
+git push -u origin main   # -u liga a branch local à remota (só na primeira vez)
+git push                  # depois disso, basta isto
+```
+
+**`fetch`** baixa novidades do remoto **sem** mexer no seu trabalho - você
+inspeciona antes de integrar. **`pull`** é `fetch` + `merge` num passo só: baixa
+e já junta na sua branch atual:
+
+```bash
+git fetch origin          # baixa, mas não altera suas branches
+git pull                  # baixa E integra na branch atual
+```
+
+- **`origin`** é o apelido do remoto principal (definido no clone).
+- **`push`** envia; **`fetch`** baixa sem integrar; **`pull`** baixa e integra.
+- **`push -u`** conecta a branch local à remota uma vez; depois só `push`/`pull`.
+- **HTTPS ou SSH?** SSH (com chave) evita digitar senha toda hora - vale
+  configurar cedo.
+
+> Dica: sempre dê `git pull` **antes** de começar a trabalhar e antes de dar
+> `push`. Se alguém enviou algo enquanto você codava, o `push` é recusado com
+> "rejected" - um `pull` (resolvendo eventuais conflitos) destrava. Nunca use
+> `push --force` numa branch compartilhada sem ter certeza absoluta.
+
+Com remotos entendidos, vamos ao fluxo que move o open source: **fork e pull
+request** no GitHub.

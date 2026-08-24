@@ -1,0 +1,56 @@
+---
+id: hooks
+title: "Git Hooks: Automatizando o Fluxo"
+resources:
+  - title: "Git Hooks (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Personalizando-o-Git-Git-Hooks
+    type: doc
+    lang: pt
+    free: true
+  - title: "Husky - hooks de Git para projetos JavaScript"
+    url: https://typicode.github.io/husky/
+    type: doc
+    lang: en
+    free: true
+---
+
+Um **hook** é um script que o Git dispara **automaticamente** em certos momentos:
+antes de um commit, antes de um push, depois de um merge. É como você força
+qualidade sem depender da memória das pessoas - "roda o lint antes de deixar
+comitar", "recusa mensagem de commit fora do padrão".
+
+Os hooks vivem em `.git/hooks/`. Ali há vários `.sample`; para ativar um, crie o
+arquivo com o nome exato (sem `.sample`) e o torne executável. Um `pre-commit`
+que barra o commit se o lint falhar:
+
+```bash
+# arquivo: .git/hooks/pre-commit
+#!/bin/sh
+npm run lint || {
+  echo "Lint falhou. Commit abortado."
+  exit 1               # exit != 0 cancela a operação
+}
+```
+
+Os mais usados: **`pre-commit`** (roda antes de gravar o commit - lint, testes,
+formatação), **`commit-msg`** (valida a mensagem - útil para Conventional
+Commits) e **`pre-push`** (última barreira antes de enviar).
+
+O problema: `.git/hooks/` **não** é versionado - não sobe no push, então o time
+não compartilha os hooks. Por isso projetos JavaScript usam o **Husky**, que
+guarda os hooks no repositório e os instala para todo mundo automaticamente.
+(Este próprio repositório usa Husky, aliás.)
+
+- **Hook = script disparado pelo Git** em eventos (commit, push, merge...).
+- **`pre-commit`, `commit-msg`, `pre-push`** são os mais comuns; `exit 1` cancela.
+- **`.git/hooks/` não é versionado** - por isso ferramentas como o **Husky**
+  existem, para compartilhar hooks com o time.
+- Hooks locais são **conveniência**, não segurança: a validação séria também roda
+  no **CI** do servidor, que ninguém pula.
+
+> Dica: hook não substitui CI. Um dev pode pular o hook com `git commit
+> --no-verify`. Use hooks para feedback **rápido e local** (formatar, avisar
+> cedo) e o CI para a checagem **inescapável**. Os dois se complementam.
+
+Ferramentas dominadas, falta a estratégia: como um time organiza branches e
+commits. Isso são os **workflows**.

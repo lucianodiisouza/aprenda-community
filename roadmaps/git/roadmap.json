@@ -1,0 +1,175 @@
+{
+  "slug": "git",
+  "title": "Git",
+  "description": "Trilha completa de Git - do controle de versão do zero (o que é um commit) até rebase, reflog, bisect e workflows de colaboração. Cobre básico, intermediário e avançado, com prática em cada nível e um projeto final de contribuição open source.",
+  "difficulty": "iniciante",
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "Introdução: O que é Controle de Versão",
+      "type": "topic",
+      "recommended": true,
+      "children": ["instalacao-config"]
+    },
+    {
+      "id": "instalacao-config",
+      "title": "Instalando e Configurando o Git",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["repositorio"]
+    },
+    {
+      "id": "repositorio",
+      "title": "Repositório: git init e git clone",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ciclo-basico"]
+    },
+    {
+      "id": "ciclo-basico",
+      "title": "O Ciclo Básico: add, status, commit",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["gitignore"]
+    },
+    {
+      "id": "gitignore",
+      "title": ".gitignore: O Que o Git Deve Ignorar",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["historico"]
+    },
+    {
+      "id": "historico",
+      "title": "Vendo o Histórico: log, show e diff",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["desfazer"]
+    },
+    {
+      "id": "desfazer",
+      "title": "Desfazendo Coisas: restore, reset e revert",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["branches"]
+    },
+    {
+      "id": "branches",
+      "title": "Branches: Trabalhando em Paralelo",
+      "type": "topic",
+      "recommended": true,
+      "children": ["merge"]
+    },
+    {
+      "id": "merge",
+      "title": "Merge: Juntando Branches",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["conflitos"]
+    },
+    {
+      "id": "conflitos",
+      "title": "Conflitos: Quando o Git Precisa de Você",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["remotos"]
+    },
+    {
+      "id": "remotos",
+      "title": "Remotos: fetch, pull e push",
+      "type": "topic",
+      "recommended": true,
+      "children": ["github-colaboracao"]
+    },
+    {
+      "id": "github-colaboracao",
+      "title": "GitHub: Fork, Pull Request e Colaboração",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["stash"]
+    },
+    {
+      "id": "stash",
+      "title": "Stash: Guardando Trabalho Pela Metade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tags-releases"]
+    },
+    {
+      "id": "tags-releases",
+      "title": "Tags e Versionamento Semântico",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rebase"]
+    },
+    {
+      "id": "rebase",
+      "title": "Rebase: Reescrevendo a Base da Branch",
+      "type": "topic",
+      "recommended": true,
+      "children": ["rebase-interativo"]
+    },
+    {
+      "id": "rebase-interativo",
+      "title": "Rebase Interativo: squash, reword e reorder",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cherry-pick"]
+    },
+    {
+      "id": "cherry-pick",
+      "title": "Cherry-pick: Pegando Commits Avulsos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["reflog-recuperacao"]
+    },
+    {
+      "id": "reflog-recuperacao",
+      "title": "Reflog: Recuperando o Que Você \"Perdeu\"",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["bisect"]
+    },
+    {
+      "id": "bisect",
+      "title": "Bisect: Caçando o Commit que Quebrou",
+      "type": "subtopic",
+      "recommended": false,
+      "children": ["reescrever-historia"]
+    },
+    {
+      "id": "reescrever-historia",
+      "title": "Reescrevendo a História (com Responsabilidade)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["hooks"]
+    },
+    {
+      "id": "hooks",
+      "title": "Git Hooks: Automatizando o Fluxo",
+      "type": "subtopic",
+      "recommended": false,
+      "children": ["workflows"]
+    },
+    {
+      "id": "workflows",
+      "title": "Workflows: Git Flow, Trunk-Based e Conventional Commits",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Sua Primeira Contribuição Open Source",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

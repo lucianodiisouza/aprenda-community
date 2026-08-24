@@ -1,0 +1,54 @@
+---
+id: tags-releases
+title: "Tags e Versionamento Semântico"
+resources:
+  - title: "Fazendo tags (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Fazendo-Tags
+    type: doc
+    lang: pt
+    free: true
+  - title: "Versionamento Semântico 2.0.0 (SemVer, PT-BR)"
+    url: https://semver.org/lang/pt-BR/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Commits são ótimos para o dia a dia, mas os humanos precisam de marcos com nome:
+"a versão 1.0", "o release de setembro". Uma **tag** é um apelido permanente para
+um commit específico - normalmente usado para marcar **versões** de um software.
+
+Existem dois tipos, mas na prática você quer a **anotada** (guarda autor, data e
+mensagem, como um mini-commit):
+
+```bash
+git tag -a v1.0.0 -m "Primeiro release estável"
+git tag                  # lista as tags
+git show v1.0.0          # vê o commit apontado pela tag
+```
+
+Tags **não** vão junto no `git push` normal - você envia explicitamente:
+
+```bash
+git push origin v1.0.0        # envia uma tag
+git push origin --tags        # envia todas
+```
+
+O nome `v1.0.0` não é aleatório: segue o **Versionamento Semântico** (SemVer),
+o padrão `MAJOR.MINOR.PATCH`. Você incrementa:
+
+- **PATCH** (`1.0.1`) para correções de bug compatíveis.
+- **MINOR** (`1.1.0`) para funcionalidades novas que não quebram nada.
+- **MAJOR** (`2.0.0`) para mudanças que **quebram** compatibilidade.
+
+- **Tag = apelido permanente de um commit**, tipicamente uma versão.
+- **Prefira tags anotadas (`-a`)** - carregam autor, data e mensagem.
+- **Tags não sobem sozinhas.** Envie com `git push origin --tags`.
+- **SemVer (`MAJOR.MINOR.PATCH`)** comunica em números o impacto de cada versão.
+
+> Dica: no GitHub, uma tag pode virar um **Release** com notas e binários
+> anexados. E ferramentas de CI costumam disparar deploys quando uma tag
+> `vX.Y.Z` é enviada - tag não é só documentação, é gatilho de automação.
+
+Fechamos o intermediário. Daqui pra frente é território **avançado**, começando
+pela ferramenta mais poderosa (e mal-entendida) do Git: o **rebase**.

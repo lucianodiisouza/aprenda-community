@@ -1,0 +1,53 @@
+---
+id: historico
+title: "Vendo o Histórico: log, show e diff"
+resources:
+  - title: "Vendo o histórico de commits (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Vendo-o-Hist%C3%B3rico-de-Commits
+    type: doc
+    lang: pt
+    free: true
+---
+
+Todo commit que você faz vira uma entrada no histórico. Saber **ler** esse
+histórico é o que transforma o Git de "botão de salvar" em uma máquina do tempo
+navegável.
+
+O comando central é o `git log`. Sozinho ele lista os commits do mais recente ao
+mais antigo, mas o que você vai usar de verdade é a versão compacta:
+
+```bash
+git log --oneline --graph --decorate --all
+```
+
+Isso mostra uma linha por commit, com o **hash** (o identificador), a mensagem,
+e um desenho das branches. Cada commit tem um hash tipo `a1b2c3d` - você usa os
+primeiros caracteres para se referir a ele.
+
+Para ver **um commit específico** por inteiro (mensagem + o que mudou):
+
+```bash
+git show a1b2c3d
+```
+
+E para ver as diferenças **antes de comitar** - o que você mexeu e ainda não
+adicionou:
+
+```bash
+git diff              # mudanças ainda não adicionadas (working dir vs staging)
+git diff --staged     # o que já está no staging, pronto pro commit
+```
+
+- **`git log --oneline`** é a forma prática de ver o histórico; adicione
+  `--graph` para enxergar branches.
+- **Cada commit tem um hash** único; os primeiros ~7 caracteres bastam para
+  referenciá-lo.
+- **`git show <hash>`** abre um commit específico por completo.
+- **`git diff`** mostra o que mudou; `--staged` mostra o que já está preparado.
+
+> Dica: `git log -p` mostra o histórico **com o diff de cada commit** embutido -
+> ótimo para entender a evolução de um arquivo. E `git log --oneline -- caminho/do/arquivo`
+> filtra só os commits que tocaram naquele arquivo.
+
+Sabendo ler o histórico, o próximo passo natural é aprender a **desfazer** -
+porque uma hora você vai comitar besteira, e está tudo bem.

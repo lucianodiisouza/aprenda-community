@@ -1,0 +1,53 @@
+---
+id: repositorio
+title: "Repositório: git init e git clone"
+resources:
+  - title: "Obtendo um repositório Git (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Obtendo-um-Reposit%C3%B3rio-Git
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um **repositório** (ou "repo") é uma pasta que o Git está observando. Ela tem os
+seus arquivos normais **mais** uma pasta escondida `.git/`, onde mora todo o
+histórico. Existem duas formas de conseguir um repo.
+
+**1. Começar do zero** com `git init`, numa pasta que já é sua:
+
+```bash
+mkdir meu-projeto
+cd meu-projeto
+git init
+```
+
+Isso cria a pasta `.git/`. A partir daqui, o Git está de olho nessa pasta. Rode
+`git status` e ele vai te dizer que você está na branch `main` e ainda não tem
+commits.
+
+**2. Clonar** um repositório que já existe (seu ou de outra pessoa), baixando
+todo o histórico:
+
+```bash
+git clone https://github.com/usuario/projeto.git
+cd projeto
+```
+
+O `clone` cria a pasta, baixa tudo e já configura o servidor de origem (o
+`origin`, que veremos no nó de remotos). É assim que você pega o código de um
+projeto para trabalhar nele.
+
+- **`git init`** transforma uma pasta comum em repositório (cria o `.git/`).
+- **`git clone <url>`** baixa um repositório existente com todo o histórico.
+- A pasta **`.git/`** é o repositório de verdade - apague ela e você perde o
+  histórico (mas mantém os arquivos atuais).
+- **`git status`** é o comando que você mais vai usar: ele mostra em que pé está
+  o repo.
+
+> Dica: nunca coloque um repositório **dentro** de outro sem intenção (uma pasta
+> com `.git/` dentro de outra com `.git/`). Isso confunde o Git. Para casos
+> legítimos existem os *submodules*, tema avançado - por ora, um repo por
+> projeto.
+
+Com o repo criado, vamos aprender o **ciclo básico** que se repete o tempo todo:
+mexer, adicionar, comitar.

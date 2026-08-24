@@ -1,0 +1,61 @@
+---
+id: instalacao-config
+title: "Instalando e Configurando o Git"
+resources:
+  - title: "Instalando o Git (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Come%C3%A7ando-Instalando-o-Git
+    type: doc
+    lang: pt
+    free: true
+  - title: "Download oficial do Git (todas as plataformas)"
+    url: https://git-scm.com/downloads
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de versionar qualquer coisa, o Git precisa estar instalado e saber **quem
+é você** - todo commit carrega um nome e um e-mail.
+
+No **macOS** e **Linux** o Git costuma já vir instalado (ou vem com um `xcode-select
+--install` / o gerenciador de pacotes da distro). No **Windows**, baixe o
+instalador em [git-scm.com/downloads](https://git-scm.com/downloads), que traz o
+**Git Bash** junto. Para conferir se deu certo:
+
+```bash
+git --version
+```
+
+Se apareceu algo como `git version 2.43.0`, está pronto. Agora a configuração
+mínima, que você faz **uma vez** por máquina:
+
+```bash
+git config --global user.name "Seu Nome"
+git config --global user.email "voce@exemplo.com"
+```
+
+O `--global` grava isso para todos os seus projetos. Use o **mesmo e-mail** da
+sua conta no GitHub - é assim que ele liga os commits ao seu perfil. Vale também
+definir o nome da branch inicial e seu editor de texto:
+
+```bash
+git config --global init.defaultBranch main
+git config --global core.editor "code --wait"   # VS Code; ajuste ao seu editor
+```
+
+Para ver tudo o que está configurado: `git config --list`.
+
+- **`user.name` e `user.email`** vão dentro de cada commit - configure antes de
+  começar.
+- **`--global`** aplica a config a todos os projetos; sem ele, vale só no repo
+  atual.
+- **`init.defaultBranch main`** faz repos novos nascerem na branch `main`.
+- **`core.editor`** define quem abre quando o Git pede uma mensagem (commit,
+  rebase, merge).
+
+> Dica: e-mail errado é a causa nº 1 de "meus commits não aparecem no GitHub".
+> Confira com `git config user.email` e, se precisar, use o e-mail de "noreply"
+> que o GitHub oferece nas configurações de privacidade.
+
+No próximo nó, criamos nosso primeiro **repositório** - o lugar onde o Git guarda
+o histórico.

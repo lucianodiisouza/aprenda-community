@@ -1,0 +1,59 @@
+---
+id: github-colaboracao
+title: "GitHub: Fork, Pull Request e Colaboração"
+resources:
+  - title: "Sobre pull requests (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
+    type: doc
+    lang: pt
+    free: true
+  - title: "Fluxo de trabalho do GitHub (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/get-started/using-github/github-flow
+    type: doc
+    lang: pt
+    free: true
+---
+
+Aqui o Git encontra a colaboração de verdade. Um **Pull Request** (PR) é um
+pedido: "ei, peguei sua branch, fiz umas mudanças, dá uma olhada e, se gostar,
+integra". É a forma padrão de propor código - tanto no seu time quanto em
+projetos open source de estranhos.
+
+Há dois cenários. Se você tem **acesso de escrita** ao repositório (seu time),
+o fluxo é direto: cria branch, comita, dá push, abre o PR.
+
+```bash
+git switch -c fix/corrige-typo
+# ...edita, git add, git commit...
+git push -u origin fix/corrige-typo
+# depois abre o PR pela interface do GitHub (ou: gh pr create)
+```
+
+Se você **não** tem acesso de escrita (a maioria dos projetos open source), usa
+o **fork**: uma cópia do repositório na sua conta. Você clona o *seu* fork,
+trabalha nele, e abre o PR do fork para o projeto original. Costuma-se adicionar
+o original como um segundo remoto chamado **`upstream`** para puxar as
+atualizações:
+
+```bash
+git remote add upstream git@github.com:projeto-original/repo.git
+git fetch upstream
+git merge upstream/main        # mantém seu fork em dia com o original
+```
+
+No PR, quem mantém o projeto **revisa**, comenta, pede ajustes. Você responde com
+novos commits na mesma branch - eles aparecem no PR automaticamente. Quando está
+bom, o mantenedor faz o **merge**.
+
+- **Pull Request = proposta de mudança revisável.** O coração da colaboração.
+- **Com acesso de escrita:** branch → push → PR. **Sem acesso:** fork → PR.
+- **`upstream`** é o remoto do projeto original; use-o para manter seu fork
+  atualizado.
+- **PR é conversa.** Espere review, responda com novos commits, seja gentil.
+
+> Dica: antes de abrir um PR num projeto que não é seu, leia o `CONTRIBUTING.md`.
+> Cada projeto tem suas regras (padrão de commit, testes, formatação). Seguir o
+> guia é o que separa um PR que é mergeado de um que é ignorado.
+
+Colaborando, uma hora você vai precisar largar o que está fazendo no meio.
+Para isso existe o **stash**.

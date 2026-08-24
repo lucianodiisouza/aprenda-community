@@ -1,0 +1,58 @@
+---
+id: ciclo-basico
+title: "O Ciclo Básico: add, status, commit"
+resources:
+  - title: "Gravando alterações no repositório (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Gravando-Altera%C3%A7%C3%B5es-no-Reposit%C3%B3rio
+    type: doc
+    lang: pt
+    free: true
+  - title: "Learn Git Branching (exercícios interativos, PT-BR)"
+    url: https://learngitbranching.js.org/?locale=pt_BR
+    type: exercicio
+    lang: pt
+    free: true
+---
+
+Esse é o coração do Git, o ciclo que você vai repetir milhares de vezes. Um
+arquivo passa por **três áreas**: o diretório de trabalho (onde você edita), a
+**staging area** (a "área de preparo") e o **repositório** (o histórico).
+
+Você editou um arquivo. Rode `git status` para ver o estado:
+
+```bash
+git status
+# Untracked files:  ola.txt      <- o Git ainda não versiona esse arquivo
+```
+
+Agora você **seleciona** o que quer incluir no próximo commit com `git add` -
+isso move para a staging area:
+
+```bash
+git add ola.txt          # adiciona um arquivo
+git add .                # adiciona tudo que mudou na pasta atual
+```
+
+E finalmente **grava a foto** com `git commit`, sempre com uma mensagem que
+explica *o quê e por quê*:
+
+```bash
+git commit -m "Adiciona saudação inicial"
+```
+
+Por que duas etapas (`add` e depois `commit`)? Porque a staging area te deixa
+montar um commit **coerente**: você pode ter mexido em 5 arquivos e comitar só
+os 2 que formam uma mudança lógica, deixando o resto para o próximo commit.
+
+- **Diretório de trabalho → staging (`add`) → commit.** Esse é o fluxo.
+- **`git status`** mostra o que mudou e em que área está. Use o tempo todo.
+- **`git add`** escolhe o que entra no próximo commit; **`git commit`** grava.
+- **A mensagem de commit importa.** No presente, curta na primeira linha,
+  explicando a intenção - não "mudanças" ou "fix".
+
+> Dica: `git commit -am "msg"` adiciona **e** comita arquivos já rastreados em um
+> passo só - mas ele ignora arquivos novos (untracked). Para esses, o `git add`
+> continua obrigatório.
+
+No próximo nó, o `.gitignore`: como dizer ao Git para **não** rastrear certos
+arquivos.
