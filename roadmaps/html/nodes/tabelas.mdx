@@ -7,7 +7,7 @@ resources:
     type: doc
     lang: pt
     free: true
-  - title: "Tabelas em HTML — guia completo (MDN PT-BR)"
+  - title: "Tabelas em HTML - guia completo (MDN PT-BR)"
     url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Core/Structuring_content/HTML_table_basics
     type: doc
     lang: pt
@@ -15,7 +15,7 @@ resources:
 ---
 
 Tabelas em HTML servem para **dados tabulares**: coisas que você
-apresentaria em uma planilha. Não servem para layout de página — isso foi
+apresentaria em uma planilha. Não servem para layout de página - isso foi
 abandonado lá pelo ano 2000 (e é uma história cautionary tale inteira).
 
 ```html
@@ -59,17 +59,17 @@ abandonado lá pelo ano 2000 (e é uma história cautionary tale inteira).
 ```
 Vamos destrinchar:
 
-- **`<table>`** — a tabela em si.
-- **`<caption>`** — o **título** da tabela. Aparece acima, antes dos
+- **`<table>`** - a tabela em si.
+- **`<caption>`** - o **título** da tabela. Aparece acima, antes dos
   dados. É importante para acessibilidade: leitores de tela anunciam a
   caption como parte da tabela.
-- **`<thead>`** — cabeçalho. A linha com os títulos das colunas.
-- **`<tbody>`** — corpo. Os dados.
-- **`<tfoot>`** — rodapé. Para totais, médias, observações.
-- **`<tr>`** (*table row*) — uma linha.
-- **`<th>`** (*table header*) — célula de **cabeçalho** (em negrito por
+- **`<thead>`** - cabeçalho. A linha com os títulos das colunas.
+- **`<tbody>`** - corpo. Os dados.
+- **`<tfoot>`** - rodapé. Para totais, médias, observações.
+- **`<tr>`** (*table row*) - uma linha.
+- **`<th>`** (*table header*) - célula de **cabeçalho** (em negrito por
   padrão, semanticamente uma "célula que rotula").
-- **`<td>`** (*table data*) — célula de **dado**.
+- **`<td>`** (*table data*) - célula de **dado**.
 
 Sem CSS, a tabela aparece sem bordas. É assim de propósito: estilo é
 trabalho do CSS. Mas o significado (cabeçalho, corpo, rodapé) já está todo
@@ -132,7 +132,7 @@ ocupa 2 linhas.
   </tr>
 </table>
 ```
-Use com parcimônia — tabelas muito "complexas" geralmente são várias
+Use com parcimônia - tabelas muito "complexas" geralmente são várias
 tabelas simples.
 
 ### Por que não usar tabela para layout?
@@ -154,8 +154,8 @@ para dados tabulares. Ponto.
 - **colspan** e **rowspan** para mesclar células; use com parcimônia.
 
 > Dica: antes de criar uma tabela, pergunte: "esses dados têm colunas
-> nomeadas e linhas comparáveis?" Se sim, tabela. Se não, é layout —
+> nomeadas e linhas comparáveis?" Se sim, tabela. Se não, é layout -
 > use CSS.
 
-No próximo nó, vamos entrar nos **formulários** — provavelmente a parte
+No próximo nó, vamos entrar nos **formulários** - provavelmente a parte
 mais interativa do HTML e onde a gente coleta dados do usuário.

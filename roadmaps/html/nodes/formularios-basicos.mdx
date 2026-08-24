@@ -16,7 +16,7 @@ resources:
 
 A maior parte da web "fala" com o usuário por meio de **formulários**:
 login, busca, cadastro, comentários, upload, checkout. O HTML tem um
-conjunto robusto de tags pra isso — e várias armadilhas para iniciantes.
+conjunto robusto de tags pra isso - e várias armadilhas para iniciantes.
 
 O mínimo necessário:
 
@@ -36,7 +36,7 @@ Anatomia:
 - **`<form action="..." method="...">`** é o container. `action` é pra
   onde os dados vão; `method` é o verbo HTTP (`get` ou `post`).
 - **`<label for="id-do-input">`** é o **rótulo** do campo. O `for`
-  conecta o rótulo ao input pelo `id` — clicar no label foca o input, e
+  conecta o rótulo ao input pelo `id` - clicar no label foca o input, e
   leitores de tela anunciam o rótulo quando o input recebe foco. **Sempre
   use `<label>`.**
 - **`<input>`** é o campo em si. Tem dezenas de tipos via `type="..."`.
@@ -49,7 +49,7 @@ Anatomia:
 | ------------- | ------------------------------------------------ | ------------------------------------------ |
 | `text`        | Texto genérico (uma linha)                       | Padrão se você omitir `type`               |
 | `email`       | E-mail (validação de formato no navegador)       | Teclado com `@` no celular                 |
-| `password`    | Senha (caracteres escondidos)                    | Não confie só nele — use HTTPS!            |
+| `password`    | Senha (caracteres escondidos)                    | Não confie só nele - use HTTPS!            |
 | `number`      | Número (com setinhas no navegador)               | `min`, `max`, `step`                       |
 | `tel`         | Telefone                                         | Teclado numérico no celular                |
 | `url`         | URL                                              | Teclado com `.` e `/` no celular           |
@@ -61,23 +61,23 @@ Anatomia:
 | `file`        | Upload de arquivo                                | `accept="image/*"` filtra                  |
 | `color`       | Seletor de cor                                   | -                                          |
 | `range`       | Slider                                           | `min`, `max`, `step`, `value`              |
-| `hidden`      | Invisível — dados extras junto com o form        | -                                          |
+| `hidden`      | Invisível - dados extras junto com o form        | -                                          |
 
 Atributos importantes compartilhados:
 
-- **`name="..."`** — o **nome do campo** quando o form é enviado. Sem
+- **`name="..."`** - o **nome do campo** quando o form é enviado. Sem
   `name`, o input não é enviado! Erro clássico de iniciante.
-- **`id="..."`** — único na página, usado pra conectar com `<label>` e
+- **`id="..."`** - único na página, usado pra conectar com `<label>` e
   âncoras.
-- **`required`** — campo obrigatório. O navegador bloqueia o envio se
+- **`required`** - campo obrigatório. O navegador bloqueia o envio se
   estiver vazio.
-- **`placeholder="..."`** — dica que aparece **dentro** do campo quando
-  ele está vazio. **Não substitui o `<label>`** — o placeholder some
+- **`placeholder="..."`** - dica que aparece **dentro** do campo quando
+  ele está vazio. **Não substitui o `<label>`** - o placeholder some
   quando o usuário digita, e leitores de tela nem sempre leem.
-- **`value="..."`** — valor inicial.
-- **`disabled`** — desabilita o input (cinza, não editável, não enviado).
-- **`readonly`** — não editável, mas enviado no form.
-- **`autocomplete="..."`** — dica pro navegador. `name`, `email`, `tel`,
+- **`value="..."`** - valor inicial.
+- **`disabled`** - desabilita o input (cinza, não editável, não enviado).
+- **`readonly`** - não editável, mas enviado no form.
+- **`autocomplete="..."`** - dica pro navegador. `name`, `email`, `tel`,
   `current-password`, `new-password` etc.
 
 ### Checkbox e radio
@@ -144,8 +144,8 @@ Um input pode estar **fora** do `<form>` mas ser associado a ele:
 layout (ex: a barra de busca no header, mas o `<form>` no footer).
 
 - **`<form action method>`** contém os inputs e botões de envio.
-- **`<label for>`** é o rótulo do campo — sempre use.
-- **`<input name>`** — sem `name`, o campo não vai no envio.
+- **`<label for>`** é o rótulo do campo - sempre use.
+- **`<input name>`** - sem `name`, o campo não vai no envio.
 - **`type` correto** ativa teclado apropriado no celular e validação
   nativa.
 - **`<fieldset>` + `<legend>`** agrupam campos.

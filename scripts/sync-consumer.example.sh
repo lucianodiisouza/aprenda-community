@@ -9,7 +9,7 @@
 #
 # 1. Shallow clone (--depth 1) + sparse-checkout → só baixa a pasta
 #    `roadmaps/`, não o repo inteiro.
-# 2. Resolve o commit SHA da tag pinada (não a branch — reprodutibilidade).
+# 2. Resolve o commit SHA da tag pinada (não a branch - reprodutibilidade).
 # 3. Lê o SHA do último sync de `.content-version` (criado na primeira run).
 # 4. Compara com `git diff --name-only <last>..HEAD -- roadmaps/`.
 # 5. Copia **só** os arquivos listados no diff. Arquivos deletados no
@@ -33,7 +33,7 @@
 #
 #   APRENDA_COMMUNITY_TAG    Tag a sincronizar (default: v1.1.0)
 #   APRENDA_COMMUNITY_REPO  URL do repo (default: o público)
-#   DRY_RUN                  Se "1", não copia — só mostra o diff
+#   DRY_RUN                  Se "1", não copia - só mostra o diff
 #   SKIP_VALIDATE            Se "1", pula a validação após sync
 #   VERBOSE                  Se "1", log detalhado
 #
@@ -80,7 +80,7 @@ dbg "target_commit=$target_commit  last_commit=$last_commit"
 
 # ─── Early exit se nada mudou ─────────────────────────────────────────────
 if [[ "$last_commit" == "$target_commit" && -d "$TARGET_DIR" ]]; then
-  log "✅ Up to date at $PINNED_TAG ($target_commit) — nothing to do"
+  log "✅ Up to date at $PINNED_TAG ($target_commit) - nothing to do"
   exit 0
 fi
 
@@ -96,13 +96,13 @@ if [[ -n "$last_commit" && -d "$TARGET_DIR" ]]; then
   changed=$(git -C "$TMP_DIR/repo" diff --name-only "$last_commit..HEAD" -- 'roadmaps/*' 2>/dev/null || true)
   # `git diff` no sparse-checkout só vê os arquivos sparse-checkouted.
   # Para pegar arquivos **deletados** desde last_commit, precisamos
-  # buscar esse commit também — mas como é shallow, git log/diff só vê
+  # buscar esse commit também - mas como é shallow, git log/diff só vê
   # HEAD. Solução: usar `git log --diff-filter=D`:
   deleted=$(git -C "$TMP_DIR/repo" log --diff-filter=D --name-only --pretty=format: \
     "$last_commit..HEAD" -- 'roadmaps/*' 2>/dev/null | grep -v '^$' || true)
   all_changes=$(printf "%s\n%s\n" "$changed" "$deleted" | grep -v '^$' | sort -u)
 else
-  log "🆕 First sync (or no version file) — taking everything..."
+  log "🆕 First sync (or no version file) - taking everything..."
   all_changes=$(cd "$TMP_DIR/repo" && find roadmaps -type f | sed 's|^roadmaps/||')
 fi
 
@@ -158,7 +158,7 @@ if [[ "$DRY_RUN" != "1" && "$SKIP_VALIDATE" != "1" && -f "packages/content/scrip
   if pnpm content:validate 2>&1 | tail -3; then
     log "✅ Validation passed"
   else
-    log "⚠️  Validation reported issues — check output above"
+    log "⚠️  Validation reported issues - check output above"
   fi
 fi
 

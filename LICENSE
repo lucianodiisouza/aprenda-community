@@ -511,21 +511,21 @@ to the general public.
 
   ## CONTEÚDO DAS TRILHAS (arquivos .mdx e roadmap.json)
 
-  Todo o conteúdo das trilhas — arquivos em `roadmaps/**` (incluindo
-  `roadmap.json` e `nodes/*.mdx`) — está licenciado sob a Creative Commons
+  Todo o conteúdo das trilhas - arquivos em `roadmaps/**` (incluindo
+  `roadmap.json` e `nodes/*.mdx`) - está licenciado sob a Creative Commons
   Atribuição-CompartilhaIgual 4.0 Internacional (CC BY-SA 4.0).
 
   Você pode:
-  - Compartilhar — copiar e redistribuir o material em qualquer suporte ou formato
-  - Adaptar — remixar, transformar, e criar a partir do material
+  - Compartilhar - copiar e redistribuir o material em qualquer suporte ou formato
+  - Adaptar - remixar, transformar, e criar a partir do material
     para qualquer fim, mesmo comercialmente.
 
   Sob os seguintes termos:
-  - Atribuição — Você deve dar crédito apropriado, prover um link para a
+  - Atribuição - Você deve dar crédito apropriado, prover um link para a
     licença, e indicar se mudanças foram feitas. Você pode fazê-lo de qualquer
     forma razoável, mas não de maneira que sugira que o licenciante endossa
     você ou seu uso.
-  - CompartilhaIgual — Se você remixar, transformar, ou criar a partir do
+  - CompartilhaIgual - Se você remixar, transformar, ou criar a partir do
     material, você deve distribuir suas contribuições sob a mesma licença do
     original.
 

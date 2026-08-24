@@ -30,7 +30,7 @@ A gente poderia fazer tudo com `<div>`:
 </div>
 <div class="footer">...</div>
 ```
-Funciona — o navegador renderiza. Mas leitor de tela vê uma sopa de
+Funciona - o navegador renderiza. Mas leitor de tela vê uma sopa de
 `<div>`s sem distinção. Mecanismo de busca não entende a estrutura. CSS
 fica mais difícil.
 
@@ -52,7 +52,7 @@ Mesma renderização visual (sem CSS), mas com estrutura explícita.
 ### As tags de landmark (região)
 
 Existem sete tags principais que definem **regiões** da página. São
-chamadas de *landmark regions* — leitores de tela permitem ao usuário
+chamadas de *landmark regions* - leitores de tela permitem ao usuário
 pular diretamente para qualquer uma delas.
 
 ```html
@@ -141,7 +141,7 @@ Note os detalhes:
 - **`<header>` aparece duas vezes**: uma na página (com o logo e nav) e
   outra dentro do `<article>` (com o título do post). Ambos são
   semanticamente válidos.
-- **`<nav aria-label="Principal">`** — `aria-label` dá um nome acessível
+- **`<nav aria-label="Principal">`** - `aria-label` dá um nome acessível
   ao bloco de navegação, distinguindo-o de outros `nav` (ex: nav de
   rodapé).
 - **`<aside>`** poderia ser movido para fora do `<main>` (é
@@ -152,13 +152,13 @@ Note os detalhes:
 
 A confusão clássica:
 
-- **`<article>`** — conteúdo **independente** que faria sentido sozinho.
+- **`<article>`** - conteúdo **independente** que faria sentido sozinho.
   Post de blog, notícia, card de produto, comentário. Tem seu próprio
   `<header>`/`<footer>`.
-- **`<section>`** — agrupamento **temático** dentro de um contexto. Se
+- **`<section>`** - agrupamento **temático** dentro de um contexto. Se
   remover, o conteúdo perde o agrupamento. Precisa de um título
   (`<h2>`, `<h3>`...).
-- **`<div>`** — quando não há significado semântico. Puro container de
+- **`<div>`** - quando não há significado semântico. Puro container de
   estilo.
 
 ```html
@@ -178,7 +178,7 @@ A confusão clássica:
 ### Headings (títulos) e a hierarquia do documento
 
 A hierarquia `h1` → `h6` é o **esqueleto semântico** mais importante.
-Leitores de tela oferecem "atalho por heading" — o usuário pula direto
+Leitores de tela oferecem "atalho por heading" - o usuário pula direto
 para o `h2` "Ingredientes", por exemplo.
 
 ```html
@@ -209,17 +209,17 @@ como sumário.
 
 Algumas tags têm **significado duplo** dependendo do contexto:
 
-- **`<small>`** — não é só "texto pequeno". Significa "nota de rodapé,
+- **`<small>`** - não é só "texto pequeno". Significa "nota de rodapé,
   comentário lateral, letra miúda legal". Visual fica pequeno por padrão.
-- **`<s>`** — texto **riscado** porque está errado ou desatualizado. (Não
+- **`<s>`** - texto **riscado** porque está errado ou desatualizado. (Não
   confunda com `<del>`, que é texto deletado, com semântica de mudança.)
-- **`<u>`** — texto **sublinhado** com significado de "termo
+- **`<u>`** - texto **sublinhado** com significado de "termo
   semântico" (nome próprio chinês, palavra com erro ortográfico marcado,
   etc.). Por padrão tem sublinhado, mas pode mudar.
-- **`<time datetime="...">`** — marca uma data/hora de forma que
+- **`<time datetime="...">`** - marca uma data/hora de forma que
   máquinas entendam: `<time datetime="2026-08-23">23 de agosto de
   2026</time>`.
-- **`<mark>`** — texto destacado (como marca-texto amarelo).
+- **`<mark>`** - texto destacado (como marca-texto amarelo).
 
 - **Use tags semânticas** (`<header>`, `<nav>`, `<main>`, `<article>`,
   `<section>`, `<aside>`, `<footer>`) em vez de `<div>` quando possível.
@@ -234,5 +234,5 @@ Algumas tags têm **significado duplo** dependendo do contexto:
 > mostra a hierarquia de headings da página em tempo real. Se a estrutura
 > parecer confusa, é sinal de que a semântica precisa melhorar.
 
-No próximo nó, vamos colocar **mídia** na página — áudio, vídeo, e quando
+No próximo nó, vamos colocar **mídia** na página - áudio, vídeo, e quando
 usar cada um.

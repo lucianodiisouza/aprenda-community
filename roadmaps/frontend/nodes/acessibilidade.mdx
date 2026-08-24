@@ -19,8 +19,8 @@ resources:
     free: true
 ---
 
-**Acessibilidade** (a11y — o "11" é o número de letras entre o "a" e o
-"y") é construir sites que **qualquer pessoa** consegue usar — incluindo
+**Acessibilidade** (a11y - o "11" é o número de letras entre o "a" e o
+"y") é construir sites que **qualquer pessoa** consegue usar - incluindo
 quem usa leitor de tela, navega só com teclado, tem daltonismo ou visão
 reduzida.
 
@@ -30,22 +30,22 @@ celular, em ambientes com luz forte, com mouse quebrado.
 
 Os cinco pilares do dia-a-dia:
 
-- **HTML semântico** — `<button>` para botão, `<a>` para link, `<nav>`,
+- **HTML semântico** - `<button>` para botão, `<a>` para link, `<nav>`,
   `<main>`, `<h1>`-`<h6>`. Não inventa com `<div onClick>`.
-- **Contraste** — texto legível no fundo. Mínimo 4.5:1 para texto
+- **Contraste** - texto legível no fundo. Mínimo 4.5:1 para texto
   normal. DevTools tem ferramenta para checar.
-- **Foco visível** — quem navega com `Tab` precisa **ver** onde está.
+- **Foco visível** - quem navega com `Tab` precisa **ver** onde está.
   Não remova o `outline` sem oferecer alternativa.
-- **Labels em inputs** — `<label htmlFor="email">` associado ao input.
+- **Labels em inputs** - `<label htmlFor="email">` associado ao input.
   Placeholder **não** é label.
-- **`alt` em imagens** — vazio (`alt=""`) para decorativas; descritivo
+- **`alt` em imagens** - vazio (`alt=""`) para decorativas; descritivo
   para conteúdo.
 
 **ARIA** (Accessible Rich Internet Applications) é o "superset" para
-componentes customizados. **Só use quando o HTML nativo não der conta** —
+componentes customizados. **Só use quando o HTML nativo não der conta** -
 a primeira tentativa deve ser a tag certa.
 
 Esse próprio site aplica essas convenções. Use **Tab** para navegar e
 veja o anel de foco; tente um leitor de tela (NVDA no Windows é gratuito,
-VoiceOver no Mac) na página `/trilhas/programacao-do-zero` — o resultado
+VoiceOver no Mac) na página `/trilhas/programacao-do-zero` - o resultado
 faz a diferença toda valer a pena.

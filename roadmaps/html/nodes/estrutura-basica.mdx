@@ -15,7 +15,7 @@ resources:
 ---
 
 Toda página HTML tem a mesma "carcaça". À primeira vista parece muito formal
-— cheia de tags, `lang="..."`, `meta charset`... — mas cada pedaço tem um
+- cheia de tags, `lang="..."`, `meta charset`... - mas cada pedaço tem um
 papel claro. Vamos destrinchar.
 
 ```html
@@ -37,25 +37,25 @@ página web. Sem build, sem framework, sem servidor.
 
 Agora, parte por parte:
 
-- **`<!DOCTYPE html>`** — primeira linha, sempre. Diz ao navegador "este
+- **`<!DOCTYPE html>`** - primeira linha, sempre. Diz ao navegador "este
   documento é **HTML5**" (a versão atual da linguagem). Sem isso, o navegador
   entra em "modo de compatibilidade" e pode renderizar errado.
-- **`<html lang="pt-BR">`** — a tag raiz: tudo da página está aqui dentro. O
+- **`<html lang="pt-BR">`** - a tag raiz: tudo da página está aqui dentro. O
   atributo `lang="pt-BR"` diz que o conteúdo está em português brasileiro.
   Leitores de tela usam isso pra escolher a voz certa; mecanismos de busca
   usam pra indexar.
-- **`<head>`** — o "cabeçalho" da página. Guarda **metadados**: informações
+- **`<head>`** - o "cabeçalho" da página. Guarda **metadados**: informações
   *sobre* a página, não o conteúdo que aparece. Aqui vão título, codificação,
   favicon, links de CSS etc.
-- **`<meta charset="UTF-8">`** — define a codificação de caracteres. UTF-8
+- **`<meta charset="UTF-8">`** - define a codificação de caracteres. UTF-8
   suporta acentos, emojis, praticamente todo caractere do planeta. Sem isso,
   "não" vira "nÃ£o".
-- **`<meta name="viewport" ...>`** — faz a página se comportar bem em
+- **`<meta name="viewport" ...>`** - faz a página se comportar bem em
   celular. Sempre inclua; sem ele, celular renderiza como se fosse desktop
   e o usuário precisa dar zoom.
-- **`<title>`** — o texto que aparece na **aba do navegador** e no resultado
+- **`<title>`** - o texto que aparece na **aba do navegador** e no resultado
   de busca do Google. Cada página tem **um único** `<title>`.
-- **`<body>`** — o **corpo** da página. Tudo que você quer que apareça na
+- **`<body>`** - o **corpo** da página. Tudo que você quer que apareça na
   tela vai aqui: textos, imagens, botões, vídeos, o que for.
 
 A hierarquia é sempre a mesma: `<html>` contém `<head>` e `<body>`. Dentro do
@@ -67,7 +67,7 @@ A hierarquia é sempre a mesma: `<html>` contém `<head>` e `<body>`. Dentro do
 - `<body>` carrega **tudo que aparece na tela**.
 
 > Dica: muita gente pula o `<meta name="viewport">` em testes locais e a
-> página parece funcionar — porque você tá no desktop. Abra no celular (ou
+> página parece funcionar - porque você tá no desktop. Abra no celular (ou
 > no DevTools, modo responsivo) pra ver a diferença.
 
 No próximo nó, vamos ver as tags que **formatam texto** dentro do `<body>`:

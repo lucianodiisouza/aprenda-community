@@ -20,13 +20,13 @@ sugerindo trilhas, corrigindo erros, melhorando recursos e adicionando conteúdo
 
 Trilhas hoje:
 
-- 📘 [**HTML**](./roadmaps/html) — a linguagem de marcação que estrutura toda a web.
+- 📘 [**HTML**](./roadmaps/html) - a linguagem de marcação que estrutura toda a web.
   **18 nós**, do zero absoluto até projeto final. Ideal como primeira
   trilha antes de CSS ou JavaScript.
-- 🟢 [**Programação do Zero**](./roadmaps/programacao-do-zero) — para
+- 🟢 [**Programação do Zero**](./roadmaps/programacao-do-zero) - para
   quem nunca programou: pensamento computacional, lógica, primeira
   linguagem, primeiro projeto. **13 nós**, em PT-BR.
-- 🟣 [**Frontend**](./roadmaps/frontend) — para quem quer construir a
+- 🟣 [**Frontend**](./roadmaps/frontend) - para quem quer construir a
   parte visual e interativa da web: HTML, CSS, JavaScript, React.
   **12 nós**. Assume o básico de JS.
 
@@ -44,7 +44,7 @@ Trilhas hoje:
 ## 🚀 Como o conteúdo aparece no app
 
 Este repositório é consumido via **git submodule** pelo app
-[primo-academy](https://github.com/lucianodiisouza/primo-academy) — o mesmo
+[primo-academy](https://github.com/lucianodiisouza/primo-academy) - o mesmo
 código que renderiza o site público. Cada merge aqui, depois de passar no CI,
 vira uma versão semântica (`vX.Y.Z`) que o app pode pinar.
 
@@ -65,7 +65,7 @@ Contribuir com conteúdo é simples e **não exige saber programar**:
 4. **Tem dúvida?**
    → [Discussions / Q&A](https://github.com/lucianodiisouza/aprenda-community/discussions/categories/q-a).
 
-Leia o [**CONTRIBUTING.md**](./CONTRIBUTING.md) — é curto e mostra o passo a
+Leia o [**CONTRIBUTING.md**](./CONTRIBUTING.md) - é curto e mostra o passo a
 passo. Se for editar texto, dê uma olhada no
 [**Style Guide**](./docs/style-guide.md) pra manter a voz e a profundidade.
 
@@ -107,7 +107,7 @@ vira URL e é referenciado pelo app.
 - **Código do repo** (scripts de validação, CI, templates) sob
   [AGPL-3.0](./LICENSE).
 - **Conteúdo das trilhas** (arquivos `.mdx`, `roadmap.json`) sob
-  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.pt_BR) —
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.pt_BR) -
   você pode usar, remixar e compartilhar, desde que credite e mantenha a mesma
   licença.
 
@@ -123,9 +123,9 @@ contribuidores da release.
 
 ## 📣 Onde nos encontrar
 
-- [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions) —
+- [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions) -
   perguntas, sugestões, show & tell.
-- [Issues](https://github.com/lucianodiisouza/aprenda-community/issues) — bugs
+- [Issues](https://github.com/lucianodiisouza/aprenda-community/issues) - bugs
   e propostas concretas.
 - O app (em breve): aprenda.oprimo.dev.
 

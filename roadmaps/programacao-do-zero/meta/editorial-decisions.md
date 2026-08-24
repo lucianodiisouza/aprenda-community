@@ -1,9 +1,9 @@
-# Decisões editoriais — Trilha de Programação do Zero
+# Decisões editoriais - Trilha de Programação do Zero
 
 > Histórico de decisões de escopo, organização e curadoria. Quando a
 > trilha ganha ou perde um nó, isso fica registrado aqui.
 
-## v1.0.0 — Migração inicial (2026-08-23)
+## v1.0.0 - Migração inicial (2026-08-23)
 
 ### Origem
 
@@ -37,13 +37,13 @@ publicar). As mudanças concretas foram:
 
 ### O que ficou de fora (intencionalmente)
 
-- **Python WASM no navegador** — mencionado no backlog como P2, mas
+- **Python WASM no navegador** - mencionado no backlog como P2, mas
   fora do escopo "do zero" (adiciona dependência pesada sem
   benefício claro pra quem está começando).
-- **TypeScript** — trilha separada (potencial).
-- **Testes automatizados** — vai como trilha própria de "Boas
+- **TypeScript** - trilha separada (potencial).
+- **Testes automatizados** - vai como trilha própria de "Boas
   Práticas" no futuro.
-- **Ambientes virtuais / pip / poetry** — fora do "do zero". Quem
+- **Ambientes virtuais / pip / poetry** - fora do "do zero". Quem
   chegar nesse ponto vai pra trilha intermediária.
 
 ### Aprofundamentos futuros
@@ -51,12 +51,12 @@ publicar). As mudanças concretas foram:
 Os 13 nós atuais cobrem o suficiente pra "primeiro projeto". Onde
 poderiam crescer:
 
-- **`logica`** — fluxograma, pseudocódigo, exemplos de problemas
+- **`logica`** - fluxograma, pseudocódigo, exemplos de problemas
   clássicos (FizzBuzz, Torre de Hanói).
-- **`strings`** — expressões regulares (regex).
-- **`git-basico`** — branches, merge, conflitos, PRs. Atualmente é
+- **`strings`** - expressões regulares (regex).
+- **`git-basico`** - branches, merge, conflitos, PRs. Atualmente é
   só add/commit/push.
-- **`projeto-final`** — esqueleto de um "to-do list" ou "calculadora"
+- **`projeto-final`** - esqueleto de um "to-do list" ou "calculadora"
   com estrutura de pastas, README, .gitignore.
 
 Mudanças de escopo aqui viram bump **minor** (v1.1.0) se adicionarem

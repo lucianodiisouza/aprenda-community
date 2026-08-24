@@ -21,7 +21,7 @@
 
 ## Issue relacionada (se houver)
 
-<!-- Closes #123, ou "Sem issue — achei de passagem". -->
+<!-- Closes #123, ou "Sem issue - achei de passagem". -->
 
 ## Checklist de auto-revisão
 

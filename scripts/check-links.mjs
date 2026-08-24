@@ -36,7 +36,7 @@ async function check(url) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
     let res = await fetch(url, { method: "HEAD", signal: controller.signal, redirect: "follow" });
-    // Alguns servidores não aceitam HEAD — tenta GET.
+    // Alguns servidores não aceitam HEAD - tenta GET.
     if (res.status === 405 || res.status === 403) {
       res = await fetch(url, { method: "GET", signal: controller.signal, redirect: "follow" });
     }

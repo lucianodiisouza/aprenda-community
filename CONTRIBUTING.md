@@ -2,7 +2,7 @@
 
 Obrigado por estar aqui. 🥹
 
-Contribuir com conteúdo aqui é simples **mesmo sem saber programar** — você
+Contribuir com conteúdo aqui é simples **mesmo sem saber programar** - você
 consegue fazer tudo pelo navegador, direto na interface do GitHub.
 
 Este guia cobre:
@@ -75,7 +75,7 @@ trabalho pode ser recusado não por qualidade, mas por **fora de escopo**.
    Descreva o que quer adicionar, por quê, e que recursos conhece.
 2. Discuta com a gente. Pode ser que o nó já exista em outra trilha, ou que
    faça sentido criar em outro lugar.
-3. Depois do ✅, é só seguir o cenário 1 — mas criando o arquivo do zero (no
+3. Depois do ✅, é só seguir o cenário 1 - mas criando o arquivo do zero (no
    GitHub: "Add file" → "Create new file").
 
 ### Cenário 4: você quer propor uma trilha inteira nova
@@ -83,7 +83,7 @@ trabalho pode ser recusado não por qualidade, mas por **fora de escopo**.
 1. **Primeiro:** abra uma
    [issue do tipo "trilha nova"](./.github/ISSUE_TEMPLATE/trilha-nova.md).
 2. Preencha a estrutura proposta (mínimo 5 nós, objetivo da trilha, público).
-3. Espere o ✅ antes de gastar horas escrevendo — pode ser que a gente sugira
+3. Espere o ✅ antes de gastar horas escrevendo - pode ser que a gente sugira
    encaixar em uma trilha existente.
 
 ---
@@ -180,7 +180,7 @@ Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
 ## Critérios de aceite do CI
 
 Todo PR passa por uma checagem automática. **Se o CI fica vermelho, o PR não
-pode ser mergeado** — mas não se preocupe, em geral é coisa simples.
+pode ser mergeado** - mas não se preocupe, em geral é coisa simples.
 
 | Checagem                     | O que ela faz                                                  |
 | ---------------------------- | -------------------------------------------------------------- |
@@ -191,7 +191,7 @@ pode ser mergeado** — mas não se preocupe, em geral é coisa simples.
 | `lint:pt-br`                 | Confere que o corpo está em PT-BR (heurística leve)           |
 
 Se algo falhar, o próprio log do CI mostra o arquivo e a linha do problema.
-Em caso de dúvida, comente no PR — a gente te ajuda.
+Em caso de dúvida, comente no PR - a gente te ajuda.
 
 ---
 
@@ -207,22 +207,22 @@ Em caso de dúvida, comente no PR — a gente te ajuda.
    próxima **tag** semântica.
 
 Reviews são em PT-BR, tom amigável, foco em manter a voz do projeto. Não é
-exame — é conversa.
+exame - é conversa.
 
 ---
 
 ## Glossário rápido
 
-- **Nó (`node`)** — uma "etapa" dentro de uma trilha. Ex: "HTML: Listas".
-- **Trilha (`roadmap`)** — uma sequência de nós. Ex: "HTML".
-- **Slug** — o identificador kebab-case de uma trilha ou nó. Ex: `html`, `estrutura-basica`.
-- **Frontmatter** — o bloco de metadados no topo de um `.mdx` (entre `---`).
-- **Recurso (`resource`)** — link externo curado que aparece no fim de cada nó.
-- **MDX** — Markdown + JSX. Por enquanto, a gente só usa o subconjunto
+- **Nó (`node`)** - uma "etapa" dentro de uma trilha. Ex: "HTML: Listas".
+- **Trilha (`roadmap`)** - uma sequência de nós. Ex: "HTML".
+- **Slug** - o identificador kebab-case de uma trilha ou nó. Ex: `html`, `estrutura-basica`.
+- **Frontmatter** - o bloco de metadados no topo de um `.mdx` (entre `---`).
+- **Recurso (`resource`)** - link externo curado que aparece no fim de cada nó.
+- **MDX** - Markdown + JSX. Por enquanto, a gente só usa o subconjunto
   Markdown; o `.mdx` é só a extensão.
-- **CI** — GitHub Actions. Roda automaticamente em todo PR.
-- **Tag semântica** — `v1.0.0`, `v1.1.0` etc. Marca versões do conteúdo.
-- **Submodule** — forma como o app consome este repo. Você não precisa
+- **CI** - GitHub Actions. Roda automaticamente em todo PR.
+- **Tag semântica** - `v1.0.0`, `v1.1.0` etc. Marca versões do conteúdo.
+- **Submodule** - forma como o app consome este repo. Você não precisa
   entender pra contribuir.
 
 ---

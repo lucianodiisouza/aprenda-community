@@ -1,9 +1,9 @@
-# Decisões editoriais — Trilha de HTML
+# Decisões editoriais - Trilha de HTML
 
 > Histórico de decisões de escopo, organização e curadoria. Quando a trilha
 > ganha ou perde um nó, isso fica registrado aqui.
 
-## v1.1.0 — Expansão focada (2026-08-23)
+## v1.1.0 - Expansão focada (2026-08-23)
 
 ### Decisão
 
@@ -12,32 +12,32 @@ de HTML que dá pra explicar?". A resposta honesta: **não**, ainda faltava
 uns 10-15% do uso cotidiano. Decidimos adicionar 4 nós que cobrem esse
 espaço, sem esticar até virar enciclopédia:
 
-- **i18n básico** — trilhas em PT-BR muitas vezes pulam isso, mas é
+- **i18n básico** - trilhas em PT-BR muitas vezes pulam isso, mas é
   parte do "cidadão do mundo" do HTML. Especialmente `lang` em
   elementos individuais, que é simples e útil mesmo para projetos
   monolíngues (ex: trechos em inglês dentro de texto PT).
-- **atributos globais** — cabe em qualquer projeto. `hidden`,
+- **atributos globais** - cabe em qualquer projeto. `hidden`,
   `data-*`, `tabindex`, `contenteditable` resolvem problemas
   reais. Estava faltando.
-- **template/clone** — abre a porta para Web Components. É o "Hello
+- **template/clone** - abre a porta para Web Components. É o "Hello
   World" de uma das tendências mais importantes da plataforma web.
   Mantivemos na trilha de iniciante porque o conceito em si é simples
   (declarar HTML que não renderiza para clonar depois).
-- **HTML deprecated** — o que **não** usar e o que usar no lugar.
+- **HTML deprecated** - o que **não** usar e o que usar no lugar.
   Defende explicitamente contra `<center>`, `<font>`, `<marquee>` etc.
   É um "sinal de stop" antes do projeto final.
 
 ### O que continuamos deixando fora
 
-- **Web Components completos** (custom elements + Shadow DOM) — vira
+- **Web Components completos** (custom elements + Shadow DOM) - vira
   trilha intermediária própria.
-- **Microdata / schema.org** — importante para SEO, mas é tema
+- **Microdata / schema.org** - importante para SEO, mas é tema
   intermediário. Candidato a uma trilha de "HTML para SEO" no futuro.
-- **HTML para e-mail** — peculiar demais (tabelas para layout, inline
+- **HTML para e-mail** - peculiar demais (tabelas para layout, inline
   styles, VML...). Vale trilha própria, fora desta.
-- **Performance / preload / critical rendering path** — vira trilha de
+- **Performance / preload / critical rendering path** - vira trilha de
   Web Performance.
-- **i18n profunda** (RTL, fontes, CLDR) — vira trilha de i18n.
+- **i18n profunda** (RTL, fontes, CLDR) - vira trilha de i18n.
 
 ### Ordem dos novos nós
 
@@ -65,17 +65,17 @@ Com a v1.1.0, estimamos que a trilha cobre:
   CSS, JavaScript ou frameworks.
 
 Os 5% restantes (microdata, custom elements, e-mail, etc.) viram
-trilhas intermediárias próprias — respeitando o princípio do projeto
+trilhas intermediárias próprias - respeitando o princípio do projeto
 "poucas trilhas, bem-feitas, antes de muitas rasas".
 
-## v1.0.0 — Lançamento (2026-08-23)
+## v1.0.0 - Lançamento (2026-08-23)
 
 ### Por que uma trilha de HTML standalone?
 
 A trilha **Frontend** do MVP já tinha um nó `html` ("HTML: Estrutura e
 Semântica"). Mas o feedback de leitores do /aprenda é consistente: muita
 gente que nunca programou quer **começar pelo começo absoluto**, e HTML é o
-começo mais natural — antes de CSS, antes de JavaScript, antes de qualquer
+começo mais natural - antes de CSS, antes de JavaScript, antes de qualquer
 framework. Um único nó dentro de Frontend não dá conta.
 
 A decisão foi criar uma **trilha dedicada** que cobre HTML do zero até
@@ -92,7 +92,7 @@ trilha.
   PT-BR, "você", exemplos antes de abstração, máximo 3-4 conceitos novos
   por nó.
 - **Projeto final** é uma landing page completa e acessível, com
-  checklist de qualidade — não um exercício trivial.
+  checklist de qualidade - não um exercício trivial.
 
 ### O que ficou de fora (e por quê)
 
@@ -143,7 +143,7 @@ ao longo de toda a trilha:
 - `acessibilidade` (nó dedicado) **amarra** tudo e cobre ARIA,
   contraste, foco, atalhos de teclado.
 
-Essa distribuição foi intencional: a11y não é um "tópico" — é
+Essa distribuição foi intencional: a11y não é um "tópico" - é
 qualidade que permeia o trabalho. O nó dedicado funciona como
 **recapitulação + aprofundamento**, não como primeira exposição.
 

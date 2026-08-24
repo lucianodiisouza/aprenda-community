@@ -18,7 +18,7 @@ notas[0];      // 8 (o primeiro!)
 notas.length;  // 4
 notas.push(6); // adiciona 6 no final
 notas.pop();   // remove o último
-notas.includes(9); // true — busca um valor
+notas.includes(9); // true - busca um valor
 ```
 Para **percorrer** todos os itens, o jeito clássico é o `for`. Mas existem
 métodos que deixam isso mais legível e poderoso:
@@ -28,11 +28,11 @@ const dobrados = notas.map(n => n * 2);
 const maioresQue7 = notas.filter(n => n > 7);
 const soma = notas.reduce((total, n) => total + n, 0);
 ```
-- `map` — transforma cada item em outro (mesma quantidade de itens).
-- `filter` — mantém só os itens que passam no teste.
-- `reduce` — combina todos os itens em um único valor.
+- `map` - transforma cada item em outro (mesma quantidade de itens).
+- `filter` - mantém só os itens que passam no teste.
+- `reduce` - combina todos os itens em um único valor.
 
-Map, filter e reduce são a base da **programação funcional** — não precisa
+Map, filter e reduce são a base da **programação funcional** - não precisa
 virar especialista agora, mas é bom saber que existem. Eles evitam muitos
 `for` complicados.
 

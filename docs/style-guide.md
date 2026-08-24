@@ -1,11 +1,11 @@
-# Style Guide — Conteúdo das trilhas
+# Style Guide - Conteúdo das trilhas
 
 > Complementa o [CONTRIBUTING.md](../CONTRIBUTING.md) (fluxo de PR) e o
 > [modelo de conteúdo](../CONTRIBUTING.md#anatomia-de-um-nó-mdx) (estrutura).
 > Este doc é sobre **escrita**: voz, tom, profundidade e curadoria de recursos.
 
 A voz do Aprenda é a de **um amigo mais experiente que está explicando com
-calma** — não a de um manual corporativo, nem a de um professor universitário.
+calma** - não a de um manual corporativo, nem a de um professor universitário.
 PT-BR, sem jargão desnecessário, com exemplos antes da abstração.
 
 ---
@@ -15,13 +15,13 @@ PT-BR, sem jargão desnecessário, com exemplos antes da abstração.
 - **"Você"**, não "o aluno" nem "o usuário". Estamos falando com uma pessoa.
 - **Voz ativa.** "O navegador interpreta o HTML" (não "O HTML é interpretado
   pelo navegador").
-- **Direto, mas encorajador.** "Antes de aprender CSS, vem a estrutura" — em
+- **Direto, mas encorajador.** "Antes de aprender CSS, vem a estrutura" - em
   vez de "É importante notar que…".
 - **PT-BR.** Recursos em inglês entram com `lang: en` no frontmatter e selo
   visível na UI. Texto do corpo **sempre** em PT-BR.
 - **Sem diminutivos forçados.** "Os erros" é melhor que "os errinhos".
   Informal não é infantil.
-- **Humor leve, nunca irônico.** Estamos ensinando — não queremos que ninguém
+- **Humor leve, nunca irônico.** Estamos ensinando - não queremos que ninguém
   se sinta por baixo.
 
 ## 2. Profundidade
@@ -35,16 +35,16 @@ PT-BR, sem jargão desnecessário, com exemplos antes da abstração.
 - **Limite a 3-4 conceitos novos por nó.** Se você está empilhando termos
   novos, quebre em dois nós.
 - **Diga o que pode esperar do próximo nó.** "No próximo, vamos ver como
-  adicionar links entre páginas." — ajuda a montar a trilha na cabeça.
+  adicionar links entre páginas." - ajuda a montar a trilha na cabeça.
 
 ## 3. Estrutura recomendada de um nó (no `.mdx`)
 
-1. **1-2 frases de abertura** — por que esse nó existe, onde ele se encaixa.
+1. **1-2 frases de abertura** - por que esse nó existe, onde ele se encaixa.
 2. **Explicação + exemplo de código** (se aplicável). Curto, comentado.
 3. **Lista curta dos 2-4 conceitos pra fixar** (bullet points com **negrito**
    no termo-chave).
-4. **"Dica:" opcional** — armadilha comum, atalho, ou pegadinha de iniciante.
-5. **Recursos no frontmatter** (não no corpo) — o app renderiza numa seção à
+4. **"Dica:" opcional** - armadilha comum, atalho, ou pegadinha de iniciante.
+5. **Recursos no frontmatter** (não no corpo) - o app renderiza numa seção à
    parte.
 
 ### Exemplo (esqueleto)
@@ -95,12 +95,12 @@ No próximo nó, vamos ver as tags que **formatam texto**: títulos, parágrafos
 - **PT-BR primeiro.** Se existe versão em PT-BR com qualidade aceitável, use
   ela. Inglês só quando não tem equivalente ou quando é a fonte canônica
   (ex: docs do W3C).
-- **Marque `lang: en`** em qualquer recurso em inglês — a UI exibe selo.
+- **Marque `lang: en`** em qualquer recurso em inglês - a UI exibe selo.
 - **Marque `free: false`** se o recurso é pago. Se for freemium, deixe `true`
   e mencione no `title` se for relevante ("… (trechos gratuitos)").
 - **Critério de qualidade:** o autor realmente **explica** o conceito, ou só
   arranha a superfície? Se arranha, procure outro ou escreva um recurso
-  próprio. **Recurso próprio é o ideal a longo prazo** — não dependa de
+  próprio. **Recurso próprio é o ideal a longo prazo** - não dependa de
   terceiros pra curadoria crítica.
 - **URLs estáveis.** Evite links de posts de blog antigos sem data; prefira
   docs oficiais (MDN, W3C) ou conteúdo versionado.
@@ -141,15 +141,15 @@ na trilha, e o `children` reflete isso.
 ## 7. O que **NÃO** fazemos
 
 - ❌ Textos com mais de 2 linhas sem exemplo ou lista.
-- ❌ "Neste tutorial vamos aprender…" — vamos direto ao ponto.
+- ❌ "Neste tutorial vamos aprender…" - vamos direto ao ponto.
 - ❌ Tabelas longas de comparação (vão pra recurso, não pro corpo).
-- ❌ "Como mencionei anteriormente" — não presumimos leitura linear perfeita.
+- ❌ "Como mencionei anteriormente" - não presumimos leitura linear perfeita.
 - ❌ Prompts de LLM no meio do corpo do nó (se for útil, link externo com
   selo de gerado-por-IA).
 - ❌ Recursos patrocinados / afiliado sem marcar.
 - ❌ Conteúdo que pode mudar em 6 meses sem nota de validade (ex: "o
   framework X é o mais popular em 2026" sem data).
-- ❌ Tag deprecada sem marcar (`<center>`, `<font>`, `<marquee>`, etc. —
+- ❌ Tag deprecada sem marcar (`<center>`, `<font>`, `<marquee>`, etc. -
   sempre mencione que caiu em desuso e indique a substituta).
 
 ## 8. Checklist antes de abrir PR
@@ -158,6 +158,6 @@ na trilha, e o `children` reflete isso.
 - [ ] Slug único na trilha; `children` aponta pra IDs existentes.
 - [ ] Recursos têm `lang` e `free` preenchidos corretamente.
 - [ ] Código de exemplo foi testado em um editor/Playground.
-- [ ] Texto revisado em voz alta — se trai, simplifica.
+- [ ] Texto revisado em voz alta - se trai, simplifica.
 - [ ] Nó novo tá linkado no `roadmap.json` e na ordem certa.
 - [ ] Mudanças de escopo de uma trilha vão pra `meta/editorial-decisions.md`.

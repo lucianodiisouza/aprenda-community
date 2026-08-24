@@ -33,18 +33,18 @@ function Contador() {
 }
 ```
 `useState(valorInicial)` devolve um par: o **valor atual** e a função
-**set** para atualizar. **Nunca** mude o state direto — sempre via `set`.
+**set** para atualizar. **Nunca** mude o state direto - sempre via `set`.
 
 Os hooks mais usados (em React 19):
 
-- `useState(valor)` — guarda um valor que muda.
-- `useEffect(() => { ... }, [deps])` — roda algo **depois** da renderização
+- `useState(valor)` - guarda um valor que muda.
+- `useEffect(() => { ... }, [deps])` - roda algo **depois** da renderização
   (buscar dados, inscrever em eventos,定时). O array de dependências diz
   quando rodar de novo.
-- `useRef(valor)` — uma "caixa" mutable que **não** causa re-render.
+- `useRef(valor)` - uma "caixa" mutable que **não** causa re-render.
   Ótimo para acessar o DOM diretamente ou guardar valores entre renders.
-- `useMemo` / `useCallback` — memoização (pular recálculo). Use com
-  parcimônia — só quando medir e ver que importa.
+- `useMemo` / `useCallback` - memoização (pular recálculo). Use com
+  parcimônia - só quando medir e ver que importa.
 
 Para **hooks customizados**, basta extrair uma função que comece com `use`
 e use outros hooks dentro:

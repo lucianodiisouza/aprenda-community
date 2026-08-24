@@ -7,7 +7,7 @@ resources:
     type: doc
     lang: pt
     free: true
-  - title: "Open Graph Protocol — referência oficial"
+  - title: "Open Graph Protocol - referência oficial"
     url: https://ogp.me/
     type: doc
     lang: en
@@ -21,7 +21,7 @@ resources:
 
 O que aparece quando você cola um link no WhatsApp, Twitter ou LinkedIn?
 Aquela prévia com imagem, título e descrição. Quem controla isso é o
-**`<head>`** da sua página — meta tags, Open Graph, e o favicon.
+**`<head>`** da sua página - meta tags, Open Graph, e o favicon.
 
 ### Meta tags essenciais
 
@@ -34,7 +34,7 @@ Aquela prévia com imagem, título e descrição. Quem controla isso é o
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Título da aba -->
-  <title>Receita de bolo de cenoura — Cozinha da Ana</title>
+  <title>Receita de bolo de cenoura - Cozinha da Ana</title>
 
   <!-- Descrição para mecanismos de busca -->
   <meta name="description" content="Bolo de cenoura fofinho, com cobertura de chocolate. Receita testada, com passo a passo detalhado.">
@@ -80,18 +80,18 @@ Limite prático: **~155 caracteres**. Seja direto: "o que é essa página?"
 
 #### `<meta name="viewport">`
 
-**Sempre inclua** — sem isso, a página renderiza como desktop no celular
+**Sempre inclua** - sem isso, a página renderiza como desktop no celular
 e o usuário precisa dar zoom. Vimos isso no nó de estrutura básica.
 
 #### `<meta name="robots">`
 
 Diz a mecanismos de busca o que fazer:
 
-- `index, follow` (padrão implícito) — indexa a página e segue os links.
-- `noindex, nofollow` — não indexa, não segue. Útil para páginas
+- `index, follow` (padrão implícito) - indexa a página e segue os links.
+- `noindex, nofollow` - não indexa, não segue. Útil para páginas
   internas, drafts, páginas de busca.
-- `index, nofollow` — indexa, mas não segue os links. Raro.
-- `noindex, follow` — não indexa a página em si, mas segue os links
+- `index, nofollow` - indexa, mas não segue os links. Raro.
+- `noindex, follow` - não indexa a página em si, mas segue os links
   para descobrir outras.
 
 ### Open Graph (og:)
@@ -102,20 +102,20 @@ bonito aparecer.
 
 **Quatro tags são obrigatórias** para o preview funcionar:
 
-1. `og:title` — título.
-2. `og:description` — descrição.
-3. `og:image` — URL absoluta da imagem (recomendado 1200×630 px).
-4. `og:url` — URL canônica da página.
+1. `og:title` - título.
+2. `og:description` - descrição.
+3. `og:image` - URL absoluta da imagem (recomendado 1200×630 px).
+4. `og:url` - URL canônica da página.
 
 Mais úteis:
 
-- `og:type` — `website`, `article`, `video.movie`, `product`...
-- `og:site_name` — nome do site.
-- `og:locale` — idioma, no formato `pt_BR`.
+- `og:type` - `website`, `article`, `video.movie`, `product`...
+- `og:site_name` - nome do site.
+- `og:locale` - idioma, no formato `pt_BR`.
 
 **A imagem é o que mais importa para o preview.** Sem ela, WhatsApp
 mostra só o título em texto. Com uma imagem bem-feita, o link parece
-"vivo". A recomendação é 1200×630 px (proporção 1.91:1) — e testá-la no
+"vivo". A recomendação é 1200×630 px (proporção 1.91:1) - e testá-la no
 [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
 e [Twitter Card Validator](https://cards-dev.twitter.com/validator).
 
@@ -137,15 +137,15 @@ de imagens e uma única declaração:
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#1e90ff">
 ```
-- **`favicon.ico`** — formato legado, ainda amplamente suportado.
+- **`favicon.ico`** - formato legado, ainda amplamente suportado.
   Recomendado manter para compatibilidade.
-- **`favicon.svg`** — moderno, escala perfeitamente. Pode usar CSS
+- **`favicon.svg`** - moderno, escala perfeitamente. Pode usar CSS
   dentro (ex: respeitar `prefers-color-scheme`).
-- **`apple-touch-icon.png`** — ícone no iOS quando o usuário adiciona
+- **`apple-touch-icon.png`** - ícone no iOS quando o usuário adiciona
   à tela inicial. 180×180 px.
-- **`site.webmanifest`** — manifest de PWA (Progressive Web App), para
+- **`site.webmanifest`** - manifest de PWA (Progressive Web App), para
   quem quer que o site seja "instalável" no celular.
-- **`theme-color`** — cor da barra do navegador no celular.
+- **`theme-color`** - cor da barra do navegador no celular.
 
 Para gerar todos esses a partir de uma imagem única, use
 [realfavicongenerator.net](https://realfavicongenerator.net/) (gratuito).
@@ -177,7 +177,7 @@ Para gerar todos esses a partir de uma imagem única, use
 > Dica: depois de publicar, valide o preview no
 > [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
 > e no [Twitter Card Validator](https://cards-dev.twitter.com/validator).
-> Mudanças em meta tags **não são vistas em tempo real** — eles
+> Mudanças em meta tags **não são vistas em tempo real** - eles
 > cacheiam, e você precisa "raspar" o cache.
 
 No próximo (e último!) nó, vamos juntar tudo num **projeto final**: uma

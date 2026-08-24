@@ -7,7 +7,7 @@ resources:
     type: doc
     lang: pt
     free: true
-  - title: "Web Content Accessibility Guidelines (WCAG) — versão oficial"
+  - title: "Web Content Accessibility Guidelines (WCAG) - versão oficial"
     url: https://www.w3.org/WAI/standards-guidelines/wcag/
     type: doc
     lang: pt
@@ -24,15 +24,15 @@ maioria das barreiras.
 O padrão internacional de acessibilidade (WCAG) tem 4 princípios,
 mnemônico **POUR**:
 
-- **Perceptível** — a informação tem que ser apresentada de forma que o
+- **Perceptível** - a informação tem que ser apresentada de forma que o
   usuário consiga perceber. Texto alternativo em imagens, legenda em
   vídeo, contraste de cor.
-- **Operável** — o usuário tem que conseguir interagir. Tudo acessível
+- **Operável** - o usuário tem que conseguir interagir. Tudo acessível
   por teclado, sem limite de tempo impossível, sem conteúdo que pisca
   (que pode causar convulsão).
-- **Compreensível** — o conteúdo tem que ser legível. Linguagem clara,
+- **Compreensível** - o conteúdo tem que ser legível. Linguagem clara,
   comportamento previsível, ajuda pra erros em formulários.
-- **Robusto** — o conteúdo tem que funcionar com tecnologias assistivas
+- **Robusto** - o conteúdo tem que funcionar com tecnologias assistivas
   atuais e futuras. HTML válido, semântico.
 
 ### Práticas que já passamos neste trilha
@@ -51,7 +51,7 @@ Boa parte da acessibilidade é grátis se você seguir o que já vimos:
 | `scope` em `<th>`      | Leitor associa célula ao rótulo de coluna/linha |
 | `<track>` de legendas  | Vídeo acessível para surdos                    |
 
-### Atributos `aria-*` — quando o HTML não basta
+### Atributos `aria-*` - quando o HTML não basta
 
 ARIA (Accessible Rich Internet Applications) é um conjunto de atributos
 que **complementa** a semântica do HTML. A regra geral: **prefira
@@ -84,7 +84,7 @@ Mas há casos em que ARIA ajuda:
 <input type="email" id="email" aria-describedby="email-ajuda" aria-invalid="true">
 <p id="email-ajuda">Use o formato nome@exemplo.com</p>
 
-<!-- Marca a região como "ao vivo" — anuncia mudanças dinâmicas -->
+<!-- Marca a região como "ao vivo" - anuncia mudanças dinâmicas -->
 <div aria-live="polite">Salvo com sucesso!</div>
 ```
 #### O `sr-only` clássico
@@ -181,15 +181,15 @@ esperar o usuário focar o campo).
 Cada página interativa se beneficia de atalhos. Os universais
 (modifier pode variar) são:
 
-- **Tab / Shift+Tab** — próximo / anterior campo focável.
-- **Enter** — submeter form, ativar botão.
-- **Esc** — fechar modal, cancelar.
-- **Setas** — navegar em radio group, slider, select.
-- **Espaço** — toggle checkbox, ativar botão.
-- **/** — em muitas UIs, foca a busca (convenção).
+- **Tab / Shift+Tab** - próximo / anterior campo focável.
+- **Enter** - submeter form, ativar botão.
+- **Esc** - fechar modal, cancelar.
+- **Setas** - navegar em radio group, slider, select.
+- **Espaço** - toggle checkbox, ativar botão.
+- **/** - em muitas UIs, foca a busca (convenção).
 
 Documente os atalhos específicos da sua aplicação. Leitores de tela
-têm seus próprios atalhos sobrepostos — pense nisso antes de mapear
+têm seus próprios atalhos sobrepostos - pense nisso antes de mapear
 teclas "populares" demais.
 
 ### Testes de acessibilidade
@@ -214,6 +214,6 @@ teclas "populares" demais.
 > Dica: imagine que você perdeu o mouse por uma semana. Tente usar seu
 > próprio site só com teclado. As barreiras aparecem em minutos.
 
-No próximo nó, vamos ver os bastidores — **meta tags**, Open Graph e
+No próximo nó, vamos ver os bastidores - **meta tags**, Open Graph e
 favicon, que controlam como sua página aparece em mecanismos de busca e
 redes sociais.

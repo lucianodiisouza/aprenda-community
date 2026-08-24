@@ -6,7 +6,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
-## [1.2.0] — 2026-08-23
+## [1.2.0] - 2026-08-23
 
 ### Adicionado
 - 🆕 Trilha **Programação do Zero** migrada do monorepo `primo-academy`
@@ -14,7 +14,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - 🆕 Trilha **Frontend** migrada do monorepo (12 nós, da web até React).
 - 📜 Documentação de decisões editoriais para cada trilha nova
   (`roadmaps/<slug>/meta/editorial-decisions.md`).
-- 🛠️ Script `scripts/sync-consumer.example.sh` — exemplo de **sync
+- 🛠️ Script `scripts/sync-consumer.example.sh` - exemplo de **sync
   smart e incremental** para o consumer (monorepo `primo-academy`):
   - Shallow + sparse clone (só baixa a pasta `roadmaps/`)
   - Diff com o último commit sincronizado (`.content-version`)
@@ -22,7 +22,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   - Exit 0 em ~1s se nada mudou
 
 ### Mudado
-- 🔧 `scripts/lint.mjs` — agora entende que **fechadores** de bloco
+- 🔧 `scripts/lint.mjs` - agora entende que **fechadores** de bloco
   (` ``` ` puro) são OK em markdown; só avisa sobre **aberturas**
   sem linguagem.
 
@@ -40,18 +40,18 @@ lint.mjs       → 0 erros, 0 avisos
 check-links    → 80 ok, 0 com problema
 ```
 
-## [1.1.0] — 2026-08-23
+## [1.1.0] - 2026-08-23
 
 ### Adicionado
 - ➕ 4 nós novos na trilha HTML (14 → 18 nós):
-  - `i18n-basico` (após `textos`) — `lang` em elementos, `<bdi>`, `<bdo>`,
+  - `i18n-basico` (após `textos`) - `lang` em elementos, `<bdi>`, `<bdo>`,
     `<ruby>` para conteúdo multilíngue.
-  - `atributos-globais` (após `semantica`) — `hidden`, `data-*`,
+  - `atributos-globais` (após `semantica`) - `hidden`, `data-*`,
     `tabindex`, `contenteditable`, `draggable`, `spellcheck`, `dir`,
     `translate`, `role`.
-  - `template-clone` (após `midia`) — `<template>` e `cloneNode(true)`,
+  - `template-clone` (após `midia`) - `<template>` e `cloneNode(true)`,
     base de Web Components e renderização de frameworks.
-  - `html-deprecated` (antes de `projeto-final`) — elementos
+  - `html-deprecated` (antes de `projeto-final`) - elementos
     (`<center>`, `<font>`, `<marquee>`, `<frame>`, `<bgsound>`,
     `<blink>`) e atributos que caíram em desuso, com alternativas
     modernas.
@@ -63,42 +63,42 @@ check-links    → 80 ok, 0 com problema
   mas abre a porta para **Web Components** que serão tema de trilha
   intermediária no futuro.
 
-## [1.0.0] — 2026-08-23
+## [1.0.0] - 2026-08-23
 
 ### Adicionado
 - 🆕 Trilha **HTML** completa (14 nós, do zero absoluto até projeto final).
-  - `introducao` — O que é HTML, como a web funciona.
-  - `estrutura-basica` — DOCTYPE, html, head, body, viewport, title.
-  - `textos` — Headings, parágrafos, ênfase, citação, sigla, atalho.
-  - `links` — Tag `<a>`, caminhos, âncoras, `target`/`rel`, `mailto`/`tel`.
-  - `imagens` — `<img>`, `alt`, `srcset`/`sizes`, `<picture>`, `<figure>`,
+  - `introducao` - O que é HTML, como a web funciona.
+  - `estrutura-basica` - DOCTYPE, html, head, body, viewport, title.
+  - `textos` - Headings, parágrafos, ênfase, citação, sigla, atalho.
+  - `links` - Tag `<a>`, caminhos, âncoras, `target`/`rel`, `mailto`/`tel`.
+  - `imagens` - `<img>`, `alt`, `srcset`/`sizes`, `<picture>`, `<figure>`,
     SVG inline.
-  - `listas` — `<ul>`, `<ol>`, `<dl>`, aninhamento.
-  - `tabelas` — `<table>`, `<thead>`/`<tbody>`/`<tfoot>`, `<caption>`,
+  - `listas` - `<ul>`, `<ol>`, `<dl>`, aninhamento.
+  - `tabelas` - `<table>`, `<thead>`/`<tbody>`/`<tfoot>`, `<caption>`,
     `scope`, `colspan`/`rowspan`.
-  - `formularios-basicos` — `<form>`, `<label>`, `<input>`, tipos comuns,
+  - `formularios-basicos` - `<form>`, `<label>`, `<input>`, tipos comuns,
     `name`, `id`, `required`, `<fieldset>`, `<legend>`, `<button>`.
-  - `formularios-avancados` — `<select>`, `<optgroup>`, `<datalist>`,
+  - `formularios-avancados` - `<select>`, `<optgroup>`, `<datalist>`,
     `<textarea>`, validação nativa, `pattern`, `setCustomValidity`.
-  - `semantica` — Landmarks (`header`/`nav`/`main`/`article`/`section`/
+  - `semantica` - Landmarks (`header`/`nav`/`main`/`article`/`section`/
     `aside`/`footer`/`address`), hierarquia de headings, `<article>` vs
     `<section>` vs `<div>`.
-  - `midia` — `<video>`, `<audio>`, `<source>`, `<track>`, `<iframe>`,
+  - `midia` - `<video>`, `<audio>`, `<source>`, `<track>`, `<iframe>`,
     menção a `<canvas>`/`<svg>`.
-  - `acessibilidade` — POUR/WCAG, ARIA, foco de teclado, contraste,
+  - `acessibilidade` - POUR/WCAG, ARIA, foco de teclado, contraste,
     formulários acessíveis, ferramentas de teste.
-  - `meta-seo` — `<title>`, `description`, Open Graph, Twitter Card,
+  - `meta-seo` - `<title>`, `description`, Open Graph, Twitter Card,
     favicon, canonical, `hreflang`.
-  - `projeto-final` — Briefing, estrutura, checklist de qualidade,
+  - `projeto-final` - Briefing, estrutura, checklist de qualidade,
     esqueleto completo, publicação.
 - 📚 Documentação:
-  - `README.md` — visão geral, links, estrutura, licença.
-  - `CONTRIBUTING.md` — passo a passo de contribuição, cenários
+  - `README.md` - visão geral, links, estrutura, licença.
+  - `CONTRIBUTING.md` - passo a passo de contribuição, cenários
     (typo, recurso, nó, trilha), anatomia de `.mdx` e `roadmap.json`.
-  - `docs/style-guide.md` — voz, tom, profundidade, curadoria.
-  - `CODE_OF_CONDUCT.md` — baseado no Contributor Covenant 2.1.
-  - `LICENSE` — AGPL-3.0 (código) + CC BY-SA 4.0 (conteúdo).
-  - `CODEOWNERS` — Luciano como owner de tudo (revisão centralizada
+  - `docs/style-guide.md` - voz, tom, profundidade, curadoria.
+  - `CODE_OF_CONDUCT.md` - baseado no Contributor Covenant 2.1.
+  - `LICENSE` - AGPL-3.0 (código) + CC BY-SA 4.0 (conteúdo).
+  - `CODEOWNERS` - Luciano como owner de tudo (revisão centralizada
     no início).
 - 🛠️ Infra:
   - Templates de issue (bug, trilha nova, nó novo, melhoria de

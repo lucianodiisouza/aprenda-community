@@ -1,4 +1,4 @@
-# CODEOWNERS — quem revisa o quê
+# CODEOWNERS - quem revisa o quê
 #
 # Cada linha é um padrão de arquivo seguido do(s) owner(s) (GitHub user/team).
 # O PR pede review automaticamente do(s) owner(s) listado(s) em qualquer

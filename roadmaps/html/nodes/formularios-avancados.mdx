@@ -15,10 +15,10 @@ resources:
 ---
 
 No nó anterior, vimos inputs e botões. Agora vamos para campos mais ricos
-— onde tem mais coisa para escolher ou escrever — e a **validação nativa**
+- onde tem mais coisa para escolher ou escrever - e a **validação nativa**
 do HTML, que é poderosa e subutilizada.
 
-### `<select>` — listas de opções
+### `<select>` - listas de opções
 
 ```html
 <label for="estado">Estado</label>
@@ -66,7 +66,7 @@ Para **agrupar opções**:
   </optgroup>
 </select>
 ```
-### `<datalist>` — input com sugestões
+### `<datalist>` - input com sugestões
 
 É um meio-termo entre `<input>` e `<select>`: o usuário pode digitar
 qualquer coisa, mas tem **sugestões** para escolher.
@@ -85,7 +85,7 @@ qualquer coisa, mas tem **sugestões** para escolher.
 ```
 O `list="navegadores"` no input conecta ao `<datalist id="navegadores">`.
 
-### `<textarea>` — texto longo
+### `<textarea>` - texto longo
 
 Para mais de uma linha:
 
@@ -99,7 +99,7 @@ Para mais de uma linha:
 - Diferente do `<input>`, `<textarea>` **tem** tag de fechamento: o conteúdo
   entre elas é o valor inicial.
 
-### Validação nativa — o navegador faz o trabalho
+### Validação nativa - o navegador faz o trabalho
 
 O HTML tem atributos que dizem ao navegador: "esse campo tem essas
 regras". O navegador bloqueia o envio e mostra uma mensagem de erro se
@@ -130,17 +130,17 @@ algo não bater. **Não precisa de JavaScript para o básico.**
 ```
 Atributos de validação:
 
-- **`required`** — campo obrigatório.
-- **`minlength` / `maxlength`** — comprimento de texto mínimo e máximo.
-- **`min` / `max`** — valor mínimo e máximo (number, date, range).
-- **`step`** — incremento permitido (ex: `step="0.01"` para moeda).
-- **`pattern="regex"`** — uma expressão regular que o valor deve casar.
+- **`required`** - campo obrigatório.
+- **`minlength` / `maxlength`** - comprimento de texto mínimo e máximo.
+- **`min` / `max`** - valor mínimo e máximo (number, date, range).
+- **`step`** - incremento permitido (ex: `step="0.01"` para moeda).
+- **`pattern="regex"`** - uma expressão regular que o valor deve casar.
   Use para formatos específicos.
-- **`type`** — valida formato (email, url, tel, number).
+- **`type`** - valida formato (email, url, tel, number).
 
 Você também pode escrever **validação customizada em JavaScript** para
 coisas mais complexas (ex: "a senha não pode ser igual ao nome de
-usuário"). Mas a validação nativa já cobre 80% dos casos — use-a.
+usuário"). Mas a validação nativa já cobre 80% dos casos - use-a.
 
 ### Mensagens de erro personalizadas
 
@@ -159,7 +159,7 @@ email.addEventListener("input", () => {
 ```
 Ou, mais moderno, com CSS `:invalid` + seletor de mensagem customizada.
 
-### `novalidate` — desligar a validação nativa
+### `novalidate` - desligar a validação nativa
 
 ```html
 <form novalidate>
@@ -168,7 +168,7 @@ Ou, mais moderno, com CSS `:invalid` + seletor de mensagem customizada.
 ```
 Útil quando você quer **toda validação em JavaScript** (ex: validação
 server-side que depende de uma chamada de API). Cuidado: isso delega
-100% ao JS — se o JS falhar, o form envia sem validar.
+100% ao JS - se o JS falhar, o form envia sem validar.
 
 ### `formaction`, `formmethod`, `formnovalidate` em botões
 
@@ -190,7 +190,7 @@ O segundo botão envia para `/publicar` em vez de `/rascunho`. Útil para
 - **`<datalist>`** dá sugestões a um `<input>` sem limitar.
 - **`<textarea>`** é texto de várias linhas.
 - **Validação nativa** com `required`, `pattern`, `min`, `max`, `type`
-  — sem JS, navegador mostra o erro.
+  - sem JS, navegador mostra o erro.
 - **`pattern`** aceita regex para formatos específicos.
 - **Não desabilite** a validação nativa sem boa razão.
 
@@ -198,5 +198,5 @@ O segundo botão envia para `/publicar` em vez de `/rascunho`. Útil para
 > anuncia os erros pra leitores de tela). Use-a. Só vá pra JavaScript
 > quando precisar de regras mais complexas.
 
-No próximo nó, vamos falar de **HTML semântico** — as tags que descrevem
+No próximo nó, vamos falar de **HTML semântico** - as tags que descrevem
 o **papel** de cada parte da página.

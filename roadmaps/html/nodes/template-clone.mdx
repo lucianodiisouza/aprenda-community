@@ -15,7 +15,7 @@ resources:
 ---
 
 Às vezes você quer **declarar** um pedaço de HTML, mas **não**
-renderizá-lo imediatamente — ele vai ser usado depois, possivelmente
+renderizá-lo imediatamente - ele vai ser usado depois, possivelmente
 muitas vezes, por JavaScript. É para isso que existe `<template>`.
 
 ```html
@@ -75,26 +75,26 @@ Você pode ter visto isso em código antigo:
 </script>
 ```
 Funciona (o navegador ignora conteúdo de `<script>` com `type` que não
-reconhece), mas é gambiarra. **Use `<template>`** — é a forma oficial,
+reconhece), mas é gambiarra. **Use `<template>`** - é a forma oficial,
 acessível e indexável.
 
 ### Por que isso importa (além do clone)
 
 `<template>` é a base de duas tecnologias grandes:
 
-- **Web Components** — `<template>` + **custom elements** + Shadow DOM.
+- **Web Components** - `<template>` + **custom elements** + Shadow DOM.
   Você define seu próprio `<meu-componente>` com HTML, CSS e JS
   encapsulados. Está cada vez mais comum em apps grandes.
-- **Renderização client-side** — frameworks como Vue, Svelte, Lit e
+- **Renderização client-side** - frameworks como Vue, Svelte, Lit e
   (até certo ponto) React usam a ideia de "template HTML + dados" para
   gerar interface. O `<template>` do navegador é uma das engrenagens
   por baixo.
 
 Você não precisa aprender Web Components agora. Mas saber que
-`<template>` existe — e o que faz — é a fundação para entender essas
+`<template>` existe - e o que faz - é a fundação para entender essas
 coisas no futuro.
 
-- **`<template>`** declara HTML que **não renderiza** — fica guardado
+- **`<template>`** declara HTML que **não renderiza** - fica guardado
   como modelo.
 - **`template.content`** é um `DocumentFragment` com o conteúdo.
 - **`cloneNode(true)`** duplica o conteúdo para usar na página.
@@ -104,8 +104,8 @@ coisas no futuro.
 > Dica: o conteúdo de `<template>` fica acessível via JS, mas não
 > aparece no `document.body`. Isso é proposital: ele é "morto" até ser
 > clonado. Não confunda com `<div hidden>` ou `style="display: none"`
-> — esses elementos estão no DOM visível (só não aparecem); `<template>`
+> - esses elementos estão no DOM visível (só não aparecem); `<template>`
 > literalmente não está renderizado.
 
-No próximo nó, vamos cobrir **acessibilidade** — um nó que amarra
+No próximo nó, vamos cobrir **acessibilidade** - um nó que amarra
 vários conceitos que vimos até aqui.

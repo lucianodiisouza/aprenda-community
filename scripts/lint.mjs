@@ -86,7 +86,7 @@ if (files.length === 0) {
         const next = lines[i + 1] || "";
         const nextIsFence = /^```/.test(next.trim());
         if (!nextIsFence) {
-          // Abertura — verifica se tem linguagem
+          // Abertura - verifica se tem linguagem
           const lang = line.replace(/^```/, "").trim();
           if (lang === "") {
             warn(`${rel}:${i + 1}: bloco de código sem linguagem declarada (use \`\`\`html, \`\`\`bash, etc.)`);

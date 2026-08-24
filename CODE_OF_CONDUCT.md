@@ -1,9 +1,9 @@
-# Código de Conduta — Aprenda Community
+# Código de Conduta - Aprenda Community
 
 ## Nossa promessa
 
 A gente se compromete a fazer desta comunidade um espaço **acolhedor,
-inclusivo e livre de assédio** — independente de:
+inclusivo e livre de assédio** - independente de:
 
 - Idade, aparência, corpo, raça, etnia, nacionalidade, religião
 - Identidade ou expressão de gênero, orientação sexual

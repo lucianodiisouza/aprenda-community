@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
 
-# Cancelar execuções anteriores em PRs atualizados — economiza minutos de CI.
+# Cancelar execuções anteriores em PRs atualizados - economiza minutos de CI.
 concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
@@ -49,7 +49,7 @@ jobs:
   check-links:
     name: Checar links (best-effort)
     runs-on: ubuntu-latest
-    # Permite falha — links externos quebram o tempo todo por motivos alheios
+    # Permite falha - links externos quebram o tempo todo por motivos alheios
     # ao PR. O log fica como aviso.
     continue-on-error: true
     steps:
