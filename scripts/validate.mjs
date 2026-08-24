@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // scripts/validate.mjs
 //
-// Valida a estrutura das trilhas:
+// Valida a estrutura das trilhas e dos projetos:
 //  - todo roadmaps/<slug>/roadmap.json é JSON válido
 //  - slugs únicos
 //  - todo `id` em `nodes` é único dentro da trilha
 //  - todo `id` em `children` existe em `nodes`
 //  - todo nó tem um arquivo nodes/<id>.mdx correspondente
 //  - todo nodes/<id>.mdx tem frontmatter com `id` igual ao filename
+//  - todo projects/<slug>.mdx tem frontmatter válido
+//  - `slug` do frontmatter do projeto bate com o nome do arquivo
+//  - `trilhas` referenciadas em projetos existem em roadmaps/
 //
 // Sem dependências externas. Roda com `node scripts/validate.mjs`.
 
@@ -18,6 +21,7 @@ import { parseFrontmatter } from "./_frontmatter.mjs";
 
 const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const ROADMAPS_DIR = join(ROOT, "roadmaps");
+const PROJECTS_DIR = join(ROOT, "projects");
 
 let errors = 0;
 const warn = (msg) => console.warn(`⚠️  ${msg}`);
@@ -153,12 +157,93 @@ async function validateRoadmap(slug) {
   ok(`  Trilha "${roadmap.title || slug}" validou estrutura (${roadmap.nodes.length} nós).`);
 }
 
+async function listProjects() {
+  try {
+    const entries = await readdir(PROJECTS_DIR, { withFileTypes: true });
+    return entries
+      .filter((e) => e.isFile() && e.name.endsWith(".mdx"))
+      .map((e) => e.name.replace(/\.mdx$/, ""));
+  } catch (e) {
+    if (e.code === "ENOENT") return [];
+    throw e;
+  }
+}
+
+async function loadProjectFile(slug) {
+  const path = join(PROJECTS_DIR, `${slug}.mdx`);
+  try {
+    const content = await readFile(path, "utf8");
+    return { path, content };
+  } catch {
+    return { path, content: null };
+  }
+}
+
+async function validateProject(slug, knownRoadmapSlugs) {
+  const { path, content } = await loadProjectFile(slug);
+  if (content === null) {
+    err(`  projeto "${slug}": arquivo ausente em ${relative(ROOT, path)}`);
+    return;
+  }
+  const fm = parseFrontmatter(content);
+  if (!fm) {
+    err(`  ${relative(ROOT, path)}: frontmatter inválido ou ausente`);
+    return;
+  }
+  if (fm.slug !== slug) {
+    err(`  ${relative(ROOT, path)}: frontmatter slug "${fm.slug}" não bate com filename "${slug}"`);
+  }
+  if (!fm.title) {
+    err(`  ${relative(ROOT, path)}: frontmatter "title" ausente`);
+  }
+  if (!fm.description) {
+    err(`  ${relative(ROOT, path)}: frontmatter "description" ausente`);
+  }
+  if (!["iniciante", "intermediario", "avancado"].includes(fm.difficulty)) {
+    err(`  ${relative(ROOT, path)}: difficulty deve ser iniciante|intermediario|avancado (recebido: ${fm.difficulty})`);
+  }
+  if (fm.skills !== undefined && !Array.isArray(fm.skills)) {
+    err(`  ${relative(ROOT, path)}: frontmatter "skills" deve ser uma lista`);
+  }
+  if (fm.trilhas !== undefined) {
+    if (!Array.isArray(fm.trilhas)) {
+      err(`  ${relative(ROOT, path)}: frontmatter "trilhas" deve ser uma lista`);
+    } else {
+      for (const t of fm.trilhas) {
+        if (!knownRoadmapSlugs.has(t)) {
+          err(`  ${relative(ROOT, path)}: trilha referenciada inexistente: "${t}"`);
+        }
+      }
+    }
+  }
+  if (fm.creators !== undefined && !Array.isArray(fm.creators)) {
+    err(`  ${relative(ROOT, path)}: frontmatter "creators" deve ser uma lista`);
+  }
+  ok(`  Projeto "${fm.title || slug}" validou estrutura.`);
+}
+
 const slugs = await listRoadmaps();
 if (slugs.length === 0) {
   console.log("Nenhuma trilha encontrada em roadmaps/.");
 } else {
   for (const slug of slugs) {
     await validateRoadmap(slug);
+  }
+}
+
+// Coleta os slugs de trilhas válidos (mesmo que a validação tenha falhado em
+// outros pontos, o conjunto de slugs do `roadmap.json` é referência pra
+// `trilhas:` dos projetos).
+const knownRoadmapSlugs = new Set(slugs);
+
+console.log("");
+const projectSlugs = await listProjects();
+if (projectSlugs.length === 0) {
+  console.log("Nenhum projeto encontrado em projects/.");
+} else {
+  console.log(`📂 Projetos (${projectSlugs.length}):`);
+  for (const slug of projectSlugs) {
+    await validateProject(slug, knownRoadmapSlugs);
   }
 }
 
