@@ -1,0 +1,77 @@
+---
+id: forms-http
+title: Formulários e Fetch (HTTP)
+resources:
+  - title: "Formulários em React (React docs oficial)"
+    url: https://pt-br.react.dev/reference/react-dom/components/form
+    type: doc
+    lang: pt
+    free: true
+  - title: "Usando Fetch (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/API/Fetch_API/Using_Fetch
+    type: doc
+    lang: pt
+    free: true
+---
+
+**Formulários** e **HTTP** andam juntos: o usuário digita dados, o app
+valida, e então **busca ou envia** algo para um servidor.
+
+Em React, formulário controlado é o padrão — cada input tem seu valor no
+state:
+
+```jsx
+function Formulario() {
+  const [nome, setNome] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  async function aoEnviar(e) {
+    e.preventDefault();
+    setSalvando(true);
+    await fetch("/api/usuarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    });
+    setSalvando(false);
+  }
+
+  return (
+    <form onSubmit={aoEnviar}>
+      <input value={nome} onChange={(e) => setNome(e.target.value)} />
+      <button disabled={salvando}>{salvando ? "Salvando..."" : "Salvar"}</button>
+    </form>
+  );
+}
+```html
+Pontos importantes:
+
+- `e.preventDefault()` impede o recarregamento da página (comportamento
+  padrão do `<form>`).
+- `fetch` é a forma moderna de fazer HTTP no browser. `await fetch(url)`
+  devolve uma `Response`; `.json()` ou `.text()` lê o corpo.
+- Sempre trate **erros de rede** (try/catch) e dê feedback visual
+  (botão desabilitado, mensagem de erro).
+- A maioria das APIs hoje fala **JSON** — `Content-Type: application/json`
+  no `POST` e `JSON.stringify` no body.
+
+## Experimente
+
+```javascript
+// Simula um fetch: monta um objeto como se viesse de uma API
+async function buscarUsuarioFake(id) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ id, nome: "Ana", cidade: "São Paulo" });
+    }, 300);
+  });
+}
+
+async function main() {
+  const usuario = await buscarUsuarioFake(42);
+  console.log("Recebido:", usuario);
+  console.log("Nome:", usuario.nome);
+}
+
+main().catch(console.error);
+```

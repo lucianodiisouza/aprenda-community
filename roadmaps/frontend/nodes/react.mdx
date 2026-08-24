@@ -1,0 +1,34 @@
+---
+id: react
+title: "React: Componentes, JSX e Props"
+resources:
+  - title: "Quick Start (React docs oficial, em inglês)"
+    url: https://react.dev/learn
+    type: doc
+    lang: en
+    free: true
+  - title: "Pensando em React (React docs oficial)"
+    url: https://pt-br.react.dev/learn/thinking-in-react
+    type: doc
+    lang: pt
+    free: true
+---
+
+**React** é a biblioteca mais usada para construir interfaces web
+modernas. A ideia central é simples: você divide a tela em **componentes**
+reutilizáveis — cada um é uma função que devolve **HTML** (mais ou menos).
+
+```jsx
+function Botao({ texto, onClick }) {
+  return <button onClick={onClick}>{texto}</button>;
+}
+
+function App() {
+  return (
+    <main>
+      <h1>Meu app</h1>
+      <Botao texto="Salvar" onClick={() => alert("salvo!")} />
+    </main>
+  );
+}
+```

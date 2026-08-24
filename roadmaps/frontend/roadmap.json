@@ -1,0 +1,92 @@
+{
+  "slug": "frontend",
+  "title": "Frontend",
+  "description": "Trilha para quem quer construir a parte visual e interativa de sites e apps web: do HTML/CSS até React, com prática do começo ao fim.",
+  "difficulty": "intermediario",
+  "nodes": [
+    {
+      "id": "introducao-web",
+      "title": "Como a Web Funciona",
+      "type": "topic",
+      "recommended": true,
+      "children": ["html"]
+    },
+    {
+      "id": "html",
+      "title": "HTML: Estrutura e Semântica",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["css"]
+    },
+    {
+      "id": "css",
+      "title": "CSS: Estilo e Layout",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["javascript-web"]
+    },
+    {
+      "id": "javascript-web",
+      "title": "JavaScript no Browser",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ferramentas"]
+    },
+    {
+      "id": "ferramentas",
+      "title": "Ferramentas do Desenvolvedor",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["react"]
+    },
+    {
+      "id": "react",
+      "title": "React: Componentes, JSX e Props",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["state-hooks"]
+    },
+    {
+      "id": "state-hooks",
+      "title": "State e Hooks Essenciais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["forms-http"]
+    },
+    {
+      "id": "forms-http",
+      "title": "Formulários e Fetch (HTTP)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estilizacao"]
+    },
+    {
+      "id": "estilizacao",
+      "title": "Estilização Moderna com Tailwind",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rotas"]
+    },
+    {
+      "id": "rotas",
+      "title": "Rotas e Navegação SPA",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["acessibilidade"]
+    },
+    {
+      "id": "acessibilidade",
+      "title": "Acessibilidade (a11y)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: SPA Completa",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

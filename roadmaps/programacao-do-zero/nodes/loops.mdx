@@ -1,0 +1,53 @@
+---
+id: loops
+title: Laços e Iteração
+resources:
+  - title: "Loops e iteração (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Guide/Loops_and_iteration
+    type: doc
+    lang: pt
+    free: true
+---
+
+Às vezes o programa precisa **repetir** uma ação várias vezes — somar 100
+números, percorrer uma lista, tentar até algo dar certo. Para isso servem os
+**laços** (loops).
+
+O `for` é o mais comum quando você **sabe quantas vezes** quer repetir:
+
+```js
+for (let i = 0; i < 5; i++) {
+  console.log(i); // imprime 0, 1, 2, 3, 4
+}
+```
+O `while` é para quando você **não sabe** quantas vezes — repete enquanto a
+condição for verdadeira:
+
+```js
+let resposta = "";
+while (resposta !== "sair") {
+  resposta = perguntarAoUsuario();
+}
+```
+Para **percorrer arrays** existe o `for...of` (mais legível):
+
+```js
+const nomes = ["Ana", "Bruno", "Carla"];
+for (const nome of nomes) {
+  console.log(`Olá, ${nome}!`);
+}
+```
+Cuidado com o **loop infinito**: se a condição nunca virar falsa, o programa
+trava. `Ctrl+C` no terminal resolve. Se acontecer muito, é sinal de que a
+condição precisa de uma mudança.
+
+## Experimente
+
+```javascript
+// Soma os números de 1 a 10
+let total = 0;
+for (let i = 1; i <= 10; i++) {
+  total += i;
+}
+console.log("Soma de 1 a 10 =", total);
+```

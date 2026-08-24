@@ -1,0 +1,41 @@
+---
+id: strings
+title: Strings e Manipulação de Texto
+resources:
+  - title: "String (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/String
+    type: doc
+    lang: pt
+    free: true
+---
+
+**String** é o tipo que guarda **texto** — sempre entre aspas (`"olá"` ou
+`'olá'`). Você pode juntar, cortar, procurar, trocar — tudo com **métodos** da
+própria string.
+
+```js
+const nome = "Primo";
+nome.toUpperCase();      // "PRIMO"
+nome.toLowerCase();      // "primo"
+nome.length;             // 5
+nome[0];                 // "P" (primeiro caractere)
+"Olá, " + nome + "!";    // "Olá, Primo!" (concatenação)
+`Olá, ${nome}!`;         // "Olá, Primo!" (template literal — mais legível)
+```javascript
+Strings são **imutáveis** em quase toda linguagem: `nome.toUpperCase()` **não**
+muda `nome`, devolve uma string nova. Para guardar, é preciso
+`const novo = nome.toUpperCase();`.
+
+Quando o texto tem aspas dentro, use uma barra invertida para escapar:
+`"Ele disse: \"olá\""`. Ou use aspas diferentes: `'Ele disse: "olá"'`.
+
+## Experimente
+
+```javascript
+const frase = "  aprender programação é divertido  ";
+console.log("original:", JSON.stringify(frase));
+console.log("tamanho:", frase.length);
+console.log("sem espaços:", JSON.stringify(frase.trim()));
+console.log("maiúsculo:", frase.toUpperCase());
+console.log("começa com 'aprender'?", frase.trim().startsWith("aprender"));
+```

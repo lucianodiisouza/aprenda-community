@@ -1,0 +1,99 @@
+{
+  "slug": "programacao-do-zero",
+  "title": "Programação do Zero",
+  "description": "Trilha para quem nunca programou: do pensamento computacional ao primeiro projeto real, com uma linguagem à sua escolha.",
+  "difficulty": "iniciante",
+  "nodes": [
+    {
+      "id": "logica",
+      "title": "Pensamento Computacional",
+      "type": "topic",
+      "recommended": true,
+      "children": ["ambiente"]
+    },
+    {
+      "id": "ambiente",
+      "title": "Configurando o Ambiente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["variaveis"]
+    },
+    {
+      "id": "variaveis",
+      "title": "Variáveis e Tipos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["operadores"]
+    },
+    {
+      "id": "operadores",
+      "title": "Operadores e Expressões",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["condicionais"]
+    },
+    {
+      "id": "condicionais",
+      "title": "Condicionais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["loops"]
+    },
+    {
+      "id": "loops",
+      "title": "Laços e Iteração",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["funcoes"]
+    },
+    {
+      "id": "funcoes",
+      "title": "Funções",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["strings"]
+    },
+    {
+      "id": "strings",
+      "title": "Strings e Manipulação de Texto",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["arrays"]
+    },
+    {
+      "id": "arrays",
+      "title": "Listas (Arrays)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["objetos"]
+    },
+    {
+      "id": "objetos",
+      "title": "Objetos e Dicionários",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["debug"]
+    },
+    {
+      "id": "debug",
+      "title": "Depuração e Leitura de Erros",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["git-basico"]
+    },
+    {
+      "id": "git-basico",
+      "title": "Git: add, commit, push",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Seu Primeiro Projeto",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+---
+id: state-hooks
+title: State e Hooks Essenciais
+resources:
+  - title: "useState (React docs oficial)"
+    url: https://pt-br.react.dev/reference/react/useState
+    type: doc
+    lang: pt
+    free: true
+  - title: "useEffect (React docs oficial)"
+    url: https://pt-br.react.dev/reference/react/useEffect
+    type: doc
+    lang: pt
+    free: true
+---
+
+**State** é a memória de um componente. Quando o state muda, o React
+**re-renderiza** o componente com o valor novo. É o que faz a interface
+reagir ao usuário.
+
+```jsx
+import { useState } from "react";
+
+function Contador() {
+  const [contagem, setContagem] = useState(0);
+
+  return (
+    <div>
+      <p>Você clicou {contagem} vezes</p>
+      <button onClick={() => setContagem(contagem + 1)}>+1</button>
+    </div>
+  );
+}
+```
+`useState(valorInicial)` devolve um par: o **valor atual** e a função
+**set** para atualizar. **Nunca** mude o state direto — sempre via `set`.
+
+Os hooks mais usados (em React 19):
+
+- `useState(valor)` — guarda um valor que muda.
+- `useEffect(() => { ... }, [deps])` — roda algo **depois** da renderização
+  (buscar dados, inscrever em eventos,定时). O array de dependências diz
+  quando rodar de novo.
+- `useRef(valor)` — uma "caixa" mutable que **não** causa re-render.
+  Ótimo para acessar o DOM diretamente ou guardar valores entre renders.
+- `useMemo` / `useCallback` — memoização (pular recálculo). Use com
+  parcimônia — só quando medir e ver que importa.
+
+Para **hooks customizados**, basta extrair uma função que comece com `use`
+e use outros hooks dentro:
+
+```jsx
+function useTituloDaAba(texto) {
+  useEffect(() => {
+    document.title = texto;
+  }, [texto]);
+}
+```
+## Experimente
+
+State sem React: o padrão de "valor + função que muda o valor" mora dentro
+de um **closure**. É exatamente o que `useState` abstrai por baixo.
+
+```javascript
+function criarContador(inicial = 0) {
+  let valor = inicial;
+  return {
+    get: () => valor,
+    inc: (n = 1) => (valor += n),
+    reset: () => (valor = inicial),
+  };
+}
+
+const c = criarContador(0);
+console.log("inicial:", c.get());
+c.inc();
+c.inc();
+c.inc();
+console.log("após 3 incrementos:", c.get());
+c.reset();
+console.log("após reset:", c.get());
+```

@@ -5,7 +5,8 @@
 //  - Cada arquivo tem frontmatter entre `---`
 //  - Linhas não passam de 200 chars (sinal de copy-paste mal feito)
 //  - Sem `?utm_` (tracking)
-//  - Blocos de código têm linguagem declarada (```html em vez de só ```)
+//  - **Blocos de código de abertura** têm linguagem declarada
+//    (fechadores são ` ``` ` puros por design, OK)
 //
 // Sem dependências externas.
 
@@ -75,11 +76,26 @@ if (files.length === 0) {
       err(`${rel}: contém parâmetro ?utm_ (remova tracking)`);
     }
 
-    // Blocos de código sem linguagem
-    const fences = content.match(/^```(\S*)/gm) || [];
-    for (const fence of fences) {
-      if (fence.replace(/^```/, "") === "") {
-        warn(`${rel}: bloco de código sem linguagem declarada (use \`\`\`html, \`\`\`bash, etc.)`);
+    // Fences: só avisa sobre **aberturas** sem linguagem.
+    // Um fence de abertura é aquele cuja próxima linha **não** é outra fence.
+    let inFence = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!inFence && /^```(\w*)\s*$/.test(line)) {
+        // É abertura?
+        const next = lines[i + 1] || "";
+        const nextIsFence = /^```/.test(next.trim());
+        if (!nextIsFence) {
+          // Abertura — verifica se tem linguagem
+          const lang = line.replace(/^```/, "").trim();
+          if (lang === "") {
+            warn(`${rel}:${i + 1}: bloco de código sem linguagem declarada (use \`\`\`html, \`\`\`bash, etc.)`);
+          }
+          inFence = true;
+        }
+        // else: fence de abertura com linguagem, ou fence órfão (será tratada abaixo)
+      } else if (inFence && /^```/.test(line)) {
+        inFence = false;
       }
     }
 

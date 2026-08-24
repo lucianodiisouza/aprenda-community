@@ -1,0 +1,42 @@
+---
+id: rotas
+title: Rotas e Navegação SPA
+resources:
+  - title: "React Router — Getting Started (em inglês)"
+    url: https://reactrouter.com/start/declarative/installation
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js — App Router (introdução)"
+    url: https://nextjs.org/docs/app/getting-started/installation
+    type: doc
+    lang: en
+    free: true
+---
+
+Em uma **SPA** (Single Page Application), o navegador carrega **um** HTML
+e o JavaScript decide o que mostrar. Para parecer que o usuário "navega"
+entre páginas, usamos um **roteador** que mapeia URL → componente.
+
+A biblioteca mais usada em React é o **React Router**:
+
+```jsx
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/sobre">Sobre</Link>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/sobre" element={<Sobre />} />
+        <Route path="*" element={<NaoEncontrada />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```

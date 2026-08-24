@@ -1,0 +1,41 @@
+---
+id: variaveis
+title: Variáveis e Tipos
+resources:
+  - title: "Variáveis e tipos de dados (artigo)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/First_steps/Variables
+    type: doc
+    lang: pt
+    free: true
+---
+
+Uma **variável** é como uma caixinha com um nome, onde você guarda um valor para
+usar depois. Por exemplo: guardar a `idade` de alguém, ou o `nome` de um produto.
+
+Os valores têm **tipos** diferentes:
+
+- **Texto** (string): `"Olá, mundo"`
+- **Número**: `42`, `3.14`
+- **Booleano** (verdadeiro/falso): `true`, `false`
+
+Entender variáveis e tipos é a base para guardar e manipular informação — algo que
+todo programa faz o tempo inteiro.
+
+<Quiz
+  question="Qual dos seguintes é um nome de variável válido em JavaScript?"
+  options={[
+    { text: "2nome", correct: false, explanation: "Não pode começar com número." },
+    { text: "meu-nome", correct: false, explanation: "Hífen é interpretado como subtração." },
+    { text: "meu_nome", correct: true, explanation: "Underscore é aceito — letras, números, _, $." },
+    { text: "let", correct: false, explanation: "let é palavra reservada da linguagem." },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Crie uma variável `nome` com o valor 'Ana' e imprima no console."
+  starterCode="let nome = '';\nconsole.log(nome);"
+  expected="Ana"
+  slug="programacao-do-zero"
+  nodeId="variaveis"
+/>
+

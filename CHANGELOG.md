@@ -6,6 +6,40 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.2.0] — 2026-08-23
+
+### Adicionado
+- 🆕 Trilha **Programação do Zero** migrada do monorepo `primo-academy`
+  (13 nós, do pensamento computacional ao primeiro projeto).
+- 🆕 Trilha **Frontend** migrada do monorepo (12 nós, da web até React).
+- 📜 Documentação de decisões editoriais para cada trilha nova
+  (`roadmaps/<slug>/meta/editorial-decisions.md`).
+- 🛠️ Script `scripts/sync-consumer.example.sh` — exemplo de **sync
+  smart e incremental** para o consumer (monorepo `primo-academy`):
+  - Shallow + sparse clone (só baixa a pasta `roadmaps/`)
+  - Diff com o último commit sincronizado (`.content-version`)
+  - Copia **só** os arquivos que mudaram
+  - Exit 0 em ~1s se nada mudou
+
+### Mudado
+- 🔧 `scripts/lint.mjs` — agora entende que **fechadores** de bloco
+  (` ``` ` puro) são OK em markdown; só avisa sobre **aberturas**
+  sem linguagem.
+
+### Compatibilidade
+- ⚠️ **Breaking conceitual** (não técnico): conteúdo não usa mais
+  `<PyPlayground>` / `<Playground>`. Substituído por blocos de código
+  puros. O app, se quiser playgrounds interativos, deve detectá-los
+  pela linguagem (`python` / `javascript` / `jsx`) e transformá-los
+  no build. Documentado no `scripts/sync-consumer.example.sh`.
+
+### Validação
+```
+validate.mjs   → 3 trilhas, 43 nós, 0 erros
+lint.mjs       → 0 erros, 0 avisos
+check-links    → 80 ok, 0 com problema
+```
+
 ## [1.1.0] — 2026-08-23
 
 ### Adicionado

@@ -1,0 +1,36 @@
+---
+id: debug
+title: Depuração e Leitura de Erros
+resources:
+  - title: "O que deu errado? Solução de problemas em JavaScript (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/First_steps/What_went_wrong
+    type: doc
+    lang: pt
+    free: true
+---
+
+Todo programa tem bugs — errar faz parte. O que separa quem avança de quem
+trava é saber **ler o erro** e investigar em vez de fugir.
+
+A primeira reação certa: **ler a mensagem inteira, do topo para baixo**.
+Geralmente ela diz:
+
+- **O que** deu errado (ex: `"Cannot read properties of undefined"`)
+- **Onde** (arquivo e linha: `app.js:42`)
+- **A stack trace** — a sequência de chamadas que levou até ali
+
+Ferramentas básicas que cobrem 90% dos casos:
+
+- `console.log(valor)` — imprime no terminal. O depurador universal.
+- `console.error(...)` e `console.warn(...)` — variantes para erros e avisos.
+- `console.table(array)` — imprime arrays/objetos em formato de tabela.
+- **Debugger do editor** — colocar um **breakpoint** (bolinha vermelha) e rodar
+  passo a passo. Vale aprender quando o `console.log` parar de bastar.
+
+Quando empacar, **copie a mensagem de erro e pesquise no Google**. Alguém no
+mundo já teve esse mesmo bug e provavelmente postou a solução. Ler erros em
+inglês é normal — vale a pena se acostumar desde cedo.
+
+> Dica: leia o erro em voz alta. "Cannot read properties of undefined, reading
+> 'nome'" — significa que você tentou acessar `.nome` em algo que está
+> `undefined`. Provavelmente a variável não recebeu o valor que você esperava.

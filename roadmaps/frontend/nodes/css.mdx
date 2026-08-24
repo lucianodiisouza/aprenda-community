@@ -1,0 +1,55 @@
+---
+id: css
+title: "CSS: Estilo e Layout"
+resources:
+  - title: "Primeiros passos com CSS (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/First_steps
+    type: doc
+    lang: pt
+    free: true
+  - title: "Flexbox (guia visual completo, em inglês)"
+    url: https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+    type: doc
+    lang: en
+    free: true
+  - title: "CSS Grid (guia visual completo, em inglês)"
+    url: https://css-tricks.com/snippets/css/complete-guide-grid/
+    type: doc
+    lang: en
+    free: true
+---
+
+**CSS** (Cascading Style Sheets) é a **aparência** da página: cores, fontes,
+espaçamento, tamanho, posição. Você escreve regras do tipo "todo `<h1>` fica
+vermelho e centralizado".
+
+```css
+h1 {
+  color: #bd93f9;          /* roxo Dracula */
+  font-family: "Archivo", sans-serif;
+  text-align: center;
+}
+
+p {
+  line-height: 1.6;        /* espaço entre linhas, mais confortável de ler */
+  max-width: 70ch;         /* largura boa pra leitura */
+}
+```
+Três conceitos valem ouro desde o começo:
+
+- **Box model** — toda caixa tem `conteúdo`, `padding` (espaço interno),
+  `border` (borda) e `margin` (espaço externo). Entender isso é entender
+  80% do CSS.
+- **Flexbox** — alinhamento e distribuição em **uma dimensão** (linha ou
+  coluna). É o canivete suíço do layout.
+- **Grid** — layout em **duas dimensões** (linhas e colunas). Mais
+  poderoso, mas use quando flexbox não bastar.
+
+```css
+.container {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;   /* alinha no eixo principal */
+  align-items: center;       /* alinha no eixo cruzado */
+}
+```

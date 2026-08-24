@@ -1,0 +1,38 @@
+---
+id: ferramentas
+title: Ferramentas do Desenvolvedor
+resources:
+  - title: "Vite — guia de início"
+    url: https://vitejs.dev/guide/
+    type: doc
+    lang: en
+    free: true
+  - title: "npm — documentação oficial"
+    url: https://docs.npmjs.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando o projeto cresce, editar HTML/CSS/JS "puros" no navegador fica
+doloroso — sem reload automático, sem módulos, sem organização. Por isso
+existe um ecossistema de **ferramentas** que cuidam disso para você.
+
+As três que importam para começar:
+
+- **npm** (Node Package Manager) — o instalador de pacotes do JavaScript.
+  Vem junto com o Node.js. `npm install react` baixa a biblioteca `react`
+  e suas dependências para a pasta `node_modules/`.
+- **Vite** — um **bundler** (empacotador) que pega seus arquivos `.jsx`,
+  `.ts`, `.css`, processa, minifica e serve no navegador com **hot reload**
+  (a página atualiza sozinha quando você salva o arquivo).
+- **Editor + DevTools** — VS Code no código, F12 no navegador para inspecionar.
+
+Para criar um projeto novo com Vite:
+
+```bash
+npm create vite@latest meu-app -- --template react-ts
+cd meu-app
+npm install
+npm run dev
+```

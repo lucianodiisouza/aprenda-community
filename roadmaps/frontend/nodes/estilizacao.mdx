@@ -1,0 +1,25 @@
+---
+id: estilizacao
+title: Estilização Moderna com Tailwind
+resources:
+  - title: "Tailwind CSS — documentação oficial"
+    url: https://tailwindcss.com/docs
+    type: doc
+    lang: en
+    free: true
+  - title: "Catálogo de classes (Tailwind cheat sheet)"
+    url: https://tailwindcss.com/docs/utility-first
+    type: doc
+    lang: en
+    free: true
+---
+
+**Tailwind CSS** é um framework de **utility-first**: em vez de escrever
+classes com nome semântico (`.botao-azul-grande`), você aplica pequenas
+classes de propósito único direto no JSX.
+
+```jsx
+<button className="rounded-md bg-brand-green px-4 py-2 font-bold text-black hover:bg-brand-green/80">
+  Salvar
+</button>
+```

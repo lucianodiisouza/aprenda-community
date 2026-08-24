@@ -1,0 +1,53 @@
+---
+id: objetos
+title: Objetos e Dicionários
+resources:
+  - title: "Trabalhando com objetos (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Guide/Working_with_objects
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um **objeto** (ou dicionário, em outras linguagens) guarda pares de **chave:
+valor** — uma forma natural de representar "uma coisa com vários dados".
+
+```js
+const pessoa = {
+  nome: "Ana",
+  idade: 28,
+  cidade: "São Paulo",
+};
+pessoa.nome;      // "Ana"
+pessoa["idade"];  // 28
+pessoa.email = "ana@exemplo.com"; // adiciona uma chave nova
+delete pessoa.cidade;             // remove uma chave
+```
+Objetos podem ser **aninhados** (um objeto dentro do outro) — útil para
+representar dados do mundo real:
+
+```js
+const pedido = {
+  id: 123,
+  cliente: { nome: "Ana", email: "ana@exemplo.com" },
+  itens: [{ produto: "Caderno", preco: 12.5 }],
+};
+```
+Objetos são a base do **JSON** (`JavaScript Object Notation`), que é o formato
+que a internet inteira usa para trocar dados. `JSON.stringify(objeto)` converte
+para texto; `JSON.parse(texto)` converte de volta. Sempre que você ouvir
+"API REST" ou "resposta de servidor", provavelmente é JSON indo e voltando.
+
+## Experimente
+
+```javascript
+const usuario = {
+  nome: "Ana",
+  idade: 28,
+  habilidades: ["JavaScript", "Python", "Git"],
+};
+
+console.log("Nome:", usuario.nome);
+console.log("Habilidades:", usuario.habilidades.join(", "));
+console.log("JSON:", JSON.stringify(usuario));
+```
