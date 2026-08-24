@@ -6,7 +6,8 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-5-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-6-success.svg)](./roadmaps)
+[![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Discussions](https://img.shields.io/badge/💬-Discussions-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/discussions)
 
@@ -39,9 +40,29 @@ Trilhas hoje:
   intermediário (Big O formal, O(log n), análise de loops) e
   avançado (Big Ω/Θ, complexidade de espaço, recursão, análise
   amortizada) com prática de medição no projeto final.
+- 🎨 [**CSS**](./roadmaps/css) - a linguagem de estilo da web, do
+  zero absoluto (o que é estilo, como incluir, seletores, box model,
+  tipografia) até o avançado (Grid, Flexbox, animações, container
+  queries, `:has()`, logical properties, performance, arquitetura).
+  **36 nós** estruturados em 3 tópicos macro + projeto final. Atende
+  iniciantes e programadores; o nó final lista frameworks
+  (Tailwind, Bootstrap, Sass, CSS-in-JS) como mapa de opções, sem
+  ensinar a usar nenhum.
 
 > Mais trilhas chegando: Backend, Python, Estruturas de Dados…
 > Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).
+
+## 🛠️ Projetos práticos
+
+Além das trilhas, o repositório também guarda [**Projetos**](./projects):
+desafios práticos que exercitam o que as trilhas ensinam. São **9
+projetos** (do "olá mundo" em HTML/CSS até system design), cada um
+com um brief em MDX: objetivo, requisitos, desafios extras, dicas.
+
+Diferente de uma trilha (que é um grafo de conceitos), um projeto é
+um **documento único** - o "brief" do desafio. Veja
+[`projects/README.md`](./projects/README.md) para o formato e
+[`templates/project.mdx`](./templates/project.mdx) para o esqueleto.
 
 ## 🎯 Para quem é
 
@@ -92,12 +113,19 @@ fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge 
 ├── roadmaps/
 │   └── <slug-da-trilha>/
 │       ├── roadmap.json          # metadados + lista de nós
-│       └── nodes/
-│           └── <id-do-no>.mdx    # conteúdo de cada nó
+│       ├── nodes/
+│       │   └── <id-do-no>.mdx    # conteúdo de cada nó
+│       └── meta/                 # (opcional) notas editoriais da trilha
+├── projects/
+│   └── <slug-do-projeto>.mdx     # um arquivo por projeto (brief)
+├── templates/
+│   ├── node.mdx                  # esqueleto de um nó
+│   ├── project.mdx               # esqueleto de um projeto
+│   └── roadmap.json              # esqueleto de roadmap.json
 ├── docs/
-│   └── style-guide.md            # como escrever um nó (voz, tom, curadoria)
+│   └── style-guide.md            # como escrever (voz, tom, curadoria)
 ├── meta/
-│   ├── editorial-decisions.md    # por que a trilha é assim (decisões de escopo)
+│   ├── editorial-decisions.md    # decisões de escopo (ADRs de conteúdo)
 │   └── changelog.md              # o que mudou em cada release
 ├── .github/
 │   ├── ISSUE_TEMPLATE/           # templates de issue (bug, trilha, nó, recurso)
