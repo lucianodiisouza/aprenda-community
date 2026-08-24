@@ -1,0 +1,66 @@
+---
+id: express
+title: "Express: Seu Primeiro Servidor"
+resources:
+  - title: "Express - Guia de início (docs oficial)"
+    url: https://expressjs.com/pt-br/starter/installing.html
+    type: doc
+    lang: pt
+    free: true
+  - title: "Express - Roteamento (docs oficial)"
+    url: https://expressjs.com/pt-br/guide/routing.html
+    type: doc
+    lang: pt
+    free: true
+---
+
+Você **pode** criar um servidor HTTP só com o módulo nativo do Node, mas
+vira verboso rápido. O **Express** é um **framework minimalista** que
+cuida do repetitivo: parsear JSON, rotear URLs, responder com status code
+certo.
+
+Para criar um projeto novo:
+
+```bash
+mkdir minha-api && cd minha-api
+npm init -y
+npm install express
+```
+
+O servidor mais simples do mundo:
+
+```javascript
+// server.js
+import express from "express";
+const app = express();
+const porta = 3000;
+
+// Faz o Express entender JSON no corpo das requisições
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.json({ mensagem: "API no ar!" });
+});
+
+app.listen(porta, () => {
+  console.log(`Servidor rodando em http://localhost:${porta}`);
+});
+```
+
+Rode com `node server.js` e abra `http://localhost:3000` no navegador - ou
+use `curl http://localhost:3000` no terminal.
+
+Três conceitos que você acabou de usar:
+
+- **`app.get("/caminho", handler)`** - registra uma rota. O handler recebe
+  `req` (request, o que veio) e `res` (response, o que você devolve).
+- **`app.use(express.json())`** - **middleware**: roda antes das rotas, no
+  caso, transformando o corpo da requisição em `req.body`.
+- **`app.listen(porta, callback)`** - liga o servidor e fica escutando.
+
+> Dica: salve `node server.js` num script `"start": "node server.js"` no
+> `package.json`. Aí basta `npm start`. Para reiniciar sozinho durante o
+> desenvolvimento, use `nodemon` (`npm install -D nodemon`).
+
+No próximo nó, vamos organizar a API em vários **endpoints REST** com
+status codes corretos.

@@ -1,0 +1,77 @@
+---
+id: orm
+title: "ORM: Falando com o Banco"
+resources:
+  - title: "Prisma - Guia de início"
+    url: https://www.prisma.io/docs/getting-started
+    type: doc
+    lang: en
+    free: true
+  - title: "Prisma ORM (visão geral)"
+    url: https://www.prisma.io/docs/orm/overview/databases
+    type: doc
+    lang: en
+    free: true
+---
+
+Escrever SQL direto no código funciona, mas vira confuso quando o sistema
+cresce. Um **ORM** (Object-Relational Mapper) traduz "tabelas em SQL" pra
+"objetos em JavaScript" - você pensa em métodos, não em strings SQL.
+
+O **Prisma** é o ORM mais popular do ecossistema JavaScript hoje.
+
+Setup inicial:
+
+```bash
+npm install prisma @prisma/client
+npx prisma init --datasource-provider postgresql
+```
+
+Isso cria um `schema.prisma`, onde você descreve suas tabelas:
+
+```prisma
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  criadoEm  DateTime @default(now())
+  posts     Post[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  autorId   Int
+  autor     Usuario  @relation(fields: [autorId], references: [id])
+}
+```
+
+Usando no Express:
+
+```javascript
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
+
+app.get("/usuarios", async (req, res) => {
+  const usuarios = await prisma.usuario.findMany();
+  res.json(usuarios);
+});
+
+app.post("/usuarios", async (req, res) => {
+  const novo = await prisma.usuario.create({ data: req.body });
+  res.status(201).json(novo);
+});
+```
+
+Três benefícios do Prisma:
+
+- **Type safety** - o autocomplete funciona, erros aparecem no editor.
+- **Migrações** - `npx prisma migrate dev` versiona mudanças no schema.
+- **Leitura fluente** - `prisma.usuario.findMany({ where: { ativo: true } })`
+  em vez de SQL cru.
+
+> Dica: **nunca** exponha o objeto `PrismaClient` inteiro no endpoint -
+> use `select` ou `omit` para escolher quais campos devolver (especialmente
+> senhas). Veremos isso no próximo nó.
+
+No próximo nó, vamos proteger rotas com **autenticação** usando **JWT**.

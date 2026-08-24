@@ -1,0 +1,71 @@
+---
+id: javascript-backend
+title: JavaScript no Servidor
+resources:
+  - title: "Módulos JavaScript (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Guide/Modules
+    type: doc
+    lang: pt
+    free: true
+  - title: "Node.js - File system (docs oficial)"
+    url: https://nodejs.org/api/fs.html
+    type: doc
+    lang: en
+    free: true
+---
+
+No servidor, JavaScript ganha **superpoderes**: ler arquivos, falar com a
+rede, acessar o sistema operacional. Esses poderes vêm dos **módulos
+nativos** do Node.js.
+
+O coração da organização é o sistema de **módulos ES** (ESM):
+
+```javascript
+// utils.js
+export function formatarNome(nome) {
+  return nome.trim().toUpperCase();
+}
+
+// app.js
+import { formatarNome } from "./utils.js";
+console.log(formatarNome("  ana  ")); // "ANA"
+```
+
+Três módulos nativos que você vai usar o tempo todo:
+
+- **`fs`** - lê e escreve arquivos.
+- **`path`** - monta caminhos de arquivo portáveis (`/home/...` no Linux,
+  `C:\...` no Windows).
+- **`http`** - o módulo de mais baixo nível pra criar um servidor (sem
+  framework).
+
+Exemplo lendo um arquivo JSON local:
+
+```javascript
+import { readFile } from "node:fs/promises";
+
+const dados = await readFile("usuarios.json", "utf8");
+const usuarios = JSON.parse(dados);
+console.log(usuarios);
+```
+
+Note duas coisas: `import` (não `require`) e `await` direto no top level -
+ambos funcionam porque o Node suporta ESM moderno. O `node:` no começo de
+`node:fs` é a forma recomendada de importar módulos nativos.
+
+## Experimente
+
+```javascript
+// Roda com: node exemplo.mjs
+import { readFile } from "node:fs/promises";
+
+const conteudo = await readFile("package.json", "utf8");
+const pkg = JSON.parse(conteudo);
+console.log(`Projeto: ${pkg.name} v${pkg.version}`);
+```
+
+> Dica: arquivos com `import`/`export` precisam da extensão `.mjs` ou ter
+> `"type": "module"` no `package.json`. Sem isso, o Node trata como CommonJS.
+
+No próximo, vamos usar o módulo `http` nativo - e depois o Express por cima
+dele - pra responder requisições de verdade.

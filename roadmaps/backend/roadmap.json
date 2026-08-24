@@ -1,0 +1,99 @@
+{
+  "slug": "backend",
+  "title": "Backend",
+  "description": "Trilha para quem quer construir a parte que roda no servidor: do HTTP e Node.js até uma API completa em Express, com banco de dados, autenticação e deploy.",
+  "difficulty": "intermediario",
+  "skills": ["javascript", "node", "http", "api", "backend"],
+  "creators": [
+    {
+      "name": "Manoel carvalho",
+      "github": "theneocarvalho"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-backend",
+      "title": "O que é Backend",
+      "type": "topic",
+      "recommended": true,
+      "children": ["http"]
+    },
+    {
+      "id": "http",
+      "title": "HTTP: O Protocolo da Web",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["node"]
+    },
+    {
+      "id": "node",
+      "title": "Node.js e o Runtime JavaScript",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["javascript-backend"]
+    },
+    {
+      "id": "javascript-backend",
+      "title": "JavaScript no Servidor",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["express"]
+    },
+    {
+      "id": "express",
+      "title": "Express: Seu Primeiro Servidor",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rest-api"]
+    },
+    {
+      "id": "rest-api",
+      "title": "REST: Endpoints e Status Codes",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["banco-dados"]
+    },
+    {
+      "id": "banco-dados",
+      "title": "Banco de Dados Relacional",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["orm"]
+    },
+    {
+      "id": "orm",
+      "title": "ORM: Falando com o Banco",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["autenticacao"]
+    },
+    {
+      "id": "autenticacao",
+      "title": "Autenticação e JWT",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["validacao"]
+    },
+    {
+      "id": "validacao",
+      "title": "Validação e Tratamento de Erros",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["testes"]
+    },
+    {
+      "id": "testes",
+      "title": "Testes Automatizados",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: API Completa",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

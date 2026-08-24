@@ -1,0 +1,68 @@
+---
+id: rest-api
+title: "REST: Endpoints e Status Codes"
+resources:
+  - title: "Métodos de requisição HTTP (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Methods
+    type: doc
+    lang: pt
+    free: true
+  - title: "Princípios REST (Roy Fielding)"
+    url: https://www.ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
+    type: doc
+    lang: en
+    free: true
+---
+
+**REST** é um estilo de organizar sua API em "recursos" (usuários, posts,
+produtos) e usar os métodos HTTP como **verbos** sobre eles. É um padrão,
+não uma regra rígida - mas é o que 90% das APIs públicas seguem.
+
+A convenção mais comum:
+
+| Ação            | Método     | Endpoint             | Status de sucesso |
+| --------------- | ---------- | -------------------- | ----------------- |
+| Listar todos    | `GET`      | `/usuarios`          | `200 OK`          |
+| Pegar um        | `GET`      | `/usuarios/:id`      | `200 OK`          |
+| Criar novo      | `POST`     | `/usuarios`          | `201 Created`     |
+| Atualizar total | `PUT`      | `/usuarios/:id`      | `200 OK`          |
+| Atualizar parte | `PATCH`    | `/usuarios/:id`      | `200 OK`          |
+| Remover         | `DELETE`   | `/usuarios/:id`      | `204 No Content`  |
+
+Exemplo completo em Express:
+
+```javascript
+const usuarios = [{ id: 1, nome: "Ana" }];
+let proximoId = 2;
+
+app.get("/usuarios", (req, res) => res.json(usuarios));
+
+app.get("/usuarios/:id", (req, res) => {
+  const u = usuarios.find((x) => x.id === Number(req.params.id));
+  if (!u) return res.status(404).json({ erro: "Não encontrado" });
+  res.json(u);
+});
+
+app.post("/usuarios", (req, res) => {
+  const novo = { id: proximoId++, ...req.body };
+  usuarios.push(novo);
+  res.status(201).json(novo);
+});
+
+app.delete("/usuarios/:id", (req, res) => {
+  const idx = usuarios.findIndex((x) => x.id === Number(req.params.id));
+  if (idx === -1) return res.status(404).json({ erro: "Não encontrado" });
+  usuarios.splice(idx, 1);
+  res.status(204).send();
+});
+```
+
+Quatro boas práticas pra levar:
+
+- **Plural nos recursos** (`/usuarios`, não `/usuario`).
+- **Status code significativo** - `201` em criação, `404` em não-encontrado.
+- **Corpo de erro em JSON** com mensagem clara, ex: `{ erro: "..." }`.
+- **Semântica do método** - nunca use `GET` pra deletar, mesmo que funcione.
+
+No próximo nó, vamos tirar os usuários da memória e guardar num **banco
+de dados** de verdade.

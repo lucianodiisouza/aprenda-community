@@ -1,0 +1,55 @@
+---
+id: projeto-final
+title: "Projeto Final: API Completa"
+resources:
+  - title: "Railway - deploy fácil de Node.js e Postgres"
+    url: https://docs.railway.app/
+    type: doc
+    lang: en
+    free: true
+  - title: "Render - hospedagem com tier gratuito"
+    url: https://render.com/docs
+    type: doc
+    lang: en
+    free: true
+---
+
+Você chegou ao fim da trilha de Backend. Hora de **construir**, não só ler.
+A ideia é juntar tudo que essa trilha cobriu - servidor, rotas REST, banco,
+auth, validação, testes, deploy - num projeto só.
+
+## Sugestões
+
+- **API de lista de tarefas (to-do)** - rotas para criar, listar, atualizar
+  e remover tarefas por usuário autenticado. Pratica CRUD, JWT e validação.
+- **API de encurtador de URL** - gera um slug curto, redireciona pro link
+  original, conta cliques. Pratica modelagem de dados e contadores.
+- **API de blog** - rotas públicas para listar posts, rotas privadas para
+  criar posts (autenticadas). Pratica autorização por rota.
+- **API de catálogo de filmes** - consome a [OMDb API](https://www.omdbapi.com/)
+  e persiste um cache no seu banco. Pratica integração com terceiros e
+  modelagem.
+
+## Critério de "pronto"
+
+1. **Roda localmente** com um comando (`npm install && npm run dev`).
+2. **Tem testes** que passam (`npm test`) e cobrem pelo menos as rotas
+   críticas.
+3. **Usa banco real** (Postgres, SQLite) - não array em memória.
+4. **Tem autenticação** - pelo menos uma rota protegida com JWT.
+5. **Valida entradas** - rejeita payloads ruins com 400.
+6. **README** com: o que é, como rodar, endpoints, decisões de arquitetura,
+   o que você aprendeu.
+7. **No ar** - deploy no [Railway](https://railway.app/), [Render](https://render.com/)
+   ou [Fly.io](https://fly.io/) (todos têm tier gratuito). Cole a URL
+   no LinkedIn.
+
+## Compartilhe
+
+Poste no LinkedIn, mande para amigos, comente em uma issue no nosso
+GitHub com a tag `meu-projeto`. Mostrar o que você fez - mesmo
+"imperfeito" - é o que mais evolui.
+
+> Próximo passo: vá fundo em **DevOps** (CI/CD, containers, observabilidade)
+> ou explore **Backend Avançado** (filas, cache, microsserviços). Você tem
+> a base.
