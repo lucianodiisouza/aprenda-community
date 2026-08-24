@@ -6,6 +6,8 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.5.0] - 2026-08-24
+
 ### Mudado
 - 🔀 **Split da trilha CSS** (v1.4.0, 36 nós) em **4 trilhas menores**:
   - **`css-fundamentos`** (15 nós): introdução, incluindo CSS, seletores
