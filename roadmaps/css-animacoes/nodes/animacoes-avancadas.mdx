@@ -1,0 +1,167 @@
+---
+id: animacoes-avancadas
+title: "Animações Avançadas: timing, fill-mode e eventos"
+resources:
+  - title: "animation (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/animation
+    type: doc
+    lang: pt
+    free: true
+  - title: "Easing functions - visualizador de curvas"
+    url: https://easings.net/
+    type: doc
+    lang: en
+    free: true
+---
+
+Animação básica é: define `@keyframes`, aplica `animation`. Avançada
+é: controlar **timing com precisão**, **combinar várias animações**
+e **reagir a eventos** (quando começa, termina, repete).
+
+### `cubic-bezier()` — curva de velocidade customizada
+
+```css
+.bola {
+  animation: pular 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+  /* o "easeInOutBack" - tem um overshoot no final */
+}
+```
+
+Quatro números definem **dois pontos de controle** da curva. Os
+valores pré-definidos (`ease`, `ease-in`, etc.) são versões
+otimizadas de `cubic-bezier`. Pra escolher o seu,
+[cubic-bezier.com](https://cubic-bezier.com/) tem um playground
+visual — arrasta os pontos e vê o gráfico da velocidade em tempo
+real.
+
+Casos comuns:
+
+- **Material Design "standard"**: `cubic-bezier(0.4, 0, 0.2, 1)` —
+  entrada rápida, saída suave. Use pra maioria das transições.
+- **Material Design "decelerate"** (entradas): `cubic-bezier(0, 0,
+  0.2, 1)`.
+- **Material Design "accelerate"** (saídas): `cubic-bezier(0.4, 0,
+  1, 1)`.
+- **`easeInOutBack`** (efeito elástico sutil):
+  `cubic-bezier(0.68, -0.55, 0.27, 1.55)` — passa um pouco do alvo
+  e volta. Ótimo pra botões.
+
+### `steps()` — animação em "frames"
+
+```css
+.loading-dots {
+  animation: pontos 1s steps(4, end) infinite;
+}
+
+@keyframes pontos {
+  0%   { content: "."; }
+  25%  { content: ".."; }
+  50%  { content: "..."; }
+  100% { content: "...."; }
+}
+```
+
+`steps(N)` divide a animação em **N frames discretos** em vez de
+interpolar suavemente. Cada frame é mostrado por `duration / N`.
+Use pra:
+
+- Sprites de pixel art.
+- Efeito de "digitação" (máquina de escrever).
+- Spinners com contagem discreta (1, 2, 3, 4).
+
+### Várias animações ao mesmo tempo
+
+```css
+.carta {
+  animation:
+    aparecer 0.5s ease-out both,
+    pulsar 2s ease-in-out 0.5s infinite;
+  /* aparecer roda 1x, pulsar roda pra sempre depois de 0.5s */
+}
+```
+
+Vírgulas separam cada animação. Cada uma tem seu próprio timing,
+delay e iteration. A ordem no `@keyframes` não importa, mas a
+ordem na shorthand `animation` **sim** (a primeira sobrepõe
+propriedades da segunda se houver conflito).
+
+### Combinando transition + animation
+
+```css
+.botao {
+  transition: transform 0.2s;       /* hover suave */
+  animation: pulsar 2s ease-in-out infinite;  /* atenção */
+}
+
+.botao:hover {
+  transform: scale(1.05);           /* transition cuida */
+  animation-play-state: paused;     /* pausa a pulsação no hover */
+}
+```
+
+Funciona bem — animation e transition são independentes. Útil pra
+"chamar atenção" no botão (pulsando) e dar feedback no hover
+(crescendo).
+
+### `animation-play-state` — pausar e retomar
+
+```css
+.loader { animation: girar 1s linear infinite; }
+.loader.pausado { animation-play-state: paused; }
+```
+
+Pausa a animação **mantendo o estado atual**. Comum em sliders
+(carrossel) que pausam quando o mouse entra.
+
+### Eventos de animação (com JavaScript)
+
+```js
+elemento.addEventListener('animationstart',  () => console.log('começou'));
+elemento.addEventListener('animationend',    () => console.log('terminou'));
+elemento.addEventListener('animationiteration', () => console.log('mais uma iteração'));
+```
+
+Útil pra:
+
+- **Remover classe** que disparou a animação (`elemento.classList.remove('abrindo')`).
+- **Disparar próxima** animação (encadear).
+- **Métricas** (quantas pessoas viram o loader).
+
+A flag CSS `animation` **não tem** um callback puro-CSS. Pra isso,
+ou usa `transitionend` (similar) ou JS.
+
+### `will-change` — "dica" pro navegador (com cuidado)
+
+```css
+.carta-que-vai-animar {
+  will-change: transform;            /* avisa: "vou animar isso" */
+}
+```
+
+`will-change` diz ao navegador pra **promover o elemento pra GPU**
+antes da animação começar. Resultado: animação mais suave, sem
+"engasgos" no primeiro frame. **Cuidado**: usar em **muitos
+elementos ao mesmo tempo** lota a memória da GPU. Use só em
+elementos que **vão** animar, e **remova** depois:
+
+```js
+elemento.addEventListener('animationend', () => {
+  elemento.style.willChange = 'auto';
+});
+```
+
+- **`cubic-bezier(x1, y1, x2, y2)`** define curva customizada.
+- **`steps(N)`** quebra a animação em N frames discretos.
+- **Várias animações** separam por vírgula.
+- **`animation-play-state: paused`** pra pausar.
+- **`will-change`** avisa o navegador (use com cuidado).
+
+> Dica: na dúvida entre `transition` e `animation`, pergunte: "é
+> pra ir de A pra B e ficar lá?" → `transition`. "É uma animação
+> complexa com várias etapas?" → `@keyframes`. Na real, dá pra
+> fazer quase tudo só com transition (combinando transform/translate),
+> mas `@keyframes` é mais legível pra sequências.
+
+No próximo, vamos ver **casos práticos** prontos pra copiar: loaders,
+hover effects, transições de página, e os truques que separam
+"tá animado" de "tá bem feito".

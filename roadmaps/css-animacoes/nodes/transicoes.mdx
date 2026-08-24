@@ -1,0 +1,147 @@
+---
+id: transicoes
+title: "Transições: Mudando de Estado com Suavidade"
+resources:
+  - title: "transition (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_transitions/Using_CSS_transitions
+    type: doc
+    lang: pt
+    free: true
+  - title: "cubic-bezier.com - visualizador de curvas"
+    url: https://cubic-bezier.com/
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Transition é a forma **mais simples** de animar em CSS: você muda
+uma propriedade, e o navegador interpola o valor até o novo
+estado, com suavidade.
+
+### O caso clássico: botão que muda de cor no hover
+
+```css
+.botao {
+  background: #6366f1;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  transition: background 0.2s;       /* anima o background em 0.2s */
+}
+
+.botao:hover {
+  background: #4338ca;               /* cor mais escura */
+}
+```
+
+Sem `transition`, o background **troca instantaneamente**. Com
+`transition: background 0.2s`, a cor **desliza** de uma pra outra
+em 200ms. Pequeno detalhe, **enorme diferença** na percepção de
+qualidade.
+
+### A propriedade `transition` (shorthand)
+
+```css
+.caixa {
+  transition: propriedade duração timing-function delay;
+  /* transition: background 0.2s ease 0s; */
+}
+```
+
+- **propriedade**: qual propriedade animar (`background`, `color`,
+  `transform`, `opacity`, etc.). Use `all` pra todas (cuidado —
+  anima até coisas que você não quer).
+- **duração**: quanto tempo dura. Use `s` (segundos) ou `ms`
+  (milissegundos). Valores comuns: `0.1s` a `0.3s` (microinterações),
+  `0.5s` a `1s` (transições maiores).
+- **timing-function**: a curva de velocidade. `ease` (padrão),
+  `linear`, `ease-in`, `ease-out`, `ease-in-out`, `cubic-bezier()`.
+- **delay**: espera antes de começar. Quase sempre `0`.
+
+Várias propriedades ao mesmo tempo:
+
+```css
+.botao {
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+  /* ou: transition: all 0.2s; (cuidado com all) */
+}
+```
+
+### `ease` vs `linear` — qual usar
+
+- **`ease`**: começa devagar, acelera, termina devagar (padrão).
+  **Use pra quase tudo** — o movimento "natural" do mundo real.
+- **`linear`**: velocidade constante. Use pra **rotações** (loading
+  spinners) ou quando quer controle preciso.
+- **`ease-in`**: começa devagar, termina rápido. Saídas (modal
+  fechando).
+- **`ease-out`**: começa rápido, termina devagar. Entradas (modal
+  abrindo).
+
+```css
+.modal { transition: opacity 0.3s ease-out; }   /* fade in */
+.modal.fechando { transition: opacity 0.2s ease-in; opacity: 0; }  /* fade out */
+```
+
+### Propriedades que **dão pra animar** vs que **não dão**
+
+A maioria das propriedades **numéricas/visuais** anima. Algumas
+**não animam** (mudam instantaneamente):
+
+| Dá pra animar                                | NÃO dá                                       |
+| -------------------------------------------- | -------------------------------------------- |
+| `color`, `background`                        | `display` (none ↔ block)                    |
+| `transform` (translate, rotate, scale)       | `font-family`                                |
+| `opacity`                                    | `position`                                   |
+| `width`, `height` (cuidado, custa caro)     | `width: auto` ↔ `width: 0` (interpola estranho) |
+| `padding`, `margin`, `border-radius`         | `z-index` (muda instantaneamente)            |
+| `box-shadow`, `filter`                       |                                              |
+
+**Regra de ouro**: anime **`transform` e `opacity`** quando puder —
+são **as duas propriedades mais baratas** pro navegador (não causam
+reflow). Animar `width`/`height` funciona mas é mais custoso.
+
+### A pegadinha do `transition: all`
+
+```css
+.botao {
+  transition: all 0.3s;       /* anima TUDO que mudar */
+}
+.botao:hover {
+  background: blue;
+  /* também animou: padding, font-size, qualquer outra coisa que mude */
+}
+```
+
+Parece prático, mas **anima propriedades invisíveis** (ex: `font`
+sendo trocado por outra família, reflows, repaints). Performance
+cai. **Sempre liste as propriedades** que quer animar:
+
+```css
+.botao { transition: background 0.2s, transform 0.1s; }
+```
+
+### `transition: none` pra resetar
+
+```css
+.botao:active { transition: none; }  /* sem animação no clique */
+.botao:active { transform: scale(0.98); }  /* "afunda" instantaneamente */
+```
+
+Útil pra desativar a transição em estados momentâneos (`:active`,
+entrada de modal, etc.) onde a animação atrapalha mais do que ajuda.
+
+- **`transition: prop duração`** é a forma mais simples de animar.
+- **Duração** entre 0.1s e 0.3s pra microinterações.
+- **Anime `transform` e `opacity`** quando puder (mais barato).
+- **Não use `all`** — liste as propriedades explicitamente.
+- **`transition: none`** desativa em estados momentâneos.
+
+> Dica: a duração padrão de uma microinteração "natural" é **200ms**
+> (Apple HIG, Google Material). Acima de 300ms começa a parecer
+> "lento" pro usuário moderno. Acima de 1s só pra transições de
+> página ou onboarding.
+
+No próximo, vamos **mover** elementos pela tela: `transform` em 2D
+e 3D, o coração das animações performáticas.
