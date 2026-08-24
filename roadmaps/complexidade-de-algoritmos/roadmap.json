@@ -3,6 +3,7 @@
   "title": "Complexidade de Algoritmos",
   "description": "Aprenda a medir e comparar o custo de algoritmos: Big O, melhor/pior caso, espaço, recursão, padrões clássicos (busca binária, dois ponteiros, sliding window) e como ler código alheio sem se perder.",
   "difficulty": "intermediario",
+  "skills": ["algoritmos", "big-o", "estruturas-de-dados", "recursao", "logica"],
   "creators": [
     {
       "name": "Luciano dii Souza",

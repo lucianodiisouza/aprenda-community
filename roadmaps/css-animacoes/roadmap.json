@@ -3,6 +3,7 @@
   "title": "CSS Animações: Movimento com Responsabilidade",
   "description": "Trilha focada em **movimento** - como fazer a web ganhar vida. Cobre Transitions, Transform (2D e 3D), Animações com @keyframes (básicas e avançadas), casos clássicos de UI animada e acessibilidade visual (prefers-reduced-motion, prefers-color-scheme, prefers-contrast). Pré-requisito: css-fundamentos e css-layout.",
   "difficulty": "intermediario",
+  "skills": ["css", "animacoes", "transitions", "transform", "keyframes", "acessibilidade"],
   "creators": [
     {
       "name": "Luciano dii Souza",

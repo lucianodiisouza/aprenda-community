@@ -3,6 +3,7 @@
   "title": "Git",
   "description": "Trilha completa de Git - do controle de versão do zero (o que é um commit) até rebase, reflog, bisect e workflows de colaboração. Cobre básico, intermediário e avançado, com prática em cada nível e um projeto final de contribuição open source.",
   "difficulty": "iniciante",
+  "skills": ["git", "versionamento", "github", "colaboracao"],
   "creators": [
     {
       "name": "Luciano dii Souza",

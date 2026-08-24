@@ -3,6 +3,7 @@
   "title": "CSS Fundamentos: a Base que Tudo Sustenta",
   "description": "Trilha para quem nunca escreveu CSS ou quer consolidar a base. Cobre sintaxe, inclusão, seletores, cores, unidades, tipografia, box model, display, pseudo-classes, pseudo-elementos, cascata/especificidade e DevTools. Pré-requisito pras trilhas de layout, animações e CSS moderno.",
   "difficulty": "iniciante",
+  "skills": ["css", "seletores", "box-model", "tipografia", "cores"],
   "creators": [
     {
       "name": "Luciano dii Souza",

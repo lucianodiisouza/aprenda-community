@@ -3,6 +3,7 @@
   "title": "CSS Moderno: Variáveis, Seletores Novos e Arquitetura",
   "description": "Trilha focada no **CSS que existe hoje** mas que pouca gente domina. Cobre Custom Properties (variáveis e theming), funções modernas (clamp, min, max, calc), Container Queries, `:has()` (o seletor pai), Logical Properties, arquitetura (BEM, organização), performance e o ecossistema além do CSS puro. Pré-requisito: css-fundamentos, css-layout, css-animacoes.",
   "difficulty": "avancado",
+  "skills": ["css", "custom-properties", "container-queries", "has", "arquitetura"],
   "creators": [
     {
       "name": "Luciano dii Souza",

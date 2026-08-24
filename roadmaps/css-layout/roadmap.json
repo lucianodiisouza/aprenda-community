@@ -3,6 +3,7 @@
   "title": "CSS Layout: Position, Flexbox e Grid Aprofundados",
   "description": "Trilha focada em **layout** - como colocar elementos onde você quer. Cobre Position, Flexbox (introdução, container, itens, casos clássicos), Grid (introdução, container, itens, casos) e responsividade com media queries + container queries básico. Pré-requisito: css-fundamentos.",
   "difficulty": "intermediario",
+  "skills": ["css", "flexbox", "grid", "position", "responsividade"],
   "creators": [
     {
       "name": "Luciano dii Souza",

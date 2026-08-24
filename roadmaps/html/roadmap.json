@@ -3,6 +3,7 @@
   "title": "HTML",
   "description": "Trilha completa de HTML - do zero absoluto (o que é uma página web) até HTML semântico avançado, formulários, acessibilidade e meta tags. Ideal como primeira trilha antes de CSS ou JavaScript.",
   "difficulty": "iniciante",
+  "skills": ["html", "semantica", "acessibilidade", "formularios", "seo"],
   "creators": [
     {
       "name": "Luciano dii Souza",
