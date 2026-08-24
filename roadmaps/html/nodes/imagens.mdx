@@ -21,7 +21,7 @@ O básico:
 
 ```html
 <img src="gato.jpg" alt="Gato laranja dormindo em uma caixa de papelão.">
-```html
+```
 Três coisas em uma tag:
 
 - **`src`** — caminho ou URL da imagem. Pode ser local (`gato.jpg`) ou
@@ -50,13 +50,13 @@ telefone.
 
 <!-- ❌ Repete o nome do arquivo -->
 <img src="grafico.png" alt="grafico.png">
-```html
+```
 Exceção importante: **imagens puramente decorativas** devem ter `alt=""`
 (vazio, mas presente). Isso diz "ignore, sou decoração":
 
 ```html
 <img src="textura-fundo.png" alt="">
-```html
+```
 Se você tem dúvida entre "descreve" e "deixa vazio", pergunte: "se essa
 imagem sumisse, a página faria menos sentido?" Se sim, descreve. Se não,
 deixa vazio.
@@ -67,7 +67,7 @@ Você pode forçar tamanho:
 
 ```html
 <img src="foto.jpg" alt="Equipe reunida" width="400" height="300">
-```html
+```
 Mas o mais comum hoje em dia é **não fixar** e deixar o CSS dimensionar.
 A exceção importante: sempre declare `width` e `height` no HTML (mesmo que
 o CSS vá sobrescrever) para evitar o "salto" de layout enquanto a imagem
@@ -86,7 +86,7 @@ pequena (480px) em vez de desperdiçar banda:
           foto-800.jpg 800w,
           foto-1600.jpg 1600w"
   sizes="(max-width: 600px) 100vw, 800px">
-```html
+```
 O navegador escolhe qual baixar. `srcset` lista as opções; `sizes` diz
 "em telas até 600px, a imagem ocupa toda a largura; senão, ocupa 800px".
 
@@ -102,7 +102,7 @@ crop mobile vs. desktop), use `<picture>`:
   <source srcset="foto-mobile.jpg" media="(max-width: 600px)">
   <img src="foto.jpg" alt="Vista da praia ao entardecer">
 </picture>
-```html
+```
 `<picture>` é um **container**. A imagem de fato é a tag `<img>` dentro.
 
 ### `<figure>` e `<figcaption>` — imagens com legenda
@@ -115,7 +115,7 @@ Quando a imagem tem um significado próprio e merece uma legenda, use
   <img src="grafico-vendas.png" alt="Vendas cresceram 30% entre 2024 e 2025.">
   <figcaption>Vendas anuais de 2020 a 2025, em milhões de reais.</figcaption>
 </figure>
-```html
+```
 `<figure>` pode envolver imagens, vídeos, diagramas, trechos de código...
 qualquer conteúdo que tem uma legenda.
 
@@ -136,7 +136,7 @@ Você pode usar SVG de duas formas:
 <svg viewBox="0 0 120 40" aria-label="Logo da Aprenda" role="img">
   <text x="0" y="30" font-size="24" fill="green">Aprenda</text>
 </svg>
-```html
+```
 Note o **`aria-label` e `role="img"`** no SVG inline para acessibilidade.
 
 - **`<img>`** carrega uma imagem. Tem `src` e `alt` (obrigatório).

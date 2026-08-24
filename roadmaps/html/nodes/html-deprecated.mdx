@@ -34,7 +34,7 @@ explicitamente marcada como **deprecated** (não recomendada) ou
 <!-- ou, melhor, no CSS: -->
 <style>.centralizado { text-align: center; }</style>
 <p class="centralizado">Texto centralizado</p>
-```html
+```
 #### `<font>` → CSS
 
 ```html
@@ -45,7 +45,7 @@ explicitamente marcada como **deprecated** (não recomendada) ou
 <p style="color: red; font-size: 1.5em; font-family: Arial">
   Texto estilizado
 </p>
-```html
+```
 #### `<marquee>` → CSS animation (com `prefers-reduced-motion`)
 
 `<marquee>` fazia texto deslizar pela tela. Nativamente. Foi engraçado
@@ -67,7 +67,7 @@ acessibilidade (pessoas com sensibilidade a movimento, foco, TDAH).
   }
 </style>
 <p class="rolando">Bem-vindo!</p>
-```html
+```
 Note o `prefers-reduced-motion: no-preference` — quem tem
 sensibilidade a movimento configurou "reduzir animações" no sistema
 operacional; respeitamos.
@@ -85,7 +85,7 @@ operacional; respeitamos.
 <a href="menu.html">Ir para o menu</a>
 <!-- ou se for embed de outro site -->
 <iframe src="https://exemplo.com/embed" title="Conteúdo embutido"></iframe>
-```html
+```
 A navegação por frames foi abolida há décadas. Hoje em dia é `<iframe>`
 só para embed de outros sites (vídeos, mapas), nunca para navegação.
 
@@ -97,7 +97,7 @@ só para embed de outros sites (vídeos, mapas), nunca para navegação.
 
 <!-- ✅ Moderno -->
 <audio src="musica.mp3" autoplay loop muted></audio>
-```html
+```
 Música automática na página é fortemente desencorajada hoje em dia.
 Mas se você precisar, é `<audio>`, não `<bgsound>`.
 
@@ -109,7 +109,7 @@ Mas se você precisar, é `<audio>`, não `<bgsound>`.
 
 <!-- ✅ Moderno: não pisque texto. Não faça isso. -->
 <p>Texto normal.</p>
-```html
+```
 Piscar texto é hostil à leitura, inaccessible, e ninguém vai agradecer.
 Não faça.
 
@@ -138,7 +138,7 @@ em tags válidas**. Exemplos clássicos:
     <td style="width: 100px; height: 50px">Texto</td>
   </tr>
 </table>
-```html
+```
 Os atributos `border`, `bgcolor`, `align`, `valign`, `width`, `height`,
 `cellpadding`, `cellspacing` em `<table>` / `<td>` / `<tr>` foram
 substituídos por CSS. A maioria é "tolerada" pelo navegador
@@ -156,7 +156,7 @@ Outros exemplos:
   a    { color: blue; }
   a:visited { color: purple; }
 </style>
-```html
+```
 ### Como saber o que é deprecated?
 
 - **W3C Validator** (`validator.w3.org`) — cola o HTML, lista o que é

@@ -24,7 +24,7 @@ ou um player de terceiros. Hoje é nativo.
   <p>Seu navegador não suporta vídeo HTML5.
      <a href="paisagem.mp4">Baixe o vídeo</a>.</p>
 </video>
-```html
+```
 - **`src`** — o arquivo. Pode ser substituído por `<source>` (ver
   abaixo).
 - **`controls`** — mostra os controles nativos (play, pause, volume,
@@ -56,7 +56,7 @@ Nem todo navegador suporta todo formato. Você pode oferecer vários:
   <source src="video.mp4" type="video/mp4">
   <p>Seu navegador não suporta vídeo HTML5.</p>
 </video>
-```html
+```
 O navegador escolhe o **primeiro** que consegue tocar. Ordem importa —
 coloque o mais eficiente/compatível primeiro.
 
@@ -73,7 +73,7 @@ Olá, hoje vamos falar de HTML semântico.
 
 00:00:04.000 --> 00:00:08.000
 É um dos temas mais importantes da web moderna.
-```html
+```
 E conecte ao vídeo:
 
 ```html
@@ -82,7 +82,7 @@ E conecte ao vídeo:
   <track kind="captions" src="legendas.pt-BR.vtt" srclang="pt-BR" label="Português" default>
   <track kind="subtitles" src="legendas.en.vtt" srclang="en" label="English">
 </video>
-```html
+```
 `<track>` com `kind="captions"` ou `kind="subtitles"` ativa as legendas.
 `default` marca a legenda inicial.
 
@@ -96,7 +96,7 @@ Mesma ideia, sem a parte visual:
   <source src="musica.ogg" type="audio/ogg">
   <p>Seu navegador não suporta áudio HTML5.</p>
 </audio>
-```html
+```
 `autoplay` aqui é ainda mais irritante que em vídeo. Quase sempre é melhor
 deixar o usuário escolher quando tocar.
 
@@ -114,7 +114,7 @@ CodePen, etc.:
   allowfullscreen
   allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
 </iframe>
-```html
+```
 Cuidados com `<iframe>`:
 
 - **Sempre coloque `title`** — descrever o conteúdo para leitores de tela.

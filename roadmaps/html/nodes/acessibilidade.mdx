@@ -64,7 +64,7 @@ HTML semântico; só use ARIA quando HTML não der conta.**
 <!-- vs. -->
 
 <button type="button" onclick="abrirMenu()">Menu</button>
-```html
+```
 A primeira versão precisa de `role`, `tabindex` e `onclick`. A segunda
 já tem tudo isso de graça. **Use `<button>`.**
 
@@ -86,7 +86,7 @@ Mas há casos em que ARIA ajuda:
 
 <!-- Marca a região como "ao vivo" — anuncia mudanças dinâmicas -->
 <div aria-live="polite">Salvo com sucesso!</div>
-```html
+```
 #### O `sr-only` clássico
 
 Para conteúdo que **deve existir para leitores de tela**, mas não
@@ -104,7 +104,7 @@ precisa aparecer visualmente:
   white-space: nowrap;
   border: 0;
 }
-```html
+```
 Use para rótulos extras em ícones, instruções contextuais em campos
 complexos, etc.
 
@@ -123,7 +123,7 @@ remova o outline de foco** sem oferecer uma alternativa visível:
   outline: 2px solid #1e90ff;
   outline-offset: 2px;
 }
-```html
+```
 E para elementos não focáveis que precisam ser focáveis (ex: um `<div>`
 que age como botão), use `tabindex="0"`. Para elementos que devem sair
 do fluxo de tab, `tabindex="-1"` (usado em JavaScript para focar
@@ -160,7 +160,7 @@ Ferramentas para checar:
 
   <button type="submit">Entrar</button>
 </form>
-```html
+```
 Detalhe importante: **`aria-describedby`** conecta o campo a uma
 descrição extra (placeholder, ajuda, requisito). Leitor de tela lê o
 rótulo **e** a descrição.
@@ -172,7 +172,7 @@ para a mensagem de erro:
 <input type="email" id="email" aria-invalid="true"
        aria-describedby="email-erro">
 <p id="email-erro" role="alert">E-mail inválido. Confira a digitação.</p>
-```html
+```
 `role="alert"` faz o leitor anunciar a mudança imediatamente (em vez de
 esperar o usuário focar o campo).
 

@@ -29,7 +29,7 @@ A gente poderia fazer tudo com `<div>`:
   <div class="post">...</div>
 </div>
 <div class="footer">...</div>
-```html
+```
 Funciona — o navegador renderiza. Mas leitor de tela vê uma sopa de
 `<div>`s sem distinção. Mecanismo de busca não entende a estrutura. CSS
 fica mais difícil.
@@ -46,7 +46,7 @@ cada região:
   <article>...</article>
 </main>
 <footer>...</footer>
-```html
+```
 Mesma renderização visual (sem CSS), mas com estrutura explícita.
 
 ### As tags de landmark (região)
@@ -64,7 +64,7 @@ pular diretamente para qualquer uma delas.
 <aside>      <!-- conteúdo relacionado tangencial (sidebar, callout) -->
 <footer>     <!-- rodapé da página ou de uma seção -->
 <address>    <!-- informação de contato -->
-```html
+```
 A regra prática: **uma página tem um único `<main>`** (é o conteúdo
 principal), mas pode ter vários `<header>`, `<footer>`, `<article>` e
 `<section>` (um por bloco lógico).
@@ -135,7 +135,7 @@ principal), mas pode ter vários `<header>`, `<footer>`, `<article>` e
   </footer>
 </body>
 </html>
-```html
+```
 Note os detalhes:
 
 - **`<header>` aparece duas vezes**: uma na página (com o logo e nav) e
@@ -174,7 +174,7 @@ A confusão clássica:
     <p>...</p>
   </section>
 </article>
-```html
+```
 ### Headings (títulos) e a hierarquia do documento
 
 A hierarquia `h1` → `h6` é o **esqueleto semântico** mais importante.
@@ -200,7 +200,7 @@ para o `h2` "Ingredientes", por exemplo.
     </article>
   </main>
 </body>
-```html
+```
 Regra: **não pule níveis à toa** (ir de `h1` direto para `h3`).
 Pode pular quando o design exige, mas revise se a hierarquia faz sentido
 como sumário.

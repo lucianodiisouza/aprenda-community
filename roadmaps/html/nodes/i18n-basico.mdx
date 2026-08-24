@@ -33,7 +33,7 @@ página:
 ```html
 <p>A banda favorita da minha irmã é <span lang="en">Led Zeppelin</span>,
 mas ela também curte <span lang="ja">凛として時雨</span>.</p>
-```html
+```
 Por que importa? Leitores de tela usam `lang` para escolher a pronúncia
 e a voz certas. Mecanismos de busca usam para indexar por idioma.
 
@@ -55,7 +55,7 @@ dentro de texto em PT-BR.
   <li>Usuário: <bdi>maria</bdi> — 80 pontos</li>
   <li>Usuário: <bdi>7amada</bdi> — 70 pontos</li>
 </ul>
-```html
+```
 O número `7` antes de "amada" é um trecho em árabe onde a ordem natural
 é da direita pra esquerda. Sem `<bdi>`, o navegador pode renderizar
 "7amada" como se a palavra fosse "amada7" (com o 7 à direita). Com
@@ -70,7 +70,7 @@ que `<bdi>` — use com cuidado.
 <p>Em árabe, "Olá" escreve-se:
   <bdo dir="rtl">مرحبا</bdo>
 </p>
-```html
+```
 `dir="rtl"` (direita→esquerda) ou `dir="ltr"`. Útil em casos muito
 específicos, como trechos de texto que você quer mostrar "ao contrário"
 intencionalmente.
@@ -84,7 +84,7 @@ clássico é o **furigana** japonês (pronúncia de kanji):
 <ruby>
   漢字 <rt>かんじ</rt>
 </ruby>
-```html
+```
 - `<ruby>` é o container.
 - `<rt>` (*ruby text*) é a anotação.
 - `<rp>` (*ruby parenthesis*) é o fallback para navegadores que não

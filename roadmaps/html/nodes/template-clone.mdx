@@ -25,7 +25,7 @@ muitas vezes, por JavaScript. É para isso que existe `<template>`.
     <p class="card-descricao"></p>
   </article>
 </template>
-```html
+```
 Diferente de qualquer outra tag que vimos até aqui, **o conteúdo de
 `<template>` não aparece na página**. Você pode vê-lo no DevTools, mas
 ele não é renderizado, não tem `display`, não é clicável, não é
@@ -52,7 +52,7 @@ const card2 = fragment.cloneNode(true);
 card2.querySelector(".card-titulo").textContent = "Outro";
 card2.querySelector(".card-descricao").textContent = "Segundo card.";
 document.body.appendChild(card2);
-```html
+```
 O ponto chave: você escreveu o HTML uma vez. Para cada card novo,
 **clona** o template e preenche. Sem repetir marcação.
 
@@ -61,7 +61,7 @@ O ponto chave: você escreveu o HTML uma vez. Para cada card novo,
 ```javascript
 template.content.cloneNode(true);   // clona o template E seus filhos
 template.content.cloneNode(false);  // só o container, sem conteúdo
-```html
+```
 Quase sempre você quer `true` (clone profundo). `false` é raramente
 útil nesse contexto.
 
@@ -73,7 +73,7 @@ Você pode ter visto isso em código antigo:
 <script type="text/html" id="tpl">
   <article>...</article>
 </script>
-```html
+```
 Funciona (o navegador ignora conteúdo de `<script>` com `type` que não
 reconhece), mas é gambiarra. **Use `<template>`** — é a forma oficial,
 acessível e indexável.

@@ -30,7 +30,7 @@ O mínimo necessário:
 
   <button type="submit">Entrar</button>
 </form>
-```html
+```
 Anatomia:
 
 - **`<form action="..." method="...">`** é o container. `action` é pra
@@ -108,7 +108,7 @@ Atributos importantes compartilhados:
   <input type="radio" id="team" name="plano" value="team">
   <label for="team">Time</label>
 </fieldset>
-```html
+```
 - **Checkbox**: o usuário pode marcar **vários** do mesmo grupo. O `name`
   pode ser igual (os marcados vão juntos no envio).
 - **Radio**: o usuário escolhe **apenas um** do grupo. **Os radios do
@@ -125,7 +125,7 @@ Três tipos:
 <button type="submit">Enviar</button>     <!-- envia o form -->
 <button type="reset">Limpar</button>      <!-- reseta o form -->
 <button type="button">Outro</button>      <!-- sem ação padrão (use com JS) -->
-```html
+```
 `<input type="submit" value="Enviar">` também funciona, mas `<button>`
 permite conteúdo HTML dentro (ícones, spans...), o que é mais flexível.
 
@@ -139,7 +139,7 @@ Um input pode estar **fora** do `<form>` mas ser associado a ele:
 </form>
 
 <input type="search" name="q" form="busca" placeholder="O que procura?">
-```html
+```
 Útil quando o form é pequeno e a entrada precisa estar em outro lugar do
 layout (ex: a barra de busca no header, mas o `<form>` no footer).
 

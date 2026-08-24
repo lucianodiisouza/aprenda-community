@@ -30,7 +30,7 @@ do HTML, que é poderosa e subutilizada.
   <option value="BA">Bahia</option>
   <!-- ... -->
 </select>
-```html
+```
 - **`<select>`** é a caixa de seleção (o "dropdown").
 - **`<option value="...">`** é cada item. O `value` é o que vai no envio;
   o texto entre as tags é o que o usuário vê.
@@ -47,7 +47,7 @@ Para **seleção múltipla**:
   <option value="es">Espanhol</option>
   <option value="fr">Francês</option>
 </select>
-```html
+```
 `size="4"` mostra 4 opções de uma vez; sem `size`, vira um dropdown
 clássico (uma de cada vez). Com `multiple`, o usuário segura Ctrl/Cmd
 pra escolher várias.
@@ -65,7 +65,7 @@ Para **agrupar opções**:
     <option value="tomate">Tomate</option>
   </optgroup>
 </select>
-```html
+```
 ### `<datalist>` — input com sugestões
 
 É um meio-termo entre `<input>` e `<select>`: o usuário pode digitar
@@ -82,7 +82,7 @@ qualquer coisa, mas tem **sugestões** para escolher.
   <option value="Edge">
   <option value="Brave">
 </datalist>
-```html
+```
 O `list="navegadores"` no input conecta ao `<datalist id="navegadores">`.
 
 ### `<textarea>` — texto longo
@@ -93,7 +93,7 @@ Para mais de uma linha:
 <label for="mensagem">Mensagem</label>
 <textarea id="mensagem" name="mensagem" rows="6" cols="50"
           placeholder="Escreva aqui…" required minlength="20"></textarea>
-```html
+```
 - `rows` e `cols` são dimensões iniciais (em linhas e colunas de caractere).
   O usuário pode redimensionar e o CSS pode sobrescrever.
 - Diferente do `<input>`, `<textarea>` **tem** tag de fechamento: o conteúdo
@@ -127,7 +127,7 @@ algo não bater. **Não precisa de JavaScript para o básico.**
 
   <button type="submit">Cadastrar</button>
 </form>
-```html
+```
 Atributos de validação:
 
 - **`required`** — campo obrigatório.
@@ -156,7 +156,7 @@ email.addEventListener("input", () => {
     email.setCustomValidity("");
   }
 });
-```html
+```
 Ou, mais moderno, com CSS `:invalid` + seletor de mensagem customizada.
 
 ### `novalidate` — desligar a validação nativa
@@ -165,7 +165,7 @@ Ou, mais moderno, com CSS `:invalid` + seletor de mensagem customizada.
 <form novalidate>
   <!-- ... -->
 </form>
-```html
+```
 Útil quando você quer **toda validação em JavaScript** (ex: validação
 server-side que depende de uma chamada de API). Cuidado: isso delega
 100% ao JS — se o JS falhar, o form envia sem validar.
@@ -181,7 +181,7 @@ diferentes:
   <button type="submit">Salvar como rascunho</button>
   <button type="submit" formaction="/publicar">Publicar</button>
 </form>
-```html
+```
 O segundo botão envia para `/publicar` em vez de `/rascunho`. Útil para
 "salvar vs publicar", "preview vs enviar", etc.
 

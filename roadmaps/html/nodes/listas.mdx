@@ -24,7 +24,7 @@ A ordem **não importa** — é um conjunto de itens equivalentes.
   <li>Leite</li>
   <li>Açúcar</li>
 </ul>
-```html
+```
 O navegador coloca uma bolinha (•) na frente de cada item. Mas o importante
 não é a bolinha: é que o **significado** é "conjunto de itens".
 
@@ -39,7 +39,7 @@ A ordem **importa** — é uma sequência.
   <li>Adicione os líquidos e mexa.</li>
   <li>Asse por 40 minutos.</li>
 </ol>
-```html
+```
 O navegador coloca `1.`, `2.`, `3.`... E aqui sim a sequência tem
 significado: você não pode inverter os passos.
 
@@ -50,7 +50,7 @@ Você pode mudar o tipo de numeração:
 <ol type="I">  <!-- I, II, III, IV -->
 <ol start="5"> <!-- começa do 5 -->
 <ol reversed>  <!-- conta de trás pra frente -->
-```html
+```
 Mas no dia-a-dia, o padrão basta.
 
 ### Listas de definição (`<dl>`)
@@ -68,7 +68,7 @@ Para pares **termo / definição** — como um glossário.
   <dt>JavaScript</dt>
   <dd>Linguagem de programação que dá comportamento a páginas web.</dd>
 </dl>
-```html
+```
 - `<dt>` (*description term*) é o termo.
 - `<dd>` (*description details*) é a definição.
 - Vários `<dd>` podem seguir um `<dt>` (ex: sinônimos, exemplos).
@@ -92,7 +92,7 @@ Listas podem estar dentro de listas:
     </ul>
   </li>
 </ul>
-```html
+```
 O navegador indenta o subnível. **Aninhe dentro do `<li>`** que faz
 sentido, não no meio do texto.
 
@@ -107,7 +107,7 @@ verdade: a "checkbox hack" simula uma lista de tarefas.
   <li><input type="checkbox" checked> Beber café</li>
   <li><input type="checkbox"> Construir uma página</li>
 </ul>
-```html
+```
 Para uma lista de tarefas de verdade, prefira uma tag `<input
 type="checkbox">` mesmo, possivelmente dentro de um formulário.
 
@@ -121,7 +121,7 @@ Frutas:<br>
 Maçã<br>
 Banana<br>
 Uva<br>
-```html
+```
 Isso é texto solto, não uma lista. Use `<ul>`. Sempre.
 
 - **`<ul>`** para itens sem ordem importante.
