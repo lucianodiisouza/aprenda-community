@@ -1,0 +1,161 @@
+---
+id: animacoes-basicas
+title: "Animações: @keyframes e animation"
+resources:
+  - title: "Usando animações CSS (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_animations/Using_CSS_animations
+    type: doc
+    lang: pt
+    free: true
+  - title: "Animate.css - biblioteca de keyframes prontas"
+    url: https://animate.style/
+    type: doc
+    lang: en
+    free: true
+---
+
+Transition serve pra **ir de A a B** com suavidade. `@keyframes`
+serve pra animações **mais complexas** — várias etapas, loop,
+controle total do tempo. É a "versão completa" de animação do CSS.
+
+### O esqueleto
+
+```css
+@keyframes nome-da-animacao {
+  from { /* estado inicial */ }
+  to   { /* estado final */ }
+}
+
+.elemento {
+  animation: nome-da-animacao 1s ease;
+}
+```
+
+Três partes:
+
+1. **`@keyframes nome-da-animacao { ... }`** define os estados.
+2. **`animation: ...`** aplica ao elemento.
+3. **O elemento executa** a animação quando carrega (a menos que
+   você controle com `animation-play-state`).
+
+### Os seletores de estado: `from`, `to`, e porcentagens
+
+```css
+@keyframes pulsar {
+  0%   { transform: scale(1);   opacity: 1; }
+  50%  { transform: scale(1.1); opacity: 0.7; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.bola {
+  animation: pulsar 1.5s ease-in-out infinite;
+}
+```
+
+`0%` e `100%` são o mesmo que `from` e `to`. **Pode usar qualquer
+porcentagem** (0% a 100%) pra criar quantas etapas quiser. A
+animação **interpola suavemente** entre cada etapa declarada.
+
+### A shorthand `animation`
+
+```css
+.bola {
+  animation:
+    nome-da-animacao      /* @keyframes name */
+    1.5s                  /* duration */
+    ease-in-out           /* timing-function */
+    0s                    /* delay */
+    infinite              /* iteration-count */
+    alternate             /* direction: normal | reverse | alternate | alternate-reverse */
+    both;                 /* fill-mode: none | forwards | backwards | both */
+}
+```
+
+Detalhe importante: a **primeira unidade de tempo é a duração**, a
+**segunda é o delay**. `1.5s 0s` (1.5s de duração, sem delay) é
+diferente de `0s 1.5s` (0s de duração, 1.5s de delay — animação
+instantânea que só começa depois).
+
+### `infinite` — loop eterno
+
+```css
+.loader { animation: girar 1s linear infinite; }
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+```
+
+`infinite` faz a animação rodar pra sempre. Perfeito pra **loaders,
+spinners, indicadores pulsando**, mas cuidado: animação infinita
+distrai. Use com moderação.
+
+### `alternate` — vai e volta
+
+```css
+.bouncing {
+  animation: bounce 1s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-20px); }
+}
+```
+
+`alternate` faz a animação **ir e voltar** (vai na ida, volta na
+vinda). Sem isso, a bola pula pra cima e **volta instantaneamente**
+ao ponto de partida. O `alternate` suaviza.
+
+### `fill-mode` — o que acontece antes e depois
+
+```css
+.modal {
+  animation: aparecer 0.3s ease-out forwards;
+  /* "forwards" = ficar no estado final depois que acaba */
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+```
+
+`fill-mode` controla o que o elemento **mostra antes e depois** da
+animação:
+
+- **`none`** (padrão): antes e depois, o elemento fica com os
+  estilos "normais" (não os do keyframe).
+- **`forwards`**: depois que a animação acaba, fica com os estilos
+  do último keyframe.
+- **`backwards`**: durante o delay, fica com os estilos do primeiro
+  keyframe.
+- **`both`**: forwards + backwards.
+
+### `animation-delay` — começar depois
+
+```css
+.carta-1 { animation: aparecer 0.5s ease-out 0.0s both; }
+.carta-2 { animation: aparecer 0.5s ease-out 0.1s both; }
+.carta-3 { animation: aparecer 0.5s ease-out 0.2s both; }
+```
+
+Três cartas aparecem em sequência, com 100ms de diferença entre
+cada. Cria o efeito de "stagger" — popular em listas e
+notificações.
+
+- **`@keyframes nome { 0% {...} 100% {...} }`** define a animação.
+- **`animation: nome duração timing delay iteration direction fill-mode`**.
+- **`infinite`** pra loop eterno. **`alternate`** pra ir e voltar.
+- **`fill-mode: forwards`** mantém o estado final depois que acaba.
+- **`animation-delay`** escalona várias animações (efeito stagger).
+
+> Dica: a maioria das animações de interface começa com
+> `0% { opacity: 0; transform: translateY(20px) }` e termina com
+> `100% { opacity: 1; transform: translateY(0) }`. Esse é o "fade
+> in de baixo pra cima" — o mais comum em modais, notificações e
+> transições de página.
+
+No próximo, vamos além do básico: várias animações simultâneas,
+controle fino de timing e eventos de animação via JavaScript.

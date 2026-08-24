@@ -1,0 +1,168 @@
+---
+id: transform
+title: "Transform: translate, rotate, scale (2D e 3D)"
+resources:
+  - title: "transform (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/transform
+    type: doc
+    lang: pt
+    free: true
+  - title: "CSS 3D Transforms - guia visual (em inglês)"
+    url: https://3dtransforms.desandro.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+`transform` é a propriedade que **move, gira, redimensiona e
+inclina** elementos — sem afetar o fluxo da página (os vizinhos
+ficam onde estavam). É a propriedade mais **performática** pra
+animar, porque o navegador usa a GPU.
+
+### As quatro funções básicas (2D)
+
+```css
+.caixa {
+  transform: translate(20px, -10px);  /* X, Y - move */
+  transform: rotate(45deg);           /* gira */
+  transform: scale(1.5);              /* amplia (1 = normal) */
+  transform: skew(10deg, 5deg);        /* inclina */
+}
+```
+
+Combinando várias:
+
+```css
+.botao:hover {
+  transform: translateY(-2px) scale(1.05);  /* sobe e cresce um pouco */
+}
+```
+
+### `translate` — mover sem afetar o layout
+
+```css
+transform: translate(20px, -10px);   /* X positivo = direita, Y positivo = baixo */
+transform: translateX(20px);
+transform: translateY(-10px);
+transform: translate(50%, -50%);      /* em % do próprio tamanho */
+```
+
+Por que `transform: translate` é melhor que `margin` ou `top/left`?
+Porque **não causa reflow** — o navegador move a "textura" do
+elemento pela GPU sem recalcular o layout da página. Animação mais
+suave, especialmente em mobile.
+
+A unidade `%` é relativa ao **próprio elemento** (50% = metade da
+largura/altura do elemento). Útil pra centralizar:
+
+```css
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);   /* centraliza perfeito */
+}
+```
+
+### `rotate` — girar
+
+```css
+transform: rotate(45deg);          /* sentido horário */
+transform: rotate(-45deg);         /* anti-horário */
+transform: rotate(0.5turn);        /* 1 turn = 360deg */
+```
+
+Truque clássico: ícone de seta que vira pra baixo quando o menu
+abre:
+
+```css
+.seta { transition: transform 0.2s; }
+.menu-aberto .seta { transform: rotate(180deg); }
+```
+
+### `scale` — redimensionar
+
+```css
+transform: scale(1.5);             /* 1.5x maior (X e Y) */
+transform: scale(1.5, 0.5);        /* X 1.5x, Y 0.5x */
+transform: scaleX(1.5);
+transform: scaleY(0.5);
+```
+
+`scale(0)` faz o elemento sumir. `scale(0.95)` é o famoso "afunda
+no clique". **O elemento escala a partir do centro** por padrão
+(você pode mudar com `transform-origin`).
+
+### `transform-origin` — o ponto de pivô
+
+```css
+.caixa {
+  transform-origin: top left;      /* pivô no canto superior esquerdo */
+  transform-origin: center;        /* padrão - centro */
+  transform-origin: 50% 100%;      /* centro horizontal, base */
+}
+```
+
+Sem mudar, todo `rotate` e `scale` acontece a partir do **centro**
+do elemento. Pra "crescer a partir do canto" (efeito de badge que
+sai de um botão), use `top left` ou `bottom right`.
+
+### A ordem importa (e o lado de dentro da pilha)
+
+```css
+transform: translate(100px) rotate(45deg);    /* primeiro move, depois gira */
+transform: rotate(45deg) translate(100px);    /* primeiro gira, depois move */
+```
+
+Dão resultados **diferentes** — a ordem das funções importa. O
+movimento final é calculado da direita pra esquerda na pilha (a
+primeira função é a mais "externa", a última é a mais "interna").
+
+### 3D: `rotateX`, `rotateY`, `perspective`
+
+```css
+.carta {
+  transform: perspective(800px) rotateY(45deg);
+  /* perspective: profundidade (quanto menor, mais extremo) */
+}
+
+.carta:hover {
+  transform: perspective(800px) rotateY(180deg);
+}
+```
+
+3D em CSS é mais nicho (raramente necessário em sites), mas vale
+saber pra efeitos como **flip card**, **parallax** e **showcase
+de produtos**.
+
+```css
+.flip-card {
+  transform-style: preserve-3d;     /* filhos mantêm o 3D */
+  transition: transform 0.6s;
+}
+.flip-card.flipped { transform: rotateY(180deg); }
+.flip-card .frente,
+.flip-card .verso {
+  backface-visibility: hidden;       /* esconde o lado de trás */
+}
+.flip-card .verso {
+  transform: rotateY(180deg);        /* verso começa virado */
+}
+```
+
+- **`translate(X, Y)`** move. **`rotate(deg)`** gira.
+  **`scale(n)`** redimensiona.
+- **`transform`** não causa reflow (mais performático que
+  margin/position).
+- **Ordem importa**: `translate() rotate()` é diferente de
+  `rotate() translate()`.
+- **`transform-origin`** muda o ponto de pivô.
+- **3D** existe mas é nicho — use pra flip cards, parallax, showcase.
+
+> Dica: pra um botão "afundar" no clique, use
+> `transform: scale(0.98)` no `:active` + `transition: transform
+> 0.1s` no estado normal. **Não anime `padding` ou `margin`** —
+> custa caro pro navegador.
+
+No próximo, vamos além das transições: **`@keyframes`** e
+`animation`, que permitem animações complexas com várias etapas.

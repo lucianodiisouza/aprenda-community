@@ -1,0 +1,207 @@
+---
+id: acessibilidade-visual
+title: "Acessibilidade Visual: prefers-* e Modo Escuro"
+resources:
+  - title: "prefers-reduced-motion (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/@media/prefers-reduced-motion
+    type: doc
+    lang: pt
+    free: true
+  - title: "prefers-color-scheme (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/@media/prefers-color-scheme
+    type: doc
+    lang: pt
+    free: true
+  - title: "Guia de dark mode no CSS (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-dark-mode-mode-for-your-app
+    type: doc
+    lang: en
+    free: true
+---
+
+Animação e tema não são decoração — são **configurações do sistema
+operacional** que o usuário pode ajustar por necessidade (vestibular,
+enxaqueca, fotossensibilidade, preferência pessoal). CSS tem
+**media queries `prefers-*`** que detectam essas preferências.
+
+### `prefers-reduced-motion` — respeitar quem não aguenta animação
+
+```css
+/* por padrão, animação normal */
+.bola {
+  animation: pular 1s ease infinite;
+}
+
+/* se o usuário marcou "reduzir movimento" no sistema operacional */
+@media (prefers-reduced-motion: reduce) {
+  .bola {
+    animation: none;                     /* desliga */
+  }
+
+  /* ou reduz a duração drasticamente */
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+Usuários com **enxaqueca, vestibular, TDAH ou fotossensibilidade**
+ativam essa preferência no sistema. A animação padrão pode causar
+náusea, tontura ou crise. Respeitar é **parte do trabalho** de CSS.
+
+Como ativar pra testar:
+
+- **macOS**: Preferências do Sistema → Acessibilidade → Tela →
+  Reduzir movimento.
+- **Windows**: Configurações → Acessibilidade → Efeitos visuais →
+  Efeitos de animação.
+- **iOS/Android**: Acessibilidade → Movimento.
+
+No DevTools, dá pra simular: `Ctrl+Shift+P` → "Show Rendering" →
+em "Emulate CSS media feature prefers-reduced-motion" escolher
+"reduce".
+
+### `prefers-color-scheme` — dark mode automático
+
+```css
+:root {
+  --bg: white;
+  --texto: #1a1a1a;
+  --destaque: #6366f1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;            /* slate-900 */
+    --texto: #f1f5f9;         /* slate-100 */
+    --destaque: #818cf8;      /* indigo-400 - mais claro pro contraste */
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--texto);
+}
+```
+
+O sistema operacional expõe "claro" ou "escuro" como preferência. O
+CSS segue automaticamente. Combina com **`color-scheme: light
+dark`** no `<meta>` ou `body` pra que barras de scroll e elementos
+nativos do navegador também sigam.
+
+```css
+:root { color-scheme: light dark; }
+```
+
+**Dica importante**: em dark mode, **saturação e contraste mudam**.
+Cor que funciona em fundo branco pode ficar "estourada" em fundo
+preto. Use versões mais claras das cores de marca (ex: `#818cf8`
+em vez de `#6366f1` pro indigo).
+
+### `prefers-contrast` — alto contraste
+
+```css
+.botao {
+  border: 1px solid transparent;
+}
+
+@media (prefers-contrast: more) {
+  .botao {
+    border: 1px solid currentColor;     /* contorno visível */
+  }
+
+  body {
+    background: white;
+    color: black;                       /* máximo contraste */
+  }
+}
+```
+
+Usuários com baixa visão configuram "alto contraste" no sistema.
+O site deve responder com **bordas mais marcadas, cores mais
+saturadas e textos mais grossos**.
+
+### Outras `prefers-*` menos comuns
+
+```css
+/* usuário usa tema forçado (alto contraste do Windows) */
+@media (forced-colors: active) {
+  .botao {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonBorder;
+  }
+  /* use cores do sistema (ButtonFace, ButtonText, etc.) */
+}
+
+/* transparência do sistema (reduzir) */
+@media (prefers-reduced-transparency: reduce) {
+  .card {
+    background: white;        /* sem rgba alpha */
+  }
+}
+```
+
+### Como **combinar tudo** sem virar espaguete
+
+Estratégia que escala: **centralize cores em variáveis** e ajuste
+as variáveis por contexto.
+
+```css
+:root {
+  --bg: white;
+  --texto: #1a1a1a;
+  --texto-suave: #666;
+  --borda: #e5e7eb;
+  --destaque: #6366f1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --texto: #f1f5f9;
+    --texto-suave: #94a3b8;
+    --borda: #334155;
+    --destaque: #818cf8;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --texto: black;
+    --borda: black;
+  }
+}
+```
+
+```css
+body { background: var(--bg); color: var(--texto); }
+.card { border: 1px solid var(--borda); }
+.btn  { background: var(--destaque); }
+```
+
+Todas as `@media` mexem nas **mesmas variáveis**. O resto do CSS
+não muda. **Vai pra `css-moderno`** o aprofundamento de variáveis
+CSS (Custom Properties) — elas são a base dessa estratégia.
+
+- **`prefers-reduced-motion: reduce`** desliga/resume animação.
+  Respeite.
+- **`prefers-color-scheme: dark`** ativa dark mode.
+- **`prefers-contrast: more`** ativa alto contraste.
+- **`color-scheme: light dark`** no `:root` faz o navegador aplicar
+  nos controles nativos.
+- **Use variáveis CSS** pra centralizar cores e ajustar tudo em
+  uma `@media`.
+
+> Dica: o teste de acessibilidade mais rápido que existe é abrir
+> seu site no celular com "reduzir movimento" e "alto contraste"
+> ativados. Se algo quebrar, conserte. **É trabalho de CSS**,
+> não extra.
+
+---
+
+Você terminou **`css-animacoes`**. Agora dá pra seguir pra
+`css-moderno` (variáveis, `:has()`, container queries, arquitetura,
+performance) ou voltar pro `css-layout` e ver casos que envolvem
+animações.

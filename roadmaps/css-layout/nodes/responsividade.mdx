@@ -1,0 +1,174 @@
+---
+id: responsividade
+title: "Responsividade: Media Queries e Mobile-first"
+resources:
+  - title: "Media queries (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_media_queries/Using_media_queries
+    type: doc
+    lang: pt
+    free: true
+  - title: "Guia de breakpoints responsivos (em inglês)"
+    url: https://getbootstrap.com/docs/5.3/layout/breakpoints/
+    type: doc
+    lang: en
+    free: true
+---
+
+Responsividade é o site **se adaptar a diferentes tamanhos de tela**
+— do celular pequeno (320px) ao monitor 4K (3840px). O CSS tem
+**media queries** pra isso, e a estratégia **mobile-first** é o
+padrão moderno.
+
+### `@media` — a sintaxe
+
+```css
+/* padrão (mobile, sem query) */
+.card { padding: 12px; font-size: 14px; }
+
+/* tablet e acima */
+@media (min-width: 768px) {
+  .card { padding: 16px; font-size: 16px; }
+}
+
+/* desktop e acima */
+@media (min-width: 1024px) {
+  .card { padding: 24px; font-size: 18px; }
+}
+```
+
+O CSS **dentro da media query** só se aplica quando a condição é
+verdadeira. `@media (min-width: 768px)` = "se a tela tem pelo menos
+768px, aplique isso".
+
+### Mobile-first (escreva o pequeno primeiro)
+
+```css
+/* CSS base - assume mobile */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* só pra telas maiores */
+@media (min-width: 768px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1024px) {
+  .grid { grid-template-columns: repeat(3, 1fr); }
+}
+```
+
+**Por que mobile-first?**
+
+- A base do CSS é a tela pequena (a mais comum hoje). Funciona
+  "sozinha" no mobile.
+- As media queries **só adicionam** regras pra telas maiores. Não
+  precisam sobrescrever.
+- Força você a pensar no essencial primeiro (qual é o conteúdo
+  mais importante no celular?).
+- É o padrão da indústria (Google, MDN, frameworks).
+
+### Breakpoints comuns (não copie o do framework, **escolha pelos seus conteúdos**)
+
+| Nome          | Largura        | Quando usar                      |
+| ------------- | -------------- | -------------------------------- |
+| `sm`          | 640px+         | Telas grandes de celular, phablets |
+| `md`          | 768px+         | Tablets em portrait              |
+| `lg`          | 1024px+        | Tablets em landscape, laptops    |
+| `xl`          | 1280px+        | Desktops                         |
+| `2xl`         | 1536px+        | Monitores grandes                |
+
+São apenas **referências** — Bootstrap e Tailwind popularizaram
+esses valores, mas o melhor breakpoint é o que **seu conteúdo**
+pede. Abra o site em vários tamanhos e veja onde ele quebra.
+
+### Outras media queries (úteis)
+
+```css
+/* orientação */
+@media (orientation: landscape) { ... }
+@media (orientation: portrait)  { ... }
+
+/* prefers-reduced-motion (acessibilidade) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* prefers-color-scheme (dark mode) */
+@media (prefers-color-scheme: dark) {
+  body { background: #111; color: #eee; }
+}
+
+/* prefers-contrast (acessibilidade) */
+@media (prefers-contrast: more) {
+  body { background: #fff; color: #000; }
+}
+
+/* telas de impressão */
+@media print {
+  .navbar, .footer { display: none; }
+  body { color: black; background: white; }
+}
+```
+
+Essas últimas (`prefers-*`) são **acessibilidade** — usuários
+configuram o sistema operacional pra reduzir animação, aumentar
+contraste, ou forçar dark mode. Respeitar isso é parte do trabalho
+de CSS.
+
+### A pegadinha do viewport
+
+```html
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+```
+
+Sem essa meta tag, o celular **finje que tem 980px de largura** e o
+site aparece "diminúdo". É o bug mais comum de site mobile — sempre
+coloque a tag viewport no `<head>`.
+
+### `@container` (spoiler de css-moderno)
+
+A media query **olha pra viewport** (a tela toda). `@container` olha
+pro **tamanho do elemento pai**. Útil pra componentes reutilizáveis
+que devem se adaptar ao espaço que têm, não à tela.
+
+```css
+.card-pai {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .card-filho {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+  }
+}
+```
+
+Vamos aprofundar em `css-moderno`. Por enquanto, lembre que existe
+— e que muda o jogo pra componentes.
+
+- **Mobile-first**: escreva o CSS base sem `@media`, depois vá
+  adicionando regras pra telas maiores.
+- **Breakpoints**: são pontos onde o layout **quebra**. Escolha
+  pelo conteúdo, não por números fixos de framework.
+- **Sempre** coloque a meta tag `viewport` no HTML.
+- **`prefers-reduced-motion`** é acessibilidade — respeite.
+
+> Dica: use o DevTools pra simular diferentes tamanhos (F12 →
+> Toggle Device Toolbar, ou `Ctrl+Shift+M`). Teste em pelo menos
+> 3 tamanhos: mobile (375px), tablet (768px), desktop (1280px).
+
+---
+
+Você terminou **`css-layout`**. Agora dá pra seguir pra
+`css-animacoes` (transições, transform, keyframes, com
+acessibilidade) ou `css-moderno` (variáveis, container queries,
+`:has()`, arquitetura).

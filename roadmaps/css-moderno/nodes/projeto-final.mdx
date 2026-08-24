@@ -1,0 +1,212 @@
+---
+id: projeto-final
+title: "Projeto Final: Landing Page Completa e Responsiva"
+resources:
+  - title: "Landing pages - padrões de design (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-landing-page
+    type: doc
+    lang: en
+    free: true
+---
+
+O projeto final **junta tudo** que você aprendeu nas quatro trilhas
+de CSS. É uma landing page completa e responsiva que exercita cada
+conceito — dos fundamentos (cores, tipografia, box model) ao
+moderno (variáveis, container queries, prefers-reduced-motion).
+
+Esse é o **checkpoint** que diz "eu sei CSS de verdade" — porque
+construir do zero, sem copiar, é onde o aprendizado vira
+habilidade.
+
+## O que você vai construir
+
+Uma landing page de **produto único** (pode ser um app fictício,
+uma marca sua, ou só "Landing Demo"). **Seções esperadas**:
+
+1. **Header/Navbar** — logo + menu + CTA. Sticky no scroll.
+2. **Hero** — título grande, subtítulo, dois CTAs, imagem/ilustração
+   à direita. Fullscreen no desktop.
+3. **Features** — grid de 3-6 features com ícone, título, texto.
+4. **Como funciona** — 3 passos numerados com imagem.
+5. **Depoimentos** — 3-4 cards com avatar, nome, citação.
+6. **Preços** — 3 planos (básico, pro, empresa) com destaque no
+   recomendado.
+7. **FAQ** — 5-8 perguntas, accordion (com `<details>` ou JS leve).
+8. **CTA final** — chamada pra ação com botão grande.
+9. **Footer** — logo, links em colunas, copyright, redes sociais.
+
+## Critérios de aceite
+
+### Estrutura e semântica
+
+- [ ] HTML5 semântico (`<header>`, `<nav>`, `<main>`, `<section>`,
+  `<article>`, `<footer>`).
+- [ ] Um único arquivo `index.html` e um único arquivo `style.css`
+  (sem frameworks).
+- [ ] Imagens com `alt` descritivo.
+- [ ] Meta tags básicas (`viewport`, `description`, `og:image`).
+
+### Design e estilo
+
+- [ ] **CSS Custom Properties** no `:root` pra cores, espaçamentos
+  e tipografia. Trocar uma variável muda o tema inteiro.
+- [ ] **Sistema de espaçamento** consistente (ex: 4, 8, 16, 24, 32,
+  48, 64 — todos múltiplos de 4).
+- [ ] **Tipografia fluida** com `clamp()` em pelo menos o `h1` e
+  `h2`.
+- [ ] **Paleta de cores** com pelo menos: primária, secundária,
+  neutros (3 níveis), sucesso, erro.
+- [ ] **Modo escuro** com `@media (prefers-color-scheme: dark)`.
+- [ ] **`prefers-reduced-motion: reduce`** desabilita animações.
+
+### Layout (css-layout)
+
+- [ ] **Navbar** com Flexbox (logo à esquerda, menu à direita, CTA).
+- [ ] **Hero** com Flexbox (texto à esquerda, ilustração à direita)
+  ou Grid (2 colunas).
+- [ ] **Features** em **Grid** com `repeat(auto-fit, minmax(280px,
+  1fr))` (responsivo sem media query).
+- [ ] **Como funciona** com Grid 3 colunas no desktop, 1 coluna no
+  mobile.
+- [ ] **Preços** com 3 cards lado a lado (Grid), card central
+  destacado.
+- [ ] **Footer** com Grid 4 colunas no desktop, stack no mobile.
+- [ ] **Sticky header** que segue o usuário durante o scroll.
+
+### Responsividade (css-layout)
+
+- [ ] **Mobile-first** — o CSS base funciona em 375px sem media
+  query.
+- [ ] **Media queries** em pelo menos 2 breakpoints (recomendado
+  768px e 1024px) reestruturando layout principal.
+- [ ] Testado em **375px** (mobile), **768px** (tablet),
+  **1280px** (desktop).
+- [ ] **Sem scroll horizontal** em nenhum tamanho.
+
+### Animações (css-animacoes)
+
+- [ ] **Transição no hover** de botões e cards (mudar `transform`
+  + `box-shadow` em ~200ms).
+- [ ] **Animação de entrada** no hero (fade + slide) na primeira
+  renderização.
+- [ ] **Animação nos cards de feature** ao entrar na viewport
+  (opcional — `IntersectionObserver` + classe).
+- [ ] **Loader/animação no CTA** quando submete (opcional).
+
+### CSS moderno (css-moderno)
+
+- [ ] **Container query** em pelo menos um componente que se adapta
+  ao espaço (ex: card de feature que muda layout quando o grid
+  encolhe).
+- [ ] **`:has()`** em pelo menos um lugar (ex: card com imagem que
+  vira horizontal; FAQ aberto muda estilo do pai).
+- [ ] **`will-change`** em pelo menos um elemento animado.
+- [ ] **Sem `transition: all`** — sempre liste as propriedades.
+
+### Acessibilidade
+
+- [ ] **Contraste mínimo 4.5:1** pra texto normal, 3:1 pra texto
+  grande. Valide no
+  [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/).
+- [ ] **`:focus-visible`** com anel visível em todos os interativos
+  (botões, links, inputs).
+- [ ] **Navegação por teclado** funciona inteira (Tab, Shift+Tab,
+  Enter, Esc).
+- [ ] **`prefers-reduced-motion`** desabilita animações decorativas.
+- [ ] **`aria-label`** em ícones sem texto, `aria-expanded` em
+  accordion, `aria-current="page"` no link ativo.
+- [ ] **HTML validado** (sem tags fechadas errado, sem atributos
+  inválidos).
+
+### Performance
+
+- [ ] **Imagens otimizadas** (WebP ou AVIF, tamanho correto).
+- [ ] **`<img loading="lazy">`** em imagens abaixo da dobra.
+- [ ] **`width`/`height`** definidos em todas as imagens (evita
+  layout shift).
+- [ ] **CSS minificado** pra produção.
+- [ ] **Lighthouse score** ≥ 90 em Performance, Accessibility,
+  Best Practices, SEO.
+
+## Estrutura de arquivos sugerida
+
+```text
+landing/
+  index.html
+  style.css
+  imagens/
+    hero.svg
+    feature-1.svg
+    avatar-1.jpg
+    ...
+```
+
+(Um único arquivo CSS é OK pra landing; se virar projeto maior,
+quebre por componente.)
+
+## Como entregar
+
+1. **Hospede** no GitHub Pages, Vercel, Netlify ou similar (todos
+   têm tier gratuito).
+2. **Pegue a URL pública** e valide no
+   [PageSpeed Insights](https://pagespeed.web.dev/).
+3. **Abra o DevTools** e rode o Lighthouse — tire print do score
+   ≥ 90.
+4. **Commit** tudo no Git com mensagem descritiva.
+
+## Desafios bônus (se quiser ir além)
+
+- [ ] Adicionar **scroll-snap** em uma seção de imagens.
+- [ ] Adicionar **lightbox** ao clicar em imagem (pode ser CSS
+  puro com `:target`).
+- [ ] Adicionar **modo alto contraste** com
+  `@media (prefers-contrast: more)`.
+- [ ] Adicionar **animações de scroll** com
+  `animation-timeline: view()` (Chrome 115+).
+- [ ] Internacionalizar pra **inglês** com `lang="en"` no `<html>` e
+  usar **logical properties** pra layout funcionar em ambos.
+
+## Quando você termina
+
+Você cruzou a **ponte inteira** do CSS. Sabe:
+
+- **Por que** o CSS se comporta como se comporta (box model,
+  cascata, especificidade).
+- **Como** fazer qualquer layout (Flexbox, Grid, Position).
+- **Como** animar com responsabilidade (transitions, @keyframes,
+  `prefers-reduced-motion`).
+- **O que tem de novo** (variáveis, container queries, `:has()`,
+  logical properties).
+- **Como** organizar (BEM ou framework, escolha consciente).
+- **Como** medir e otimizar (Lighthouse, reflow, will-change).
+
+Próximos passos sugeridos:
+
+- **HTML semântico** (que já vimos em `html`).
+- **JavaScript** (DOM, eventos, fetch) — pra dar comportamento.
+- **Um framework** (React, Vue, Svelte) — pra escalar.
+- **Acessibilidade** mais a fundo (WAI-ARIA, testes com leitor de
+  tela).
+
+O importante é: **CSS não é mais um mistério**. Você sabe o que
+está fazendo.
+
+- Página completa em **HTML semântico** + **CSS puro** (sem
+  framework).
+- **Custom properties** centralizam o design system.
+- **Flexbox + Grid** pra layout, **media queries** pra
+  responsividade.
+- **Animações** suaves com `prefers-reduced-motion` respeitado.
+- **Container queries** e **`:has()`** onde faz sentido.
+- **Acessibilidade** e **performance** desde o início.
+
+> Dica: a melhor forma de **validar** se você aprendeu é abrir o
+> DevTools de outro site bom e **reconhecer cada técnica que
+> usamos**. Quando você olhar o CSS do GitHub, do Vercel ou do
+> Stripe e entender **por que** está estruturado daquele jeito, é
+> o sinal de que você internalizou.
+
+Você terminou **`css-moderno`**. Isso fecha a jornada completa de
+CSS — das 4 trilhas. Agora você sabe o que toda pessoa que mexe
+com web dev precisa saber de CSS, do "o que é uma classe" até
+container queries e arquitetura escalável. 🎉

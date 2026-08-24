@@ -1,0 +1,91 @@
+---
+id: seletores-basicos
+title: "Seletores Básicos: Tag, Classe, ID e Atributo"
+resources:
+  - title: "Seletores (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Selectors
+    type: doc
+    lang: pt
+    free: true
+  - title: "CSS Diner - jogo pra praticar seletores"
+    url: https://flukeout.github.io/
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Seletor é o **endereço** do que você quer estilizar. Os quatro básicos
+cobrem 90% do uso no dia a dia.
+
+### Por tag (tipo)
+
+```css
+p    { color: gray; }     /* todo <p> */
+h2   { margin-top: 32px; } /* todo <h2> */
+```
+
+Útil pra **estilos globais** (todo parágrafo com essa cor, todo link
+com esse sublinhado). Vago demais pra coisas específicas.
+
+### Por classe (o mais usado)
+
+```html
+<p class="destaque">Importante</p>
+```
+
+```css
+.destaque {
+  font-weight: bold;
+  color: tomato;
+}
+```
+
+Classe é **reutilizável** — o mesmo `class="destaque"` pode estar em
+milhares de elementos. Pode ter **várias classes** no mesmo elemento,
+separadas por espaço:
+
+```html
+<button class="botao botao-grande">Enviar</button>
+```
+
+### Por ID (caso especial)
+
+```html
+<h1 id="titulo-principal">Olá</h1>
+```
+
+```css
+#titulo-principal { font-size: 48px; }
+```
+
+ID é **único na página** (regra do HTML). Use com moderação — muita
+gente prefere classe pra tudo porque ID tem **especificidade alta** e
+deixa o CSS difícil de sobrescrever.
+
+### Por atributo (seletor esperto)
+
+```html
+<input type="text" disabled>
+<a href="https://exemplo.com" target="_blank">link</a>
+```
+
+```css
+input[disabled]            { background: #eee; }     /* tem o atributo */
+input[type="text"]         { border: 1px solid #999; } /* valor exato */
+a[target="_blank"]         { color: blue; }           /* só links externos */
+```
+
+Muito útil pra **estilizar formulários** (cada `type` de input com seu
+estilo) e links (externos, internos, mailto).
+
+- **Por tag** (tipo) — global, vago.
+- **Por classe** (`.nome`) — o padrão pra coisas reutilizáveis.
+- **Por ID** (`#nome`) — único, alta especificidade. Evite.
+- **Por atributo** (`[type="x"]`) — formulários e casos específicos.
+
+> Dica: quando estiver em dúvida, use **classe**. A regra "se tem
+> comportamento único, é ID; se repete, é classe" funciona.
+
+No próximo nó, vamos **combinar** esses seletores pra pegar elementos
+específicos dentro de outros (o filho de um card, o primeiro item de
+uma lista).

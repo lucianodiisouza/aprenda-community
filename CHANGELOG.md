@@ -6,6 +6,41 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+### Mudado
+- 🔀 **Split da trilha CSS** (v1.4.0, 36 nós) em **4 trilhas menores**:
+  - **`css-fundamentos`** (15 nós): introdução, incluindo CSS, seletores
+    básicos, combinadores, cores, unidades, tipografia, box model,
+    display, backgrounds, sombras, pseudo-classes, pseudo-elementos,
+    cascata/especificidade, DevTools. Pré-requisito pras outras 3.
+  - **`css-layout`** (10 nós, intermediário): position, **Flexbox
+    aprofundado em 4 nós** (introdução, container, itens, casos),
+    **Grid aprofundado em 4 nós** (introdução, container, itens, casos),
+    responsividade com media queries + mobile-first.
+  - **`css-animacoes`** (6 nós, intermediário): transições, transform
+    (2D/3D), animações básicas (`@keyframes`), animações avançadas
+    (cubic-bezier, steps, will-change), casos animados (spinner,
+    skeleton, modal, toast), **acessibilidade visual** com
+    `prefers-reduced-motion`, dark mode (`prefers-color-scheme`),
+    `prefers-contrast` e `forced-colors`.
+  - **`css-moderno`** (9 nós, avançado): variáveis CSS (custom
+    properties) e theming, funções modernas (`clamp`, `min`, `max`,
+    `calc`), Container Queries, `:has()`, Logical Properties,
+    arquitetura (BEM, Tailwind, CSS-in-JS, trade-offs), performance
+    (reflow/repaint/composite, critical CSS, content-visibility), o
+    mundo além do CSS puro (frameworks, pré-processadores), e projeto
+    final de landing page com critérios cobrindo as 4 trilhas.
+
+  Decisões editoriais detalhadas em
+  `roadmaps/{css-fundamentos,css-layout,css-animacoes,css-moderno}/meta/editorial-decisions.md`.
+
+### Removido
+- 🗑️ Trilha única `css/` (v1.4.0, 36 nós) — todo o conteúdo foi
+  migrado para as 4 trilhas acima com preservação, consolidação
+  (cascata+especificidade+herança viraram 1 nó) e aprofundamento
+  (Flexbox/Grid/animação ganharam mais nós).
+
+## [1.4.0] - 2026-08-24
+
 ### Adicionado
 - 🆕 Trilha **CSS** completa (36 nós, do zero absoluto até o avançado),
   estruturada em 3 tópicos macro + 1 milestone de projeto final:

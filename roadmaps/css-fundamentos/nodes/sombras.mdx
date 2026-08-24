@@ -1,0 +1,100 @@
+---
+id: sombras
+title: "Sombras: box-shadow e text-shadow"
+resources:
+  - title: "box-shadow (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/box-shadow
+    type: doc
+    lang: pt
+    free: true
+---
+
+Sombras dão **profundidade** — um botão "flutua" acima do fundo, um
+card "sobe" quando você passa o mouse. Duas propriedades pra isso.
+
+### `box-shadow` — sombra em volta de uma caixa
+
+```css
+.card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+```
+
+A ordem dos valores é: **deslocamento X, deslocamento Y, blur,
+cor**. Você pode adicionar **spread** (tamanho) e **inset** (sombra
+interna) — `inset 0 2px 4px ...`.
+
+| Valor          | Significado                                          |
+| -------------- | ---------------------------------------------------- |
+| `0` (X)        | Quanto a sombra anda pro lado (positivo = direita)   |
+| `2px` (Y)      | Quanto a sombra anda pra baixo (positivo = baixo)    |
+| `8px` (blur)   | Suavidade. `0` = borda nítida, valores altos = difusa |
+| `rgba(0,0,0,0.1)` | Cor com transparência                              |
+
+### Receitas clássicas
+
+```css
+/* Sombra leve - card parado */
+.card { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+
+/* Sombra média - dropdown, modal */
+.dropdown { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+
+/* Sombra forte - hero em destaque */
+.hero { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); }
+
+/* Card "levantando" no hover */
+.card {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s; /* vamos aprofundar em css-animacoes */
+}
+.card:hover { box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); }
+```
+
+### Várias sombras
+
+Você pode **empilhar** sombras — útil pra ter uma sombra colorida
++ uma cinza sutil:
+
+```css
+.botao-primario {
+  box-shadow:
+    0 4px 6px rgba(99, 102, 241, 0.3),   /* sombra colorida da marca */
+    0 1px 3px rgba(0, 0, 0, 0.1);        /* sombra cinza sutil */
+}
+```
+
+### `text-shadow` — sombra no texto
+
+```css
+h1 {
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+```
+
+Mesma lógica (X, Y, blur, cor), mas aplica ao **glifo** do texto.
+Ótimo pra texto sobre foto: clareia o fundo escuro pro texto ficar
+legível. Use com moderação — sombra em texto demais vira site dos
+anos 2000.
+
+### Acessibilidade: contraste
+
+Sombra **não substitui contraste de cor**. Um botão com sombra cinza
+em fundo branco é "clicável", mas se o texto não tiver contraste
+suficiente com o fundo, ainda é ilegível. Valide com ferramentas
+como o [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/).
+
+- **`box-shadow: X Y blur cor`** é o básico. Spread e `inset` são
+  extras.
+- **Várias sombras** separam com vírgula.
+- **`text-shadow`** pro texto; mesmo formato.
+- Sombra **não substitui** contraste de cor — valide sempre.
+
+> Dica: a sombra mais usada do mercado é
+> `0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)` —
+> é a "Material Design elevation 1" do Google. Salve nos favoritos
+> pra usar como base.
+
+No próximo, vamos dar **vida** ao estado de hover: as
+pseudo-classes que reagem à interação.

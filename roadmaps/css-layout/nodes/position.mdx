@@ -1,0 +1,121 @@
+---
+id: position
+title: "Position: static, relative, absolute, fixed e sticky"
+resources:
+  - title: "position (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/position
+    type: doc
+    lang: pt
+    free: true
+---
+
+A propriedade `position` define **como um elemento é posicionado no
+fluxo da página**. Os cinco valores cobrem todos os cenários
+realistas — do mais comum (`static`) ao mais útil em overlays
+(`fixed`).
+
+### `static` (o padrão — você quase nunca escreve)
+
+```css
+.elemento { position: static; }  /* implícito em todo elemento */
+```
+
+O elemento segue o **fluxo normal** do documento. Top, right, bottom,
+left e z-index **não têm efeito**.
+
+### `relative` (o "ajustável" — base pro absolute)
+
+```css
+.caixa { position: relative; top: 10px; left: 20px; }
+```
+
+O elemento fica **onde estaria** no fluxo, mas com um **ajuste** de
+`top`, `right`, `bottom`, `left` em relação a essa posição. O espaço
+original dele **continua reservado** (os outros elementos não
+ocupam).
+
+O uso mais importante do `relative` é servir de **âncora** pra um
+filho com `position: absolute`.
+
+### `absolute` (tira do fluxo, ancora no pai posicionado)
+
+```css
+.pai   { position: relative; }   /* ancora */
+.filho { position: absolute; top: 0; right: 0; }
+```
+
+O elemento é **removido do fluxo** (irmãos não reservam espaço pra
+ele) e posicionado em relação ao **ancestral posicionado mais
+próximo** (qualquer um com `position` diferente de `static`). Se não
+achar, usa o `<html>` (a página inteira).
+
+```html
+<div class="pai">                <!-- position: relative -->
+  <div class="filho"></div>      <!-- position: absolute, top: 0 right: 0 -->
+  <p>Outro elemento</p>          <!-- o "filho" não ocupa espaço aqui -->
+</div>
+```
+
+Clássico: **badge de notificação** no canto de um ícone, **menu
+dropdown**, **tooltip**.
+
+### `fixed` (ancora na viewport, não no pai)
+
+```css
+.botao-flutuante { position: fixed; bottom: 24px; right: 24px; }
+```
+
+O elemento fica **fixo na tela**, não na página. Rola a página
+quanto quiser — ele continua lá. Usa o viewport como referência
+(a janela do navegador).
+
+Útil pra **botão "voltar ao topo"**, **chat widget**, **cookie
+banner** que segue o usuário. Cuidado: em mobile, `fixed` pode ter
+comportamento estranho com a barra de URL que some/aparece.
+
+### `sticky` (o híbrido inteligente)
+
+```css
+.secao-titulo {
+  position: sticky;
+  top: 0;        /* gruda quando chega no topo da viewport */
+}
+```
+
+O elemento **flui normalmente** até que a posição `top` (ou `bottom`,
+`left`, `right`) seja atingida. Aí ele **gruda** ali enquanto o pai
+estiver visível. Quando o pai sai da tela, ele sai junto.
+
+Perfeito pra **headers de seção** em páginas longas, **tabelas com
+cabeçalho fixo**, **navbar lateral**. Requisito: o pai precisa ter
+`overflow` visível (não pode ser `overflow: hidden` em algum
+ancestral — quebra o sticky).
+
+### `z-index` — quem fica em cima
+
+```css
+.modal       { position: fixed; z-index: 100; }
+.tooltip     { position: absolute; z-index: 50; }
+.conteudo    { position: relative; z-index: 1; }
+```
+
+`z-index` só funciona em **elementos posicionados** (com `position`
+diferente de `static`). Valor maior = fica mais à frente. Empilha
+em **contexto de empilhamento** — se um pai tem `z-index: 1` e um
+filho tem `z-index: 9999`, o filho não passa de elementos com
+`z-index: 2` **fora** daquele pai.
+
+- **`static`** (padrão) — fluxo normal, sem ajuste.
+- **`relative`** — fica onde está, com ajuste de top/right/bottom/left.
+- **`absolute`** — tira do fluxo, ancora no pai posicionado mais
+  próximo.
+- **`fixed`** — ancora na viewport, não no pai.
+- **`sticky`** — flui até uma posição e gruda lá.
+- **`z-index`** só funciona com position diferente de `static`.
+
+> Dica: `position: absolute` precisa de um **pai posicionado** pra
+> ancorar certo. Esquecer de pôr `position: relative` no pai é o bug
+> mais comum — o elemento pula pra top/left da página inteira.
+
+No próximo, vamos entrar no **Flexbox** — o layout que destravou a
+web moderna e merece **quatro nós** pra ser bem entendido.

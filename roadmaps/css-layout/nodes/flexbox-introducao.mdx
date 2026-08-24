@@ -1,0 +1,104 @@
+---
+id: flexbox-introducao
+title: "Flexbox: o Layout que Destrava a Web"
+resources:
+  - title: "Flexbox - conceitos básicos (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox
+    type: doc
+    lang: pt
+    free: true
+  - title: "Flexbox Froggy - jogo pra aprender"
+    url: https://flexboxfroggy.com/
+    type: exercicio
+    lang: en
+    free: true
+  - title: "Guia visual de Flexbox (CSS-Tricks, em inglês)"
+    url: https://css-tricks.com/snippets/css/a-guide-to-flexbox/
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes do Flexbox, centralizar uma caixa na vertical, distribuir
+colunas com larguras iguais, ou alinhar itens com alturas diferentes
+era um **inferno** de `position: absolute`, `margin: auto` e números
+mágicos. O Flexbox chegou em 2009 e virou **o jeito padrão** de
+organizar elementos em **uma dimensão** (linha **ou** coluna).
+
+### Ativando o Flexbox
+
+```css
+.container {
+  display: flex;
+}
+```
+
+Só isso. Pronto, todos os **filhos diretos** viram "flex items" e
+obedecem a um conjunto novo de regras. O HTML continua o mesmo.
+
+### Os dois eixos
+
+Flexbox sempre trabalha com **dois eixos**:
+
+- **Eixo principal (main axis)**: a direção em que os itens se
+  distribuem. Por padrão, é **horizontal** (esquerda → direita).
+- **Eixo cruzado (cross axis)**: perpendicular ao principal. Por
+  padrão, **vertical** (topo → baixo).
+
+```text
+Eixo principal (→)  [item 1] [item 2] [item 3]
+                            ↓
+Eixo cruzado (↓)    (perpendicular)
+```
+
+Trocar o eixo principal é uma linha:
+
+```css
+.container {
+  display: flex;
+  flex-direction: column; /* agora o eixo principal é vertical */
+}
+```
+
+### O container e os itens
+
+O Flexbox tem **dois "lados"** com propriedades diferentes:
+
+- **Container (pai)**: controla o comportamento **do grupo** (direção,
+  alinhamento, espaçamento, quebra de linha).
+- **Itens (filhos)**: controlam o comportamento **individual** (crescer,
+  encolher, ordem, alinhamento próprio).
+
+Os próximos dois nós aprofundam cada lado:
+- **`flexbox-container`**: tudo que vai no pai (`flex-direction`,
+  `justify-content`, `align-items`, `gap`, etc.).
+- **`flexbox-itens`**: tudo que vai nos filhos (`flex-grow`,
+  `flex-shrink`, `flex-basis`, `order`, etc.).
+- **`flexbox-casos`**: padrões clássicos do dia a dia (centralizar,
+  navbar, cards responsivos).
+
+### Por que Flexbox é importante
+
+Quase **todo layout moderno** começa com Flexbox:
+
+- Navbar com logo à esquerda e menu à direita.
+- Cards alinhados lado a lado.
+- Formulário com label em cima do input.
+- Centralizar uma caixa na tela.
+- Distribuir itens com espaço entre eles.
+
+E funciona junto com **Grid** (cada um com seu papel — Grid pra
+layout 2D, Flexbox pra 1D e alinhamento).
+
+- **`display: flex`** no container ativa o Flexbox.
+- **Eixo principal** é a direção de distribuição (horizontal por
+  padrão).
+- **Eixo cruzado** é perpendicular.
+- Container controla o grupo; itens controlam a si mesmos.
+
+> Dica: [Flexbox Froggy](https://flexboxfroggy.com/) é um joguinho
+> onde você posiciona sapos usando Flexbox. 15 minutos resolvem e
+> solidificam o conceito. Vale mais que 5 textos.
+
+No próximo, as propriedades que controlam o **container**: como
+alinhar, espaçar, e distribuir os filhos.

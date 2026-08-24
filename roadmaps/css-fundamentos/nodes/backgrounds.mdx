@@ -1,0 +1,109 @@
+---
+id: backgrounds
+title: "Backgrounds: Cor, Imagem e Gradiente"
+resources:
+  - title: "background (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/background
+    type: doc
+    lang: pt
+    free: true
+---
+
+Background é a "pintura" da caixa. Pode ser cor, imagem, gradiente
+ou uma combinação de tudo isso.
+
+### Cor sólida
+
+```css
+.caixa { background: tomato; }
+.caixa { background: #ff6347; }
+.caixa { background: rgba(0, 0, 0, 0.5); } /* semi-transparente */
+```
+
+A cor vai **por trás** do conteúdo. Se o elemento não tem conteúdo
+ou é pequeno, o background só aparece onde a caixa é.
+
+### Imagem de fundo
+
+```css
+.hero {
+  background-image: url("foto.jpg");
+  background-size: cover;       /* cobre todo o elemento */
+  background-position: center;  /* centraliza */
+  background-repeat: no-repeat; /* não repete */
+  background-color: #333;       /* fallback antes da imagem carregar */
+}
+```
+
+- **`cover`**: cobre o elemento todo, cortando se precisar.
+- **`contain`**: mostra a imagem inteira, mesmo que sobre espaço.
+- **`repeat`** (padrão) repete em azulejo. **`no-repeat`** mostra
+  uma vez só.
+
+A **shorthand** `background` aceita tudo:
+
+```css
+.hero {
+  background: #333 url("foto.jpg") center / cover no-repeat;
+  /* cor | url | posição / tamanho | repeat */
+}
+```
+
+### Gradiente (sem imagem externa)
+
+```css
+.banner {
+  background: linear-gradient(45deg, #ff6347, #ffcc00);
+}
+```
+
+- **`linear-gradient(ângulo, cor1, cor2, ...)`**: transição em linha
+  reta.
+- **`radial-gradient(cor1, cor2)`**: transição em círculo (do centro
+  pra fora).
+
+```css
+.btn-primary {
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+}
+```
+
+`to right` é mais legível que `90deg` (ou `270deg`, depende da
+direção). Funciona com `to top`, `to bottom right`, etc.
+
+### Empilhando backgrounds
+
+Você pode ter **vários backgrounds ao mesmo tempo**, separados por
+vírgula. O primeiro fica na frente, o último atrás.
+
+```css
+.hero {
+  background:
+    linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),  /* overlay escuro */
+    url("foto.jpg") center / cover no-repeat;
+}
+```
+
+Aqui o overlay escuro fica por cima da foto — deixa o texto branco
+em cima legível. Padrão clássico de hero com texto sobre imagem.
+
+### Imagem x Gradiente x Cor — quando usar
+
+| Caso                            | Use                         |
+| ------------------------------- | --------------------------- |
+| Cor de fundo simples            | `background: #333`          |
+| Foto de capa                    | `background-image` + `cover`|
+| Botão colorido                  | `linear-gradient`           |
+| Texto sobre foto                | imagem + gradiente overlay  |
+| Padrão decorativo               | imagem pequena + `repeat`   |
+
+- **`background`** é a shorthand. Use pra combinar tudo em uma linha.
+- **`cover`** preenche cortando. **`contain`** mostra inteiro.
+- **`linear-gradient`** pra transições de cor sem imagem externa.
+- Vários backgrounds se **empilham** (vírgula, primeiro na frente).
+
+> Dica: pra `background-image`, sempre declare um `background-color`
+> como fallback. Enquanto a imagem carrega, o usuário vê a cor —
+> evita o "flash" branco.
+
+No próximo nó, vamos dar profundidade: **sombras** em caixas e texto.

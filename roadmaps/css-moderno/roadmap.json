@@ -1,0 +1,77 @@
+{
+  "slug": "css-moderno",
+  "title": "CSS Moderno: Variáveis, Seletores Novos e Arquitetura",
+  "description": "Trilha focada no **CSS que existe hoje** mas que pouca gente domina. Cobre Custom Properties (variáveis e theming), funções modernas (clamp, min, max, calc), Container Queries, `:has()` (o seletor pai), Logical Properties, arquitetura (BEM, organização), performance e o ecossistema além do CSS puro. Pré-requisito: css-fundamentos, css-layout, css-animacoes.",
+  "difficulty": "avancado",
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "variaveis",
+      "title": "Variáveis CSS: Custom Properties e Theming",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["funcoes-modernas"]
+    },
+    {
+      "id": "funcoes-modernas",
+      "title": "Funções Modernas: clamp(), min(), max() e calc()",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["container-queries"]
+    },
+    {
+      "id": "container-queries",
+      "title": "Container Queries: @container Responde ao Pai",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["has"]
+    },
+    {
+      "id": "has",
+      "title": ":has(): o Seletor que 'Sobe' pro Pai",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["logical-properties"]
+    },
+    {
+      "id": "logical-properties",
+      "title": "Logical Properties: margin-inline e afins",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["arquitetura"]
+    },
+    {
+      "id": "arquitetura",
+      "title": "Arquitetura CSS: BEM e Organização de Estilos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["performance"]
+    },
+    {
+      "id": "performance",
+      "title": "Performance: will-change, Reflow e Critical CSS",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mundo-alem"]
+    },
+    {
+      "id": "mundo-alem",
+      "title": "O Mundo Além do CSS Puro: Frameworks e Ferramentas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Landing Page Completa e Responsiva",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

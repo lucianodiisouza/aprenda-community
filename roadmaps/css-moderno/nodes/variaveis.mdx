@@ -1,0 +1,173 @@
+---
+id: variaveis
+title: "Variáveis CSS: Custom Properties e Theming"
+resources:
+  - title: "Usando custom properties (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/Using_CSS_custom_properties
+    type: doc
+    lang: pt
+    free: true
+  - title: "Custom properties como tema - padrões (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-theme-switch-component
+    type: doc
+    lang: en
+    free: true
+---
+
+Variáveis CSS (oficialmente "**custom properties**") são o
+**recurso mais transformador** do CSS moderno. Permitem
+**centralizar valores**, **trocar temas dinamicamente** e **reagir
+a JavaScript** sem refazer CSS.
+
+### A sintaxe
+
+```css
+:root {
+  --cor-primaria: #6366f1;
+  --espacamento: 16px;
+  --fonte-principal: system-ui, sans-serif;
+}
+
+.botao {
+  background: var(--cor-primaria);
+  padding: var(--espacamento);
+  font-family: var(--fonte-principal);
+}
+```
+
+Três regras:
+
+1. **Nome começa com `--`** (dois hífens).
+2. **`var(--nome)`** lê o valor.
+3. **Declaração** no seletor onde faz sentido (mais comum: `:root`
+   pra global).
+
+### Valor de fallback
+
+```css
+.botao {
+  background: var(--cor-primaria, #6366f1);
+  /* se --cor-primaria não existir, usa #6366f1 */
+}
+```
+
+Útil pra **componentes reutilizáveis** que podem ser usados em
+contextos sem a variável definida.
+
+### Escopo: local vs global
+
+```css
+:root { --cor: blue; }       /* global - vale pra toda página */
+
+.card { --bg: white; }       /* local - vale só pros .card */
+.card .titulo { background: var(--bg); }   /* herda de .card */
+```
+
+A herança segue as regras normais do CSS: **filhos herdam** do pai.
+Útil pra **componentes isolados** que definem seu próprio tema.
+
+### Theming: trocando o tema da página inteira
+
+```css
+:root {
+  --bg: white;
+  --texto: #1a1a1a;
+  --destaque: #6366f1;
+}
+
+:root[data-tema="escuro"] {
+  --bg: #0f172a;
+  --texto: #f1f5f9;
+  --destaque: #818cf8;
+}
+
+body { background: var(--bg); color: var(--texto); }
+```
+
+```js
+// alternar tema
+document.documentElement.dataset.tema = "escuro";
+```
+
+**Uma linha de JS** troca o tema inteiro da página — sem reescrever
+CSS, sem framework, sem re-render. Combina com a media query
+`prefers-color-scheme` que vimos em `css-animacoes`.
+
+### Manipulando com JavaScript
+
+```js
+// ler
+const cor = getComputedStyle(document.documentElement)
+  .getPropertyValue('--cor-primaria');
+
+// escrever
+document.documentElement.style.setProperty('--cor-primaria', 'tomato');
+```
+
+A aplicação é **instantânea** — todo elemento que usa `var(--cor)`
+atualiza junto. É a base de **temas dinâmicos, animações
+controladas por JS, sliders de cor**, etc.
+
+### Custom properties + `calc()`: dinâmica de verdade
+
+```css
+:root {
+  --base: 16;
+  --escala: 1.25;
+}
+
+h1 { font-size: calc(var(--base) * var(--escala) * 2 * 1px); }  /* 40px */
+h2 { font-size: calc(var(--base) * var(--escala) * 1px); }      /* 20px */
+```
+
+Combine com `@media` ou `:has()` pra ajustar a **escala inteira**
+de tipografia de uma vez:
+
+```css
+:root { --escala: 1.25; }
+@media (min-width: 1024px) {
+  :root { --escala: 1.333; }   /* desktop um pouco maior */
+}
+```
+
+### `@property` (anima custom properties)
+
+```css
+@property --angulo {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.bola {
+  --angulo: 0deg;
+  animation: girar 2s linear infinite;
+}
+
+@keyframes girar {
+  to { --angulo: 360deg; }
+}
+```
+
+Sem `@property`, custom properties são **strings** — animar
+`--angulo: 0deg → 360deg` **não interpola** (vai de um pro outro
+instantaneamente). Com `@property` (Chrome 85+, Firefox 128+,
+Safari 16.4+), o navegador entende que é um ângulo e **interpola
+suavemente**. Use pra animar gradientes, transforms em CSS puro.
+
+- **Custom properties** são declaradas com `--` e lidas com
+  `var()`.
+- **`:root`** é o lugar comum pra variáveis globais.
+- **Fallback**: `var(--cor, #fallback)`.
+- **JS** lê (`getPropertyValue`) e escreve (`setProperty`).
+- **`@property`** permite animar valores customizados (suporte
+  moderno).
+
+> Dica: pra qualquer projeto com mais de 5 cores ou 3 tamanhos
+> repetidos, **use variáveis**. O ganho de manutenção (mudar uma
+> vez, vale pra todo o site) é absurdo. E você vai precisar pra
+> dark mode de qualquer jeito.
+
+No próximo, vamos combinar variáveis com **funções modernas** do
+CSS: `clamp()`, `min()`, `max()` e `calc()` — pra tipografia
+fluida e layout responsivo sem media query.

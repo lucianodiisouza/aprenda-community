@@ -1,0 +1,217 @@
+---
+id: casos-animados
+title: "Casos Animados: Loaders, Hover Effects e Mais"
+resources:
+  - title: "CSS Loaders - catálogo de loaders prontos"
+    url: https://css-loaders.com/
+    type: doc
+    lang: en
+    free: true
+  - title: "Hover.css - biblioteca de efeitos de hover"
+    url: https://ianlunn.github.io/Hover/
+    type: doc
+    lang: en
+    free: true
+---
+
+A diferença entre "tá animado" e "tá bem feito" é saber **quais
+padrões funcionam** em quais contextos. Aqui vai a cola.
+
+### Loading spinner (o caso mais comum)
+
+```css
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid #e5e7eb;            /* cinza claro - trilho */
+  border-top-color: #6366f1;            /* azul - parte que gira */
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+```
+
+Quatro linhas de CSS, um spinner profissional. **Duração entre 0.6s
+e 1.2s** — mais rápido parece ansioso, mais lento parece travado.
+
+### Skeleton loader (placeholder que "respira")
+
+```css
+.esqueleto {
+  background: linear-gradient(
+    90deg,
+    #e5e7eb 0%,
+    #f3f4f6 50%,
+    #e5e7eb 100%
+  );
+  background-size: 200% 100%;
+  animation: brilho 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+@keyframes brilho {
+  0%, 100% { background-position: 0% 0%; }
+  50%      { background-position: -100% 0%; }
+}
+```
+
+O gradiente se **move** da direita pra esquerda, dando a impressão
+de "brilho passando". Padrão moderno em apps (LinkedIn, YouTube,
+Facebook). Use pra conteúdo que está carregando.
+
+### Card que "sobe" no hover
+
+```css
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  /* animação rápida (200ms) e propriedade performática (transform) */
+}
+
+.card:hover {
+  transform: translateY(-4px);          /* sobe 4px */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.card:active {
+  transform: translateY(-2px) scale(0.99);
+  transition-duration: 0.1s;            /* "afunda" mais rápido */
+}
+```
+
+A combinação **sombra + movimento** vende o efeito de "elevação" —
+o navegador interpreta como o card saindo do plano. `transform`
+em vez de `margin-top` pra não causar reflow.
+
+### Botão com micro-feedback
+
+```css
+.botao {
+  background: #6366f1;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  transition: transform 0.1s, background 0.2s;
+  cursor: pointer;
+}
+
+.botao:hover  { background: #4338ca; }
+.botao:active { transform: scale(0.97); }
+.botao:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+```
+
+Três estados: hover (cor), active (escala), focus (anel de
+acessibilidade). **Use `:focus-visible`**, não `:focus` — só aplica
+o anel quando o foco veio do teclado (mouse user não precisa).
+
+### Modal que aparece com fade + slide
+
+```css
+.modal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+  /* estado "fechado" é o padrão */
+}
+
+.modal.aberta {
+  opacity: 1;
+  transform: translateY(0);
+}
+```
+
+```js
+// abrir
+modal.classList.add('aberta');
+// fechar (depois de 300ms, esconde o container)
+setTimeout(() => modal.style.display = 'none', 300);
+```
+
+Padrão mais comum de modal/tooltip/dropdown. **Duração de 200-300ms
+pra entrada** e **150-200ms pra saída** (saída mais rápida parece
+mais responsiva).
+
+### Notificação (toast) que entra pela direita e some
+
+```css
+.toast {
+  transform: translateX(120%);           /* fora da tela à direita */
+  opacity: 0;
+  transition: transform 0.3s ease-out, opacity 0.3s;
+}
+.toast.visivel {
+  transform: translateX(0);
+  opacity: 1;
+}
+.toast.saindo {
+  transform: translateX(120%);
+  opacity: 0;
+  transition-duration: 0.2s;            /* saída mais rápida */
+}
+```
+
+```js
+toast.classList.add('visivel');
+setTimeout(() => toast.classList.add('saindo'), 3000);
+setTimeout(() => toast.remove(), 3500);
+```
+
+Aparece, espera 3s, sai mais rápido. Toasts devem **sempre sumir
+sozinhos** — não force o usuário a fechar.
+
+### Pulso "chamando atenção" (notificação nova)
+
+```css
+.badge-nova {
+  animation: pulso 1.5s ease-in-out infinite;
+}
+
+@keyframes pulso {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  50%      { transform: scale(1.1);  box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+}
+```
+
+O "anel" cresce de 0 a 8px e some, dando a impressão de **onda**
+saindo do elemento. Padrão pra badge de "nova mensagem".
+
+### Transição de página (com View Transitions API)
+
+```css
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+main {
+  animation: fade-in 0.3s ease-out;
+}
+```
+
+Mais elaborado: View Transitions API (Chrome 111+) permite
+transicionar entre páginas com CSS puro. Por enquanto, anima o
+container `<main>` a cada navegação.
+
+- **Spinner**: borda de cor diferente + `rotate(360deg)` infinite.
+- **Skeleton**: gradiente animado com `background-position`.
+- **Hover de card**: `translateY(-4px)` + `box-shadow` maior.
+- **Modal**: `opacity` + `translateY(20px)` na entrada.
+- **Toast**: sai pela lateral com `translateX(120%)`.
+
+> Dica: tenha um **catálogo pessoal** de animações prontas. Quando
+> precisar, copia e adapta em vez de reinventar. Sites como
+> [css-loaders.com](https://css-loaders.com/) e
+> [hover.css](https://ianlunn.github.io/Hover/) são ótimos pontos
+> de partida.
+
+No próximo (e último desta trilha), o que **separa animação boa de
+animação irresponsável**: acessibilidade visual.

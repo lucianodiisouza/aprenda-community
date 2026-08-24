@@ -1,0 +1,94 @@
+---
+id: cores
+title: "Cores: Nome, Hex, RGB e HSL"
+resources:
+  - title: "Valores de cor (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/color_value
+    type: doc
+    lang: pt
+    free: true
+  - title: "Coolors - gerador de paletas"
+    url: https://coolors.co/
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Existem **várias formas** de escrever a mesma cor. Você não precisa
+saber todas de cabeça — escolha uma e use consistentemente.
+
+### Por nome (curto e legível)
+
+```css
+h1 { color: tomato; }
+p  { color: slategray; }
+```
+
+Funciona, mas o catálogo é limitado e os nomes são em inglês
+(`tomato`, não `tomate`). Use pra rascunho e testes rápidos.
+
+### Hex (o padrão da indústria)
+
+```css
+h1  { color: #ff6347; }   /* tomate em hex */
+.bg { background: #333; }  /* cinza escuro, shorthand */
+```
+
+Cada par de dígitos vai de `00` (zero) a `ff` (máximo) e representa
+**vermelho, verde, azul**. `#ff0000` é vermelho puro, `#00ff00` verde,
+`#0000ff` azul.
+
+Atalhos comuns: `#fff` (branco), `#000` (preto), `#333` (cinza escuro),
+`#f5f5f5` (cinza clarinho).
+
+### RGB e RGBA (vermelho, verde, azul + opacidade)
+
+```css
+h1 { color: rgb(255, 99, 71); }     /* mesmo tomate */
+.caixa {
+  background: rgba(0, 0, 0, 0.5);   /* preto 50% transparente */
+}
+```
+
+O `a` (`alpha`) controla **opacidade** de 0 (invisível) a 1 (sólido).
+Útil pra overlay, sombra leve, fundo semi-transparente.
+
+### HSL (matiz, saturação, luminosidade — o mais intuitivo)
+
+```css
+h1 { color: hsl(9, 100%, 64%); }     /* mesmo tomate */
+.bg { background: hsl(0, 0%, 20%); } /* cinza escuro */
+```
+
+- **H (hue)** = a cor em si, em graus (0 vermelho, 120 verde, 240 azul).
+- **S (saturation)** = quanto de cor (0% cinza, 100% puro).
+- **L (lightness)** = quanto claro/escuro (0% preto, 100% branco).
+
+`hsl(0, 0%, 20%)` lê "sem cor, sem saturação, 20% claro" = cinza.
+Fácil fazer variações de uma cor sem calculadora.
+
+### Qual usar?
+
+| Caso                          | Use           |
+| ----------------------------- | ------------- |
+| Cor sólida simples            | Hex (`#333`)  |
+| Precisa de transparência      | `rgba()`/`hsla()` |
+| Variações de uma cor (light/dark) | `hsl()`    |
+| Rascunho, teste rápido        | Nome (`tomato`) |
+
+No projeto final e em produção, escolha **um** formato e mantenha. A
+maioria das equipes usa hex pra cor sólida e rgba/hsla pra
+transparência.
+
+- **Hex** (`#ff6347`): cor sólida, compacto, padrão de mercado.
+- **RGB/RGBA** (`rgb(255, 99, 71)`): preciso, suporta alpha.
+- **HSL/HSLA** (`hsl(9, 100%, 64%)`): mais legível, ótimo pra
+  variações de tema.
+
+> Dica: ferramentas como [Coolors](https://coolors.co/) e o
+> [Google Material Color Tool](https://m2.material.io/design/color/)
+> geram paletas harmoniosas. Não chute cor — pegue uma paleta e
+> adapte.
+
+No próximo, vamos **medir coisas em CSS**: as unidades de tamanho
+que vão te acompanhar pra sempre.

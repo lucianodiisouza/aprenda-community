@@ -1,0 +1,112 @@
+---
+id: unidades
+title: "Unidades: px, em, rem, %, vh e vw"
+resources:
+  - title: "Valores e unidades (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Values_and_units
+    type: doc
+    lang: pt
+    free: true
+---
+
+CSS tem dezenas de unidades, mas no dia a dia você usa **seis**.
+Escolher a unidade certa é o que separa layout que **escala** de
+layout que **quebra** quando o usuário aumenta a fonte.
+
+### `px` — pixel (unidade absoluta)
+
+```css
+h1 { font-size: 32px; }
+img { width: 200px; }
+```
+
+Pixel é a **unidade absoluta** mais comum. Mas atenção: "1px" no
+CSS não é necessariamente 1 pixel físico do dispositivo — em telas
+de alta densidade, o navegador escala. Use sem medo pra **tamanhos
+fixos** (ícones, bordas).
+
+### `rem` — relativo ao tamanho de fonte da raiz
+
+```css
+html { font-size: 16px; }   /* padrão */
+h1   { font-size: 2rem; }    /* 32px */
+p    { font-size: 1rem; }    /* 16px */
+p.small { font-size: 0.875rem; } /* 14px */
+```
+
+`rem` = "root em". O "M" do `<html>`. Se o usuário aumenta a fonte
+do navegador, **tudo escala junto** — bom pra acessibilidade. É o
+**padrão moderno** pra fonte e a maioria dos espaçamentos.
+
+### `em` — relativo ao pai
+
+```css
+.caixa { font-size: 1.25rem; }  /* 20px */
+.caixa p { font-size: 0.9em; }   /* 18px (90% de 20px) */
+```
+
+`em` é relativo ao **tamanho de fonte do elemento pai**. É útil
+quando o tamanho deve escalar junto com o contexto (espaçamento
+interno de um botão, por exemplo), mas **compõe** (em dentro de em
+dentro de em) — fácil perder o controle. Pra fonte em si, prefira
+`rem`.
+
+### `%` — relativo ao pai
+
+```css
+.coluna  { width: 50%; }      /* metade do pai */
+.imagem  { max-width: 100%; } /* nunca maior que o pai */
+```
+
+Porcentagem é **relativa à propriedade correspondente do pai**.
+Largura de 50% = metade da largura do pai. Altura de 100% = altura
+total do pai. **Funciona quando o pai tem altura definida** (em
+muitos casos precisa de `html, body { height: 100% }`).
+
+### `vh` e `vw` — viewport (a janela do navegador)
+
+```css
+.hero    { height: 100vh; }   /* 100% da altura da tela */
+.banner  { width: 100vw; }    /* 100% da largura da tela */
+```
+
+- `vh` = 1% da altura do viewport.
+- `vw` = 1% da largura do viewport.
+
+Úteis pra "**fullscreen**" (hero de landing page, modal). Combine
+com `min-height` pra não quebrar em telas muito pequenas.
+
+### `clamp()` — escala entre mínimo e máximo (spoiler de css-moderno)
+
+```css
+h1 {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  /* mínimo 1.5rem, ideal 4vw, máximo 3rem */
+}
+```
+
+Permite "**tipografia fluida**" sem media queries. Vamos aprofundar
+em css-moderno.
+
+### Quando usar o quê
+
+| Caso                              | Unidade       |
+| --------------------------------- | ------------- |
+| Fonte de texto                    | `rem`         |
+| Bordas, sombras, ícones           | `px`          |
+| Espaçamento interno de container  | `rem`         |
+| Largura/altura responsiva         | `%`, `vw`, `vh` |
+| Tela cheia (hero)                 | `vh`          |
+| Tipografia fluida                 | `clamp()`     |
+
+- **`px`** pra valores fixos (borda, ícone, sombra leve).
+- **`rem`** pra fonte e espaçamento (escala com a preferência do
+  usuário).
+- **`%` / `vw` / `vh`** pra tamanho relativo ao pai ou à tela.
+- **`em`** raramente, pra casos onde precisa herdar do contexto.
+
+> Dica: nunca defina `font-size` no `body` em `px` — isso quebra o
+> zoom do navegador. Use `rem` ou deixe o padrão (que é 16px).
+
+No próximo, vamos aplicar isso à **tipografia**: famílias de fonte,
+peso, altura de linha e espaçamento entre letras.

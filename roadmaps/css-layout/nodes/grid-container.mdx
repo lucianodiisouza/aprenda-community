@@ -1,0 +1,142 @@
+---
+id: grid-container
+title: "Grid: Propriedades do Container"
+resources:
+  - title: "Grid - propriedades do container (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout#the_grid_container
+    type: doc
+    lang: pt
+    free: true
+---
+
+O container Grid define a **arquitetura** — quantas colunas, quantas
+linhas, qual o espaçamento, como o conteúdo se distribui. É aqui
+que você desenha o esqueleto do layout.
+
+### `grid-template-columns` e `grid-template-rows`
+
+```css
+.container {
+  grid-template-columns: 200px 1fr 200px;
+  /* coluna 1: 200px fixos
+     coluna 2: 1 fração do espaço
+     coluna 3: 200px fixos */
+
+  grid-template-rows: 80px 1fr 60px;
+  /* linha 1: 80px (header)
+     linha 2: cresce (conteúdo)
+     linha 3: 60px (footer) */
+}
+```
+
+### `repeat()` e funções
+
+```css
+grid-template-columns: repeat(3, 1fr);    /* 3 colunas iguais */
+grid-template-columns: repeat(4, 200px);  /* 4 colunas de 200px */
+grid-template-columns: repeat(2, 1fr 2fr);/* 1fr 2fr 1fr 2fr */
+```
+
+### `minmax()` — tamanho mínimo e máximo
+
+```css
+grid-template-columns: repeat(3, minmax(250px, 1fr));
+/* cada coluna: no mínimo 250px, no máximo 1 fração */
+```
+
+Perfeito pra **colunas responsivas** que não podem ficar menores
+que um valor (ex: cards de produto onde cada um precisa de pelo
+menos 250px pra mostrar a imagem).
+
+### `auto-fit` e `auto-fill` — quantas colunas cabem?
+
+```css
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+/* quantas colunas de no mínimo 250px couberem, com sobra dividida igual */
+```
+
+A **mágica da responsividade sem media query**: o navegador decide
+quantas colunas cabem baseado no espaço. Em desktop 4-5, em tablet
+2-3, em mobile 1. **Não precisa de `@media`**.
+
+```css
+/* a linha mais importante do Grid pra galeria/cards */
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+```
+
+Diferença entre `auto-fit` e `auto-fill`:
+
+- **`auto-fit`**: se sobrar espaço, as colunas **crescem** pra
+  preencher.
+- **`auto-fill`**: se sobrar espaço, **cria colunas vazias** (mesmo
+  se não tem conteúdo).
+
+Pra galerias reais, `auto-fit` é quase sempre o que você quer.
+
+### `gap` (igual ao Flexbox)
+
+```css
+.container { gap: 16px; }             /* entre linhas e colunas */
+.container { gap: 16px 24px; }        /* row column */
+```
+
+Funciona idêntico ao Flexbox. `gap` é o jeito moderno — não use
+margin entre itens de Grid.
+
+### `grid-template-areas` (o layout desenhado)
+
+```css
+.layout {
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+}
+```
+
+Os nomes em `grid-template-areas` viram "slots" que os filhos
+referenciam com `grid-area: header` (próximo nó). Use `.` pra
+declarar uma célula vazia:
+
+```css
+grid-template-areas:
+  "header  header"
+  "sidebar .     "
+  "footer  footer";
+/* célula do meio da linha 2 fica vazia */
+```
+
+Todos os nomes devem ser **retangulares** (não dá pra ter um L).
+**Cada nome deve aparecer uma vez por linha** (ou em colunas
+diferentes, mas é a sintaxe mais limpa).
+
+### `justify-items` e `align-items`
+
+```css
+.container {
+  justify-items: stretch;   /* padrão - estica horizontal em cada célula */
+  justify-items: center;    /* centraliza horizontal na célula */
+  align-items: stretch;     /* padrão - estica vertical na célula */
+  align-items: center;      /* centraliza vertical na célula */
+}
+```
+
+Pensa: `justify-content` alinha o **grid inteiro** dentro do
+container; `justify-items` alinha **cada item dentro de sua célula**.
+
+- **`grid-template-columns/rows`** define a estrutura.
+- **`repeat()` + `auto-fit` + `minmax()`** = responsividade sem
+  media query.
+- **`grid-template-areas`** desenha o layout visualmente.
+- **`gap`** pra espaçamento (não use margin).
+- **`justify-items`/`align-items`** alinham itens dentro da célula.
+
+> Dica: a linha
+> `grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));`
+> vale ouro. Copie e cole em qualquer galeria de cards. Substitua
+> `250px` pelo mínimo que faz sentido e pronto.
+
+No próximo, o outro lado: as propriedades que vão nos **filhos** e
+definem **em qual célula** cada um fica.

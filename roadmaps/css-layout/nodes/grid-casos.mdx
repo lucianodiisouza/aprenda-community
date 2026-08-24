@@ -1,0 +1,188 @@
+---
+id: grid-casos
+title: "Grid: Casos Clássicos do Dia a Dia"
+resources:
+  - title: "Grid by Example - padrões e receitas"
+    url: https://gridbyexample.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Os padrões que você vai usar **toda semana** com Grid. Salva essa
+página — é a cola pra quando o layout pedir "duas dimensões".
+
+### Layout clássico de página (header + sidebar + main + footer)
+
+```css
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 64px 1fr 48px;
+  grid-template-areas:
+    "header   header"
+    "sidebar  main"
+    "footer   footer";
+  min-height: 100vh;
+  gap: 16px;
+}
+.app > header  { grid-area: header; }
+.app > aside   { grid-area: sidebar; }
+.app > main    { grid-area: main; }
+.app > footer  { grid-area: footer; }
+```
+
+```html
+<div class="app">
+  <header>Logo + nav</header>
+  <aside>Menu lateral</aside>
+  <main>Conteúdo</main>
+  <footer>© 2026</footer>
+</div>
+```
+
+Lê como um mapa. **Reorganizar** o layout pra mobile é só mudar o
+`grid-template-areas`:
+
+```css
+@media (max-width: 768px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "main"
+      "sidebar"
+      "footer";
+  }
+}
+```
+
+### Galeria responsiva **sem media query**
+
+A linha mais importante do Grid:
+
+```css
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+```
+
+```html
+<div class="galeria">
+  <img src="...">
+  <img src="...">
+  <img src="...">
+  <!-- adicione quantas quiser -->
+</div>
+```
+
+Em **desktop**: 4-5 colunas. Em **tablet**: 2-3. Em **mobile**: 1.
+Sem uma única `@media`. Substitua `250px` pelo mínimo que faz
+sentido pro seu conteúdo.
+
+### Card "destaque" que ocupa 2 colunas
+
+```css
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+.cards .destaque {
+  grid-column: span 2;        /* ocupa 2 colunas quando tem espaço */
+}
+```
+
+```html
+<div class="cards">
+  <div class="card destaque">Destaque</div>
+  <div class="card">Normal</div>
+  <div class="card">Normal</div>
+  <div class="card">Normal</div>
+</div>
+```
+
+Em telas com 4 colunas: o destaque vira 2 colunas, sobram 2
+normais. Em telas com 2 colunas: destaque fica em uma linha só,
+normais embaixo. Em mobile: tudo vira uma coluna.
+
+### Dashboard com widgets de tamanhos diferentes
+
+```css
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: minmax(120px, auto);
+  gap: 16px;
+}
+.widget-grande { grid-column: span 2; grid-row: span 2; }
+.widget-largo  { grid-column: span 2; }
+.widget-alto   { grid-row: span 2; }
+```
+
+`grid-auto-rows: minmax(120px, auto)` define a altura mínima das
+linhas **criadas automaticamente** conforme você adiciona widgets —
+não precisa declarar quantas linhas existem.
+
+### Form com label e input lado a lado
+
+```css
+.form {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px 16px;
+  align-items: center;
+}
+.form .full { grid-column: 1 / -1; }  /* campo de texto grande, ocupa tudo */
+```
+
+```html
+<form class="form">
+  <label for="nome">Nome</label>
+  <input id="nome">
+  <label for="email">E-mail</label>
+  <input id="email">
+  <textarea class="full" placeholder="Mensagem"></textarea>
+  <button class="full">Enviar</button>
+</form>
+```
+
+`gap: 12px 16px` é `row-gap column-gap` — 12px entre linhas, 16px
+entre colunas.
+
+### Holy Grail (header, footer, 3 colunas, central cresce)
+
+```css
+.holy-grail {
+  display: grid;
+  grid-template:
+    "header  header  header"  auto
+    "nav     main    aside"   1fr
+    "footer  footer  footer"  auto
+    / 200px    1fr    200px;
+  min-height: 100vh;
+  gap: 16px;
+}
+```
+
+Versão 1-linha do layout anterior. A sintaxe `grid-template: ... /
+...` aceita áreas na primeira parte e colunas na segunda (depois
+da barra). Útil pra layouts conhecidos, mais compacto que o
+`grid-template-areas` separado.
+
+- **Layout de página**: use `grid-template-areas` (semântico e
+  legível).
+- **Galeria responsiva**: `repeat(auto-fit, minmax(250px, 1fr))`.
+- **Card destaque**: `grid-column: span 2` no item especial.
+- **Dashboard**: `grid-auto-rows: minmax(120px, auto)` + `span` nos
+  widgets.
+
+> Dica: pra debugar Grid, ative no DevTools o "Grid overlay" (no
+> painel Layout). Você vê as linhas e áreas desenhadas na tela —
+> vira um "playground" pra ajustar valores rapidamente.
+
+No próximo (e último desta trilha), vamos fazer tudo isso
+**funcionar em qualquer tela**: media queries, mobile-first e
+container queries.

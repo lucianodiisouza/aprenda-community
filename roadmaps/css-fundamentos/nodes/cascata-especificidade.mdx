@@ -1,0 +1,122 @@
+---
+id: cascata-especificidade
+title: "Cascata, Especificidade e Herança"
+resources:
+  - title: "Cascata e herança (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Cascade_and_inheritance
+    type: doc
+    lang: pt
+    free: true
+---
+
+Três regras decidem **qual valor vale** quando duas regras mexem na
+mesma propriedade. Entender isso é o que tira a frase "**esse CSS
+não funciona e eu não sei por quê**" da sua vida.
+
+### 1. Cascata (ordem)
+
+Quando dois seletores têm a **mesma especificidade**, vale o **último
+declarado**.
+
+```css
+h1 { color: red; }
+h1 { color: blue; }  /* esse vence - é o último */
+```
+
+Por isso o "último CSS carregado" geralmente ganha — útil pra
+**sobrescrever** um estilo de biblioteca.
+
+### 2. Especificidade (quem é mais forte)
+
+Quando a especificidade é diferente, **o mais específico vence**,
+independente da ordem.
+
+Cada parte do seletor soma pontos:
+
+| Seletor                     | Pontos           |
+| --------------------------- | ---------------- |
+| `*` (universal)             | 0                |
+| `h1`, `p` (tag)             | 1                |
+| `.classe`                   | 10               |
+| `#id`                       | 100              |
+| `style="..."` (inline)      | 1000             |
+| `!important`                | 10000 (vence tudo) |
+
+```css
+#titulo { color: blue; }      /* 100 pontos */
+.titulo { color: red; }       /* 10 pontos */
+h1       { color: green; }    /* 1 ponto */
+/* mesmo escrito depois, #titulo vence (mais específico) */
+```
+
+**Truque pra calcular:** leia os números como se fossem colunas
+`(inline, id, classe, tag)`. `#nav .item a:hover` = `(0, 1, 1, 2)` —
+mais específico que `.item a` = `(0, 0, 1, 1)`.
+
+### `!important` — use só em emergência
+
+```css
+.botao { background: blue !important; }  /* vence quase tudo */
+```
+
+`!important` **sobrescreve especificidade e ordem**. É tentador, mas
+vira uma **bomba** pro CSS: quando precisar sobrescrever um
+`!important`, só com outro `!important` — e isso escala pra
+baixo infinito. Use só pra:
+
+- Classes utilitárias de terceiros que você precisa neutralizar.
+- Estados de acessibilidade que não podem ser sobrescritos
+  (ex: `outline` de foco).
+
+### 3. Herança (o que passa de pai pra filho)
+
+Algumas propriedades **herdam** automaticamente: cor, fonte,
+line-height. Outras **não**: margin, padding, border, width.
+
+```css
+body {
+  color: #333;          /* todos os textos herdam */
+  font-family: sans-serif; /* todos herdam */
+}
+.card {
+  margin: 20px;         /* NÃO herda pros filhos */
+  border: 1px solid #ccc; /* NÃO herda */
+}
+```
+
+Você pode **forçar** herança com a palavra-chave `inherit`:
+
+```css
+.link-do-card {
+  color: inherit;       /* usa a cor do pai, em vez do azul padrão */
+}
+```
+
+E pode **resetar** com `initial` (volta ao padrão da especificação)
+ou `unset` (herda se for herdável, senão initial).
+
+### Como debugar "por que esse CSS não funciona"
+
+Ordem de investigação:
+
+1. **Existe mesmo a regra?** (DevTools, Elements → Styles)
+2. **Está cortada** (risco no estilo)? É specificity.
+3. **A última vale?** É cascata.
+4. **O pai tem uma regra que herda?** É herança.
+
+No DevTools, o painel "Computed" mostra **qual regra venceu** e
+quais foram sobrescritas. É o lugar pra olhar primeiro.
+
+- **Cascata**: mesmo seletor, último vence.
+- **Especificidade**: `#id > .classe > tag` (mais específico ganha).
+- **`!important`**: vence tudo. Evite.
+- **Herança**: cor e fonte passam de pai pra filho; margin e
+  padding não.
+
+> Dica: a fórmula `(inline, id, classe, tag)` resolve 90% das
+> dúvidas de especificidade. Some cada coluna, e a maior vence.
+> `style` é 1, 0, 0, 0, 0. `#id` é 0, 1, 0, 0. `.classe` é 0,
+> 0, 1, 0. `tag` é 0, 0, 0, 1.
+
+No próximo (e último desta trilha), vamos abrir a ferramenta que
+vai te salvar a vida enquanto você programa CSS: o **DevTools**.

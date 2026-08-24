@@ -1,0 +1,215 @@
+---
+id: mundo-alem
+title: "O Mundo Além do CSS Puro: Frameworks e Ferramentas"
+resources:
+  - title: "State of CSS - pesquisa anual (em inglês)"
+    url: https://stateofcss.com/
+    type: doc
+    lang: en
+    free: true
+  - title: "Comparação de frameworks CSS (em inglês)"
+    url: https://www.smashingmagazine.com/2023/03/comparison-of-css-methodologies/
+    type: doc
+    lang: en
+    free: true
+---
+
+Depois de aprender CSS **puro**, vale olhar o que tem ao redor:
+frameworks que aceleram, pré-processadores que adicionam features,
+e ferramentas que mudam como você escreve CSS. **Esse nó é um
+mapa de opções**, não tutorial — você escolhe se quer usar (e
+quando).
+
+### Frameworks CSS (componentes prontos)
+
+**Bootstrap** (o clássico, 2011+)
+
+- **O que é**: kit de componentes (botões, cards, navbar, grid,
+  modais) com classes utilitárias.
+- **Prós**: comunidade gigante, documentação em PT-BR, funciona
+  sem build step.
+- **Contras**: visual datado (a versão 5 melhorou), bundle grande,
+  fácil de "parecer Bootstrap".
+- **Quando usar**: protótipo rápido, admin interno, projeto sem
+  designer.
+
+**Tailwind CSS** (utility-first, 2017+, **o mais popular hoje**)
+
+```html
+<button class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded">
+  Enviar
+</button>
+```
+
+- **O que é**: classes **pra cada propriedade** (bg-indigo-500 =
+  background indigo 500; py-2 = padding-y 0.5rem). Compõe no HTML.
+- **Prós**: zero CSS custom pra 80% dos casos, bundle final minúsculo
+  (só usa o que aparece no HTML), design system consistente.
+- **Contras**: HTML fica "poluído" com classes, curva de aprendizado
+  pra decorar os nomes, arquivo de config grande.
+- **Quando usar**: projeto novo com React/Vue/Svelte, time que
+  aceita investir 2 semanas pra aprender.
+
+**Bulma, Foundation, Materialize** (alternativas)
+
+- **Bulma**: similar ao Bootstrap, sem JS, mais moderno visualmente.
+- **Foundation**: framework "enterprise" da Zurb, mais opinativo.
+- **Materialize**: implementa Material Design do Google.
+
+### Pré-processadores (estendem a sintaxe)
+
+**Sass / SCSS** (o padrão de mercado)
+
+```scss
+$primaria: #6366f1;
+
+.botao {
+  background: $primaria;
+  &:hover {
+    background: darken($primaria, 10%);     /* função! */
+  }
+}
+
+/* aninhamento (até 3 níveis) */
+.card {
+  padding: 16px;
+  &__titulo {
+    font-size: 20px;
+  }
+}
+
+/* mixin */
+@mixin botao-base {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+}
+.btn-primario { @include botao-base; background: $primaria; }
+```
+
+- **O que adiciona**: variáveis com `$`, aninhamento, mixins,
+  funções (cor, matemática), herança (`@extend`).
+- **Compila pra CSS puro** — o navegador não sabe que é Sass.
+- **Quando usar**: projeto grande com regras reutilizadas, time
+  acostumado.
+- **Atenção**: o CSS moderno tem **`var()`**, aninhamento nativo
+  (working draft) e outras features que cobrem parte do que o Sass
+  fazia. **Use Sass quando precisa de mixins/funções**; para o
+  resto, CSS puro dá conta.
+
+**Less, Stylus, PostCSS** (outras opções)
+
+- **Less**: sintaxe similar ao Sass, mais antigo.
+- **Stylus**: sintaxe minimalista (sem `{}` nem `;`), quase sumiu.
+- **PostCSS**: **plugin-based** — você escolhe o que adicionar
+  (autoprefixer, cssnano, postcss-preset-env). Tailwind, Autoprefixer
+  e Vite usam PostCSS internamente.
+
+### CSS-in-JS (CSS dentro do JavaScript)
+
+**styled-components** (o mais popular pra React)
+
+```jsx
+import styled from 'styled-components';
+
+const Botao = styled.button`
+  background: ${props => props.primario ? '#6366f1' : 'white'};
+  color: ${props => props.primario ? 'white' : '#333'};
+  padding: 12px 24px;
+  border-radius: 8px;
+`;
+
+< Botao primario > Enviar </Botao>
+```
+
+- **Prós**: estilos **atrelados ao componente** (some com ele),
+  props dinâmicas, sem conflito de classes.
+- **Contras**: bundle maior (CSS gerado em runtime), mais complexo,
+  pior performance em SSR.
+- **Quando usar**: apps React grandes com muitos componentes
+  temáticos.
+
+**Emotion, Vanilla Extract, Linaria, Stitches** (alternativas)
+
+- **Emotion**: similar a styled-components, mais leve.
+- **Vanilla Extract**: CSS-in-TS com **zero runtime** (extrai em
+  build time). Tá crescendo.
+- **Linaria**: zero runtime também, sintaxe similar a styled-components.
+- **Stitches**: API moderna, theming nativo, **em manutenção
+  reduzida** (avisar o time).
+
+### CSS Modules e Utility-first
+
+**CSS Modules** (escopo automático via build)
+
+```css
+/* Button.module.css */
+.button {
+  background: var(--primaria);
+}
+```
+
+```jsx
+import styles from './Button.module.css';
+<button className={styles.button}>Enviar</button>
+```
+
+- **O que é**: arquivo `.module.css` por componente. As classes
+  viram **hashes únicos** no build (`button_x7f3k`). Sem conflito.
+- **Quando usar**: apps React/Vue sem framework CSS, quer CSS puro
+  com escopo.
+
+**Tailwind / UnoCSS / Windi CSS** (utility-first, **alternativa ao
+CSS-in-JS**)
+
+- **Tailwind**: o padrão (já descrito acima).
+- **UnoCSS**: mais rápido, mais flexível (configurável), mais novo.
+- **Windi CSS**: similar ao Tailwind, foi descontinuado em 2023.
+
+### O trade-off real
+
+| Ferramenta        | Quando faz sentido                                 |
+| ----------------- | -------------------------------------------------- |
+| **CSS puro + BEM**| Aprendendo, projeto pequeno, server-rendered        |
+| **Tailwind**      | App React/Vue novo, time ágil                      |
+| **Sass**          | Projeto grande com regras reutilizadas, equipe acostumada |
+| **CSS Modules**   | App React sem framework CSS, quer escopo sem overhead |
+| **CSS-in-JS**     | App React com temas dinâmicos, componentes temáticos |
+| **PostCSS**       | Já vem com Vite/Webpack (autoprefixer etc.)         |
+
+**Não tem resposta certa**. Cada projeto tem contexto. O importante
+é **entender o trade-off** — não usar Tailwind porque "todo mundo
+usa", não usar CSS-in-JS porque "é mais moderno". Use a ferramenta
+que **resolve o problema do seu time** com menos atrito.
+
+### Recomendação (opinião)
+
+Se você **acabou de aprender CSS**:
+
+1. **Continue com CSS puro + BEM** por 3-6 meses. Aprenda a
+   resolver layout, animação, responsividade **sem ferramenta**.
+2. **Experimente Tailwind** num projeto pessoal. Sinta a
+   diferença.
+3. **Aprenda CSS-in-JS** (styled-components) se for usar React
+   profissionalmente.
+4. **Não use Sass a menos que precise de mixins reais**. CSS
+   moderno cobre o resto.
+
+- **Frameworks** (Bootstrap, Tailwind): aceleram, mas têm
+  trade-offs visuais e de aprendizado.
+- **Pré-processadores** (Sass): adicionam features, mas CSS moderno
+  cobre parte.
+- **CSS-in-JS** (styled-components): atrelado ao componente, custo
+  de runtime.
+- **CSS Modules**: escopo sem overhead, padrão pra React sem
+  framework.
+- **Não tem resposta certa** — depende do projeto, time e contexto.
+
+> Dica: o [State of CSS](https://stateofcss.com/) faz uma pesquisa
+> anual com a comunidade sobre o que tá sendo usado, satisfação e
+> tendências. Vale 30 minutos pra olhar — mapa atualizado do
+> ecossistema.
+
+No próximo (e último desta trilha), vamos **juntar tudo** num
+projeto real: a landing page completa que exercita cada nó
+aprendido.

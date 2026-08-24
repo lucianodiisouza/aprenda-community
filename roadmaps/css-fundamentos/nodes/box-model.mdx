@@ -1,0 +1,106 @@
+---
+id: box-model
+title: "Box Model: Margin, Border, Padding e Content"
+resources:
+  - title: "O Box Model (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/The_box_model
+    type: doc
+    lang: pt
+    free: true
+---
+
+Todo elemento HTML é uma **caixa retangular**. Essa caixa tem quatro
+camadas — entender isso é o divisor de águas do CSS.
+
+### As quatro camadas
+
+```text
+┌─────────────────────────────────────┐  ← margin (espaço EXTERNO)
+│ ┌─────────────────────────────────┐ │  ← border (linha)
+│ │ ┌─────────────────────────────┐ │ │  ← padding (espaço INTERNO)
+│ │ │                             │ │ │
+│ │ │       conteúdo              │ │ │
+│ │ │       (texto, imagem)       │ │ │
+│ │ │                             │ │ │
+│ │ └─────────────────────────────┘ │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+```
+
+- **Content**: o que está dentro (texto, imagem, outro elemento).
+- **Padding**: espaço **interno** entre o conteúdo e a borda.
+- **Border**: a linha que contorna (pode ser invisível).
+- **Margin**: espaço **externo** entre o elemento e os vizinhos.
+
+### Shorthand dos quatro lados
+
+```css
+.caixa {
+  margin:  16px;             /* todos os 4 lados */
+  padding: 12px 24px;         /* top/bottom left/right */
+  border:  1px solid #ccc;    /* largura estilo cor */
+  border-radius: 8px;         /* cantos arredondados */
+}
+```
+
+Quando você passa **1 valor**, vale pros 4 lados. Com **2 valores**,
+o primeiro é vertical (top/bottom) e o segundo é horizontal
+(left/right). Com **3 ou 4 valores**, vale na ordem horária: top,
+right, bottom, left.
+
+```css
+margin: 10px 20px 10px 20px;  /* top right bottom left */
+margin: 10px 20px;            /* top/bottom right/left */
+margin: 10px;                 /* todos */
+```
+
+### Margin collapse — a pegadinha clássica
+
+Quando dois elementos com margin vertical se encontram, **só o maior
+vale** — não somam.
+
+```html
+<h2>Top</h2>      <!-- margin-bottom: 20px -->
+<p>Baixo</p>      <!-- margin-top: 30px -->
+<!-- espaço entre eles: 30px (o maior), não 50px -->
+```
+
+Isso só vale pra **margin vertical** entre **block elements** adjacentes.
+**Não** vale pra flex, grid, inline, nem horizontal. É um dos motivos
+de `padding` ser mais previsível que `margin` em alguns casos.
+
+### `box-sizing` — o reset moderno
+
+Por padrão, `width: 200px` significa **só o content**. Padding e
+border **somam por fora** — o elemento fica maior que 200px.
+
+```css
+.caixa { width: 200px; padding: 20px; border: 5px solid red; }
+/* largura real: 200 + 20*2 + 5*2 = 250px */
+```
+
+Quase ninguém quer isso. O padrão moderno é:
+
+```css
+*, *::before, *::after { box-sizing: border-box; }
+```
+
+Com `border-box`, o `width` inclui padding e border. O elemento
+fica **exatamente** do tamanho que você declarou. É o primeiro
+reset de qualquer projeto CSS profissional.
+
+- **Content** é o que tá dentro. **Padding** é o espaço interno
+  antes da borda. **Border** é a linha. **Margin** é o espaço
+  externo.
+- Shorthand: 1, 2, 3 ou 4 valores (sentido horário).
+- `box-sizing: border-box` no reset — é o padrão moderno.
+- **Margin collapse**: margin vertical entre blocks some e só o
+  maior vence.
+
+> Dica: o reset mais usado do mercado começa com
+> `*, *::before, *::after { box-sizing: border-box; }` e tira a
+> margin padrão do `body`. Dois linhas e você já evita 90% das
+> surpresas de layout.
+
+No próximo, vamos controlar **como** essas caixas se comportam: o
+`display` que define se algo é bloco, linha, ou some.

@@ -1,0 +1,102 @@
+---
+id: pseudo-classes-basicas
+title: "Pseudo-classes Básicas: :hover, :focus e :active"
+resources:
+  - title: "Pseudo-classes (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Selectors/Pseudo-classes_and_pseudo-elements
+    type: doc
+    lang: pt
+    free: true
+---
+
+Pseudo-classe é um **estado** do elemento: "o mouse está em cima", "o
+campo está focado", "este é o primeiro filho". É um seletor que
+**reage ao contexto** — não exige classe extra no HTML.
+
+### As quatro interativas
+
+```css
+/* :hover - mouse em cima */
+.botao:hover {
+  background: #4338ca;       /* cor mais escura no hover */
+  cursor: pointer;           /* mãozinha */
+}
+
+/* :focus - elemento focado (teclado, clique) */
+.input:focus {
+  outline: 2px solid #6366f1; /* anel de foco pra acessibilidade */
+  border-color: #6366f1;
+}
+
+/* :active - mouse clicado (ou Enter pressionado) */
+.botao:active {
+  transform: scale(0.98);    /* "afunda" no clique */
+}
+
+/* :visited - link já visitado */
+a:visited { color: #6b21a8; }
+```
+
+### As de posição
+
+```css
+/* :first-child e :last-child - primeiro e último filho */
+.lista li:first-child { border-top: 1px solid #ccc; }
+.lista li:last-child  { border-bottom: 1px solid #ccc; }
+
+/* :nth-child(n) - qualquer posição */
+.tabela tr:nth-child(odd)  { background: #f9f9f9; }  /* linhas ímpares */
+.tabela tr:nth-child(even) { background: #fff; }     /* linhas pares */
+```
+
+O `nth-child` aceita **fórmulas**:
+
+```css
+li:nth-child(3n)   { }   /* cada 3 itens: 3, 6, 9... */
+li:nth-child(3n+1) { }   /* 1, 4, 7, 10... */
+li:nth-child(-n+3) { }   /* primeiros 3 */
+li:nth-child(n+4)  { }   /* do 4 em diante */
+```
+
+Útil pra **zebrar tabelas**, destacar primeiro/último item, paginação.
+
+### Estados de formulário
+
+```css
+input:disabled  { background: #eee; cursor: not-allowed; }
+input:checked   { /* checkbox/radio marcado */ }
+input:required  { border-left: 3px solid red; }
+input:valid     { border-color: green; }
+input:invalid   { border-color: red; }
+```
+
+`required`, `valid` e `invalid` funcionam automaticamente com base nos
+atributos do input (e em alguns casos no `type` — `type="email"` é
+"válido" só se tiver `@`).
+
+### `:focus-visible` (o estado de foco que respeita o mouse)
+
+```css
+/* Mouse: sem anel de foco (não precisa) */
+/* Teclado: com anel de foco (precisa, acessibilidade) */
+.botao:focus { outline: none; }                    /* perigoso */
+.botao:focus-visible { outline: 2px solid #6366f1; }  /* melhor */
+```
+
+`:focus-visible` é o **substituto moderno** do `:focus`. Ele só
+aplica o estilo quando o foco veio do **teclado** (não do mouse).
+Use ele em vez de tirar o `outline` cegamente — acessibilidade
+importa.
+
+- **`:hover`** mouse em cima. **`:focus`** está focado.
+  **`.active`** sendo clicado.
+- **`:first-child`, `:nth-child(n)`** pra posição.
+- **`:disabled`, `:checked`, `:valid`** pra estado de formulário.
+- **`:focus-visible`** é o `:focus` inteligente (teclado só).
+
+> Dica: nunca tire o `outline` sem substituir. Mouse user não liga
+> pra anel de foco, mas usuário de teclado **depende** dele pra
+> navegar. Use `:focus-visible` e estilize à vontade.
+
+No próximo, vamos mais fundo: **pseudo-elementos** que criam
+"conteúdo virtual" antes, depois, ou dentro do elemento.

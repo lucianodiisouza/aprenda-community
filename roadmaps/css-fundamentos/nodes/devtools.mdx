@@ -1,0 +1,118 @@
+---
+id: devtools
+title: "DevTools: Inspecionar e Testar Estilos ao Vivo"
+resources:
+  - title: "Chrome DevTools - documentação oficial (em inglês)"
+    url: https://developer.chrome.com/docs/devtools/
+    type: doc
+    lang: en
+    free: true
+---
+
+DevTools é a **ferramenta de debug** que vive dentro do navegador.
+Pra CSS, é onde você **vê o que está acontecendo** (e o que não
+está). Sem DevTools, programar CSS é programar no escuro.
+
+### Como abrir
+
+- **Chrome / Edge / Firefox / Safari**: `F12` ou `Ctrl+Shift+I` (Mac:
+  `Cmd+Option+I`).
+- Botão direito em qualquer elemento → "Inspecionar" / "Inspect".
+
+### Os painéis que importam pra CSS
+
+**`Elements` (Chrome/Edge) / `Inspector` (Firefox)** — a árvore HTML
+à esquerda, os estilos à direita. Clique num elemento da árvore e:
+
+- À direita: **Styles** (regras que se aplicam, com risco nas que
+  foram sobrescritas).
+- Abaixo: **Computed** (o valor final que o navegador está usando
+  pra cada propriedade, depois de cascata, especificidade e
+  herança).
+- Mais abaixo: **Box Model** (diagrama do content, padding, border
+  e margin em pixels — passe o mouse em cima dos elementos da
+  página pra ver realçado).
+
+### Editar CSS ao vivo (o superpoder)
+
+Você pode **mudar qualquer valor** no painel Styles e ver o efeito
+**na hora**:
+
+1. Clique no valor de uma propriedade (ex: `color: red`).
+2. Apague, digite outro.
+3. A página atualiza ao vivo.
+4. **Isso não salva no arquivo** — se você recarregar, volta ao
+   original. Mas serve pra **experimentar antes de commitar**.
+
+```css
+/* antes, no CSS original */
+.botao { background: #6366f1; }
+
+/* você testa no DevTools: */
+.botao { background: #4338ca; }   /* vê que ficou melhor */
+/* aí sim vai no arquivo e commita */
+```
+
+### Forçar estados (:hover, :focus, etc.)
+
+No painel Styles, tem um botão **`:hov`** (Chrome) ou **":hov"** no
+Firefox. Permite forçar o estado:
+
+- `:hover` (mouse em cima)
+- `:focus` (focado)
+- `:active` (clicado)
+- `:visited` (link visitado)
+
+Essencial pra **estilizar estados de interação** sem precisar
+ficar tirando o mouse e voltando.
+
+### Copiar e colar
+
+- **Copiar computed value**: clique com botão direito numa
+  propriedade → "Copy property".
+- **Copiar seletor**: clique com botão direito num elemento →
+  "Copy → Copy selector".
+- **Copiar styles**: clique com botão direito → "Copy → Copy all
+  declarations" (útil pra pedir ajuda mostrando o que está
+  aplicado).
+
+### Truques úteis
+
+**`document.body.style.background = 'red'`** no Console pinta o body
+de vermelho. Bom pra testar interações rápidas sem editar o CSS.
+
+**`getComputedStyle(elemento).color`** no Console retorna a cor
+final de um elemento (depois de cascata e herança). Útil pra
+debugar "por que essa cor está vindo".
+
+**Desabilitar uma regra** sem deletar: clique no checkbox ao lado
+do seletor no painel Styles. Bom pra testar "e se essa regra não
+existisse?".
+
+### Atalhos que salvam tempo
+
+| Atalho                      | O que faz                            |
+| --------------------------- | ------------------------------------ |
+| `F12` / `Cmd+Opt+I`         | Abre/fecha DevTools                  |
+| `Ctrl+Shift+C`              | Modo "Inspecionar elemento"          |
+| `Ctrl+Shift+P`              | Command palette (busca qualquer coisa) |
+| `Ctrl+[` / `Ctrl+]`         | Navega entre os painéis              |
+| `Esc` (com DevTools aberto) | Abre o "Drawer" (console embaixo)    |
+
+- **`F12`** abre o DevTools. **`Elements`** (Chrome) é onde mora o
+  CSS.
+- **Editar valores no painel Styles** testa ao vivo (não salva).
+- **Painel `Computed`** mostra o valor final depois de cascata.
+- **Botão `:hov`** força estados (`:hover`, `:focus`, etc.).
+- **Atalho `Ctrl+Shift+C`** entra direto no modo inspeção.
+
+> Dica: se você só puder decorar um atalho, que seja `Ctrl+Shift+C`
+> (Cmd+Shift+C no Mac). É o "modo inspecionar" — clique em qualquer
+> elemento e pula direto pro Styles dele.
+
+---
+
+Você terminou **`css-fundamentos`**. Agora dá pra seguir pra
+`css-layout` (Flexbox e Grid aprofundados), `css-animacoes` (movimento
+com responsabilidade) ou `css-moderno` (Container Queries, `:has()`,
+custom properties).

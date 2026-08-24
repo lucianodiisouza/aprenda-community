@@ -1,0 +1,105 @@
+---
+id: combinadores
+title: "Combinadores: Descendente, Filho e Irmão"
+resources:
+  - title: "Combinadores (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/Selectors/Combinators
+    type: doc
+    lang: pt
+    free: true
+---
+
+Combinadores são os **espaços e sinais** entre seletores. Eles dizem
+"este elemento **dentro de** outro", "este é **filho direto**", ou
+"este vem **depois de**".
+
+### Descendente (um espaço)
+
+```css
+.card p { color: gray; }
+```
+
+Seleciona **todo `<p>` que está dentro de `.card`**, em qualquer
+nível de profundidade.
+
+```html
+<div class="card">
+  <p>Esse aqui pega.</p>          <!-- sim -->
+  <div>
+    <p>Esse aqui também pega.</p> <!-- sim, neto -->
+  </div>
+</div>
+<p>Esse NÃO pega.</p>             <!-- fora do card -->
+```
+
+O espaço é o combinador **mais comum** — é o "qualquer descendente".
+
+### Filho direto (`>`)
+
+```css
+.card > p { color: gray; }
+```
+
+Só pega o `<p>` que é **filho direto** do `.card`. Neto, bisneto —
+não pega.
+
+```html
+<div class="card">
+  <p>Pega.</p>             <!-- sim, filho direto -->
+  <div>
+    <p>NÃO pega.</p>       <!-- neto -->
+  </div>
+</div>
+```
+
+Útil quando a hierarquia **importa** (estilizar só itens diretos de
+um menu, por exemplo).
+
+### Irmão adjacente (`+`)
+
+```css
+h1 + p { font-size: 20px; }
+```
+
+Seleciona o **primeiro elemento** que vem **logo depois** do `h1`,
+desde que sejam irmãos (mesmo pai).
+
+```html
+<h1>Título</h1>
+<p>Esse aqui pega - é o primeiro irmão depois do h1.</p>
+<p>Esse não pega - tem outro p antes dele.</p>
+```
+
+Clássico: dar um **espaço maior** no parágrafo que vem logo depois de
+um título (em vez de mexer em todos os parágrafos da página).
+
+### Irmão geral (`~`)
+
+```css
+h1 ~ p { color: gray; }
+```
+
+Pega **todos os `<p>` que vêm depois** do `h1` como irmãos, não só
+o primeiro.
+
+### Combinando combinadores
+
+Você pode misturar tudo:
+
+```css
+nav.menu > ul > li:first-child a { font-weight: bold; }
+```
+
+"a dentro do primeiro `li` dentro da `ul` dentro do `nav.menu`".
+
+- **Descendente** (espaço): `A B` — B em qualquer nível dentro de A.
+- **Filho** (`>`): `A > B` — B é filho direto de A.
+- **Irmão adjacente** (`+`): `A + B` — B vem logo depois de A.
+- **Irmão geral** (`~`): `A ~ B` — B vem depois de A, em qualquer
+  posição.
+
+> Dica: comece com descendente (espaço). Se o resultado pegar mais
+> coisa do que queria, troque pra `>` ou `+` pra apertar o alvo.
+
+No próximo, vamos colorir tudo: as **maneiras de escrever cores** em
+CSS.
