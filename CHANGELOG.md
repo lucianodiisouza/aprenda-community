@@ -6,6 +6,14 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.6.0] - 2026-08-24
+
+### Adicionado
+- 🏷️ **Campo `skills` nas trilhas** (`roadmaps/*/roadmap.json`): array de
+  tópicos/techs que cada trilha cobre. Alimenta a busca e os filtros por
+  tópico no índice do site. Campo opcional e aditivo — não altera nós nem
+  metadados existentes.
+
 ## [1.5.0] - 2026-08-24
 
 ### Mudado
