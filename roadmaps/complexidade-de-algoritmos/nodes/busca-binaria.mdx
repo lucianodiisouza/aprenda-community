@@ -1,0 +1,81 @@
+---
+id: busca-binaria
+title: "Busca Binária na Vida Real"
+resources:
+  - title: "Binary Search (Khan Academy, PT-BR legendado)"
+    url: https://pt.khanacademy.org/computing/computer-science/algorithms/binary-search/a/binary-search
+    type: doc
+    lang: pt
+    free: true
+  - title: "A Beautiful Visualization of Binary Search"
+    url: https://www.cs.usfca.edu/~galles/visualization/Search.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Busca binária é o algoritmo que **mais vale a pena** você internalizar. É
+curto, elegante, e cai em todo lugar - inclusive em problemas que não
+parecem "busca" à primeira vista.
+
+A premissa: a coleção está **ordenada**. A cada passo, você olha o meio e
+descarta metade. Em log₂(n) passos, acha.
+
+```python
+def busca_binaria(lista, alvo):
+    lo, hi = 0, len(lista) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if lista[mid] == alvo:
+            return mid
+        elif lista[mid] < alvo:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+```
+
+| Tamanho | Passos da busca binária | Passos da busca linear |
+|---|---|---|
+| 100 | 7 | até 100 |
+| 10.000 | 14 | até 10.000 |
+| 1.000.000 | 20 | até 1.000.000 |
+| 1.000.000.000 | 30 | até 1.000.000.000 |
+
+Em um bilhão de itens, busca binária acha em 30 passos. Linear em até 1
+bilhão. **A diferença é absurda.**
+
+### Onde ela aparece (mesmo onde você não esperava)
+
+- **Encontrar o menor valor que satisfaz X** - "qual a menor dose de um
+  remédio que ainda funciona?". Busca binária sobre a resposta.
+- **Depuração de bugs com `git bisect`** - busca binária no histórico
+  (200 commits viram 8 testes).
+- **Procurar em listas ordenadas em produção** - banco de dados
+  indexado, dicionário físico, catálogo telefônico (como começou).
+- **Problema de rateio / capacidade** - "qual a maior soma de k
+  cabos que cabe no duto?". Busca binária no espaço de respostas.
+
+### Erros comuns
+
+1. **Esquecer que precisa estar ordenado.** Busca binária numa lista
+   não-ordenada é silenciosamente errada - devolve um resultado plausível
+   que pode estar errado.
+2. **Off-by-one no `lo` e `hi`.** Se você confunde `mid` com `mid+1` /
+   `mid-1`, ou trata `lo <= hi` vs `lo < hi` no lugar errado, pode ter
+   loop infinito ou resposta errada.
+3. **Overflow** em linguagens de baixo nível: `(lo + hi) / 2` pode
+   estourar o inteiro. Use `lo + (hi - lo) / 2`.
+
+- **Ordenada + busca = binária.** Sempre.
+- **log₂(n) passos** para qualquer n - o crescimento mais lento que existe
+  na prática.
+- **Mais útil do que parece**: aparece em problemas que não são
+  "busca" à primeira vista.
+
+> Dica: se você está num problema com "ordem" e "encontre o X" e está
+> pensando em loop, pare. Vale pelo menos 30 segundos pensando se
+> binária se aplica.
+
+No próximo nó, vamos falar sobre **quando Big O mente** - e o que fazer
+quando isso acontece.

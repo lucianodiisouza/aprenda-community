@@ -1,0 +1,86 @@
+---
+id: espaco
+title: "Complexidade de Espaço"
+resources:
+  - title: "Space complexity (Khan Academy)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/space-complexity
+    type: doc
+    lang: en
+    free: true
+---
+
+Big O mede **tempo**. Mas todo algoritmo também gasta **memória** - e essa
+conta também importa, principalmente quando o volume de dados é grande.
+
+A pergunta é: além da entrada em si, **quanta memória extra** o algoritmo
+precisa para rodar?
+
+### O(1) - espaço constante
+
+Não importa o tamanho da entrada, o algoritmo usa o mesmo tanto de memória
+**auxiliar**.
+
+```python
+def soma(lista):
+    total = 0          # uma variável
+    for x in lista:
+        total += x
+    return total        # O(1) de espaço
+```
+
+### O(n) - espaço linear
+
+O algoritmo precisa de memória proporcional à entrada. Criar uma cópia, uma
+lista nova, etc.
+
+```python
+def inverter(lista):
+    nova = []                  # cresce até o tamanho de lista
+    for x in lista:
+        nova.insert(0, x)      # O(n) de espaço
+    return nova
+```
+
+### O(n²) - espaço quadrático
+
+Tabela de NxN. Aparece em programação dinâmica ingênua.
+
+```python
+# Tabela completa de distâncias entre todos os pares
+dists = [[0] * n for _ in range(n)]   # O(n²) de espaço
+```
+
+### A pegadinha clássica: tempo x espaço
+
+Muitos algoritmos **trocam memória por velocidade** - usam mais espaço para
+rodar mais rápido. O exemplo clássico é a **memoização** de Fibonacci:
+
+```python
+# Sem memo: O(2ⁿ) tempo, O(n) espaço (pilha de recursão)
+def fib(n):
+    if n < 2: return n
+    return fib(n-1) + fib(n-2)
+
+# Com memo: O(n) tempo, O(n) espaço (cache)
+cache = {}
+def fib_memo(n):
+    if n in cache: return cache[n]
+    if n < 2: return n
+    cache[n] = fib_memo(n-1) + fib_memo(n-2)
+    return cache[n]
+```
+
+A versão com memo usa mais memória **mas** é dramaticamente mais rápida.
+Esse trade-off aparece toda hora: vale mais gastar RAM ou esperar?
+
+- **Espaço O(1)** é o ideal: zero memória extra além do input.
+- **Espaço O(n)** é aceitável na maioria dos casos reais.
+- **Tabela completa (O(n²))** é onde os algoritmos ficam "pesados" - vale
+  procurar uma versão que escale melhor.
+
+> Dica: Big O do espaço **conta só a memória auxiliar**, não a entrada. Se
+> a função recebe uma lista de N itens e cria uma lista auxiliar de N, é
+> O(n) de espaço, não O(2n). O(n) e O(2n) são a mesma classe.
+
+No próximo nó, vamos colocar isso em prática: como **analisar loops
+aninhados e condicionais** somando as complexidades.

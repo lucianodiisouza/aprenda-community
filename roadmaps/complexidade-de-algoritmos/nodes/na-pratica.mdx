@@ -1,0 +1,100 @@
+---
+id: na-pratica
+title: "Na Prática: Quando Big O Mente"
+resources:
+  - title: "The Real Cost of Big O (artigo)"
+    url: https://www.youtube.com/watch?v=D7KoN6wq5dk
+    type: video
+    lang: en
+    free: true
+  - title: "Performance Optimization - Chrome DevTools Docs"
+    url: https://developer.chrome.com/docs/devtools/performance
+    type: doc
+    lang: en
+    free: true
+---
+
+Big O é poderosa, mas é um **modelo** - e modelos simplificam. Na vida
+real, três coisas quebram a análise pura:
+
+### 1. Constantes que importam
+
+Um algoritmo O(n) com constante grande pode ser pior que um O(n²) com
+constante pequena, **para entradas pequenas**.
+
+Imagine:
+
+- Algoritmo A: O(n²) com 5n² operações.
+- Algoritmo B: O(n) com 1.000.000·n operações.
+
+Para `n = 100`:
+- A: 5 · 10.000 = 50.000 ops
+- B: 1.000.000 · 100 = 100.000.000 ops
+
+B é O(n) "melhor", mas é **2.000 vezes mais lento** nesse caso. Para
+`n = 10.000`:
+- A: 5 · 10⁸ = 500.000.000 ops
+- B: 1.000.000 · 10.000 = 10.000.000.000 ops
+
+B ainda é pior, mas a差距 diminuiu. Para `n = 1.000.000`, A explode
+totalmente e B vence. O ponto onde B vence é o **break-even** - e ele
+depende das constantes.
+
+**Regra prática:** para `n < 1000` ou mais, o algoritmo "pior" em Big O
+pode ser mais rápido na prática. Não troque sem medir.
+
+### 2. Cache locality
+
+CPUs modernas são ordens de grandeza mais rápidas que a memória RAM. A
+diferença é tão grande que o **tempo de acessar dados** importa mais que
+o tempo de computá-los.
+
+- **Array sequencial** - os dados estão **contíguos** na memória. A CPU
+  puxa um bloco de cache e os próximos acessos são "de graça".
+- **Lista ligada** - os nós estão **espalhados**. Cada acesso é um "vai
+  até a RAM" - centenas de ciclos de clock perdidos.
+
+Por isso, na prática, um loop sobre array (O(n²) "pior") pode ser mais
+rápido que percorrer uma lista ligada (O(n) "melhor"). O hardware
+distorce o modelo.
+
+```python
+# Em CPUs modernas, "percorrer array" ganha de "percorrer lista ligada"
+# para volumes grandes, mesmo que a notação diga o contrário.
+```
+
+### 3. I/O domina
+
+O tempo de **ir até o disco** ou fazer uma requisição HTTP é da ordem
+de **milissegundos**. Uma operação de CPU é da ordem de **nanossegundos**.
+A razão é 1.000.000:1.
+
+Por isso, em sistemas reais, o gargalo quase nunca é o algoritmo - é a
+**rede, o disco, o banco de dados**. Uma consulta SQL mal-escrita pode
+demorar 5 segundos, enquanto qualquer algoritmo que você faça em cima
+dela demora 0,001 segundo.
+
+A lição: **perfil antes de otimizar.** Não chute onde está o gargalo.
+
+### Quando Big O basta
+
+Para a maioria dos problemas, Big O **é a ferramenta certa**. As
+ressalvas acima importam em casos específicos:
+
+- **Sistemas de alta performance** (banco de dados, jogos, sistemas
+  embarcados) - cache locality e constantes dominam.
+- **Sistemas com I/O pesado** (web, mobile) - acesso a dados domina.
+- **Volume realmente massivo** (milhões+) - Big O vence mesmo assim.
+
+- **Big O assume hardware abstrato.** Real é diferente.
+- **Constantes importam para entradas pequenas** - mas somem para grandes.
+- **Meça antes de otimizar.** Profilers existem por motivo.
+- **Em sistemas reais, I/O geralmente domina o tempo.**
+
+> Dica: a primeira coisa que um sênior faz quando você diz "está lento"
+> não é trocar o algoritmo. É **perfil** - ver **onde** o tempo está
+> indo. Chutar otimização que Big O diz ser melhor é uma das formas
+> mais rápidas de **não** melhorar nada.
+
+A seguir, o **projeto final** - você vai comparar implementações de
+verdade e ver a diferença na pele.

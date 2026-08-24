@@ -1,0 +1,104 @@
+---
+id: classes-comuns
+title: "As Classes que Você Vai Ver Todo Dia"
+resources:
+  - title: "Tabela visual de complexidades (Big O Cheat Sheet)"
+    url: https://www.bigocheatsheet.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Aqui estão as classes mais comuns e **onde elas aparecem de verdade**.
+
+### O(1) - constante
+
+Custo **não muda** com a entrada. Acessar um item por índice num array,
+inserir no fim de um hash map, checar se um número é par.
+
+```python
+def primeiro(lista):
+    return lista[0]   # 1 operação, sempre
+```
+
+### O(log n) - logarítmico
+
+Custo cresce devagar. **Cada passo divide o problema pela metade.** O exemplo
+clássico é a busca binária: numa lista de 1 milhão, acha em ~20 passos.
+
+```python
+# Busca binária: descarta metade a cada comparação
+def busca_binaria(lista, alvo):
+    lo, hi = 0, len(lista) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if lista[mid] == alvo:
+            return mid
+        elif lista[mid] < alvo:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+```
+
+### O(n) - linear
+
+Custo cresce **na mesma proporção** que a entrada. Percorrer uma lista uma
+vez, somar elementos, encontrar o maior.
+
+```python
+def maior(lista):
+    m = lista[0]
+    for x in lista:        # passa por cada item uma vez
+        if x > m:
+            m = x
+    return m
+```
+
+### O(n log n) - log-linear
+
+Custo típico de algoritmos de ordenação **eficientes** (merge sort, quick
+sort, Timsort). É o "limite saudável" para ordenação.
+
+### O(n²) - quadrático
+
+Custo **quadruplica** se a entrada dobra. Loops aninhados sobre a mesma
+coleção. Bolha, seleção, inserção. Para 10.000 itens, é 100.000.000 de
+operações.
+
+```python
+def tem_duplicata(lista):     # O(n²) - percorre a lista dentro da lista
+    for i in range(len(lista)):
+        for j in range(i+1, len(lista)):
+            if lista[i] == lista[j]:
+                return True
+    return False
+```
+
+### O(2ⁿ) - exponencial
+
+Custo **dobra** a cada item a mais. Recursão ingênua de Fibonacci,
+força-bruta de subset-sum. Vira inviável muito rápido.
+
+```python
+def fib(n):                  # O(2ⁿ) - cada chamada gera duas novas
+    if n < 2:
+        return n
+    return fib(n-1) + fib(n-2)
+```
+
+### O(n!) - fatorial
+
+Permutações: "todas as formas de ordenar 10 itens" = 3.628.800. Só serve
+para `n` muito pequeno.
+
+- **O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!)**
+- **O(n log n)** é o "teto prático" pra ordenação.
+- Acima de O(n²), comece a procurar alternativa.
+
+> Dica: quando estiver em dúvida se uma solução é boa, pergunte "qual é a
+> complexidade?". Se a resposta for "depende" ou "não sei", vale parar e
+> contar antes de seguir.
+
+A seguir: **melhor, médio e pior caso** - porque o "número Big O" sozinho
+esconde uma parte importante da história.

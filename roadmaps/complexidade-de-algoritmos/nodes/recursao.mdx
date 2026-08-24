@@ -1,126 +1,109 @@
 ---
 id: recursao
-title: "Recursão: Analisando Algoritmos Que Se Chamam"
+title: "Recursão: Como Analisar"
 resources:
-  - title: "Master Theorem (Wikipedia, EN)"
-    url: https://en.wikipedia.org/wiki/Master_theorem
+  - title: "Thinking Recursively (Python docs)"
+    url: https://docs.python.org/3/tutorial/controlflow.html#defining-functions
+    type: doc
+    lang: en
+    free: true
+  - title: "Memoization (artigo interativo)"
+    url: https://www.freecodecamp.org/news/memoization-in-javascript-and-react/
     type: artigo
     lang: en
     free: true
-  - title: "Recursividade (Wikipedia, PT-BR)"
-    url: https://pt.wikipedia.org/wiki/Recursividade
-    type: artigo
-    lang: pt
-    free: true
 ---
 
-Algoritmos recursivos são elegantes - mas analisar a complexidade deles
-exige um truque: **transformar a recursão numa equação** (chamada de
-**recorrência**) e resolvê-la.
+Recursão é quando uma função **chama ela mesma** com uma entrada menor. É
+elegante e assustadora na mesma medida - principalmente quando você precisa
+dizer quanto custa.
 
-A ideia é simples: descreva o custo de um problema de tamanho `n` em
-função do custo de **problemas menores**, e descubra o padrão.
+A análise tem duas peças: **tempo** (quantas chamadas) e **espaço** (quanto
+a pilha de chamadas cresce).
 
-**Exemplo 1 - fatorial.**
+### Exemplo 1 - fatorial: linear em tudo
 
-```js
-function fatorial(n) {
-  if (n <= 1) return 1;          // caso base
-  return n * fatorial(n - 1);    // 1 chamada, com n-1
-}
-```text
-
-A recorrência:
-
-```text
-T(n) = T(n - 1) + O(1)         // 1 chamada + trabalho constante
-T(1) = O(1)
-```text
-
-Resolvendo: `T(n) = T(n-1) + 1 = T(n-2) + 2 = ... = T(1) + (n-1) = n`.
-
-**Complexidade: O(n)** - cada chamada faz um trabalho constante e a
-recursão desce até 1.
-
-**Exemplo 2 - busca binária recursiva.**
-
-```js
-function buscaBinaria(lista, alvo, ini = 0, fim = lista.length - 1) {
-  if (ini > fim) return -1;
-  const meio = Math.floor((ini + fim) / 2);
-  if (lista[meio] === alvo) return meio;
-  if (lista[meio] < alvo) return buscaBinaria(lista, alvo, meio + 1, fim);
-  return buscaBinaria(lista, alvo, ini, meio - 1);
-}
+```python
+def fatorial(n):
+    if n <= 1:
+        return 1
+    return n * fatorial(n-1)
 ```
 
-A recorrência:
+- A função chama ela mesma **n vezes** antes de chegar no caso base.
+- **Tempo: O(n).**
+- **Espaço: O(n)** (a pilha guarda n chamadas antes de "voltar").
 
-```text
-T(n) = T(n / 2) + O(1)         // 1 chamada em METADE do problema
-T(1) = O(1)
+### Exemplo 2 - Fibonacci ingênuo: exponencial
+
+```python
+def fib(n):
+    if n < 2: return n
+    return fib(n-1) + fib(n-2)
 ```
 
-Resolvendo: a cada nível da recursão, o problema cai pela metade. Quantos
-níveis até chegar a 1? log₂(n).
+Aqui cada chamada gera **duas novas**, que geram duas cada, que geram duas
+cada… o número de chamadas cresce como uma árvore binária de profundidade n.
 
-**Complexidade: O(log n).**
+Para `n = 30` já passa de 1 milhão de chamadas. **Tempo: O(2ⁿ).** Péssimo.
 
-**Exemplo 3 - fibonacci "ingênuo".**
+### Como visualizar: a árvore de chamadas
 
-```js
-function fib(n) {
-  if (n < 2) return n;
-  return fib(n - 1) + fib(n - 2);   // DUAS chamadas
-}
-```text
+Desenhe a árvore. **Cada nó é uma chamada**, cada nível é uma "fase" da
+recursão. O total de chamadas é a soma de todos os nós.
 
-A recorrência:
-
-```text
-T(n) = T(n - 1) + T(n - 2) + O(1)
+```
+fib(4)
+├── fib(3)
+│   ├── fib(2)
+│   │   ├── fib(1)
+│   │   └── fib(0)
+│   └── fib(1)
+└── fib(2)
+    ├── fib(1)
+    └── fib(0)
 ```
 
-Aqui a coisa explode. Cada chamada gera duas, e a árvore de chamadas
-cresce **exponencialmente** - aproximadamente **Φⁿ** (número de ouro
-elevado a n), que é da mesma ordem que 1.618ⁿ.
+Repare que **`fib(2)` é calculado duas vezes**, `fib(1)` três vezes. A
+recursão está **refazendo o mesmo trabalho** várias vezes. Aí entra…
 
-**Complexidade: O(2ⁿ)** - inviável para n maior que ~40.
+### Memoização: O(2ⁿ) → O(n)
 
-A "tabela de ouro" para recorrências divide-e-conquista (Master Theorem):
+```python
+from functools import lru_cache
 
-```text
-T(n) = a · T(n / b) + f(n)
-```text
+@lru_cache
+def fib(n):
+    if n < 2: return n
+    return fib(n-1) + fib(n-2)
+```
 
-Onde `a` é o número de chamadas recursivas, `b` é o quanto o problema
-diminui, e `f(n)` é o trabalho fora das chamadas. Os casos clássicos:
+O decorador guarda o resultado de cada `fib(k)` na primeira vez. Da segunda
+em diante, devolve do cache em O(1). O número de chamadas "únicas" cai de
+2ⁿ para **n**. **Tempo: O(n). Espaço: O(n).**
 
-- `f(n) = O(n^c)` com `c < log_b(a)` → **O(n^(log_b(a)))** (recursão domina).
-  Exemplo: `T(n) = 2·T(n/2) + 1` → O(n).
-- `f(n) = O(n^c)` com `c = log_b(a)` → **O(n^c · log n)** (equilíbrio).
-  Exemplo: `T(n) = 2·T(n/2) + n` (merge sort) → O(n log n).
-- `f(n) = O(n^c)` com `c > log_b(a)` → **O(f(n))** (trabalho fora domina).
-  Exemplo: `T(n) = 2·T(n/2) + n²` → O(n²).
+### A relação de recorrência
 
-Cuidado com o **espaço da pilha** (call stack) em recursão. Mesmo
-quando o tempo é O(log n), o espaço da pilha pode ser O(log n) também -
-porque cada chamada recursiva "empilha" um quadro. Se a profundidade
-ficar muito grande, dá **stack overflow**. Soluções: **recursão de cauda**
-(tail call) ou **converter para loop**.
+Para algoritmos divide-and-conquer (merge sort, binary search), a análise
+segue um padrão: **`T(n) = a · T(n/b) + f(n)`**.
 
-> Dica: sempre que vir uma função que chama ela mesma, escreva a
-> recorrência **antes** de tentar achar a complexidade. É o passo que
-> transforma a intuição em análise real. E lembre: profundidade da
-> recursão = profundidade da pilha = espaço extra.
+- **`a`** = quantas chamadas recursivas.
+- **`b`** = por quanto o input é dividido.
+- **`f(n)`** = trabalho **fora** das chamadas.
 
-- **Recursão se analisa com recorrências:** `T(n) = a·T(n/b) + f(n)`.
-- **Resolva expandindo** até ver o padrão, ou use o Master Theorem para
-  casos clássicos de dividir-e-conquistar.
-- **Cuidado com chamadas duplicadas** (fibonacci ingênuo): uma função
-  O(2ⁿ) pode virar O(n) só com **memoização** (cache dos resultados).
-- **Espaço da pilha** conta. Recursão profunda demais = stack overflow.
+Merge sort: `T(n) = 2·T(n/2) + O(n)` → resolve para **O(n log n).**
+Binary search: `T(n) = T(n/2) + O(1)` → resolve para **O(log n).**
 
-No próximo nó, conhecemos uma técnica mais sutil: a **análise amortizada**,
-que mostra por que algumas operações são caras "uma vez" mas baratas "em
-média" - e como isso muda a forma de pensar.
+Você não precisa decorar a fórmula - mas reconhecer o padrão ajuda a
+"ler" algoritmos clássicos.
+
+- **Conte as chamadas** que a recursão gera.
+- **Memoize** se a mesma entrada for calculada mais de uma vez.
+- **Espaço = profundidade** da pilha de chamadas.
+
+> Dica: se a recursão está ficando lenta, quase sempre é ou (a) trabalho
+> repetido que memoization resolve, ou (b) chamadas demais por nível que
+> uma versão iterativa resolve com um loop.
+
+A seguir: como **estruturas de dados** mudam completamente a complexidade -
+o mesmo problema fica O(n) ou O(n²) dependendo do que você escolhe.

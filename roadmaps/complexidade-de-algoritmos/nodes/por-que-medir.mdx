@@ -1,0 +1,42 @@
+---
+id: por-que-medir
+title: "Por Que Medir Eficiência"
+resources:
+  - title: "O que é eficiência de um algoritmo? (vídeo introdutório)"
+    url: https://www.youtube.com/results?search_query=complexidade+de+algoritmos+introducao
+    type: video
+    lang: pt
+    free: true
+  - title: "Introduction to Algorithms (CLRS) - Capítulo 1 (em inglês)"
+    url: https://mitpress.mit.edu/9780262033848/introduction-to-algorithms/
+    type: doc
+    lang: en
+    free: false
+---
+
+"Funciona" é o mínimo. Dois programas podem dar a mesma resposta - um em
+milissegundos, outro em horas. A diferença é o **algoritmo** por trás.
+
+Imagine que você tem uma lista telefônica com 1 milhão de nomes e precisa
+encontrar "Marina Silva". Você pode:
+
+- **Folhear página por página** até achar. Na média, você para na metade.
+- **Abrir no meio** e decidir: "Marina" vem antes ou depois dessa página?
+  Se vem antes, descarta a metade de baixo; se depois, descarta a metade de
+  cima. Repete.
+
+O segundo jeito acha a Marina em **20 "passos"** (porque 2²⁰ = 1.048.576). O
+primeiro pode levar **500.000**. A diferença não é "5% mais rápido" - é
+**25.000 vezes mais rápido**.
+
+Complexidade de algoritmos é o **vocabulário** que te permite falar sobre essa
+diferença sem medir tempo no relógio. Em vez de "esse aqui demora", você diz
+"esse aqui é O(log n) e o outro é O(n)" - e qualquer pessoa que conhece a
+notação entende a magnitude.
+
+> É uma das coisas mais valiosas que você aprende na carreira: um programa
+> "certo" mas ingênuo derruba um sistema inteiro quando o volume cresce. Big O
+> te ajuda a **prever** isso antes de colocar no ar.
+
+No próximo nó, vamos ver como **contar operações** na prática - o primeiro
+passo pra chegar à notação.

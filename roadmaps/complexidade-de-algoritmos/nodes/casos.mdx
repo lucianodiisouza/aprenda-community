@@ -1,0 +1,68 @@
+---
+id: casos
+title: "Melhor, Médio e Pior Caso"
+resources:
+  - title: "Best, Worst and Average Case (GeeksforGeeks)"
+    url: https://www.geeksforgeeks.org/analysis-of-algorithms-set-2-asymptotic-analysis/
+    type: doc
+    lang: en
+    free: true
+---
+
+Big O descreve o **pior caso**. Mas um mesmo algoritmo pode se comportar
+muito diferente dependendo da entrada. Os três casos clássicos:
+
+- **Melhor caso (Ω - Omega):** a entrada mais favorável.
+- **Caso médio (Θ - Theta):** o que acontece "em geral".
+- **Pior caso (O - Big O):** a entrada mais desfavorável.
+
+O exemplo clássico é a **busca linear**:
+
+```python
+def busca(lista, alvo):
+    for i, x in enumerate(lista):
+        if x == alvo:
+            return i
+    return -1
+```
+
+- Se o alvo é o **primeiro item**: 1 comparação. **Melhor caso: O(1).**
+- Se o alvo é o **último** (ou não existe): N comparações. **Pior caso: O(n).**
+- Se o alvo está em **posição aleatória**: em média, N/2. **Caso médio: O(n).**
+
+Aqui a notação do pior caso (O(n)) é honesta - a busca linear sempre pode
+piorar. Mas a diferença entre melhor e pior é brutal: 1 vs N comparações.
+
+Outro caso interessante: o **insertion sort**.
+
+```python
+def insertion_sort(lista):
+    for i in range(1, len(lista)):
+        chave = lista[i]
+        j = i - 1
+        while j >= 0 and lista[j] > chave:
+            lista[j+1] = lista[j]
+            j -= 1
+        lista[j+1] = chave
+```
+
+- Lista **já ordenada**: 1 comparação por item → **O(n).**
+- Lista **em ordem inversa**: cada item desliza até o começo → **O(n²).**
+- Lista **aleatória**: em média, metade das comparações do pior caso → **O(n²).**
+
+Por isso insertion sort não é "sempre O(n²)" - **é O(n²) no pior caso, mas
+O(n) no melhor.** Isso importa na prática: se os seus dados costumam chegar
+quase ordenados, insertion sort é um algoritmo decente.
+
+- **Big O** = pior caso (garantia de "não passa disso").
+- **Omega** = melhor caso (pode ser mais rápido que isso).
+- **Theta** = caso médio (o que costuma acontecer).
+- Os três só são iguais quando a complexidade **não depende da entrada**.
+
+> Dica: na hora de escolher um algoritmo, olhe os três. O(n²) no pior caso
+> com O(n) no melhor é tentador quando os dados são "normalmente bons".
+> Quick sort é O(n log n) no caso médio mas O(n²) no pior - e isso é
+> justamente o que o introsort resolve (cai pra heapsort no pior caso).
+
+A seguir, vamos olhar o **outro lado** da moeda: além do tempo, quanto
+**espaço** (memória) o algoritmo gasta.

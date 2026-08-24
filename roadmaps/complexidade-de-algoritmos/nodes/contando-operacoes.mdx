@@ -1,68 +1,60 @@
 ---
 id: contando-operacoes
-title: "Contando Operações (Sem Matemática)"
+title: "Contando Operações"
 resources:
-  - title: "Big O Cheat Sheet (luz velas, PT-BR)"
-    url: https://www.bigocheatsheet.com/
-    type: artigo
+  - title: "Análise de Algoritmos (curso de Paulo Feofiloff, IME-USP)"
+    url: https://www.ime.usp.br/~pf/analise_de_algoritmos/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Big O Notation - CS50 (vídeo, legenda PT-BR disponível)"
+    url: https://www.youtube.com/watch?v=IM9sHGlJHoo
+    type: video
     lang: en
     free: true
 ---
 
-Antes de falar em "O de algo", vamos ao passo mais importante: **contar
-quantas vezes o seu código faz alguma coisa**. É isso - sem fórmula, sem
-terror, só contar.
+Medir tempo em segundos é instável: depende do processador, do que mais está
+rodando, da linguagem. O que **não muda** é a **quantidade de trabalho** que
+o algoritmo faz. Por isso a gente conta **operações**.
 
-Imagine que você recebe uma lista de 5 nomes e precisa dizer se "Ana" está
-nela. A solução mais óbvia é **olhar um por um**:
+Imagine esta função que soma todos os números de 1 a N:
 
-```js
-const nomes = ["Ana", "Bruno", "Carla", "Diego", "Eva"];
-const alvo = "Ana";
-
-let encontrado = false;
-for (let i = 0; i < nomes.length; i++) {
-  if (nomes[i] === alvo) {
-    encontrado = true;
-  }
-}
+```python
+def soma(n):
+    total = 0              # 1 operação
+    for i in range(1, n+1):  # o loop roda n vezes
+        total += i         # 2 operações por volta (adição + atribuição)
+    return total
 ```
 
-Você consegue adivinhar quantas vezes o código **comparou** um nome com `alvo`?
-**5 vezes** - uma para cada item, porque o pior caso é o "Ana" estar no fim
-(ou nem estar). Esse "pior caso" é o que vamos medir, porque ele é o
-**limite superior honesto** do que o algoritmo pode gastar.
+Quantas operações, no total? Algo como `1 + n * 2`. Para `n = 10`, dá 21.
+Para `n = 1.000.000`, dá 2.000.001.
 
-Agora o mesmo problema com 1000 nomes: o mesmo laço faria **1000 comparações**.
-Com 1.000.000 de nomes? **1.000.000 de comparações**. O número de operações
-**cresce na mesma proporção que a lista**.
+Agora um algoritmo que faz a mesma soma sem loop:
 
-A regra de ouro para contar:
+```python
+def soma(n):
+    return n * (n + 1) // 2   # 3 operações, sempre
+```
 
-- **Operações básicas** (somar dois números, comparar strings, acessar um
-  índice) contam como **1 operação**.
-- **Loops** multiplicam: um `for` que roda `n` vezes faz `n` vezes o que está
-  dentro dele.
-- **Não importa o valor exato** (1000 ou 1024 operações), e sim **como ele
-  cresce** quando `n` muda.
+Esse segundo é `3`, não importa o tamanho de `n`. Os dois retornam o mesmo
+valor, mas o primeiro **cresce** com `n` e o segundo **não**.
 
-Exemplos mentais:
+A sacada é: para descrever a velocidade, **não importa o número exato de
+operações**, só como ele **cresce** quando `n` cresce. `1 + 2n` e `5n` e
+`42n + 1000` se comportam do mesmo jeito - todos são "lineares em n". O
+detalhe numérico some quando `n` vira grande.
 
-- "Ver o primeiro item da lista" → **sempre 1 operação**, não importa o
-  tamanho da lista.
-- "Procurar um nome numa lista" → **no máximo n operações** (no pior caso).
-- "Para cada item, comparar com todos os outros" → **n × n operações** -
-  é a cara do O(n²), que você vai conhecer no próximo nó.
+- **Conte operações, não segundos.** Hardware muda, estrutura não.
+- **Foque em como o trabalho escala** com o tamanho da entrada, não no
+  valor exato.
+- Constantes e termos menores somem na análise: `5n + 100` é "linear" igual
+  a `n + 1`.
 
-- **Contar operações** é o primeiro passo para falar de complexidade.
-- **O pior caso** (a maior quantidade possível de operações) é o que nos
-  interessa - é o "teto honesto" do algoritmo.
-- **O que importa é a forma do crescimento**, não o número exato: `n`,
-  `2n`, `100n` crescem todos do mesmo jeito.
+> Dica: na hora de contar, **ignore constantes**. `2n` e `100n` são a mesma
+> classe - "linear". O que importa é se a operação cresce com `n`, com `n²`,
+> com `log n`… e isso é exatamente o que a notação Big O te diz.
 
-> Dica: da próxima vez que vir um `for`, conte em voz alta: "isso roda n
-> vezes, e dentro tem 2 operações... então são 2n". Você está fazendo
-> análise de complexidade sem perceber.
-
-No próximo nó, vamos dar **nomes** a esses padrões de crescimento - começando
-pelos mais comuns: o "constante" e o "linear".
+No próximo nó, vamos formalizar: **Big O** é o nome dessa notação que diz
+"como o trabalho escala".

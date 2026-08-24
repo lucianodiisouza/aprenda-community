@@ -1,0 +1,94 @@
+---
+id: loops-condicionais
+title: "Analisando Loops e Condicionais"
+resources:
+  - title: "Como analisar loops aninhados (artigo em PT-BR)"
+    url: https://www.ime.usp.br/~pf/analise_de_algoritmos/aulas/Oh.html
+    type: artigo
+    lang: pt
+    free: true
+---
+
+A análise de complexidade vira mecânica quando você aprende três regras
+para combinar blocos de código. Todas vêm de somar ou multiplicar.
+
+### Regra 1 - código sequencial: some
+
+Se você faz uma coisa **depois** da outra, as complexidades **somam**.
+Mas a soma de uma O(n) com uma O(1) ainda é O(n) (a maior vence).
+
+```python
+def processar(lista):
+    # O(n): percorre a lista
+    for x in lista:
+        print(x)
+    # O(1): uma operação
+    print("pronto")
+```
+
+Complexidade total: **O(n) + O(1) = O(n).**
+
+### Regra 2 - loops aninhados: multiplique
+
+Se dentro de um loop tem outro loop, o custo é o **produto** dos custos.
+O(n) dentro de O(n) é O(n × n) = O(n²).
+
+```python
+def tem_duplicata(lista):
+    # O(n) de fora
+    for i in range(len(lista)):
+        # O(n) de dentro, para cada i
+        for j in range(i+1, len(lista)):
+            if lista[i] == lista[j]:
+                return True
+    return False
+```
+
+Complexidade: **O(n) × O(n) = O(n²).**
+
+### Regra 3 - condicionais: pegue o pior ramo
+
+Um `if/else` tem o custo do **ramo mais caro** que pode executar. Você não
+soma os dois - só o pior caso conta.
+
+```python
+def busca(lista, alvo):
+    if not lista:           # O(1)
+        return -1
+    for x in lista:         # O(n) no pior caso
+        if x == alvo:
+            return x
+    return -1
+```
+
+Complexidade: **O(1) ou O(n), no pior O(n).**
+
+### Loops com tamanho que muda
+
+Cuidado com loops onde o índice **cresce ou diminui** - às vezes o custo
+é menor do que parece.
+
+```python
+i = 1
+while i < n:
+    print(i)
+    i *= 2     # dobra a cada volta
+```
+
+O loop roda `log₂(n)` vezes, não `n`. Cada vez, `i` dobra - então para
+atingir `n`, basta `log₂(n)` dobras. **Complexidade: O(log n).**
+
+O oposto - dividir por 2 - também dá O(log n). É o mesmo raciocínio da
+busca binária.
+
+- **Sequência** = some (e mantenha só o maior).
+- **Loops aninhados** = multiplique.
+- **Condicional** = o pior ramo vence.
+- **Loop que divide/dobra** = geralmente O(log n).
+
+> Dica: a regra "loops aninhados = multiplica" é a fonte mais comum de
+> "por que isso está tão lento?". Sempre que ver `for` dentro de `for`,
+> pare e pergunte: dá pra trocar um deles por um hash map? Em geral, dá.
+
+A seguir, **recursão** - a outra fonte clássica de "por que isso está
+explodindo?".
