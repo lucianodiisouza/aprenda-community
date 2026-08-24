@@ -1,102 +1,102 @@
 {
   "slug": "complexidade-de-algoritmos",
   "title": "Complexidade de Algoritmos",
-  "description": "Trilha completa sobre complexidade - do zero absoluto (o que é um algoritmo 'lento' vs 'rápido') até análise amortizada, Big Omega, complexidade de espaço e análise de algoritmos recursivos. Cobre básico, intermediário e avançado, com exemplos em Python e JavaScript, prática em cada nível e um projeto final de análise comparativa.",
-  "difficulty": "iniciante",
+  "description": "Aprenda a medir e comparar o custo de algoritmos: Big O, melhor/pior caso, espaço, recursão, padrões clássicos (busca binária, dois ponteiros, sliding window) e como ler código alheio sem se perder.",
+  "difficulty": "intermediario",
   "creators": [
     {
-      "name": "Luciano de Souza",
+      "name": "Luciano dii Souza",
       "github": "lucianodiisouza"
     }
   ],
   "nodes": [
     {
-      "id": "introducao",
-      "title": "Introdução: O que é Complexidade",
+      "id": "por-que-medir",
+      "title": "Por Que Medir Eficiência",
       "type": "topic",
       "recommended": true,
       "children": ["contando-operacoes"]
     },
     {
       "id": "contando-operacoes",
-      "title": "Contando Operações (Sem Matemática)",
+      "title": "Contando Operações",
       "type": "subtopic",
       "recommended": true,
-      "children": ["constante-linear"]
+      "children": ["big-o"]
     },
     {
-      "id": "constante-linear",
-      "title": "Constante e Linear: O(1) e O(n)",
+      "id": "big-o",
+      "title": "Big O: A Notação que Importa",
       "type": "subtopic",
       "recommended": true,
-      "children": ["quadratico"]
+      "children": ["classes-comuns"]
     },
     {
-      "id": "quadratico",
-      "title": "Quadrático: O(n²) - Loops Dentro de Loops",
+      "id": "classes-comuns",
+      "title": "As Classes que Você Vai Ver Todo Dia",
       "type": "subtopic",
       "recommended": true,
-      "children": ["notacao-big-o"]
+      "children": ["casos"]
     },
     {
-      "id": "notacao-big-o",
-      "title": "Notação Big O (Formal, Mas Sem Medo)",
-      "type": "topic",
-      "recommended": true,
-      "children": ["logaritmico"]
-    },
-    {
-      "id": "logaritmico",
-      "title": "Logaritmo: O(log n) e a Busca Binária",
+      "id": "casos",
+      "title": "Melhor, Médio e Pior Caso",
       "type": "subtopic",
       "recommended": true,
-      "children": ["analisando-loops"]
+      "children": ["espaco"]
     },
     {
-      "id": "analisando-loops",
-      "title": "Analisando Loops: Regras Práticas",
+      "id": "espaco",
+      "title": "Complexidade de Espaço",
       "type": "subtopic",
       "recommended": true,
-      "children": ["comparando-complexidades"]
+      "children": ["loops-condicionais"]
     },
     {
-      "id": "comparando-complexidades",
-      "title": "Comparando Complexidades na Prática",
-      "type": "subtopic",
-      "recommended": true,
-      "children": ["big-omega-big-theta"]
-    },
-    {
-      "id": "big-omega-big-theta",
-      "title": "Big Ω e Big Θ: Pior Caso, Melhor Caso, Caso Justo",
-      "type": "topic",
-      "recommended": true,
-      "children": ["complexidade-espaco"]
-    },
-    {
-      "id": "complexidade-espaco",
-      "title": "Complexidade de Espaço: Memória Também Conta",
+      "id": "loops-condicionais",
+      "title": "Analisando Loops e Condicionais",
       "type": "subtopic",
       "recommended": true,
       "children": ["recursao"]
     },
     {
       "id": "recursao",
-      "title": "Recursão: Analisando Algoritmos Que Se Chamam",
+      "title": "Recursão: Como Analisar",
       "type": "subtopic",
       "recommended": true,
-      "children": ["analise-amortizada"]
+      "children": ["estruturas-de-dados"]
     },
     {
-      "id": "analise-amortizada",
-      "title": "Análise Amortizada: O Pior Caso Não é a Média",
+      "id": "estruturas-de-dados",
+      "title": "Estruturas de Dados Mudam Tudo",
       "type": "subtopic",
-      "recommended": false,
+      "recommended": true,
+      "children": ["padroes-classicos"]
+    },
+    {
+      "id": "padroes-classicos",
+      "title": "Padrões Clássicos: Dois Ponteiros, Sliding Window, D&C",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["busca-binaria"]
+    },
+    {
+      "id": "busca-binaria",
+      "title": "Busca Binária na Vida Real",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["na-pratica"]
+    },
+    {
+      "id": "na-pratica",
+      "title": "Na Prática: Quando Big O Mente",
+      "type": "subtopic",
+      "recommended": true,
       "children": ["projeto-final"]
     },
     {
       "id": "projeto-final",
-      "title": "Projeto Final: Comparando Algoritmos do Mundo Real",
+      "title": "Projeto Final: Comparando Implementações",
       "type": "milestone",
       "recommended": true,
       "children": []

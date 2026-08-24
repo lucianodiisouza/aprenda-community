@@ -1,0 +1,166 @@
+---
+id: position
+title: "Position: static, relative, absolute, fixed e sticky"
+resources:
+  - title: "position (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/position
+    type: doc
+    lang: pt
+    free: true
+  - title: "Entendendo position: relative e absolute (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/Containing_block#identifying_the_containing_block
+    type: doc
+    lang: pt
+    free: true
+---
+
+A propriedade `position` muda como um elemento **se posiciona no fluxo
+da página**. Tem cinco valores - três que você vai usar sempre
+(`relative`, `absolute`, `fixed`), um com caso de uso específico
+(`sticky`) e um que é o default (`static`).
+
+### `static`: o default (não precisa declarar)
+
+```css
+div { position: static; }
+```
+
+O elemento fica no **fluxo normal** da página, na ordem do HTML, sem
+`top`/`left`/`right`/`bottom` que valham. Você só configura `position:
+static` se quiser ser explícito (raro).
+
+### `relative`: "deslocado em relação a si mesmo"
+
+```css
+.caixa {
+  position: relative;
+  top: 10px;
+  left: 20px;
+}
+```
+
+O elemento continua no fluxo da página (ocupa o mesmo espaço que
+ocuparia), mas é **deslocado** pela quantidade que você passou em
+`top`/`left`/`right`/`bottom`. É como se você "puxasse" o elemento uns
+pixels pra fora do lugar original.
+
+**Caso de uso principal:** servir de **âncora** para um filho com
+`position: absolute` (ver abaixo). Você quase nunca usa `relative`
+só pelo deslocamento.
+
+### `absolute`: "tirado do fluxo, posicionado em relação ao ancestral mais próximo que seja 'posicionado'"
+
+```css
+.pai {
+  position: relative; /* vira a "âncora" */
+}
+
+.filho {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+```
+
+O elemento **sai do fluxo** (os outros elementos agem como se ele não
+existisse) e é posicionado com `top`/`right`/`bottom`/`left` em
+relação ao **ancestral posicionado mais próximo** (qualquer ancestral
+com `position` diferente de `static`). Se não houver ancestral
+posicionado, é em relação ao `<html>`.
+
+É o que faz o **"badge" no canto do card**, o **"X" de fechar no canto
+do modal**, a **seta do tooltip** e por aí vai.
+
+```html
+<div class="card">
+  Card
+  <span class="badge">Novo!</span>
+</div>
+```
+
+```css
+.card { position: relative; }
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 4px 8px;
+}
+```
+
+### `fixed`: "tela inteira, sempre visível"
+
+```css
+.botao-whatsapp {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+```
+
+O elemento sai do fluxo e é posicionado em relação à **viewport**
+(tela visível). Não importa se você rola a página - o elemento
+continua lá. É o que faz o **menu fixo no topo**, o **botão de
+"voltar ao topo"**, o **banner de cookies** que não sai.
+
+Cuidado: no mobile, `position: fixed` tem bugs clássicos com a barra
+de URL que some/aparece. Às vezes, `position: sticky` resolve melhor.
+
+### `sticky`: "vira fixed quando precisa"
+
+```css
+.menu {
+  position: sticky;
+  top: 0;
+}
+```
+
+O elemento se comporta como `relative` **até** que a rolagem o alcance
+na posição que você definiu (no caso, `top: 0`). A partir daí, ele
+"gruda" como se fosse `fixed`. É o que faz **cabeçalhos de tabela que
+ficam visíveis ao rolar** e **menus laterais que seguem a rolagem**.
+
+Detalhe importante: o **pai** do elemento sticky precisa ter altura
+suficiente para a "rolagem" ter efeito. Se o pai termina antes do
+elemento alcançar a posição, o sticky não funciona. Isso pega muita
+gente.
+
+### Empilhamento: `z-index`
+
+Quando elementos se sobrepõem, o navegador usa o `z-index` para decidir
+quem fica em cima (maior z-index = mais à frente). Só funciona em
+elementos **posicionados** (qualquer `position` diferente de `static`):
+
+```css
+.modal   { position: fixed; z-index: 100; }
+.tooltip { position: absolute; z-index: 200; } /* fica na frente do modal */
+```
+
+Sem `position`, `z-index` é ignorado.
+
+### Quando usar qual
+
+- **`relative`:** como **âncora** para filhos absolutos (95% dos casos).
+- **`absolute`:** sobrepor um elemento a outro, dentro de uma âncora.
+- **`fixed`:** "ficar na tela" - navegação, botões flutuantes.
+- **`sticky`:** "ficar visível só enquanto passa por aqui" - cabeçalhos
+  de tabela, sidebars.
+- **`static`:** default, quase nunca declarado.
+
+- **Tirar do fluxo:** `absolute` ou `fixed`.
+- **Ancorar absoluto:** o pai com `position: relative`.
+- **Sticky** precisa de pai com altura suficiente.
+- **`z-index`** só vale em elementos posicionados.
+
+> Dica: chegou a hora de entender de verdade o **`containing block`**
+> (bloco contenedor). Resumo: `absolute` se referencia ao ancestral
+> posicionado; `fixed` sempre à viewport; `sticky` se referencia ao
+> ancestral scrollável mais próximo. Tirar um tempinho pra entender
+> isso economiza horas de "por que não está grudando?".
+
+No próximo nó, vamos para o **Flexbox** - o sistema de layout que
+destrava 90% dos problemas de alinhamento e distribuição da web
+moderna.

@@ -1,0 +1,103 @@
+---
+id: padroes-classicos
+title: "Padrões Clássicos: Dois Ponteiros, Sliding Window, D&C"
+resources:
+  - title: "Sliding Window Technique (artigo)"
+    url: https://www.geeksforgeeks.org/window-sliding-technique/
+    type: doc
+    lang: en
+    free: true
+  - title: "Divide and Conquer Algorithms (Khan Academy)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms/merge-sort/a/divide-and-conquer
+    type: doc
+    lang: en
+    free: true
+---
+
+A maior parte dos problemas de entrevista (e da vida real) usa um punhado
+de **padrões**. Quando você reconhece o padrão, a solução vem quase
+mecânica. Estes três cobrem uma fração enorme do que aparece no dia a dia.
+
+### 1. Dois ponteiros
+
+Dois índices percorrem a estrutura - em geral um mais rápido que o outro,
+ou um de cada lado - até se encontrarem. Resolve "pares que somam X" e
+"palíndromo" em O(n).
+
+```python
+# Pares que somam X numa lista ORDENADA
+def pares_soma(lista, x):
+    i, j = 0, len(lista) - 1
+    while i < j:
+        s = lista[i] + lista[j]
+        if s == x:
+            return (lista[i], lista[j])
+        elif s < x:
+            i += 1
+        else:
+            j -= 1
+    return None
+```
+
+Complexidade: **O(n)** - cada ponteiro anda no máximo n vezes, e a
+comparação é O(1).
+
+### 2. Sliding window (janela deslizante)
+
+Uma "janela" de tamanho fixo ou variável percorre o array. Você **ajusta
+a janela** (aumenta ou encolhe) em vez de recalcular tudo. Serve para
+"maior soma de k consecutivos", "maior substring sem repetir".
+
+```python
+# Maior soma de k números consecutivos
+def max_soma_k(nums, k):
+    soma = sum(nums[:k])        # soma inicial
+    melhor = soma
+    for i in range(k, len(nums)):
+        soma += nums[i] - nums[i - k]   # adiciona o novo, tira o que saiu
+        melhor = max(melhor, soma)
+    return melhor
+```
+
+Complexidade: **O(n)** - cada elemento entra e sai da janela exatamente
+uma vez.
+
+### 3. Divide and conquer (dividir para conquistar)
+
+Quebra o problema em **subproblemas menores**, resolve cada um, e
+**combina** as soluções. Merge sort, quick sort, busca binária.
+
+```python
+# Merge sort: divide, ordena cada metade, junta
+def merge_sort(lista):
+    if len(lista) <= 1:
+        return lista
+    meio = len(lista) // 2
+    esq = merge_sort(lista[:meio])
+    dir = merge_sort(lista[meio:])
+    return merge(esq, dir)
+```
+
+Complexidade: **O(n log n)** - cada nível do "dividir" custa O(n) (juntar
+as metades), e há log n níveis.
+
+### Como reconhecer cada um
+
+- **Dois ponteiros:** array/lista ordenada + "encontre par/trio que
+  satisfaz X".
+- **Sliding window:** "subarray/substring de tamanho K" ou "maior/menor
+  que cabe em X".
+- **Divide and conquer:** "ordene / encontre em estrutura que pode ser
+  quebrada em metades".
+
+- **Dois ponteiros** é O(n) onde uma solução ingênua seria O(n²).
+- **Sliding window** é O(n) onde um loop aninhado seria O(nk).
+- **Divide and conquer** geralmente é O(n log n) - o teto prático pra
+  ordenação.
+
+> Dica: se você está olhando um problema e pensando "vou usar força
+> bruta", vale parar 30 segundos. Tem padrão clássico que resolve em
+> O(n) ou O(n log n) em quase todos os casos "óbvios".
+
+A seguir, vamos ver **busca binária** em detalhe - porque é a técnica
+mais subestimada e mais útil da categoria.

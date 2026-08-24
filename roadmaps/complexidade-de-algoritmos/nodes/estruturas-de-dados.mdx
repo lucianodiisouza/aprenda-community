@@ -1,0 +1,90 @@
+---
+id: estruturas-de-dados
+title: "Estruturas de Dados Mudam Tudo"
+resources:
+  - title: "Big-O Algorithm Complexity Cheat Sheet (operções por estrutura)"
+    url: https://www.bigocheatsheet.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+A maioria dos problemas de performance na vida real não é "escolhi o
+algoritmo errado" - é **"usei a estrutura de dados errada"**. O mesmo
+problema muda de O(n²) para O(n) só trocando de array para hash map.
+
+### Tabela de operações por estrutura
+
+| Estrutura | Acesso | Busca | Inserção | Remoção |
+|---|---|---|---|---|
+| Array | O(1) | O(n) | O(n) | O(n) |
+| Linked list | O(n) | O(n) | O(1) | O(1) |
+| Hash map | - | O(1) médio | O(1) médio | O(1) médio |
+| Árvore binária de busca balanceada | - | O(log n) | O(log n) | O(log n) |
+| Heap | - | O(n) | O(log n) | O(log n) |
+| Trie | - | O(k) | O(k) | O(k) |
+
+(`k` = tamanho da chave, no caso de strings; irrelevante para inteiros.)
+
+### O mesmo problema, três soluções
+
+Quero contar a **frequência de cada palavra** num texto.
+
+```python
+texto = "o gato caçou o rato o gato dormiu"
+```
+
+**Solução 1 - listas aninhadas. O(n²):**
+
+```python
+frequencias = []
+for palavra in texto.split():                       # O(n)
+    encontrada = None
+    for item in frequencias:                         # O(n) por palavra
+        if item[0] == palavra:
+            encontrada = item
+            break
+    if encontrada:
+        encontrada[1] += 1
+    else:
+        frequencias.append([palavra, 1])
+```
+
+**Solução 2 - hash map. O(n):**
+
+```python
+frequencias = {}
+for palavra in texto.split():                       # O(n)
+    frequencias[palavra] = frequencias.get(palavra, 0) + 1   # O(1) por palavra
+```
+
+Mesma tarefa. A primeira escala com `n²`, a segunda com `n`. Para 1
+milhão de palavras, a primeira faz trilhões de operações; a segunda, 1
+milhão.
+
+### Quando cada estrutura brilha
+
+- **Array/lista** - quando você precisa de **ordem** e acesso por índice.
+  A ordem de inserção é preservada.
+- **Hash map/dict** - quando você precisa de **busca por chave**. É o
+  canivete suíço. Quase sempre é a resposta certa para "estou fazendo busca
+  dentro de loop".
+- **Set** - quando você só precisa saber "isso já apareceu?". Versão do
+  hash map sem valor.
+- **Pilha/queue** - quando você precisa de LIFO ou FIFO. Algoritmos de
+  BFS, parsing, undo.
+- **Árvore** - quando você precisa manter dados **ordenados** com busca
+  rápida.
+
+- **Trocar a estrutura de dados** é muitas vezes mais impactante que
+  micro-otimizar o algoritmo.
+- **Hash map** é a estrutura que mais "salva vidas" - se você está
+  procurando algo dentro de um loop, vire esse loop numa chave de hash.
+- **Big O por estrutura** é o seu atalho mental pra escolher.
+
+> Dica: regra prática. Antes de escrever um loop aninhado, pare e pergunte
+> "isso aqui é uma busca que pode virar um hash map?". Na maioria das
+> vezes, sim.
+
+A seguir, padrões clássicos de **algoritmo** que você acaba usando o
+tempo todo: dois ponteiros, sliding window, divide and conquer.

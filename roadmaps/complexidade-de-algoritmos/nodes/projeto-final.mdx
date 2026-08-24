@@ -1,148 +1,129 @@
 ---
 id: projeto-final
-title: "Projeto Final: Comparando Algoritmos do Mundo Real"
+title: "Projeto Final: Comparando Implementações"
 resources:
-  - title: "Big-O Cheat Sheet (bigocheatsheet.com)"
-    url: https://www.bigocheatsheet.com/
-    type: artigo
+  - title: "Python timeit — medindo performance de trechos"
+    url: https://docs.python.org/3/library/timeit.html
+    type: doc
     lang: en
     free: true
-  - title: "Visualizando algoritmos de ordenação (visualgo.net, EN)"
-    url: https://visualgo.net/en/sorting
-    type: exercicio
-    lang: en
+  - title: "JavaScript performance.now() — medindo no browser"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/API/Performance/now
+    type: doc
+    lang: pt
     free: true
 ---
 
-Você passou por 12 nós: do "o que é complexidade" até análise amortizada.
-Nada disso "gruda" só lendo. Este projeto é a prova: **pegar dois
-algoritmos que resolvem o mesmo problema, analisar a complexidade de cada
-um, e ver a diferença aparecer em números reais**.
+Você passou por 12 nós: de "por que medir" até "quando Big O mente".
+Agora é hora de **medir de verdade** e ver a diferença na pele, não só no
+papel.
 
-A ideia não é virar especialista em ordenação ou em grafos - é praticar
-o **processo de análise**: ler o código, contar operações, nomear a
-complexidade, **e confirmar com um teste de tempo**.
+O objetivo: pegar **3 problemas clássicos**, implementar **2 soluções cada**
+(de complexidades diferentes) e medir quanto cada uma demora. Você vai ver
+que, na prática, os números confirmam (ou surpreendem) o que a teoria
+prometeu.
 
----
+## Os 3 problemas
 
-## O desafio
+### Problema 1 - encontrar par que soma X
 
-Escolha **um dos três desafios abaixo** (ou mais de um se estiver
-animado):
+Lista **ordenada**, par de números que somam X.
 
-### Desafio A - "Tem duplicado?" (busca)
+- **Solução A (O(n²)):** loop duplo - testa todos os pares.
+- **Solução B (O(n)):** dois ponteiros - um de cada lado.
 
-Implemente duas versões da função `temDuplicado(lista)`:
+### Problema 2 - tem item duplicado
 
-- **Versão 1 (ingênua):** dois loops aninhados, comparando todos os
-  pares. Análise esperada: O(n²) de tempo, O(1) de espaço.
-- **Versão 2 (com Set):** um loop, usando `Set` para "lembrar" o que
-  já viu. Análise esperada: O(n) de tempo, O(n) de espaço.
+Lista **não ordenada**, retornar `True` se algum item aparece 2+ vezes.
 
-Rode as duas com listas de 100, 1.000, 10.000 e 100.000 elementos.
-Compare o tempo. **Anote a proporção**: a versão 2 deve ser ordens de
-grandeza mais rápida.
+- **Solução A (O(n²)):** loop duplo comparando tudo.
+- **Solução B (O(n)):** hash set - guarda o que já viu e checa em O(1).
 
-### Desafio B - "Ordena isso" (ordenação)
+### Problema 3 - contar frequência de palavras
 
-Implemente dois algoritmos de ordenação para arrays de números:
+Texto com N palavras, contar quantas vezes cada uma aparece.
 
-- **Versão 1 (bubble sort ou selection sort):** didático, O(n²).
-- **Versão 2 (o `sort` da sua linguagem):** implementado por baixo como
-  Timsort/Merge Sort/etc., O(n log n).
+- **Solução A (O(n²)):** lista de pares `(palavra, count)` com busca linear.
+- **Solução B (O(n)):** hash map.
 
-Rode os dois com entradas de 1.000, 10.000, 100.000 elementos (e
-entradas já ordenadas, e em ordem reversa - para o bubble sort
-"sofrer"). **Anote**: a partir de qual `n` a versão 2 fica claramente
-mais rápida?
+## O que medir
 
-### Desafio C - "Onde está o X?" (busca)
+Para cada par de soluções, meça o tempo em **3 tamanhos de entrada**:
+pequeno (n=100), médio (n=10.000), grande (n=1.000.000).
 
-Implemente duas versões de busca em lista ordenada:
+Você vai ver algo assim:
 
-- **Versão 1 (linear):** percorre do início ao fim. O(n).
-- **Versão 2 (binária):** divide a busca pela metade. O(log n).
+```
+Problema 2 (tem duplicata), Solução A (O(n²)):
+  n=100:        0.0001s
+  n=10.000:     0.08s
+  n=1.000.000:  8.5s           # aqui já fica visível a dor
 
-Rode as duas com entradas de 10.000, 100.000, 1.000.000 e 10.000.000
-elementos. A versão 2 deve ser **absurdamente** mais rápida conforme a
-entrada cresce.
-
----
-
-## O que entregar (checklist)
-
-- [ ] Código das duas versões, com comentários explicando cada linha.
-- [ ] Análise de complexidade **antes** de medir (escreva a recorrência,
-      conte loops, justifique o Big O).
-- [ ] Tabela ou gráfico com os tempos medidos para cada `n`.
-- [ ] Conclusão em texto: a medição **bate** com a análise? Onde
-      divergiu (constantes, overhead, garbage collection)?
-- [ ] Reflexão: se sua entrada fosse 1 bilhão de itens, qual versão
-      seria viável e qual seria inviável?
-
----
-
-## Dicas de execução
-
-**Em JavaScript (Node):**
-
-```js
-// Medindo tempo
-const inicio = performance.now();
-// ... sua função ...
-const fim = performance.now();
-console.log(`demorou ${(fim - inicio).toFixed(2)} ms`);
+Problema 2 (tem duplicata), Solução B (O(n)):
+  n=100:        0.00005s
+  n=10.000:     0.005s
+  n=1.000.000:  0.5s           # mesma operação, 17× mais rápido
 ```
 
-**Em Python:**
+Repare como **O(n²) vs O(n)** parece "5x" para `n=100` (constante
+importa) e vira **17x** para `n=1.000.000` (a complexidade vence).
+
+## Como medir
+
+Em **Python:**
 
 ```python
 import time
-inicio = time.perf_counter()
-# ... sua função ...
-fim = time.perf_counter()
-print(f"demorou {(fim - inicio) * 1000:.2f} ms")
+
+def medir(fn, *args):
+    t0 = time.perf_counter()
+    fn(*args)
+    return time.perf_counter() - t0
+
+print(medir(solucao_a, lista_grande))   # 8.5
+print(medir(solucao_b, lista_grande))   # 0.5
 ```
 
-**Como gerar entradas grandes (JavaScript):**
+Em **JavaScript/Node:**
 
-```js
-// Lista com 1 milhão de números aleatórios
-const grande = Array.from({ length: 1_000_000 }, () => Math.random());
+```javascript
+function medir(fn, ...args) {
+  const t0 = performance.now();
+  fn(...args);
+  return performance.now() - t0;
+}
 ```
 
-**Como gerar entradas grandes (Python):**
+> Dica: rode cada medição **várias vezes** e tire a média. A primeira
+> execução pode ser afetada por cache, JIT, etc.
 
-```python
-import random
-grande = [random.random() for _ in range(1_000_000)]
-```
+## O que anotar
+
+Faça uma tabela no seu caderno (ou num `.md`) com:
+
+| Problema | Solução | Big O | n=100 | n=10.000 | n=1.000.000 |
+|---|---|---|---|---|---|
+| 1 | A (duplo loop) | O(n²) | … | … | … |
+| 1 | B (dois ponteiros) | O(n) | … | … | … |
+| 2 | A (duplo loop) | O(n²) | … | … | … |
+| 2 | B (hash set) | O(n) | … | … | … |
+| 3 | A (lista) | O(n²) | … | … | … |
+| 3 | B (hash map) | O(n) | … | … | … |
+
+## Critério de "pronto"
+
+1. As 6 implementações (2 por problema) estão escritas e funcionam.
+2. As medições estão em uma tabela, em todos os 3 tamanhos.
+3. Você consegue **explicar por que** os números saíram como saíram.
+4. Opcional: poste no LinkedIn / Twitter com a tabela. Mostrar "olha a
+   diferença real entre O(n) e O(n²)" é didático e viraliza.
 
 ---
 
-## O que esse projeto ensina
-
-- **Análise de complexidade antes da medição.** Você tem que **prever**
-  qual vai ser mais rápido, justificar com Big O, e **depois** ver
-  se a previsão se confirma.
-- **Constantes importam para `n` pequeno, ordem de grandeza importa
-  para `n` grande.** Os números vão te mostrar isso na pele.
-- **A diferença explode** com a entrada. O que é "1 ms vs 5 ms" para
-  n=100 vira "0,1 s vs 5 minutos" para n=10.000.
-- **Análise ≠ otimização prematura.** Você não precisa otimizar tudo
-  para O(log n) - precisa saber **quando a ordem de grandeza vai te
-  morder**.
-
-> Dica: se sua função ficou lenta em produção e você não sabe por
-> onde começar, volte a este projeto. A resposta quase sempre está
-> em "qual é o `n` aqui, e qual a complexidade do meu algoritmo
-> nesse `n`?". Saber a pergunta certa é metade da solução.
-
----
-
-🎉 **Você terminou a trilha de Complexidade de Algoritmos.** Do "O(1)
-vs O(n)" de intuição até análise amortizada, você tem agora a
-linguagem para **ler, escrever e criticar** o desempenho de qualquer
-algoritmo. Isso aparece em entrevistas, em code review, em decisões
-de arquitetura - e, mais importante, na hora de **não escrever código
-lento sem saber**.
+🎉 **Você terminou a trilha de Complexidade de Algoritmos.** Você sabe
+contar operações, ler Big O, identificar o padrão certo para o problema,
+e - mais importante - **medir antes de otimizar**. Esse é o kit de
+sobrevivência de quem escreve código que aguenta o tranco quando o
+volume sobe. Próximos passos: escolha **Estruturas de Dados** (se ainda
+não viu) ou vá direto para uma trilha de **Backend/DevOps** e aplique
+tudo isso em sistemas maiores.

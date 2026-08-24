@@ -1,0 +1,48 @@
+---
+slug: landing-page-responsiva
+title: "Landing Page Responsiva"
+description: "Uma página de divulgação de produto que fica perfeita no celular e no desktop, usando Tailwind."
+difficulty: intermediario
+skills:
+  - css
+  - tailwind
+  - responsivo
+  - flexbox
+  - grid
+trilhas:
+  - frontend
+estimate: "1 fim de semana"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Uma landing page de um produto fictício: hero, features, depoimentos e um rodapé
+com call-to-action. O foco é **layout responsivo** — a mesma página, ótima em
+qualquer tela.
+
+## Objetivo
+
+Dominar **layout com Flexbox e Grid** e o design responsivo com breakpoints. Ótimo
+projeto pra sentir o ganho do Tailwind (ou CSS puro, se preferir treinar a base).
+
+## Requisitos
+
+- [ ] Uma seção "hero" com título, subtítulo e botão de ação
+- [ ] Uma grade de 3+ features (cards) que vira coluna única no celular
+- [ ] Menu de navegação no topo (com versão mobile, nem que seja simples)
+- [ ] Usar breakpoints (`sm:`, `md:`, `lg:` no Tailwind) — nada de largura fixa
+- [ ] Contraste e tamanhos de fonte legíveis em telas pequenas
+
+## Desafios extras
+
+- [ ] Menu "hambúrguer" que abre/fecha no mobile
+- [ ] Modo escuro com a estratégia `dark:` do Tailwind
+- [ ] Uma animação sutil de entrada nos cards ao rolar a página
+
+## Dicas
+
+- Projete **mobile-first**: escreva o estilo base pro celular e use os breakpoints
+  só pra ajustar telas maiores.
+- Para a grade de features, `grid grid-cols-1 md:grid-cols-3 gap-6` já resolve 90%.
+- Teste redimensionando a janela do navegador o tempo todo, não só no final.

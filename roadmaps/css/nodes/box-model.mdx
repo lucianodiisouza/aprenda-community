@@ -1,0 +1,116 @@
+---
+id: box-model
+title: "Box Model: Margin, Border, Padding e Content"
+resources:
+  - title: "O Box Model (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/CSS/Building_blocks/The_box_model
+    type: doc
+    lang: pt
+    free: true
+---
+
+Todo elemento HTML é, para o CSS, uma **caixa retangular**. Mesmo um
+`<span>` com uma palavra dentro. A forma como essa caixa se comporta
+define o layout inteiro da página.
+
+```
+┌─────────────────────────────────────┐  ← margin (espaço EXTERNO)
+│  ┌───────────────────────────────┐  │  ← border (a borda)
+│  │  ┌─────────────────────────┐  │  │  ← padding (espaço INTERNO)
+│  │  │                         │  │  │
+│  │  │       conteúdo          │  │  │  ← content (o que está dentro)
+│  │  │                         │  │  │
+│  │  └─────────────────────────┘  │  │
+│  └───────────────────────────────┘  │
+└─────────────────────────────────────┘
+```
+
+De dentro pra fora:
+
+- **Content:** o conteúdo em si (texto, imagem, etc.).
+- **Padding:** o **acolchoamento interno** - o espaço entre o conteúdo e
+  a borda. "Respiro" antes da borda.
+- **Border:** a borda em si. Grossura, estilo, cor.
+- **Margin:** o **espaço externo** - a distância entre essa caixa e as
+  outras caixas vizinhas.
+
+Exemplo:
+
+```css
+.card {
+  width: 300px;
+  padding: 20px;       /* 20px de "ar" interno dos quatro lados */
+  border: 2px solid #333;
+  margin: 16px;        /* 16px de espaço externo dos quatro lados */
+}
+```
+
+### Shorthand (atalho)
+
+Você pode escrever os quatro lados de uma vez, em uma propriedade só. A
+ordem é: **top, right, bottom, left** (sentido horário a partir do topo,
+como um relógio).
+
+```css
+.card {
+  padding: 10px 20px 30px 40px;
+  /*        top  right bot  left */
+}
+
+/* 1 valor: todos os lados iguais */
+.card { padding: 16px; }
+
+/* 2 valores: vertical | horizontal */
+.card { padding: 16px 24px; }
+
+/* 3 valores: top | horizontal | bottom */
+.card { padding: 16px 24px 32px; }
+
+/* 4 valores: top right bottom left */
+.card { padding: 16px 24px 32px 40px; }
+```
+
+A mesma lógica vale para `margin` e `border`.
+
+### `box-sizing`: o detalhe que pega muita gente
+
+Por padrão, o CSS calcula o `width` de um elemento **só no content**. Se
+você define `width: 300px` e depois põe `padding: 20px`, o tamanho
+**real** da caixa na tela é 300 + 20 + 20 = 340px (mais a border, se
+tiver).
+
+Isso confunde. Por isso, **praticamente todo projeto real** começa com:
+
+```css
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+```
+
+Com `border-box`, o `width: 300px` significa "a caixa toda tem 300px
+incluindo padding e border". Você define o tamanho da caixa e pronto - o
+conteúdo se ajusta pra caber. **É o padrão mental que vale memorizar.**
+
+### Margin collapsing
+
+Duas margins verticais **adjacentes** (sem border ou padding no meio)
+"se juntam" - a maior vence, não somam. Por exemplo, dois parágrafos com
+`margin-top: 20px` e `margin-bottom: 30px` ficam com **30px** entre eles,
+não 50px. É o comportamento padrão e pega muita gente de surpresa. Não
+adianta "forçar" - entender é melhor que lutar contra.
+
+- **Content** é o que está dentro.
+- **Padding** é o acolchoamento interno.
+- **Border** é a borda visível.
+- **Margin** é o espaço externo entre elementos.
+- **`box-sizing: border-box`** é o padrão moderno - tamanho da caixa é o
+  que você pede no `width`, e o conteúdo se ajusta.
+
+> Dica: devtools do navegador é a melhor forma de **ver** o box model.
+> Inspecione qualquer elemento - você vê a caixa azulada (content) com
+> padding verde, border amarela e margin laranja por fora. Aprendemos
+> isso no fim do nível iniciante, mas é a ferramenta nº 1 de quem mexe
+> com CSS.
+
+No próximo nó, vamos falar do **`display`** - a propriedade que decide se
+a caixa se comporta como bloco, como texto inline, ou some completamente.

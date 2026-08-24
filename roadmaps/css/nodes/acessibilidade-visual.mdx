@@ -1,0 +1,215 @@
+---
+id: acessibilidade-visual
+title: "Acessibilidade Visual: prefers-reduced-motion e prefers-color-scheme"
+resources:
+  - title: "prefers-reduced-motion (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/@media/prefers-reduced-motion
+    type: doc
+    lang: pt
+    free: true
+  - title: "prefers-color-scheme (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/@media/prefers-color-scheme
+    type: doc
+    lang: pt
+    free: true
+---
+
+Acessibilidade não é "extra". É o **mínimo**. CSS tem um conjunto
+de media queries que **leem as preferências do sistema operacional**
+do usuário e aplicam estilos de acordo. São fáceis de usar e o
+impacto é enorme.
+
+### `prefers-reduced-motion`: "eu prefiro menos movimento"
+
+```css
+.card {
+  transition: transform 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  /* ou, mais agressivo: */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+Usuários com sensibilidade a movimento (vestibular, enxaqueca,
+ansiedade) configuram essa preferência no sistema operacional.
+Quando ela está em `reduce`, o site **para de animar**.
+
+Como desenvolvedor, é sua responsabilidade respeitar. A versão
+"agressiva" (zera tudo) é o padrão WCAG, mas se você tem animações
+essenciais (não decorativas), pode desabilitar só as decorativas
+e manter as outras. O importante é **nenhuma animação surpresa**.
+
+### `prefers-color-scheme`: "eu prefiro tema escuro/claro"
+
+```css
+:root {
+  --bg: white;
+  --texto: #1a1a1a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --texto: #f0f0f0;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--texto);
+}
+```
+
+O navegador aplica automaticamente a versão que casa com a
+preferência do usuário. Mudou no sistema operacional, o site
+acompanha. **Não exige JavaScript, não exige toggle na UI** -
+funciona sozinho.
+
+A combinação ideal: variáveis CSS (vistas antes) + media query
+de `prefers-color-scheme`. Você define cores claras e escuras no
+:root, e o navegador escolhe qual usar.
+
+### `prefers-contrast`: "eu preciso de mais contraste"
+
+```css
+@media (prefers-contrast: more) {
+  .texto-secundario {
+    color: #000; /* em vez de #666 */
+  }
+  .botao {
+    border: 2px solid currentColor; /* reforça o contorno */
+  }
+}
+```
+
+Usuários com baixa visão podem pedir mais contraste. Esse media
+query permite reforçar textos secundários, bordas, separadores
+visuais - sem ter que criar uma versão "high contrast" separada.
+
+### `forced-colors`: "o sistema está forçando cores"
+
+```css
+@media (forced-colors: active) {
+  .botao {
+    border: 1px solid ButtonText; /* palavra-chave especial */
+    background: ButtonFace;
+    color: ButtonText;
+  }
+}
+```
+
+Windows tem o "High Contrast Mode". Quando ativado, o navegador
+**ignora suas cores** e usa uma paleta simplificada do sistema.
+O media query `forced-colors: active` permite que você **use as
+palavras-chave de cor do sistema** (`ButtonText`, `ButtonFace`,
+`Canvas`, `CanvasText`, `LinkText`, etc.) para que seus botões
+não fiquem invisíveis nesse modo.
+
+```css
+.link {
+  color: LinkText; /* sempre legível no high contrast */
+}
+```
+
+### `prefers-reduced-transparency`: "eu prefiro sem transparência"
+
+```css
+.modal {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .modal { background: rgb(0, 0, 0); /* opaco */ }
+}
+```
+
+Usuários com sensibilidade a sobreposições ou dificuldade de foco
+podem preferir fundos opacos.
+
+### Foco visível: `:focus-visible`
+
+```css
+/* Foco vindo de mouse - sem anel */
+button:focus { outline: none; }
+
+/* Foco vindo de teclado - com anel */
+button:focus-visible {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+```
+
+O navegador **distingue** foco de teclado (Tab) de foco de mouse
+(clique). `:focus-visible` aplica estilos **só** quando o foco é
+do teclado. É a forma moderna de dar feedback para usuários de
+teclado sem poluir a UI para quem está usando mouse.
+
+**Nunca remova o foco sem substituir.** Sem `outline` e sem
+alternativa, o usuário de teclado fica perdido na página.
+
+### `aria-*` em CSS (pseudoclass `:has` + ARIA)
+
+```css
+[aria-expanded="true"] .seta {
+  transform: rotate(90deg);
+}
+```
+
+Você pode usar atributos ARIA no seletor. Combinar
+`aria-expanded`, `aria-current`, `aria-pressed` com CSS é a forma
+padrão de estilizar estados sem precisar duplicar em classes.
+
+### Movimento acessível: regra geral
+
+```css
+/* Boa prática: motion só quando o usuário permite */
+.animado {
+  animation: algo 0.5s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animado { animation: none; }
+}
+```
+
+Para ser **super defensivo**:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+Esse reset é o padrão da maioria dos frameworks. Use no topo do
+CSS e tudo fica quieto quando o usuário pedir.
+
+- **`prefers-reduced-motion: reduce`:** zere animações/transições.
+- **`prefers-color-scheme: dark`:** aplique tema escuro.
+- **`prefers-contrast: more`:** reforce contraste.
+- **`forced-colors: active`:** use cores de sistema.
+- **`:focus-visible`:** anel de foco só para teclado.
+- **Nunca remova `outline` sem substituir** - acessibilidade quebra.
+- **Combine com variáveis CSS** para theming limpo.
+
+> Dica: a melhor forma de testar acessibilidade visual é **ligar
+> High Contrast no Windows** e **acessibilidade do Mac**. Ou
+> emulando via DevTools (Chrome → Rendering → "Emulate CSS media
+> feature prefers-reduced-motion"). O que você vê no DevTools é
+> **o que o usuário sente** - se está ilegível, está ilegível.
+
+No próximo nó, vamos falar de **arquitetura CSS** - como organizar
+o CSS de projetos grandes sem virar espaguete.

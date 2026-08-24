@@ -7,29 +7,51 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
-- 🆕 Trilha **Complexidade de Algoritmos** (13 nós, do "o que é
-  complexidade" à análise amortizada), cobrindo básico, intermediário
-  e avançado com exemplos em JavaScript e prática de medição no
-  projeto final:
-  - **Básico** (`introducao` → `quadratico`): o que é complexidade,
-    como contar operações sem matemática, O(1) e O(n) na intuição,
-    O(n²) em loops aninhados.
-  - **Intermediário** (`notacao-big-o` → `comparando-complexidades`):
-    notação Big O formal, O(log n) e busca binária, regras práticas
-    para analisar loops, comparação lado a lado com números reais.
-  - **Avançado** (`big-omega-big-theta` → `analise-amortizada`): Big Ω
-    e Big Θ (pior/melhor caso), complexidade de espaço, análise de
-    algoritmos recursivos (recorrências, Master Theorem), análise
-    amortizada (array dinâmico, hash map).
-  - **Projeto final** (`projeto-final`): implementar duas soluções
-    para o mesmo problema, medir o tempo em diferentes tamanhos de
-    entrada, comparar a previsão da análise com o resultado real.
-- 📜 `roadmaps/complexidade-de-algoritmos/meta/editorial-decisions.md`
-  com as decisões de escopo e curadoria da trilha.
+- 🆕 Trilha **CSS** completa (36 nós, do zero absoluto até o avançado),
+  estruturada em 3 tópicos macro + 1 milestone de projeto final:
+  - **CSS do Zero** (10 subtopics): introdução, inclusão, seletores,
+    cores, tipografia, box model, display, unidades, pseudo-classes
+    básicas, DevTools.
+  - **CSS Intermediário** (10 subtopics): especificidade, cascata e
+    herança, combinadores, pseudo-elementos, position, Flexbox,
+    backgrounds, sombras, transições, responsividade.
+  - **CSS Avançado** (12 subtopics): Grid, variáveis CSS, animações,
+    transform (2D/3D), funções modernas (`clamp`, `min`, `max`,
+    `calc`), container queries, `:has()`, logical properties,
+    acessibilidade visual, arquitetura (BEM), performance, "o mundo
+    além do CSS puro" (frameworks e ferramentas como mapa de opções,
+    sem tutorial).
+  - **Projeto final** (milestone): landing page completa e responsiva
+    com checklist de aceitação.
+- 🆕 Tipo de conteúdo **Projetos** (`projects/`): desafios práticos
+  que exercitam o que as trilhas ensinam. Seed inicial com 9 projetos:
+  - Iniciante: `pagina-de-perfil` (HTML/CSS), `calculadora-de-gorjeta`
+    (JS/DOM), `lista-de-tarefas` (JS/DOM).
+  - Intermediário: `landing-page-responsiva` (CSS/Tailwind),
+    `clima-agora` (API), `quiz-react` (React/hooks), `busca-com-filtros`
+    (algoritmos).
+  - Avançado: `encurtador-de-url` (system design), `dashboard-analitico`
+    (React/perf).
+- 📜 `projects/README.md` e `templates/{node,project}.mdx` +
+  `templates/roadmap.json` para scaffold.
+- 📜 `README.md` - lista a nova trilha CSS, menciona a seção de
+  Projetos, atualiza o badge de contagem de trilhas (5 → 6) e adiciona
+  badge de projetos.
 
 ### Mudado
-- 📘 `README.md` - lista a nova trilha Complexidade de Algoritmos e
-  atualiza o badge de contagem de trilhas (4 → 5).
+- 🔄 Trilha **Complexidade de Algoritmos** - substituição completa da
+  estrutura de nós. A versão anterior (`introducao` → `quadratico` →
+  `notacao-big-o` → ... → `analise-amortizada`, 13 nós) foi
+  substituída por uma versão reorganizada com 13 nós
+  (`por-que-medir` → `contando-operacoes` → `big-o` → `classes-comuns`
+  → `casos` → `espaco` → `loops-condicionais` → `recursao` →
+  `estruturas-de-dados` → `padroes-classicos` → `busca-binaria` →
+  `na-pratica` → `projeto-final`). A nova versão é mais "intuitiva"
+  (entra pela pergunta "por que medir" e segue por classes comuns /
+  análise de loops / recursão / estruturas de dados / padrões
+  clássicos) e troca "análise amortizada" por "na prática: quando
+  Big O mente" (mais aplicado). Detalhes em
+  `roadmaps/complexidade-de-algoritmos/meta/editorial-decisions.md`.
 
 ## [1.3.0] - 2026-08-24
 

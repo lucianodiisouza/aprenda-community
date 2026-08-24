@@ -69,35 +69,50 @@ export function parseFrontmatter(content) {
 
         const itemStart = listLine.match(/^\s*-\s+(.*)$/);
         if (itemStart) {
-          const item = {};
           const firstPart = itemStart[1];
+          // Lista pode ser de objetos (com chave: valor) ou de strings simples.
           const firstKV = firstPart.match(/^([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
           if (firstKV) {
+            const item = {};
             const [, k, v] = firstKV;
             item[k] = coerceValue(v);
-          }
-          // Linhas de continuação: indentadas, começam com chave:
-          let j = i + 1;
-          while (j < lines.length) {
-            const cont = lines[j];
-            if (!cont.trim()) {
-              j++;
-              continue;
+            // Linhas de continuação: indentadas, começam com chave:
+            let j = i + 1;
+            while (j < lines.length) {
+              const cont = lines[j];
+              if (!cont.trim()) {
+                j++;
+                continue;
+              }
+              if (!/^[\s\t]/.test(cont)) break;
+              // Se for "- " começando novo item, para.
+              if (/^\s*-\s+/.test(cont)) break;
+              const contKV = cont.match(/^\s+([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
+              if (contKV) {
+                const [, k, v] = contKV;
+                item[k] = coerceValue(v);
+                j++;
+              } else {
+                break;
+              }
             }
-            if (!/^[\s\t]/.test(cont)) break;
-            // Se for "- " começando novo item, para.
-            if (/^\s*-\s+/.test(cont)) break;
-            const contKV = cont.match(/^\s+([A-Za-z_][A-Za-z0-9_-]*)\s*:\s*(.*)$/);
-            if (contKV) {
-              const [, k, v] = contKV;
-              item[k] = coerceValue(v);
-              j++;
+            list.push(item);
+            i = j;
+          } else {
+            // Item é uma string simples (ou inline `[a, b, c]`).
+            const inlineList = firstPart.match(/^\[(.*)\]$/);
+            if (inlineList) {
+              const items = inlineList[1]
+                .split(",")
+                .map((s) => coerceValue(s.trim()))
+                .filter((s) => s !== "");
+              list.push(...items);
+              i++;
             } else {
-              break;
+              list.push(coerceValue(firstPart));
+              i++;
             }
           }
-          list.push(item);
-          i = j;
         } else {
           i++;
         }

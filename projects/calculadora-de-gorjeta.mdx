@@ -1,0 +1,48 @@
+---
+slug: calculadora-de-gorjeta
+title: "Calculadora de Gorjeta"
+description: "Uma calculadora que divide a conta e a gorjeta entre as pessoas, com JavaScript no browser."
+difficulty: iniciante
+skills:
+  - javascript
+  - dom
+  - html
+  - css
+trilhas:
+  - frontend
+  - programacao-do-zero
+estimate: "2-3 horas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Digite o valor da conta, a porcentagem da gorjeta e quantas pessoas: a página
+mostra quanto cada um paga. É o primeiro projeto que **reage** ao que o usuário faz.
+
+## Objetivo
+
+Conectar HTML e JavaScript: ler valores de `<input>`, fazer uma conta e escrever o
+resultado de volta na tela. Aqui entram **eventos** e **manipulação do DOM**.
+
+## Requisitos
+
+- [ ] Campos para: valor da conta, % de gorjeta e número de pessoas
+- [ ] Calcular o total (conta + gorjeta) e o valor por pessoa
+- [ ] Atualizar o resultado ao clicar num botão **ou** ao digitar
+- [ ] Formatar o resultado como dinheiro (ex.: `R$ 12,50`)
+- [ ] Tratar entradas inválidas (número de pessoas = 0, campo vazio)
+
+## Desafios extras
+
+- [ ] Botões de gorjeta rápida (10%, 15%, 20%) além do campo manual
+- [ ] Salvar a última gorjeta escolhida no `localStorage`
+- [ ] Botão "limpar" que zera tudo
+
+## Dicas
+
+- Valores de `<input>` chegam como **texto**. Converta com `Number(...)` antes de
+  calcular, e cheque `Number.isNaN(...)`.
+- `Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })` formata
+  dinheiro pra você.
+- Comece fazendo a conta aparecer no `console.log`. Só depois jogue na tela.

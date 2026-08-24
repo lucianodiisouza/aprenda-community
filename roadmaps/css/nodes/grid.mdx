@@ -1,0 +1,195 @@
+---
+id: grid
+title: "CSS Grid: Layout em Duas Dimensões"
+resources:
+  - title: "CSS Grid Layout (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_Grid_Layout
+    type: doc
+    lang: pt
+    free: true
+  - title: "Grid Garden - jogo pra aprender"
+    url: https://cssgridgarden.com/
+    type: exercicio
+    lang: en
+    free: true
+  - title: "Guia visual de Grid (CSS-Tricks, em inglês)"
+    url: https://css-tricks.com/snippets/css/complete-guide-grid/
+    type: doc
+    lang: en
+    free: true
+---
+
+Flexbox é unidimensional: ou linha **ou** coluna. **Grid** é
+bidimensional: linhas **e** colunas ao mesmo tempo. É a ferramenta
+certa quando o layout tem estrutura (tabela, dashboard, galeria,
+layout de página inteira).
+
+### Ativando o Grid
+
+```css
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* 3 colunas iguais */
+  gap: 16px;
+}
+```
+
+Só isso. Os filhos viram "grid items" posicionados automaticamente nas
+células.
+
+### `fr`: a fração do espaço disponível
+
+A unidade `fr` significa "fração do espaço livre". `1fr 1fr 1fr` divide
+o espaço em três partes iguais. `1fr 2fr 1fr` divide em quatro e dá
+uma parte dobrada para o do meio.
+
+```css
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr; /* sidebar fixa + conteúdo que cresce */
+  grid-template-rows: auto 1fr auto; /* header, conteúdo, footer */
+  min-height: 100vh;
+  gap: 16px;
+}
+```
+
+Esse é o layout clássico de **página completa** com sidebar: uma
+coluna de 240px, e o resto se ajusta. Sem CSS hack, sem `flex: 1`
+criativo, sem números mágicos.
+
+### Linhas e colunas nomeadas
+
+```css
+.layout {
+  display: grid;
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  gap: 16px;
+}
+
+.header  { grid-area: header; }
+.sidebar { grid-area: sidebar; }
+.main    { grid-area: main; }
+.footer  { grid-area: footer; }
+```
+
+`grid-template-areas` é **a forma mais legível** de montar layouts
+complexos. Você "desenha" o grid com palavras. Cada linha do string é
+uma linha do grid, e cada palavra é uma célula. Repetir a palavra na
+mesma linha faz o elemento ocupar várias colunas. `.` (ponto) é uma
+célula vazia.
+
+### Posicionando itens individualmente
+
+```css
+.destaque {
+  grid-column: 1 / 3;   /* da linha 1 até a linha 3 (cobre 2 colunas) */
+  grid-row: 2 / 4;      /* da linha 2 até a linha 4 (cobre 2 linhas) */
+}
+
+/* Ou, mais simples: */
+.destaque {
+  grid-column: span 2;  /* ocupa 2 colunas */
+  grid-row: span 2;     /* ocupa 2 linhas */
+}
+```
+
+`span 2` é mais robusto que `1 / 3` - se o grid mudar de tamanho, o
+`span` continua fazendo sentido.
+
+### Funções poderosas: `repeat()`, `minmax()`, `auto-fit`
+
+```css
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+```
+
+Traduzindo:
+
+- **`repeat(auto-fit, ...)`:** repete o número de colunas
+  **automaticamente**, dependendo do espaço.
+- **`minmax(250px, 1fr)`:** cada coluna tem **no mínimo 250px** e
+  **no máximo uma fração** do espaço.
+
+Resultado: uma galeria que se adapta sozinha. Tela grande → 5
+colunas. Tela pequena → 1 coluna. **Sem uma única media query**. É
+o padrão moderno de "responsive grid sem esforço".
+
+A diferença entre `auto-fit` e `auto-fill` é sutil mas importante:
+`auto-fit` **estica** as colunas para preencher o espaço (o que
+você quer quase sempre). `auto-fill` mantém o tamanho mínimo e
+deixa o espaço sobrando. Para galerias, use `auto-fit`.
+
+### Alinhamento (igual ao Flexbox)
+
+```css
+.container {
+  display: grid;
+  justify-items: stretch;  /* alinha itens horizontalmente em cada célula */
+  align-items: stretch;    /* alinha verticalmente em cada célula */
+  justify-content: center; /* alinha a grade no container (se houver espaço sobrando) */
+  align-content: center;   /* alinha a grade verticalmente */
+}
+```
+
+`justify-content` e `align-content` no Grid são parecidos com o
+Flexbox, mas operam no **grid inteiro** (conjunto de células) em
+relação ao container. `justify-items` e `align-items` operam dentro
+de **cada célula**, em cada item.
+
+### Quando usar Grid vs Flexbox
+
+- **Grid:** layout em **duas dimensões**. Tabelas, dashboards, layout
+  de página, galerias, formulários complexos.
+- **Flexbox:** layout em **uma dimensão**. Navbars, botões, alinhamento
+  de itens em uma linha, distribuição de espaço.
+
+Dica de senior: dá pra usar **os dois juntos**. Um Grid externo para a
+macroestrutura, e dentro de cada célula, Flexbox para alinhar os
+detalhes. É a combinação padrão de qualquer site moderno.
+
+### Grid + `subgrid` (o próximo nível)
+
+```css
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.card-grid > .card {
+  display: grid;
+  grid-template-rows: subgrid; /* herda as linhas do grid pai */
+  grid-row: span 3;            /* cada card tem 3 linhas */
+}
+```
+
+`subgrid` é suporte recente (Chrome 117+, Firefox 71+, Safari 16+).
+Resolve o problema clássico: "meus cards têm alturas diferentes
+porque a imagem é maior em um, e o botão fica desalinhado". Com
+subgrid, todos os cards **alinhados pelo mesmo template**.
+
+- **`display: grid`** ativa.
+- **`grid-template-columns` / `grid-template-rows`:** estrutura.
+- **`fr`** é a unidade de "fração do espaço".
+- **`grid-template-areas`** com nomes é a forma mais legível.
+- **`repeat(auto-fit, minmax(250px, 1fr))`** é a galeria responsiva
+  sem media query.
+- **Grid** = duas dimensões. **Flexbox** = uma dimensão. Use juntos.
+
+> Dica: [Grid Garden](https://cssgridgarden.com/) é o "Flexbox Froggy
+> do Grid". 15 minutos jogando solidificam o que meia hora de leitura.
+> E mais: o Firefox tem um **inspector de Grid** (clica no display:grid
+> e aparece um ícone ao lado) que mostra as linhas, colunas e áreas
+> visualmente. É a melhor forma de debugar.
+
+No próximo nó, vamos falar de **variáveis CSS** - uma das features mais
+úteis dos últimos anos, e a base de qualquer design system.

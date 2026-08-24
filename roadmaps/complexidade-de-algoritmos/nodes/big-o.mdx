@@ -1,0 +1,61 @@
+---
+id: big-o
+title: "Big O: A Notação que Importa"
+resources:
+  - title: "Big O notation (Khan Academy, PT-BR)"
+    url: https://pt.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/big-o-notation
+    type: doc
+    lang: pt
+    free: true
+  - title: "Big-O Cheat Sheet (referência visual)"
+    url: https://www.bigocheatsheet.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+**Big O** descreve o **pior caso** de quanto um algoritmo custa conforme a
+entrada cresce. A letra `O` vem de "Order" (ordem de grandeza). Lê-se
+"Ó de n", "Ó de n ao quadrado" etc.
+
+A regra é: você mantém só o termo que **mais cresce** e joga fora constantes.
+
+```text
+5n + 3          → O(n)        linear
+3n² + 10n + 7   → O(n²)       quadrático
+2ⁿ + n³         → O(2ⁿ)       exponencial
+n log n + 5n    → O(n log n)  log-linear
+```
+
+Por que jogar fora os outros termos? Porque, conforme `n` cresce, o maior
+termo **engole** os menores:
+
+- Para `n = 1000`:
+  - `3n²` = 3.000.000
+  - `10n` = 10.000
+  - O `10n` é 0,3% do `3n²` - tanto faz na prática.
+- Para `n = 100`:
+  - `2ⁿ` = 1.267.650.600.000.000.000.000.000.000
+  - `n³` = 1.000.000
+  - `n³` virou pó.
+
+Big O responde à pergunta: **"se a entrada dobrar, quanto o tempo
+aumenta?"**
+
+- O(1) → não aumenta
+- O(log n) → aumenta um pouquinho
+- O(n) → dobra junto com a entrada
+- O(n²) → quadruplica
+- O(2ⁿ) → explode
+
+- **Big O** é o limite superior - o pior caso.
+- **Constantes e termos menores somem** quando `n` é grande.
+- **A pergunta que ela responde:** "se a entrada crescer, como o custo
+  reage?"
+
+> Dica: Big O não diz se um algoritmo é "rápido" - só como ele **escala**.
+  O(n) num hardware ruim pode ser pior que O(n²) num hardware bom, para
+  entradas pequenas. Mas conforme o volume sobe, a notação vence.
+
+A seguir, vamos conhecer as **classes que você vai encontrar o tempo todo**
+e o que cada uma significa na prática.

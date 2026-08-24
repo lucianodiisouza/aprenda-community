@@ -1,0 +1,47 @@
+---
+slug: quiz-react
+title: "Quiz em React"
+description: "Um quiz de múltipla escolha em React, com pontuação e tela de resultado."
+difficulty: intermediario
+skills:
+  - react
+  - hooks
+  - state
+  - componentes
+trilhas:
+  - frontend
+estimate: "1 fim de semana"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Um quiz que mostra uma pergunta por vez, guarda o que o usuário respondeu e no
+final exibe a pontuação. É o projeto pra fixar **estado e componentes** em React.
+
+## Objetivo
+
+Praticar componentes, props e o hook `useState` num app com fluxo real: avançar
+perguntas, acumular acertos e reiniciar. A base do "pensar em React".
+
+## Requisitos
+
+- [ ] Mostrar uma pergunta com 3-4 alternativas por vez
+- [ ] Marcar a resposta e avançar para a próxima pergunta
+- [ ] Contar os acertos e mostrar o placar final no fim
+- [ ] Botão "jogar de novo" que reseta o estado
+- [ ] Quebrar a UI em componentes (ex.: `Pergunta`, `Alternativa`, `Resultado`)
+
+## Desafios extras
+
+- [ ] Feedback na hora (verde/vermelho) ao escolher a alternativa
+- [ ] Barra de progresso (pergunta 3 de 10)
+- [ ] Cronômetro por pergunta
+
+## Dicas
+
+- Guarde as perguntas num **array de objetos** e mantenha só o índice da pergunta
+  atual no estado — não copie a pergunta pro estado.
+- Estado que muda a tela mora no componente-pai; os filhos recebem por props e
+  avisam mudanças por callbacks (`onResponder`).
+- Não precisa de backend: as perguntas podem ser um array fixo no código.

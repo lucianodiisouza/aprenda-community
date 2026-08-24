@@ -1,0 +1,130 @@
+---
+id: pseudo-classes-basicas
+title: "Pseudo-classes Básicas: :hover, :focus e :active"
+resources:
+  - title: "Pseudo-classes (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/Pseudo-classes
+    type: doc
+    lang: pt
+    free: true
+  - title: "Pseudo-classes de interação (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/Pseudo-classes#interacao
+    type: doc
+    lang: pt
+    free: true
+---
+
+Pseudo-classe é uma **palavrinha que descreve um estado especial** do
+elemento, sem precisar de uma classe HTML extra. O elemento não tem
+`class="hover"` - mas **nesse momento** ele está sendo apontado pelo
+mouse, então o CSS sabe disso.
+
+A sintaxe é `seletor:pseudo-classe { ... }`.
+
+### `:hover` - "o mouse está em cima"
+
+```css
+button {
+  background: #1a73e8;
+  color: white;
+}
+
+button:hover {
+  background: #1557b0;
+  cursor: pointer;
+}
+```
+
+Quando o mouse passa por cima do botão, a cor muda. É a pseudo-classe
+mais famosa - está em todo botão, link, card interativo. Use para dar
+**feedback visual** de que o elemento é clicável.
+
+### `:focus` - "o teclado (ou toque) está aqui"
+
+```css
+input {
+  border: 1px solid #ccc;
+}
+
+input:focus {
+  border-color: #1a73e8;
+  outline: 2px solid rgba(26, 115, 232, 0.3);
+}
+```
+
+Quando o usuário **foca** num input (clicou, ou chegou com `Tab`),
+a borda muda. Isso é **acessibilidade** - usuário de teclado precisa
+saber onde está. **Nunca remova o `outline` sem substituir por outro
+indicador de foco visível.**
+
+### `:active` - "está sendo clicado AGORA"
+
+```css
+button:active {
+  transform: translateY(1px);
+}
+```
+
+No exato instante do clique. O efeito clássico é o botão "afundar" um
+pouco. Soma com `:hover` (`:hover` para mouse em cima, `:active` para
+clicado). A combinação de feedback visual em camadas é o que faz a
+interface parecer "física".
+
+### `:visited` - "link que o usuário já abriu"
+
+```css
+a:visited {
+  color: #6f42c1;
+}
+```
+
+Aplica estilo a links que o navegador sabe que o usuário já visitou.
+**Limitação por privacidade**: o navegador só permite mudar `color`,
+`background-color`, `border-color`, `outline-color` e `column-rule-color`.
+Você não pode, por exemplo, mudar o `font-size` de um link visitado. É
+deliberado - sites maliciosos não podem "espionar" o histórico do
+usuário.
+
+### Ordem importa: LVHA
+
+Para um link estilizado com hover, visited, focus e active ao mesmo
+tempo, a **ordem das regras** muda o resultado. A regra prática é
+**LVHA** (Link, Visited, Hover, Active) - uma das poucas "receitas de
+bolo" do CSS.
+
+```css
+a { color: blue; }          /* estado padrão */
+a:visited { color: purple; }
+a:hover { color: red; }
+a:active { color: orange; }
+```
+
+### Outras pseudo-classes úteis do dia-a-dia
+
+```css
+tr:nth-child(odd)  { background: #f7f7f7; } /* zebra em tabela */
+li:first-child    { font-weight: bold; }    /* primeiro item */
+li:last-child     { border-bottom: none; }  /* último item */
+input:disabled    { opacity: 0.5; }         /* campo desabilitado */
+input:checked + label { color: green; }     /* checkbox marcado */
+```
+
+`:nth-child(n)` é especialmente útil - `2n` ou `even` (pares), `2n+1` ou
+`odd` (ímpares), `3n` (a cada três), etc. É o que faz o "efeito zebra" em
+tabelas e listas.
+
+- **`:hover`** - mouse em cima.
+- **`:focus`** - focado via teclado/toque. **Sempre dê feedback.**
+- **`:active`** - sendo clicado agora.
+- **`:visited`** - link já aberto (limitado por privacidade).
+- **`:nth-child(n)`** - enésimo filho (zebra, padrões repetidos).
+- **`:first-child` / `:last-child`** - primeiro e último.
+
+> Dica: para o **foco do teclado** (`:focus-visible`), o navegador
+> distingue foco de teclado e foco de mouse. Use `:focus-visible` quando
+> quiser o anel de foco só para usuários de teclado, sem poluir a UI
+> quando o foco veio de um clique. Veremos mais disso no nível
+> avançado.
+
+No próximo nó, vamos abrir a ferramenta que vai te acompanhar pelo resto
+da carreira: **DevTools** do navegador.
