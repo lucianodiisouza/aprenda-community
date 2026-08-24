@@ -1,0 +1,102 @@
+---
+id: big-omega-big-theta
+title: "Big Ω e Big Θ: Pior Caso, Melhor Caso, Caso Justo"
+resources:
+  - title: "Asymptotic Notation (Khan Academy, EN)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/asymptotic-notation
+    type: artigo
+    lang: en
+    free: true
+  - title: "Notação assintótica (Wikipedia, PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Nota%C3%A7%C3%A3o_assint%C3%B3tica
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Big O é a mais famosa das notações, mas não é a única. A "família" tem
+três letras gregas que aparecem juntas em livros e artigos: **O**, **Ω** e
+**Θ**. Cada uma responde a uma pergunta diferente sobre o **custo** de
+um algoritmo.
+
+**Big O (O) - limite superior: "no máximo".**
+
+```text
+O(f(n))  significa:  o custo é no máximo c · f(n) (para n grande o suficiente)
+```
+
+É o **pior caso** - ou, mais precisamente, um teto honesto do que o
+algoritmo pode gastar. Por isso é o que aparece em 90% das conversas:
+porque queremos saber o **quanto pode dar errado**.
+
+**Big Ω (Omega) - limite inferior: "no mínimo".**
+
+```text
+Ω(f(n))  significa:  o custo é no mínimo c · f(n) (para n grande o suficiente)
+```
+
+É o **melhor caso**. Exemplo: a busca sequencial em uma lista **precisa**
+olhar pelo menos 1 elemento para decidir algo (no melhor caso, é o
+primeiro). Então Big Ω é Ω(1).
+
+**Big Θ (Theta) - limite justo: "exatamente desta ordem".**
+
+```text
+Θ(f(n))  significa:  o custo é limitado acima E abaixo por c · f(n)
+                     (ou seja, O(f(n)) e Ω(f(n)) ao mesmo tempo)
+```
+
+Quando o **pior caso** e o **melhor caso** crescem na mesma proporção,
+usamos Θ. Exemplo: percorrer uma lista inteira do começo ao fim **sempre**
+custa Θ(n) - o Ω(1) (melhor caso) e o O(n) (pior caso) não importam tanto
+quanto o fato de que o algoritmo **sempre** lê todos os n itens.
+
+Exemplo clássico - busca linear:
+
+```js
+function busca(lista, alvo) {
+  for (let i = 0; i < lista.length; i++) {
+    if (lista[i] === alvo) return i;
+  }
+  return -1;
+}
+```
+
+- **Melhor caso (Ω):** o alvo é o primeiro item → Ω(1).
+- **Pior caso (O):** o alvo é o último (ou não está) → O(n).
+- **Caso justo (Θ):** em média, o alvo está "no meio" → Θ(n/2) = Θ(n).
+
+Mas note: Θ é **honesto** só quando descreve **todos** os casos. A busca
+linear não é Θ(n) - é Θ(n) no **caso médio** e Θ(n) no **pior caso**, mas
+Θ(1) no melhor. Como isso varia, falamos em O e Ω separadamente.
+
+Comparação: o `merge sort`, por outro lado, é **sempre** Θ(n log n) - não
+importa a ordem da entrada. Esse é o tipo de algoritmo em que Θ faz
+sentido e é tranquilizante.
+
+Tabela-resumo:
+
+| Notação | Pergunta              | "Em palavras"      |
+| ------- | --------------------- | ------------------ |
+| O(f(n)) | Qual o pior caso?     | "No máximo f(n)"   |
+| Ω(f(n)) | Qual o melhor caso?   | "No mínimo f(n)"   |
+| Θ(f(n)) | Qual o caso justo?    | "Exatamente f(n)"  |
+
+Na prática, **Big O é o que você vai falar quase sempre** - porque o pior
+caso é o que limita a viabilidade. Mas quando encontrar Θ e Ω em
+documentação ou livros, agora você sabe o que estão perguntando.
+
+> Dica: ao descrever um algoritmo, seja **preciso**. Dizer "esse algoritmo
+> é O(n)" sem contexto é como dizer "esse carro gasta até 15 km/l" -
+> informação útil, mas incompleta. Se o melhor caso for diferente, vale
+> mencionar: "no melhor caso é O(1), no pior é O(n)".
+
+- **Big O = pior caso** (limite superior). É o que você mais usa.
+- **Big Ω = melhor caso** (limite inferior). Útil para diferenciar
+  algoritmos "felizes" dos "padrão".
+- **Big Θ = caso justo.** Só faz sentido quando O e Ω são o mesmo.
+- **Seja preciso.** Se o algoritmo tem melhor e pior caso diferentes,
+  descreva os dois separadamente.
+
+No próximo nó, saímos do **tempo** e olhamos para o **espaço** - porque
+memória também é recurso, e algumas soluções "rápidas" custam caro em RAM.

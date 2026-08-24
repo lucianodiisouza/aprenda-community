@@ -1,0 +1,148 @@
+---
+id: projeto-final
+title: "Projeto Final: Comparando Algoritmos do Mundo Real"
+resources:
+  - title: "Big-O Cheat Sheet (bigocheatsheet.com)"
+    url: https://www.bigocheatsheet.com/
+    type: artigo
+    lang: en
+    free: true
+  - title: "Visualizando algoritmos de ordenação (visualgo.net, EN)"
+    url: https://visualgo.net/en/sorting
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Você passou por 12 nós: do "o que é complexidade" até análise amortizada.
+Nada disso "gruda" só lendo. Este projeto é a prova: **pegar dois
+algoritmos que resolvem o mesmo problema, analisar a complexidade de cada
+um, e ver a diferença aparecer em números reais**.
+
+A ideia não é virar especialista em ordenação ou em grafos - é praticar
+o **processo de análise**: ler o código, contar operações, nomear a
+complexidade, **e confirmar com um teste de tempo**.
+
+---
+
+## O desafio
+
+Escolha **um dos três desafios abaixo** (ou mais de um se estiver
+animado):
+
+### Desafio A - "Tem duplicado?" (busca)
+
+Implemente duas versões da função `temDuplicado(lista)`:
+
+- **Versão 1 (ingênua):** dois loops aninhados, comparando todos os
+  pares. Análise esperada: O(n²) de tempo, O(1) de espaço.
+- **Versão 2 (com Set):** um loop, usando `Set` para "lembrar" o que
+  já viu. Análise esperada: O(n) de tempo, O(n) de espaço.
+
+Rode as duas com listas de 100, 1.000, 10.000 e 100.000 elementos.
+Compare o tempo. **Anote a proporção**: a versão 2 deve ser ordens de
+grandeza mais rápida.
+
+### Desafio B - "Ordena isso" (ordenação)
+
+Implemente dois algoritmos de ordenação para arrays de números:
+
+- **Versão 1 (bubble sort ou selection sort):** didático, O(n²).
+- **Versão 2 (o `sort` da sua linguagem):** implementado por baixo como
+  Timsort/Merge Sort/etc., O(n log n).
+
+Rode os dois com entradas de 1.000, 10.000, 100.000 elementos (e
+entradas já ordenadas, e em ordem reversa - para o bubble sort
+"sofrer"). **Anote**: a partir de qual `n` a versão 2 fica claramente
+mais rápida?
+
+### Desafio C - "Onde está o X?" (busca)
+
+Implemente duas versões de busca em lista ordenada:
+
+- **Versão 1 (linear):** percorre do início ao fim. O(n).
+- **Versão 2 (binária):** divide a busca pela metade. O(log n).
+
+Rode as duas com entradas de 10.000, 100.000, 1.000.000 e 10.000.000
+elementos. A versão 2 deve ser **absurdamente** mais rápida conforme a
+entrada cresce.
+
+---
+
+## O que entregar (checklist)
+
+- [ ] Código das duas versões, com comentários explicando cada linha.
+- [ ] Análise de complexidade **antes** de medir (escreva a recorrência,
+      conte loops, justifique o Big O).
+- [ ] Tabela ou gráfico com os tempos medidos para cada `n`.
+- [ ] Conclusão em texto: a medição **bate** com a análise? Onde
+      divergiu (constantes, overhead, garbage collection)?
+- [ ] Reflexão: se sua entrada fosse 1 bilhão de itens, qual versão
+      seria viável e qual seria inviável?
+
+---
+
+## Dicas de execução
+
+**Em JavaScript (Node):**
+
+```js
+// Medindo tempo
+const inicio = performance.now();
+// ... sua função ...
+const fim = performance.now();
+console.log(`demorou ${(fim - inicio).toFixed(2)} ms`);
+```
+
+**Em Python:**
+
+```python
+import time
+inicio = time.perf_counter()
+# ... sua função ...
+fim = time.perf_counter()
+print(f"demorou {(fim - inicio) * 1000:.2f} ms")
+```
+
+**Como gerar entradas grandes (JavaScript):**
+
+```js
+// Lista com 1 milhão de números aleatórios
+const grande = Array.from({ length: 1_000_000 }, () => Math.random());
+```
+
+**Como gerar entradas grandes (Python):**
+
+```python
+import random
+grande = [random.random() for _ in range(1_000_000)]
+```
+
+---
+
+## O que esse projeto ensina
+
+- **Análise de complexidade antes da medição.** Você tem que **prever**
+  qual vai ser mais rápido, justificar com Big O, e **depois** ver
+  se a previsão se confirma.
+- **Constantes importam para `n` pequeno, ordem de grandeza importa
+  para `n` grande.** Os números vão te mostrar isso na pele.
+- **A diferença explode** com a entrada. O que é "1 ms vs 5 ms" para
+  n=100 vira "0,1 s vs 5 minutos" para n=10.000.
+- **Análise ≠ otimização prematura.** Você não precisa otimizar tudo
+  para O(log n) - precisa saber **quando a ordem de grandeza vai te
+  morder**.
+
+> Dica: se sua função ficou lenta em produção e você não sabe por
+> onde começar, volte a este projeto. A resposta quase sempre está
+> em "qual é o `n` aqui, e qual a complexidade do meu algoritmo
+> nesse `n`?". Saber a pergunta certa é metade da solução.
+
+---
+
+🎉 **Você terminou a trilha de Complexidade de Algoritmos.** Do "O(1)
+vs O(n)" de intuição até análise amortizada, você tem agora a
+linguagem para **ler, escrever e criticar** o desempenho de qualquer
+algoritmo. Isso aparece em entrevistas, em code review, em decisões
+de arquitetura - e, mais importante, na hora de **não escrever código
+lento sem saber**.

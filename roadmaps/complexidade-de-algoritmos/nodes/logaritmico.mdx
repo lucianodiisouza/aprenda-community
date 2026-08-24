@@ -1,0 +1,84 @@
+---
+id: logaritmico
+title: "Logaritmo: O(log n) e a Busca Binária"
+resources:
+  - title: "Busca binária (Wikipedia, PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Busca_bin%C3%A1ria
+    type: artigo
+    lang: pt
+    free: true
+  - title: "Visualizando algoritmos (visualgo, EN)"
+    url: https://visualgo.net/en/sorting
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Existe uma classe de algoritmos que escala **muito melhor do que parece**:
+os de **complexidade logarítmica**, O(log n). O `log` aqui é o logaritmo
+na base 2 - o número de vezes que você precisa **dividir por 2** para
+chegar a 1.
+
+Como "log n" se comporta:
+
+- log₂(10) ≈ 3
+- log₂(1.000) ≈ 10
+- log₂(1.000.000) ≈ 20
+- log₂(1.000.000.000) ≈ 30
+
+Compare com n=1.000.000.000: linear (O(n)) seriam 1 bilhão de operações;
+logarítmico (O(log n)), **30**. A diferença é absurda.
+
+O algoritmo que torna O(log n) famoso é a **busca binária**. A ideia é
+simples: imagine uma lista **ordenada** (ex: dicionário). Em vez de olhar
+página por página do começo ao fim, você:
+
+1. Abre no meio.
+2. Se o que procura é "menor", joga fora a metade da direita.
+3. Se é "maior", joga fora a metade da esquerda.
+4. Repete até encontrar (ou acabar).
+
+A cada passo, o espaço de busca **dobra para menos**. Por isso é O(log n).
+
+Em código (JavaScript):
+
+```js
+function buscaBinaria(listaOrdenada, alvo) {
+  let inicio = 0;
+  let fim = listaOrdenada.length - 1;
+
+  while (inicio <= fim) {
+    const meio = Math.floor((inicio + fim) / 2);
+    if (listaOrdenada[meio] === alvo) return meio;
+    if (listaOrdenada[meio] < alvo) inicio = meio + 1;
+    else fim = meio - 1;
+  }
+  return -1;  // não achou
+}
+```
+
+Repare: o loop **não percorre os n itens**. Cada iteração corta o problema
+pela metade - então são, no máximo, log₂(n) iterações.
+
+Onde O(log n) aparece:
+
+- **Busca binária** em array ordenado.
+- **Operações em árvores binárias balanceadas** (busca, inserção, remoção).
+- **Certas estratégias de algoritmos "dividir para conquistar"** (como
+  parte do merge sort e do quick sort).
+
+> Dica: se você está procurando um valor numa lista **ordenada** e está
+> usando O(n) (percorrendo do início ao fim), provavelmente está fazendo
+> esforço desnecessário. Ordenar uma vez (O(n log n)) e usar busca binária
+> (O(log n)) quase sempre vale a pena quando você vai buscar muitas vezes.
+
+- **O(log n) = logarítmico.** O `log` aqui é quantas vezes você divide por 2
+  até sobrar 1.
+- **Escala incrivelmente bem.** 1 bilhão de itens → cerca de 30 operações.
+- **Busca binária** é o exemplo canônico: funciona em lista **ordenada** e
+  descarta metade a cada passo.
+- **Nem todo problema permite O(log n):** se a lista não está ordenada (ou
+  não dá para "dividir para conquistar"), a busca continua O(n).
+
+No próximo nó, vamos ver as **regras práticas** para analisar qualquer loop
+que aparecer na sua frente - e descobrir, de cara, qual a complexidade.

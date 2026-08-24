@@ -1,0 +1,126 @@
+---
+id: recursao
+title: "Recursão: Analisando Algoritmos Que Se Chamam"
+resources:
+  - title: "Master Theorem (Wikipedia, EN)"
+    url: https://en.wikipedia.org/wiki/Master_theorem
+    type: artigo
+    lang: en
+    free: true
+  - title: "Recursividade (Wikipedia, PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Recursividade
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Algoritmos recursivos são elegantes - mas analisar a complexidade deles
+exige um truque: **transformar a recursão numa equação** (chamada de
+**recorrência**) e resolvê-la.
+
+A ideia é simples: descreva o custo de um problema de tamanho `n` em
+função do custo de **problemas menores**, e descubra o padrão.
+
+**Exemplo 1 - fatorial.**
+
+```js
+function fatorial(n) {
+  if (n <= 1) return 1;          // caso base
+  return n * fatorial(n - 1);    // 1 chamada, com n-1
+}
+```text
+
+A recorrência:
+
+```text
+T(n) = T(n - 1) + O(1)         // 1 chamada + trabalho constante
+T(1) = O(1)
+```text
+
+Resolvendo: `T(n) = T(n-1) + 1 = T(n-2) + 2 = ... = T(1) + (n-1) = n`.
+
+**Complexidade: O(n)** - cada chamada faz um trabalho constante e a
+recursão desce até 1.
+
+**Exemplo 2 - busca binária recursiva.**
+
+```js
+function buscaBinaria(lista, alvo, ini = 0, fim = lista.length - 1) {
+  if (ini > fim) return -1;
+  const meio = Math.floor((ini + fim) / 2);
+  if (lista[meio] === alvo) return meio;
+  if (lista[meio] < alvo) return buscaBinaria(lista, alvo, meio + 1, fim);
+  return buscaBinaria(lista, alvo, ini, meio - 1);
+}
+```
+
+A recorrência:
+
+```text
+T(n) = T(n / 2) + O(1)         // 1 chamada em METADE do problema
+T(1) = O(1)
+```
+
+Resolvendo: a cada nível da recursão, o problema cai pela metade. Quantos
+níveis até chegar a 1? log₂(n).
+
+**Complexidade: O(log n).**
+
+**Exemplo 3 - fibonacci "ingênuo".**
+
+```js
+function fib(n) {
+  if (n < 2) return n;
+  return fib(n - 1) + fib(n - 2);   // DUAS chamadas
+}
+```text
+
+A recorrência:
+
+```text
+T(n) = T(n - 1) + T(n - 2) + O(1)
+```
+
+Aqui a coisa explode. Cada chamada gera duas, e a árvore de chamadas
+cresce **exponencialmente** - aproximadamente **Φⁿ** (número de ouro
+elevado a n), que é da mesma ordem que 1.618ⁿ.
+
+**Complexidade: O(2ⁿ)** - inviável para n maior que ~40.
+
+A "tabela de ouro" para recorrências divide-e-conquista (Master Theorem):
+
+```text
+T(n) = a · T(n / b) + f(n)
+```text
+
+Onde `a` é o número de chamadas recursivas, `b` é o quanto o problema
+diminui, e `f(n)` é o trabalho fora das chamadas. Os casos clássicos:
+
+- `f(n) = O(n^c)` com `c < log_b(a)` → **O(n^(log_b(a)))** (recursão domina).
+  Exemplo: `T(n) = 2·T(n/2) + 1` → O(n).
+- `f(n) = O(n^c)` com `c = log_b(a)` → **O(n^c · log n)** (equilíbrio).
+  Exemplo: `T(n) = 2·T(n/2) + n` (merge sort) → O(n log n).
+- `f(n) = O(n^c)` com `c > log_b(a)` → **O(f(n))** (trabalho fora domina).
+  Exemplo: `T(n) = 2·T(n/2) + n²` → O(n²).
+
+Cuidado com o **espaço da pilha** (call stack) em recursão. Mesmo
+quando o tempo é O(log n), o espaço da pilha pode ser O(log n) também -
+porque cada chamada recursiva "empilha" um quadro. Se a profundidade
+ficar muito grande, dá **stack overflow**. Soluções: **recursão de cauda**
+(tail call) ou **converter para loop**.
+
+> Dica: sempre que vir uma função que chama ela mesma, escreva a
+> recorrência **antes** de tentar achar a complexidade. É o passo que
+> transforma a intuição em análise real. E lembre: profundidade da
+> recursão = profundidade da pilha = espaço extra.
+
+- **Recursão se analisa com recorrências:** `T(n) = a·T(n/b) + f(n)`.
+- **Resolva expandindo** até ver o padrão, ou use o Master Theorem para
+  casos clássicos de dividir-e-conquistar.
+- **Cuidado com chamadas duplicadas** (fibonacci ingênuo): uma função
+  O(2ⁿ) pode virar O(n) só com **memoização** (cache dos resultados).
+- **Espaço da pilha** conta. Recursão profunda demais = stack overflow.
+
+No próximo nó, conhecemos uma técnica mais sutil: a **análise amortizada**,
+que mostra por que algumas operações são caras "uma vez" mas baratas "em
+média" - e como isso muda a forma de pensar.

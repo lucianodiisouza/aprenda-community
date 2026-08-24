@@ -7,6 +7,33 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [Não lançado]
 
 ### Adicionado
+- 🆕 Trilha **Complexidade de Algoritmos** (13 nós, do "o que é
+  complexidade" à análise amortizada), cobrindo básico, intermediário
+  e avançado com exemplos em JavaScript e prática de medição no
+  projeto final:
+  - **Básico** (`introducao` → `quadratico`): o que é complexidade,
+    como contar operações sem matemática, O(1) e O(n) na intuição,
+    O(n²) em loops aninhados.
+  - **Intermediário** (`notacao-big-o` → `comparando-complexidades`):
+    notação Big O formal, O(log n) e busca binária, regras práticas
+    para analisar loops, comparação lado a lado com números reais.
+  - **Avançado** (`big-omega-big-theta` → `analise-amortizada`): Big Ω
+    e Big Θ (pior/melhor caso), complexidade de espaço, análise de
+    algoritmos recursivos (recorrências, Master Theorem), análise
+    amortizada (array dinâmico, hash map).
+  - **Projeto final** (`projeto-final`): implementar duas soluções
+    para o mesmo problema, medir o tempo em diferentes tamanhos de
+    entrada, comparar a previsão da análise com o resultado real.
+- 📜 `roadmaps/complexidade-de-algoritmos/meta/editorial-decisions.md`
+  com as decisões de escopo e curadoria da trilha.
+
+### Mudado
+- 📘 `README.md` - lista a nova trilha Complexidade de Algoritmos e
+  atualiza o badge de contagem de trilhas (4 → 5).
+
+## [1.3.0] - 2026-08-24
+
+### Adicionado
 - 🆕 Trilha **Git** completa (23 nós, do controle de versão do zero ao
   avançado), cobrindo básico, intermediário e avançado com prática em cada
   nível e um projeto final de contribuição open source:

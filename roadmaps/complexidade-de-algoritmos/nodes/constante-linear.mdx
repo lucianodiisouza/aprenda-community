@@ -1,0 +1,72 @@
+---
+id: constante-linear
+title: "Constante e Linear: O(1) e O(n)"
+resources:
+  - title: "Complexidade de tempo (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array
+    type: doc
+    lang: pt
+    free: true
+---
+
+Duas das complexidades mais comuns do dia a dia são a **constante** e a
+**linear**. Vamos conhecer as duas pelo nome.
+
+**O(1) - constante.** "O" de "ordem de", 1 porque é "uma vez". A operação
+demora **o mesmo tempo**, não importa se a lista tem 10 ou 10 milhões de
+itens. É o "acesso direto":
+
+```js
+const lista = ["Ana", "Bruno", "Carla", /* ...10 milhões de itens... */];
+const primeiro = lista[0];         // 1 operação
+const ultimo = lista[9999999];     // 1 operação - mesmo tempo!
+const tamanho = lista.length;      // 1 operação
+```
+
+Também são O(1):
+
+- Pegar o primeiro ou último elemento de um array.
+- Inserir ou remover do **fim** de um array.
+- Ler o valor de uma variável.
+- Acessar uma chave de objeto (`pessoa.nome`).
+
+**O(n) - linear.** O "n" é o tamanho da entrada. A operação **cresce na
+mesma proporção** que os dados. Se dobra a lista, dobra o tempo:
+
+```js
+function somarTudo(lista) {
+  let total = 0;
+  for (let i = 0; i < lista.length; i++) {
+    total += lista[i];          // 1 operação por item
+  }
+  return total;                 // n operações no total
+}
+```
+
+Outros exemplos de O(n):
+
+- Procurar um item numa lista **sem ordem** (pode estar em qualquer lugar).
+- Imprimir todos os itens.
+- Contar quantos itens satisfazem uma condição.
+
+A diferença na prática:
+
+- Lista com 1.000 itens: O(1) faz 1 operação; O(n) faz ~1.000.
+- Lista com 1.000.000 de itens: O(1) **continua** fazendo 1 operação; O(n)
+  faz ~1.000.000.
+- A partir de certo tamanho, O(1) é "instantâneo" e O(n) começa a ser
+  perceptível.
+
+> Dica: O(1) não é "sempre melhor que O(n)". Às vezes, construir a estrutura
+> que dá O(1) (como um índice ou um hash) tem um custo O(n) pela frente. A
+> escolha depende de **quantas vezes** você vai precisar dessa busca depois.
+
+- **O(1) = constante.** Não cresce com a entrada. Acessos diretos, leitura
+  de variável, push/pop no fim de um array.
+- **O(n) = linear.** Cresce na mesma proporção. Percorrer a lista inteira,
+  busca sem ordem.
+- **A diferença explode** conforme a entrada cresce: O(1) não muda; O(n)
+  escala 1:1 com os dados.
+
+No próximo nó, vamos ver o que acontece quando você **coloca um loop dentro
+de outro loop** - e aparece a complexidade quadrática, O(n²).

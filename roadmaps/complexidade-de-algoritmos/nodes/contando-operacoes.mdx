@@ -1,0 +1,68 @@
+---
+id: contando-operacoes
+title: "Contando Operações (Sem Matemática)"
+resources:
+  - title: "Big O Cheat Sheet (luz velas, PT-BR)"
+    url: https://www.bigocheatsheet.com/
+    type: artigo
+    lang: en
+    free: true
+---
+
+Antes de falar em "O de algo", vamos ao passo mais importante: **contar
+quantas vezes o seu código faz alguma coisa**. É isso - sem fórmula, sem
+terror, só contar.
+
+Imagine que você recebe uma lista de 5 nomes e precisa dizer se "Ana" está
+nela. A solução mais óbvia é **olhar um por um**:
+
+```js
+const nomes = ["Ana", "Bruno", "Carla", "Diego", "Eva"];
+const alvo = "Ana";
+
+let encontrado = false;
+for (let i = 0; i < nomes.length; i++) {
+  if (nomes[i] === alvo) {
+    encontrado = true;
+  }
+}
+```
+
+Você consegue adivinhar quantas vezes o código **comparou** um nome com `alvo`?
+**5 vezes** - uma para cada item, porque o pior caso é o "Ana" estar no fim
+(ou nem estar). Esse "pior caso" é o que vamos medir, porque ele é o
+**limite superior honesto** do que o algoritmo pode gastar.
+
+Agora o mesmo problema com 1000 nomes: o mesmo laço faria **1000 comparações**.
+Com 1.000.000 de nomes? **1.000.000 de comparações**. O número de operações
+**cresce na mesma proporção que a lista**.
+
+A regra de ouro para contar:
+
+- **Operações básicas** (somar dois números, comparar strings, acessar um
+  índice) contam como **1 operação**.
+- **Loops** multiplicam: um `for` que roda `n` vezes faz `n` vezes o que está
+  dentro dele.
+- **Não importa o valor exato** (1000 ou 1024 operações), e sim **como ele
+  cresce** quando `n` muda.
+
+Exemplos mentais:
+
+- "Ver o primeiro item da lista" → **sempre 1 operação**, não importa o
+  tamanho da lista.
+- "Procurar um nome numa lista" → **no máximo n operações** (no pior caso).
+- "Para cada item, comparar com todos os outros" → **n × n operações** -
+  é a cara do O(n²), que você vai conhecer no próximo nó.
+
+- **Contar operações** é o primeiro passo para falar de complexidade.
+- **O pior caso** (a maior quantidade possível de operações) é o que nos
+  interessa - é o "teto honesto" do algoritmo.
+- **O que importa é a forma do crescimento**, não o número exato: `n`,
+  `2n`, `100n` crescem todos do mesmo jeito.
+
+> Dica: da próxima vez que vir um `for`, conte em voz alta: "isso roda n
+> vezes, e dentro tem 2 operações... então são 2n". Você está fazendo
+> análise de complexidade sem perceber.
+
+No próximo nó, vamos dar **nomes** a esses padrões de crescimento - começando
+pelos mais comuns: o "constante" e o "linear".

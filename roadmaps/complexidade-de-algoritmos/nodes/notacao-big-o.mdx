@@ -1,0 +1,81 @@
+---
+id: notacao-big-o
+title: "Notação Big O (Formal, Mas Sem Medo)"
+resources:
+  - title: "Big O Notation (Khan Academy, EN)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms/asymptotic-notation/a/big-o-notation
+    type: artigo
+    lang: en
+    free: true
+  - title: "Análise de algoritmos (Wikipedia, PT-BR)"
+    url: https://pt.wikipedia.org/wiki/An%C3%A1lise_de_algoritmos
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Você já sabe dizer "isso aqui é O(n)" de intuição. Agora é hora de entender
+**o que essa notação realmente quer dizer** - porque ela aparece em todo
+lugar: entrevistas, documentação, livros, conversas técnicas.
+
+**Big O** descreve o **limite superior** do custo de um algoritmo: o "no
+máximo" quanto ele pode gastar conforme a entrada cresce. Em símbolos:
+
+```text
+O(f(n))  significa:  o custo do algoritmo cresce NO MÁXIMO como f(n)
+```
+
+Traduzindo: existe uma constante `c` e um tamanho mínimo `n₀` a partir do
+qual o algoritmo **nunca** gasta mais que `c · f(n)` operações.
+
+Mas no dia a dia, a gente não fica provando essas constantes. O que
+importa é o **"formato" do crescimento**, e a notação simplifica a vida
+descartando o que **não muda a tendência**:
+
+- `5n + 100` → O(n) (o `5` e o `100` somem, porque o que importa é o `n`).
+- `3n² + 50n + 7` → O(n²) (o `n²` domina quando n é grande).
+- `n + log n` → O(n) (o `n` é maior que o `log n` para n grande).
+
+Algumas regrinhas práticas para "encurtar" a notação:
+
+- **Constantes somem:** `O(3n)` é O(n); `O(50)` é O(1).
+- **Só o termo dominante fica:** `O(n² + n)` é O(n²); `O(n + log n)` é O(n).
+- **Soma de complexidades:** se você faz uma coisa **depois** da outra,
+  some: `O(n) + O(n) = O(n)`. Se faz uma **dentro** da outra, multiplique:
+  `O(n) · O(n) = O(n²)`.
+
+Exemplo rápido:
+
+```js
+function exemplo(lista) {
+  console.log(lista[0]);     // O(1)
+  for (const x of lista) {  // O(n) - percorre tudo
+    console.log(x);
+  }
+  for (const a of lista) {  // O(n) - percorre tudo de novo
+    for (const b of lista) {// O(n) - e mais uma vez para cada
+      console.log(a, b);
+    }
+  }
+}
+```
+
+Análise:
+
+- O(1) + O(n) + O(n) · O(n) = O(1) + O(n) + O(n²) = **O(n²)**.
+- O `O(n²)` é o que "vence" a expressão inteira quando `n` é grande.
+
+> Dica: Big O fala do **pior caso** por padrão. Mas existem outras letras
+> para outros casos: Big Ω é o **melhor caso**, Big Θ é o caso **justo**
+> (limite superior e inferior são iguais). A gente vê isso em detalhes
+> mais pra frente, na parte avançada.
+
+- **Big O = limite superior** do custo: "no máximo isso aqui".
+- **Descarte constantes e termos menores:** `5n² + 100n` é O(n²), não
+  "5n² + 100n".
+- **Operações em sequência somam; operações aninhadas multiplicam.**
+- **A intuição prática** ("conta loops, vê quem domina") chega no mesmo
+  resultado que a definição formal - e é isso que vamos usar no próximo nó.
+
+No próximo nó, conhecemos a **complexidade logarítmica** - O(log n) - e o
+algoritmo que a torna famosa: a **busca binária**.
