@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-6-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-9-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Discussions](https://img.shields.io/badge/💬-Discussions-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/discussions)
@@ -40,14 +40,26 @@ Trilhas hoje:
   intermediário (Big O formal, O(log n), análise de loops) e
   avançado (Big Ω/Θ, complexidade de espaço, recursão, análise
   amortizada) com prática de medição no projeto final.
-- 🎨 [**CSS**](./roadmaps/css) - a linguagem de estilo da web, do
-  zero absoluto (o que é estilo, como incluir, seletores, box model,
-  tipografia) até o avançado (Grid, Flexbox, animações, container
-  queries, `:has()`, logical properties, performance, arquitetura).
-  **36 nós** estruturados em 3 tópicos macro + projeto final. Atende
-  iniciantes e programadores; o nó final lista frameworks
-  (Tailwind, Bootstrap, Sass, CSS-in-JS) como mapa de opções, sem
-  ensinar a usar nenhum.
+- 🎨 **CSS** (4 trilhas, **40 nós** no total) - a linguagem de
+  estilo da web, dividida para aprofundar o que importa:
+  - [**CSS Fundamentos**](./roadmaps/css-fundamentos) (15 nós,
+    iniciante): o que é CSS, sintaxe, inclusão, seletores, cores,
+    unidades, tipografia, box model, display, backgrounds, sombras,
+    pseudo-classes, pseudo-elementos, cascata/especificidade,
+    DevTools.
+  - [**CSS Layout**](./roadmaps/css-layout) (10 nós,
+    intermediário): position, **Flexbox aprofundado em 4 nós**,
+    **Grid aprofundado em 4 nós**, responsividade mobile-first.
+  - [**CSS Animações**](./roadmaps/css-animacoes) (6 nós,
+    intermediário): transitions, transform (2D/3D), `@keyframes`
+    básico e avançado, casos clássicos (spinner, skeleton, modal,
+    toast) e **acessibilidade visual** (`prefers-reduced-motion`,
+    `prefers-color-scheme`, `prefers-contrast`).
+  - [**CSS Moderno**](./roadmaps/css-moderno) (9 nós, avançado):
+    custom properties, `clamp()`/`min()`/`max()`/`calc()`, Container
+    Queries, `:has()`, Logical Properties, arquitetura (BEM, Tailwind,
+    CSS-in-JS), performance, frameworks como mapa de opções, e
+    projeto final de landing page.
 
 > Mais trilhas chegando: Backend, Python, Estruturas de Dados…
 > Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).
