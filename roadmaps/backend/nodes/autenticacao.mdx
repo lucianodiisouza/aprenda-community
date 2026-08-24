@@ -1,0 +1,83 @@
+---
+id: autenticacao
+title: "Autenticação e JWT"
+resources:
+  - title: "JWT - Introdução (jwt.io)"
+    url: https://jwt.io/introduction
+    type: doc
+    lang: en
+    free: true
+  - title: "jsonwebtoken - Documentação oficial"
+    url: https://github.com/auth0/node-jsonwebtoken
+    type: doc
+    lang: en
+    free: true
+---
+
+"Quem é você?" é a pergunta que toda API precisa responder antes de
+devolver dados sensíveis. **Autenticação** é exatamente isso: provar que
+o request vem de quem diz ser.
+
+O fluxo mais comum hoje usa **JWT** (JSON Web Token):
+
+1. Usuário envia `email` + `senha` num `POST /login`.
+2. Servidor confere no banco, e se bate, **gera um token JWT** assinado
+   com um segredo.
+3. Cliente guarda o token (em geral no `localStorage` do app).
+4. Em cada próxima requisição, o cliente envia o token no header
+   `Authorization: Bearer <token>`.
+5. Servidor confere a assinatura e libera o acesso.
+
+Implementação:
+
+```javascript
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+
+const SEGREDO = process.env.JWT_SECRET; // nunca hardcode!
+
+app.post("/login", async (req, res) => {
+  const { email, senha } = req.body;
+  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  if (!usuario || !(await bcrypt.compare(senha, usuario.senhaHash))) {
+    return res.status(401).json({ erro: "Credenciais inválidas" });
+  }
+  const token = jwt.sign({ userId: usuario.id }, SEGREDO, {
+    expiresIn: "7d",
+  });
+  res.json({ token });
+});
+
+// Middleware que protege rotas
+function autenticar(req, res, next) {
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ erro: "Sem token" });
+  try {
+    req.userId = jwt.verify(token, SEGREDO).userId;
+    next();
+  } catch {
+    res.status(401).json({ erro: "Token inválido" });
+  }
+}
+
+app.get("/me", autenticar, (req, res) => {
+  res.json({ userId: req.userId });
+});
+```
+
+Três regras de ouro:
+
+- **Nunca** guarde senha em texto puro. Sempre passe por `bcrypt.hash`
+  antes de salvar.
+- **Nunca** coloque o segredo JWT direto no código. Use variável de ambiente
+  (`process.env.JWT_SECRET`).
+- **JWT não é armazenamento de sessão**. Se precisar invalidar um token
+  antes da expiração, é mais complexo - vale considerar sessões ou
+  refresh tokens.
+
+> Dica: compare `bcrypt` (lento, seguro) com `argon2` (mais moderno). Pra
+> começar, `bcrypt` está ótimo.
+
+No próximo nó, vamos blindar a API contra **entradas ruins** e padronizar
+o formato dos erros.

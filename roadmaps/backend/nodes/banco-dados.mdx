@@ -1,0 +1,67 @@
+---
+id: banco-dados
+title: Banco de Dados Relacional
+resources:
+  - title: "SQL Tutorial - W3Schools (EN)"
+    url: https://www.w3schools.com/sql/
+    type: doc
+    lang: en
+    free: true
+  - title: "SQLBolt - lições interativas de SQL"
+    url: https://sqlbolt.com/
+    type: exercicio
+    lang: en
+    free: true
+  - title: "PostgreSQL - Documentação oficial"
+    url: https://www.postgresql.org/docs/
+    type: doc
+    lang: en
+    free: true
+---
+
+Enquanto o servidor roda, tudo que está em **memória** some quando ele
+desliga. Pra persistir dados, você usa um **banco de dados**.
+
+O tipo mais comum para começar é o **relacional** (PostgreSQL, MySQL,
+SQLite). A ideia central: dados em **tabelas**, parecidas com planilhas,
+que se relacionam por **chaves**.
+
+A linguagem pra falar com eles é o **SQL**:
+
+```sql
+-- Cria uma tabela de usuários
+CREATE TABLE usuarios (
+  id    SERIAL PRIMARY KEY,
+  nome  TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  criado_em TIMESTAMP DEFAULT NOW()
+);
+
+-- Insere um usuário
+INSERT INTO usuarios (nome, email)
+VALUES ('Ana', 'ana@exemplo.com');
+
+-- Busca todos
+SELECT * FROM usuarios;
+
+-- Busca um específico
+SELECT * FROM usuarios WHERE id = 1;
+```
+
+Quatro comandos que cobrem 80% do uso diário:
+
+- **`SELECT`** - lê dados.
+- **`INSERT`** - cria linhas.
+- **`UPDATE`** - atualiza linhas (sempre com `WHERE`!).
+- **`DELETE`** - remove linhas (sempre com `WHERE`!).
+
+**PostgreSQL** é o banco relacional open source mais usado no mercado -
+vale a pena instalar e praticar localmente. Para aprender sem instalar
+nada, o [SQLBolt](https://sqlbolt.com/) é excelente.
+
+> Dica: rode um PostgreSQL local com Docker sem dor:
+> `docker run --name pg -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres`.
+> Pronto, você tem um banco rodando.
+
+No próximo nó, vamos ver como **falar SQL a partir do Node.js** sem escrever
+strings de SQL no meio do código - com um **ORM**.

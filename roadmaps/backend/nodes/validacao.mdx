@@ -1,0 +1,86 @@
+---
+id: validacao
+title: "Validação e Tratamento de Erros"
+resources:
+  - title: "Zod - Documentação oficial"
+    url: https://zod.dev/
+    type: doc
+    lang: en
+    free: true
+  - title: "Express - Error handling (docs oficial)"
+    url: https://expressjs.com/en/guide/error-handling.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma API bem-comportada faz duas coisas:
+
+1. **Recusa entradas ruins** antes de processar.
+2. **Devolve erros úteis** quando algo dá errado - em formato consistente.
+
+A peça central é o **schema de validação**. O **Zod** é o padrão de fato no
+JavaScript moderno:
+
+```javascript
+import { z } from "zod";
+
+const UsuarioSchema = z.object({
+  nome: z.string().min(2).max(100),
+  email: z.string().email(),
+  idade: z.number().int().min(0).max(150).optional(),
+});
+
+app.post("/usuarios", async (req, res, next) => {
+  const parsed = UsuarioSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      erro: "Dados inválidos",
+      detalhes: parsed.error.flatten(),
+    });
+  }
+  const novo = await prisma.usuario.create({ data: parsed.data });
+  res.status(201).json(novo);
+});
+```
+
+`safeParse` devolve `{ success, data }` ou `{ success: false, error }` -
+sem lançar exceção, perfeito pra usar em handlers.
+
+Para o **tratamento centralizado de erros**, use um middleware Express
+no fim da cadeia (4 argumentos, o quarto é `next`):
+
+```javascript
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (err.code === "P2002") {
+    return res.status(409).json({ erro: "Já existe um registro com esse valor único" });
+  }
+  res.status(500).json({ erro: "Erro interno do servidor" });
+});
+```
+
+Isso captura qualquer `throw new Error()` em rotas assíncronas - mas
+precisa de `next(err)` para chegar aqui:
+
+```javascript
+app.get("/usuarios/:id", async (req, res, next) => {
+  try {
+    const u = await prisma.usuario.findUnique({ where: { id: Number(req.params.id) } });
+    if (!u) return res.status(404).json({ erro: "Não encontrado" });
+    res.json(u);
+  } catch (e) { next(e); }
+});
+```
+
+Quatro princípios pra levar:
+
+- **Valide na borda** - schemas na entrada, antes de tocar no banco.
+- **Status code por intenção** - 400 (input ruim), 404 (não existe),
+  409 (conflito), 500 (bug).
+- **Nunca exponha stack trace em produção** - em dev tudo bem, em prod
+  só a mensagem genérica.
+- **Log de erros** - mesmo que só um `console.error`, você vai querer
+  ver depois.
+
+No próximo nó, vamos **testar tudo isso** automaticamente.

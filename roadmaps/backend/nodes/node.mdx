@@ -1,0 +1,56 @@
+---
+id: node
+title: "Node.js e o Runtime JavaScript"
+resources:
+  - title: "Introdução ao Node.js (Documentação oficial PT-BR)"
+    url: https://nodejs.org/pt-br/learn
+    type: doc
+    lang: pt
+    free: true
+  - title: "Node.js - Documentação oficial"
+    url: https://nodejs.org/en/docs
+    type: doc
+    lang: en
+    free: true
+  - title: "Node.js // Dicionário do Programador (Código Fonte TV)"
+    url: https://www.youtube.com/watch?v=vYekSMBCCiM
+    type: video
+    lang: pt
+    free: true
+---
+
+**Node.js** é um **runtime** que executa JavaScript fora do navegador. Com
+ele, você usa a mesma linguagem do frontend para escrever o servidor.
+
+Por que isso importa? Antes do Node, backend era território de Java, PHP,
+Python, Ruby. Hoje, JavaScript está em **todos os lugares**: navegador,
+servidor, mobile, IoT. Uma linguagem, uma carreira mais fluida.
+
+Para instalar:
+
+```bash
+# macOS (via brew) / Linux (via nvm - recomendado)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+nvm install --lts
+
+# Ou baixe direto em https://nodejs.org
+```
+
+Para confirmar:
+
+```bash
+node -v   # exibe a versão (ex: v20.11.0)
+npm -v    # npm vem junto
+```
+
+O **npm** (Node Package Manager) é o instalador de pacotes - o equivalente
+do "loja de apps" do JavaScript. `npm install express` baixa a biblioteca
+e suas dependências para a pasta `node_modules/`.
+
+> Dica: prefira o **nvm** (Node Version Manager) em vez de instalar o Node
+> "direto". nvm permite ter várias versões de Node instaladas lado a lado,
+> o que salva você quando um projeto antigo pede Node 18 e o novo pede
+> Node 22.
+
+No próximo nó, vamos ver como rodar JavaScript no servidor - lendo arquivos,
+importando módulos e respondendo requisições.

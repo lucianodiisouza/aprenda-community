@@ -1,0 +1,89 @@
+---
+id: testes
+title: Testes Automatizados
+resources:
+  - title: "Vitest - Documentação oficial"
+    url: https://vitest.dev/guide/
+    type: doc
+    lang: en
+    free: true
+  - title: "Supertest - HTTP assertions"
+    url: https://github.com/ladjs/supertest
+    type: doc
+    lang: en
+    free: true
+---
+
+Código de backend sem teste é como dirigir sem cinto - funciona, até o dia
+que não funciona mais. **Testes automatizados** te dão confiança pra mexer
+no código sem medo de quebrar o que já estava pronto.
+
+A pirâmide tem três andares:
+
+- **Unitário** - testa uma função/regra isolada.
+- **Integração** - testa o fluxo de uma rota, com banco de verdade
+  (ou mockado).
+- **E2E (end-to-end)** - sobe a aplicação inteira e simula o usuário.
+
+Para começar, **unitário + integração** com **Vitest** (test runner) e
+**Supertest** (faz requisições HTTP em memória).
+
+Setup:
+
+```bash
+npm install -D vitest supertest
+```
+
+Exemplo de teste unitário:
+
+```javascript
+// utils.test.js
+import { describe, it, expect } from "vitest";
+import { formatarNome } from "./utils.js";
+
+describe("formatarNome", () => {
+  it("remove espaços e coloca em maiúsculo", () => {
+    expect(formatarNome("  ana  ")).toBe("ANA");
+  });
+});
+```
+
+Exemplo de teste de integração (rota HTTP):
+
+```javascript
+// usuarios.test.js
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import request from "supertest";
+import app from "./app.js";
+
+describe("POST /usuarios", () => {
+  it("cria um usuário válido", async () => {
+    const res = await request(app)
+      .post("/usuarios")
+      .send({ nome: "Ana", email: "ana@test.com" });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ nome: "Ana" });
+  });
+
+  it("rejeita email inválido com 400", async () => {
+    const res = await request(app)
+      .post("/usuarios")
+      .send({ nome: "Ana", email: "nao-e-email" });
+    expect(res.status).toBe(400);
+  });
+});
+```
+
+Para rodar: `npx vitest run` (uma vez) ou `npx vitest` (modo watch).
+
+Quatro dicas pra manter testes saudáveis:
+
+- **Cada teste independente** - não confie em ordem; use `beforeEach` pra
+  resetar estado.
+- **Banco de teste separado** - nunca rode testes no banco de produção.
+- **Cubra os caminhos críticos** - login, criação, validação, autorização.
+  Não precisa testar getters triviais.
+- **Falhe legível** - nomeie os testes como frases: "rejeita email inválido
+  com 400" > "test1".
+
+No próximo, o **projeto final**: juntar tudo numa API completa e publicar.

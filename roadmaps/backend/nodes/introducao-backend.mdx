@@ -1,0 +1,39 @@
+---
+id: introducao-backend
+title: O que é Backend
+resources:
+  - title: "Visão geral de HTTP (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Overview
+    type: doc
+    lang: pt
+    free: true
+  - title: "Lado cliente vs. lado servidor (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/Common_questions/Web_mechanics/What_is_a_web_server
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando você abre um app, **metade do trabalho acontece onde você não vê** -
+num computador remoto respondendo a pedidos. Essa metade é o **backend**.
+
+Imagine o app de banco do seu celular:
+
+- Você digita "saldo" e aperta atualizar.
+- O app (**frontend**) manda uma mensagem para um servidor: "me dá o saldo
+  da conta 12345".
+- O servidor (**backend**) consulta o banco, monta a resposta, e devolve:
+  "R$ 1.250,00".
+- O app mostra o número na tela.
+
+O backend é um **programa que fica escutando pedidos** (geralmente HTTP) e
+devolve respostas - normalmente em **JSON**. Esse programa roda 24/7 num
+servidor (nuvem, máquina física, container) esperando alguém chamar.
+
+Três peças que vão aparecer o tempo todo:
+
+- **Servidor** - o processo que escuta e responde (Node.js, Python, Go...).
+- **API** - o "cardápio" do que o servidor sabe fazer (endpoints).
+- **Banco de dados** - onde as informações vivem persistidas.
+
+Essa trilha te leva do zero até uma API completa com auth, banco e deploy.

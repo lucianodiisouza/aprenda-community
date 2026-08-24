@@ -1,0 +1,43 @@
+---
+id: http
+title: "HTTP: O Protocolo da Web"
+resources:
+  - title: "Visão geral de HTTP (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Overview
+    type: doc
+    lang: pt
+    free: true
+  - title: "Códigos de status HTTP (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status
+    type: doc
+    lang: pt
+    free: true
+---
+
+**HTTP** é o idioma que frontend e backend usam para conversar. Não importa
+se o servidor é Node.js, Python ou Go - a conversa segue o mesmo protocolo.
+
+Uma mensagem HTTP tem duas partes:
+
+- **Request (pedido)**: método + URL + cabeçalhos + corpo (opcional).
+- **Response (resposta)**: status code + cabeçalhos + corpo.
+
+Os **métodos** dizem a *intenção* do pedido:
+
+- `GET` - "me dá esse recurso" (buscar).
+- `POST` - "cria esse recurso" (enviar dados novos).
+- `PUT` / `PATCH` - "atualiza esse recurso".
+- `DELETE` - "remove esse recurso".
+
+Os **status codes** resumem o que aconteceu, em três faixas:
+
+- **2xx** - deu certo (`200 OK`, `201 Created`, `204 No Content`).
+- **4xx** - erro do cliente (`400 Bad Request`, `404 Not Found`, `401 Unauthorized`).
+- **5xx** - erro do servidor (`500 Internal Server Error`).
+
+Você não precisa decorar - só entender o **range** e consultar a tabela.
+Por exemplo, ao criar um usuário com sucesso, devolva `201`. Ao buscar algo
+que não existe, devolva `404`.
+
+No próximo nó, vamos ver o **Node.js**, o runtime que te permite escrever
+JavaScript fora do navegador - no servidor.

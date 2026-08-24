@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-9-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-10-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
@@ -30,6 +30,11 @@ Trilhas hoje:
 - 🟣 [**Frontend**](./roadmaps/frontend) - para quem quer construir a
   parte visual e interativa da web: HTML, CSS, JavaScript, React.
   **12 nós**. Assume o básico de JS.
+- 🟠 [**Backend**](./roadmaps/backend) - para quem quer construir a
+  parte que roda no servidor: HTTP, Node.js, Express, REST, banco de
+  dados, ORM, autenticação JWT, validação, testes e deploy.
+  **12 nós**. Stack curado: Node.js + Express + Prisma + PostgreSQL +
+  JWT + Zod + Vitest.
 - 🔀 [**Git**](./roadmaps/git) - controle de versão do zero ao avançado:
   commits, branches, merge, remotos, rebase, reflog, workflows e uma
   primeira contribuição open source. **23 nós**, cobrindo básico,
@@ -61,7 +66,7 @@ Trilhas hoje:
     CSS-in-JS), performance, frameworks como mapa de opções, e
     projeto final de landing page.
 
-> Mais trilhas chegando: Backend, Python, Estruturas de Dados…
+> Mais trilhas chegando: Python, Estruturas de Dados…
 > Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
 
 ## 🛠️ Projetos práticos
