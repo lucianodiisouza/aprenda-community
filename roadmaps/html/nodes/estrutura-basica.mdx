@@ -1,0 +1,74 @@
+---
+id: estrutura-basica
+title: "Estrutura Básica de um Documento"
+resources:
+  - title: "Anatomia de uma página HTML (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/HTML/Introduction_to_HTML/Getting_started
+    type: doc
+    lang: pt
+    free: true
+  - title: "Elemento <html> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/html
+    type: doc
+    lang: pt
+    free: true
+---
+
+Toda página HTML tem a mesma "carcaça". À primeira vista parece muito formal
+— cheia de tags, `lang="..."`, `meta charset`... — mas cada pedaço tem um
+papel claro. Vamos destrinchar.
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha primeira página</title>
+  </head>
+  <body>
+    <h1>Olá, mundo!</h1>
+    <p>Esse é meu primeiro parágrafo.</p>
+  </body>
+</html>
+```html
+Copie esse código, salve como `index.html` e abra no navegador. Você tem uma
+página web. Sem build, sem framework, sem servidor.
+
+Agora, parte por parte:
+
+- **`<!DOCTYPE html>`** — primeira linha, sempre. Diz ao navegador "este
+  documento é **HTML5**" (a versão atual da linguagem). Sem isso, o navegador
+  entra em "modo de compatibilidade" e pode renderizar errado.
+- **`<html lang="pt-BR">`** — a tag raiz: tudo da página está aqui dentro. O
+  atributo `lang="pt-BR"` diz que o conteúdo está em português brasileiro.
+  Leitores de tela usam isso pra escolher a voz certa; mecanismos de busca
+  usam pra indexar.
+- **`<head>`** — o "cabeçalho" da página. Guarda **metadados**: informações
+  *sobre* a página, não o conteúdo que aparece. Aqui vão título, codificação,
+  favicon, links de CSS etc.
+- **`<meta charset="UTF-8">`** — define a codificação de caracteres. UTF-8
+  suporta acentos, emojis, praticamente todo caractere do planeta. Sem isso,
+  "não" vira "nÃ£o".
+- **`<meta name="viewport" ...>`** — faz a página se comportar bem em
+  celular. Sempre inclua; sem ele, celular renderiza como se fosse desktop
+  e o usuário precisa dar zoom.
+- **`<title>`** — o texto que aparece na **aba do navegador** e no resultado
+  de busca do Google. Cada página tem **um único** `<title>`.
+- **`<body>`** — o **corpo** da página. Tudo que você quer que apareça na
+  tela vai aqui: textos, imagens, botões, vídeos, o que for.
+
+A hierarquia é sempre a mesma: `<html>` contém `<head>` e `<body>`. Dentro do
+`<head>`, vão os metadados. Dentro do `<body>`, vai o conteúdo visível.
+
+- **`<!DOCTYPE html>`** vem primeiro, fora de `<html>`.
+- `<html>` é a raiz; tem `lang` no idioma principal do conteúdo.
+- `<head>` carrega **metadados** (não aparece na tela).
+- `<body>` carrega **tudo que aparece na tela**.
+
+> Dica: muita gente pula o `<meta name="viewport">` em testes locais e a
+> página parece funcionar — porque você tá no desktop. Abra no celular (ou
+> no DevTools, modo responsivo) pra ver a diferença.
+
+No próximo nó, vamos ver as tags que **formatam texto** dentro do `<body>`:
+títulos, parágrafos, ênfase, e como dar ritmo visual a uma página sem CSS.

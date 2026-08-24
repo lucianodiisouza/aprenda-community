@@ -1,0 +1,82 @@
+---
+id: textos
+title: "Textos: Títulos, Parágrafos e Ênfase"
+resources:
+  - title: "Elementos de cabeçalho (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/Heading_Elements
+    type: doc
+    lang: pt
+    free: true
+  - title: "Por que semântica importa em texto (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/HTML/Introduction_to_HTML/HTML_text_fundamentals
+    type: doc
+    lang: pt
+    free: true
+---
+
+A maioria do conteúdo de uma página é **texto**. E mesmo sem CSS, o HTML tem
+tags que dão a esse texto uma hierarquia visual: títulos maiores, parágrafos
+separados, palavras em negrito. Mais importante que a aparência: cada tag diz
+**o que o texto significa**.
+
+```html
+<h1>Receita de bolo de cenoura</h1>
+
+<h2>Ingredientes</h2>
+<p>Você vai precisar de cenoura, farinha, ovos e açúcar.</p>
+
+<h2>Modo de preparo</h2>
+<p>Bata tudo no liquidificador e leve ao forno por 40 minutos.</p>
+
+<p>Esse <strong>bolo fica úmido</strong> por dias e o <em>cobertura de
+chocolate</em> é o destaque.</p>
+```html
+Olha o que cada tag faz:
+
+- **`<h1>` a `<h6>`** são títulos, do mais importante (`h1`) ao menos
+  (`h6`). Pense neles como o **sumário** de um documento: o `h1` é o título
+  do livro; `h2`, capítulos; `h3`, seções. **Use um único `<h1>` por página**
+  — é o assunto principal.
+- **`<p>`** é parágrafo. Use para qualquer bloco de texto corrido. O
+  navegador adiciona automaticamente uma margem antes e depois.
+- **`<strong>`** indica **forte importância** — visualmente fica em
+  negrito, mas o significado é "isso é importante". Leitores de tela podem
+  até mudar o tom de voz.
+- **`<em>`** indica **ênfase** — visualmente fica em itálico, mas o
+  significado é "enfatize isso". Lê diferente de `<strong>`.
+
+Você **pode** usar `<b>` e `<i>` (negrito e itálico sem significado), e
+existem casos válidos (ex: nome de um produto, termo técnico estrangeiro).
+Mas, por padrão, **prefira `<strong>` e `<em>`** — eles dizem algo além de
+"pinte isso".
+
+Algumas outras tags úteis pra texto:
+
+```html
+<p>Veja a <a href="#ref1">referência 1</a> no fim do artigo.</p>
+<p>Como Einstein disse: <q>A imaginação é mais importante que o conhecimento.</q></p>
+<p>Segundo o dicionário, <dfn>programação</dfn> é o ato de escrever
+instruções para um computador.</p>
+<p>O <abbr title="HyperText Markup Language">HTML</abbr> é a base da web.</p>
+<p>Pressione <kbd>Ctrl</kbd> + <kbd>S</kbd> para salvar.</p>
+```html
+- **`<a href="...">`** é o link (vamos ver com detalhe no próximo nó).
+- **`<q>`** é citação curta, inline.
+- **`<dfn>`** marca o termo que está sendo definido.
+- **`<abbr title="...">`** mostra o significado de uma sigla ao passar o
+  mouse.
+- **`<kbd>`** marca texto que o usuário digita (atalhos de teclado).
+
+- **Títulos** (`<h1>` a `<h6>`) criam a hierarquia do documento. **Um `<h1>`
+  por página.**
+- **Parágrafo** (`<p>`) é o bloco de texto padrão.
+- **`<strong>` e `<em>`** têm significado, não só aparência.
+- Existem tags especializadas pra citação, sigla, atalho de teclado — use-as
+  quando fizer sentido.
+
+> Dica: o "teste do sumário" é útil. Olhe a página e liste só os títulos
+> (`h1`, `h2`...). Se a lista não fizer sentido como sumário de um
+> documento, a hierarquia tá errada.
+
+No próximo nó, vamos falar de **links** — o que era "hipertexto" no nome HTML,
+e o que torna a web, web.

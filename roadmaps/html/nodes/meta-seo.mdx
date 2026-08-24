@@ -1,0 +1,184 @@
+---
+id: meta-seo
+title: "Meta Tags, Open Graph e Favicon"
+resources:
+  - title: "Elemento <meta> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/meta
+    type: doc
+    lang: pt
+    free: true
+  - title: "Open Graph Protocol — referência oficial"
+    url: https://ogp.me/
+    type: doc
+    lang: en
+    free: true
+  - title: "Favicons e ícones de app (web.dev)"
+    url: https://web.dev/articles/add-manifest
+    type: artigo
+    lang: en
+    free: true
+---
+
+O que aparece quando você cola um link no WhatsApp, Twitter ou LinkedIn?
+Aquela prévia com imagem, título e descrição. Quem controla isso é o
+**`<head>`** da sua página — meta tags, Open Graph, e o favicon.
+
+### Meta tags essenciais
+
+```html
+<head>
+  <!-- Codificação -->
+  <meta charset="UTF-8">
+
+  <!-- Viewport (mobile) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Título da aba -->
+  <title>Receita de bolo de cenoura — Cozinha da Ana</title>
+
+  <!-- Descrição para mecanismos de busca -->
+  <meta name="description" content="Bolo de cenoura fofinho, com cobertura de chocolate. Receita testada, com passo a passo detalhado.">
+
+  <!-- Palavras-chave (hoje em dia, ignorado pela maioria dos buscadores) -->
+  <meta name="keywords" content="bolo, cenoura, receita, doce, chocolate">
+
+  <!-- Autor -->
+  <meta name="author" content="Ana Silva">
+
+  <!-- Controle de indexação -->
+  <meta name="robots" content="index, follow">
+
+  <!-- Open Graph (Facebook, LinkedIn, WhatsApp, iMessage) -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Receita de bolo de cenoura">
+  <meta property="og:description" content="Bolo de cenoura fofinho com cobertura de chocolate.">
+  <meta property="og:image" content="https://cozinha.com/img/bolo-capa.jpg">
+  <meta property="og:url" content="https://cozinha.com/receitas/bolo-cenoura">
+  <meta property="og:site_name" content="Cozinha da Ana">
+  <meta property="og:locale" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Receita de bolo de cenoura">
+  <meta name="twitter:description" content="Bolo de cenoura fofinho com cobertura de chocolate.">
+  <meta name="twitter:image" content="https://cozinha.com/img/bolo-capa.jpg">
+  <meta name="twitter:site" content="@cozinadaana">
+</head>
+```html
+Vamos por partes:
+
+#### `<title>` (não é meta tag, mas convive no `<head>`)
+
+Texto da aba do navegador e o principal **título** que aparece no Google.
+Cada página tem **um único** `<title>`. Limite de tamanho prático:
+**~60 caracteres** (Google trunca além disso).
+
+#### `<meta name="description">`
+
+Descrição que aparece **abaixo do título no Google** e em pré-visualizações.
+Limite prático: **~155 caracteres**. Seja direto: "o que é essa página?"
+
+#### `<meta name="viewport">`
+
+**Sempre inclua** — sem isso, a página renderiza como desktop no celular
+e o usuário precisa dar zoom. Vimos isso no nó de estrutura básica.
+
+#### `<meta name="robots">`
+
+Diz a mecanismos de busca o que fazer:
+
+- `index, follow` (padrão implícito) — indexa a página e segue os links.
+- `noindex, nofollow` — não indexa, não segue. Útil para páginas
+  internas, drafts, páginas de busca.
+- `index, nofollow` — indexa, mas não segue os links. Raro.
+- `noindex, follow` — não indexa a página em si, mas segue os links
+  para descobrir outras.
+
+### Open Graph (og:)
+
+Protocolo criado pelo Facebook, hoje usado por **WhatsApp, LinkedIn,
+iMessage, Discord, Telegram, Slack, e Facebook**. É o que faz o preview
+bonito aparecer.
+
+**Quatro tags são obrigatórias** para o preview funcionar:
+
+1. `og:title` — título.
+2. `og:description` — descrição.
+3. `og:image` — URL absoluta da imagem (recomendado 1200×630 px).
+4. `og:url` — URL canônica da página.
+
+Mais úteis:
+
+- `og:type` — `website`, `article`, `video.movie`, `product`...
+- `og:site_name` — nome do site.
+- `og:locale` — idioma, no formato `pt_BR`.
+
+**A imagem é o que mais importa para o preview.** Sem ela, WhatsApp
+mostra só o título em texto. Com uma imagem bem-feita, o link parece
+"vivo". A recomendação é 1200×630 px (proporção 1.91:1) — e testá-la no
+[Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+e [Twitter Card Validator](https://cards-dev.twitter.com/validator).
+
+### Twitter Card
+
+Twitter tem o próprio sistema, mas segue o Open Graph. Se você não
+colocar tags `twitter:*`, o Twitter usa as `og:*` como fallback. Coloque
+`twitter:card` e (opcionalmente) `twitter:site` para customizar.
+
+### Favicon
+
+O **ícone na aba do navegador** e nos favoritos. Moderno, é um conjunto
+de imagens e uma única declaração:
+
+```html
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#1e90ff">
+```html
+- **`favicon.ico`** — formato legado, ainda amplamente suportado.
+  Recomendado manter para compatibilidade.
+- **`favicon.svg`** — moderno, escala perfeitamente. Pode usar CSS
+  dentro (ex: respeitar `prefers-color-scheme`).
+- **`apple-touch-icon.png`** — ícone no iOS quando o usuário adiciona
+  à tela inicial. 180×180 px.
+- **`site.webmanifest`** — manifest de PWA (Progressive Web App), para
+  quem quer que o site seja "instalável" no celular.
+- **`theme-color`** — cor da barra do navegador no celular.
+
+Para gerar todos esses a partir de uma imagem única, use
+[realfavicongenerator.net](https://realfavicongenerator.net/) (gratuito).
+
+### Outras meta tags úteis
+
+```html
+<!-- Canonical URL (evita conteúdo duplicado) -->
+<link rel="canonical" href="https://cozinha.com/receitas/bolo-cenoura">
+
+<!-- Idiomas alternativos -->
+<link rel="alternate" hreflang="pt-BR" href="https://cozinha.com/pt-BR/...">
+<link rel="alternate" hreflang="en" href="https://cozinha.com/en/...">
+
+<!-- Preconnect: antecipa conexão com CDNs -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<!-- DNS prefetch -->
+<link rel="dns-prefetch" href="//cdn.exemplo.com">
+```html
+- **`<title>`** e **`<meta name="description">`** são as duas mais
+  importantes para SEO.
+- **Open Graph** (`og:title`, `og:description`, `og:image`, `og:url`)
+  controla o preview em redes sociais.
+- **Favicon** moderno é um conjunto: `.ico` legado, `.svg`, e
+  `apple-touch-icon`.
+- **`theme-color`** ajusta a barra do navegador no mobile.
+
+> Dica: depois de publicar, valide o preview no
+> [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+> e no [Twitter Card Validator](https://cards-dev.twitter.com/validator).
+> Mudanças em meta tags **não são vistas em tempo real** — eles
+> cacheiam, e você precisa "raspar" o cache.
+
+No próximo (e último!) nó, vamos juntar tudo num **projeto final**: uma
+landing page completa e acessível.

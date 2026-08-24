@@ -1,0 +1,160 @@
+---
+id: formularios-basicos
+title: "Formulários: Inputs e Botões"
+resources:
+  - title: "Seu primeiro formulário (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/Forms/Your_first_form
+    type: doc
+    lang: pt
+    free: true
+  - title: "Tipos de <input> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/input
+    type: doc
+    lang: pt
+    free: true
+---
+
+A maior parte da web "fala" com o usuário por meio de **formulários**:
+login, busca, cadastro, comentários, upload, checkout. O HTML tem um
+conjunto robusto de tags pra isso — e várias armadilhas para iniciantes.
+
+O mínimo necessário:
+
+```html
+<form action="/login" method="post">
+  <label for="email">E-mail</label>
+  <input type="email" id="email" name="email" required>
+
+  <label for="senha">Senha</label>
+  <input type="password" id="senha" name="senha" required>
+
+  <button type="submit">Entrar</button>
+</form>
+```html
+Anatomia:
+
+- **`<form action="..." method="...">`** é o container. `action` é pra
+  onde os dados vão; `method` é o verbo HTTP (`get` ou `post`).
+- **`<label for="id-do-input">`** é o **rótulo** do campo. O `for`
+  conecta o rótulo ao input pelo `id` — clicar no label foca o input, e
+  leitores de tela anunciam o rótulo quando o input recebe foco. **Sempre
+  use `<label>`.**
+- **`<input>`** é o campo em si. Tem dezenas de tipos via `type="..."`.
+- **`<button type="submit">`** é o botão de envio. O `type="submit"` é
+  importante: sem ele, o botão não envia o form.
+
+### Tipos de `<input>` que você vai usar sempre
+
+| `type`        | Pra que serve                                    | Extras                                     |
+| ------------- | ------------------------------------------------ | ------------------------------------------ |
+| `text`        | Texto genérico (uma linha)                       | Padrão se você omitir `type`               |
+| `email`       | E-mail (validação de formato no navegador)       | Teclado com `@` no celular                 |
+| `password`    | Senha (caracteres escondidos)                    | Não confie só nele — use HTTPS!            |
+| `number`      | Número (com setinhas no navegador)               | `min`, `max`, `step`                       |
+| `tel`         | Telefone                                         | Teclado numérico no celular                |
+| `url`         | URL                                              | Teclado com `.` e `/` no celular           |
+| `search`      | Campo de busca                                   | Botão de limpar nativo em alguns browsers  |
+| `date`        | Data (calendário nativo)                         | `min`, `max`                               |
+| `time`        | Hora                                             | -                                          |
+| `checkbox`    | Caixinha de marcar (0 ou mais opções)            | `checked`                                  |
+| `radio`       | Bolinha (1 opção entre várias)                   | Mesmo `name` agrupa                        |
+| `file`        | Upload de arquivo                                | `accept="image/*"` filtra                  |
+| `color`       | Seletor de cor                                   | -                                          |
+| `range`       | Slider                                           | `min`, `max`, `step`, `value`              |
+| `hidden`      | Invisível — dados extras junto com o form        | -                                          |
+
+Atributos importantes compartilhados:
+
+- **`name="..."`** — o **nome do campo** quando o form é enviado. Sem
+  `name`, o input não é enviado! Erro clássico de iniciante.
+- **`id="..."`** — único na página, usado pra conectar com `<label>` e
+  âncoras.
+- **`required`** — campo obrigatório. O navegador bloqueia o envio se
+  estiver vazio.
+- **`placeholder="..."`** — dica que aparece **dentro** do campo quando
+  ele está vazio. **Não substitui o `<label>`** — o placeholder some
+  quando o usuário digita, e leitores de tela nem sempre leem.
+- **`value="..."`** — valor inicial.
+- **`disabled`** — desabilita o input (cinza, não editável, não enviado).
+- **`readonly`** — não editável, mas enviado no form.
+- **`autocomplete="..."`** — dica pro navegador. `name`, `email`, `tel`,
+  `current-password`, `new-password` etc.
+
+### Checkbox e radio
+
+```html
+<fieldset>
+  <legend>Notificações por e-mail</legend>
+
+  <input type="checkbox" id="news" name="notif" value="newsletter" checked>
+  <label for="news">Newsletter semanal</label>
+
+  <input type="checkbox" id="promo" name="notif" value="promocoes">
+  <label for="promo">Promoções</label>
+
+  <input type="checkbox" id="prod" name="notif" value="novo-produto">
+  <label for="prod">Aviso de produto novo</label>
+</fieldset>
+
+<fieldset>
+  <legend>Plano</legend>
+
+  <input type="radio" id="free" name="plano" value="free" checked>
+  <label for="free">Grátis</label>
+
+  <input type="radio" id="pro" name="plano" value="pro">
+  <label for="pro">Pro</label>
+
+  <input type="radio" id="team" name="plano" value="team">
+  <label for="team">Time</label>
+</fieldset>
+```html
+- **Checkbox**: o usuário pode marcar **vários** do mesmo grupo. O `name`
+  pode ser igual (os marcados vão juntos no envio).
+- **Radio**: o usuário escolhe **apenas um** do grupo. **Os radios do
+  mesmo grupo compartilham o `name`.** É isso que os agrupa.
+
+`<fieldset>` e `<legend>` agrupam campos relacionados, com um título
+visível e anunciado por leitores de tela.
+
+### Botões
+
+Três tipos:
+
+```html
+<button type="submit">Enviar</button>     <!-- envia o form -->
+<button type="reset">Limpar</button>      <!-- reseta o form -->
+<button type="button">Outro</button>      <!-- sem ação padrão (use com JS) -->
+```html
+`<input type="submit" value="Enviar">` também funciona, mas `<button>`
+permite conteúdo HTML dentro (ícones, spans...), o que é mais flexível.
+
+### O atributo `form` (avançado)
+
+Um input pode estar **fora** do `<form>` mas ser associado a ele:
+
+```html
+<form id="busca" action="/buscar" method="get">
+  <button>Buscar</button>
+</form>
+
+<input type="search" name="q" form="busca" placeholder="O que procura?">
+```html
+Útil quando o form é pequeno e a entrada precisa estar em outro lugar do
+layout (ex: a barra de busca no header, mas o `<form>` no footer).
+
+- **`<form action method>`** contém os inputs e botões de envio.
+- **`<label for>`** é o rótulo do campo — sempre use.
+- **`<input name>`** — sem `name`, o campo não vai no envio.
+- **`type` correto** ativa teclado apropriado no celular e validação
+  nativa.
+- **`<fieldset>` + `<legend>`** agrupam campos.
+- **`<button type="submit">`** envia o form; **`type="button"`** é neutro
+  (use com JS).
+
+> Dica: o `type` certo faz muita diferença no celular. `type="email"`
+> mostra teclado com `@`; `type="tel"` mostra teclado numérico; `type="date"`
+> abre um calendário nativo. O usuário percebe.
+
+No próximo nó, vamos ver campos mais ricos: `select`, `textarea`,
+`datalist`, e a **validação nativa** do HTML.

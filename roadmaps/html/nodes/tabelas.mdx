@@ -1,0 +1,161 @@
+---
+id: tabelas
+title: "Tabelas de Dados"
+resources:
+  - title: "Elemento <table> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/table
+    type: doc
+    lang: pt
+    free: true
+  - title: "Tabelas em HTML — guia completo (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Core/Structuring_content/HTML_table_basics
+    type: doc
+    lang: pt
+    free: true
+---
+
+Tabelas em HTML servem para **dados tabulares**: coisas que você
+apresentaria em uma planilha. Não servem para layout de página — isso foi
+abandonado lá pelo ano 2000 (e é uma história cautionary tale inteira).
+
+```html
+<table>
+  <caption>Notas finais de uma turma</caption>
+  <thead>
+    <tr>
+      <th>Aluno</th>
+      <th>Nota 1</th>
+      <th>Nota 2</th>
+      <th>Média</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Ana</td>
+      <td>8.5</td>
+      <td>9.0</td>
+      <td>8.75</td>
+    </tr>
+    <tr>
+      <td>Bruno</td>
+      <td>7.0</td>
+      <td>7.5</td>
+      <td>7.25</td>
+    </tr>
+    <tr>
+      <td>Carla</td>
+      <td>9.5</td>
+      <td>8.5</td>
+      <td>9.0</td>
+    </tr>
+  </tbody>
+  <tfoot>
+    <tr>
+      <td colspan="3">Média da turma</td>
+      <td>8.33</td>
+    </tr>
+  </tfoot>
+</table>
+```html
+Vamos destrinchar:
+
+- **`<table>`** — a tabela em si.
+- **`<caption>`** — o **título** da tabela. Aparece acima, antes dos
+  dados. É importante para acessibilidade: leitores de tela anunciam a
+  caption como parte da tabela.
+- **`<thead>`** — cabeçalho. A linha com os títulos das colunas.
+- **`<tbody>`** — corpo. Os dados.
+- **`<tfoot>`** — rodapé. Para totais, médias, observações.
+- **`<tr>`** (*table row*) — uma linha.
+- **`<th>`** (*table header*) — célula de **cabeçalho** (em negrito por
+  padrão, semanticamente uma "célula que rotula").
+- **`<td>`** (*table data*) — célula de **dado**.
+
+Sem CSS, a tabela aparece sem bordas. É assim de propósito: estilo é
+trabalho do CSS. Mas o significado (cabeçalho, corpo, rodapé) já está todo
+no HTML.
+
+### Cuidando da acessibilidade
+
+Dois atributos importantes para quem usa leitor de tela:
+
+```html
+<table>
+  <caption>Vendas por trimestre em 2025</caption>
+  <thead>
+    <tr>
+      <th scope="col">Trimestre</th>
+      <th scope="col">Receita (R$)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Q1</th>
+      <td>120.000</td>
+    </tr>
+    <tr>
+      <th scope="row">Q2</th>
+      <td>145.000</td>
+    </tr>
+  </tbody>
+</table>
+```html
+- **`scope="col"`** no `<th>` diz "este é o rótulo da coluna inteira".
+- **`scope="row"`** no `<th>` (no corpo!) diz "este é o rótulo da linha
+  inteira". Note que o rótulo da linha vai dentro do `<tbody>` como `<th>`,
+  não `<td>`.
+
+Para tabelas mais complexas (células que viram cabeçalho de várias
+colunas, por exemplo), existe o atributo `headers` em cada `<td>`
+apontando para os `id`s dos `<th>` correspondentes. Mas `scope` resolve
+80% dos casos.
+
+### Mesclando células
+
+`<td colspan="2">` faz a célula ocupar 2 colunas. `<td rowspan="2">`
+ocupa 2 linhas.
+
+```html
+<table>
+  <tr>
+    <th rowspan="2">Produto</th>
+    <th colspan="2">Vendas 2025</th>
+  </tr>
+  <tr>
+    <th>Q1</th>
+    <th>Q2</th>
+  </tr>
+  <tr>
+    <td>Notebook</td>
+    <td>1.200</td>
+    <td>1.500</td>
+  </tr>
+</table>
+```html
+Use com parcimônia — tabelas muito "complexas" geralmente são várias
+tabelas simples.
+
+### Por que não usar tabela para layout?
+
+Quando a web nasceu, tabelas eram a única forma de organizar elementos lado
+a lado. Resultado: HTML de sites antigos é cheio de `<table><tr><td>` para
+"encaixar" cabeçalho, menu lateral, conteúdo. Isso é um pesadelo para
+acessibilidade (leitor de tela lê linha por linha) e manutenção (mexer no
+layout exige mexer no HTML).
+
+Hoje temos **CSS Grid** e **Flexbox** para layout. Tabela no HTML é só
+para dados tabulares. Ponto.
+
+- **`<table>`** é para **dados tabulares**, não para layout de página.
+- Use **`<caption>`**, **`<thead>`**, **`<tbody>`**, **`<tfoot>`** para
+  estrutura semântica.
+- **`<th scope="col|row">`** diz a leitores de tela qual linha/coluna
+  aquela célula rotula.
+- **colspan** e **rowspan** para mesclar células; use com parcimônia.
+
+> Dica: antes de criar uma tabela, pergunte: "esses dados têm colunas
+> nomeadas e linhas comparáveis?" Se sim, tabela. Se não, é layout —
+> use CSS.
+
+No próximo nó, vamos entrar nos **formulários** — provavelmente a parte
+mais interativa do HTML e onde a gente coleta dados do usuário.

@@ -1,0 +1,106 @@
+{
+  "slug": "html",
+  "title": "HTML",
+  "description": "Trilha completa de HTML — do zero absoluto (o que é uma página web) até HTML semântico avançado, formulários, acessibilidade e meta tags. Ideal como primeira trilha antes de CSS ou JavaScript.",
+  "difficulty": "iniciante",
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "Introdução: O que é HTML",
+      "type": "topic",
+      "recommended": true,
+      "children": ["estrutura-basica"]
+    },
+    {
+      "id": "estrutura-basica",
+      "title": "Estrutura Básica de um Documento",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["textos"]
+    },
+    {
+      "id": "textos",
+      "title": "Textos: Títulos, Parágrafos e Ênfase",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["links"]
+    },
+    {
+      "id": "links",
+      "title": "Links: Navegando Entre Páginas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["imagens"]
+    },
+    {
+      "id": "imagens",
+      "title": "Imagens, Figuras e SVG",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["listas"]
+    },
+    {
+      "id": "listas",
+      "title": "Listas: Ordinais, Não-Ordenais e de Definição",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tabelas"]
+    },
+    {
+      "id": "tabelas",
+      "title": "Tabelas de Dados",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["formularios-basicos"]
+    },
+    {
+      "id": "formularios-basicos",
+      "title": "Formulários: Inputs e Botões",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["formularios-avancados"]
+    },
+    {
+      "id": "formularios-avancados",
+      "title": "Formulários: Select, Textarea e Validação Nativa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["semantica"]
+    },
+    {
+      "id": "semantica",
+      "title": "HTML Semântico: Dando Significado à Página",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["midia"]
+    },
+    {
+      "id": "midia",
+      "title": "Áudio, Vídeo e Embeds",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["acessibilidade"]
+    },
+    {
+      "id": "acessibilidade",
+      "title": "Acessibilidade: HTML para Todo Mundo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["meta-seo"]
+    },
+    {
+      "id": "meta-seo",
+      "title": "Meta Tags, Open Graph e Favicon",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Landing Page Completa",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

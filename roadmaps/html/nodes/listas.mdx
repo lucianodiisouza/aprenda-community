@@ -1,0 +1,138 @@
+---
+id: listas
+title: "Listas: Ordinais, Não-Ordenais e de Definição"
+resources:
+  - title: "Listas HTML (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/HTML/Introduction_to_HTML/HTML_text_fundamentals#lists
+    type: doc
+    lang: pt
+    free: true
+---
+
+Listas são onipresentes: ingredientes de receita, passos de tutorial, opções
+de menu, termos de glossário. O HTML tem **três** tipos, cada um com
+significado diferente.
+
+### Listas não-ordenadas (`<ul>`)
+
+A ordem **não importa** — é um conjunto de itens equivalentes.
+
+```html
+<ul>
+  <li>Farinha</li>
+  <li>Ovos</li>
+  <li>Leite</li>
+  <li>Açúcar</li>
+</ul>
+```html
+O navegador coloca uma bolinha (•) na frente de cada item. Mas o importante
+não é a bolinha: é que o **significado** é "conjunto de itens".
+
+### Listas ordenadas (`<ol>`)
+
+A ordem **importa** — é uma sequência.
+
+```html
+<ol>
+  <li>Pré-aqueça o forno a 180°C.</li>
+  <li>Misture os ingredientes secos.</li>
+  <li>Adicione os líquidos e mexa.</li>
+  <li>Asse por 40 minutos.</li>
+</ol>
+```html
+O navegador coloca `1.`, `2.`, `3.`... E aqui sim a sequência tem
+significado: você não pode inverter os passos.
+
+Você pode mudar o tipo de numeração:
+
+```html
+<ol type="A">  <!-- A, B, C, D -->
+<ol type="I">  <!-- I, II, III, IV -->
+<ol start="5"> <!-- começa do 5 -->
+<ol reversed>  <!-- conta de trás pra frente -->
+```html
+Mas no dia-a-dia, o padrão basta.
+
+### Listas de definição (`<dl>`)
+
+Para pares **termo / definição** — como um glossário.
+
+```html
+<dl>
+  <dt>HTML</dt>
+  <dd>Linguagem de marcação que estrutura páginas web.</dd>
+
+  <dt>CSS</dt>
+  <dd>Linguagem de estilo que define aparência de páginas web.</dd>
+
+  <dt>JavaScript</dt>
+  <dd>Linguagem de programação que dá comportamento a páginas web.</dd>
+</dl>
+```html
+- `<dt>` (*description term*) é o termo.
+- `<dd>` (*description details*) é a definição.
+- Vários `<dd>` podem seguir um `<dt>` (ex: sinônimos, exemplos).
+
+### Aninhamento
+
+Listas podem estar dentro de listas:
+
+```html
+<ul>
+  <li>Frutas
+    <ul>
+      <li>Maçã</li>
+      <li>Banana</li>
+    </ul>
+  </li>
+  <li>Verduras
+    <ul>
+      <li>Alface</li>
+      <li>Tomate</li>
+    </ul>
+  </li>
+</ul>
+```html
+O navegador indenta o subnível. **Aninhe dentro do `<li>`** que faz
+sentido, não no meio do texto.
+
+### Listas de tarefas (checkbox)
+
+Truque útil, mas que precisa de um pouco de CSS/JS pra funcionar de
+verdade: a "checkbox hack" simula uma lista de tarefas.
+
+```html
+<ul style="list-style: none; padding: 0;">
+  <li><input type="checkbox"> Estudar HTML</li>
+  <li><input type="checkbox" checked> Beber café</li>
+  <li><input type="checkbox"> Construir uma página</li>
+</ul>
+```html
+Para uma lista de tarefas de verdade, prefira uma tag `<input
+type="checkbox">` mesmo, possivelmente dentro de um formulário.
+
+### O que **não** é uma lista
+
+Muitos devs usam `<br>` pra fazer listas:
+
+```html
+<!-- ❌ Péssimo: sem significado, ruim pra copiar, ruim pra leitor de tela -->
+Frutas:<br>
+Maçã<br>
+Banana<br>
+Uva<br>
+```html
+Isso é texto solto, não uma lista. Use `<ul>`. Sempre.
+
+- **`<ul>`** para itens sem ordem importante.
+- **`<ol>`** para sequência (passos, ranking, prioridades).
+- **`<dl>` / `<dt>` / `<dd>`** para glossários e pares termo-definição.
+- Aninhe **dentro do `<li>`**, não no meio do texto.
+- Nunca use `<br>` no lugar de lista.
+
+> Dica: se a ordem dos itens **faz diferença semântica** (passos de uma
+> receita, prioridade de features), é `<ol>`. Se trocar a ordem não
+> muda o sentido, é `<ul>`.
+
+No próximo nó, vamos ver **tabelas** — para dados tabulares (e só pra
+esses; layout em tabela é uma má prática histórica).

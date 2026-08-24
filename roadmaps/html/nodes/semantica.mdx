@@ -1,0 +1,238 @@
+---
+id: semantica
+title: "HTML Semântico: Dando Significado à Página"
+resources:
+  - title: "HTML Semântico (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/Semantics
+    type: doc
+    lang: pt
+    free: true
+  - title: "Referência de elementos HTML (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Reference/Elements
+    type: doc
+    lang: pt
+    free: true
+---
+
+Até aqui, vimos tags que descrevem **o que é cada pedaço** de texto: título,
+parágrafo, link, imagem. Mas a página tem também **regiões**: o cabeçalho,
+a navegação, o conteúdo principal, o rodapé.
+
+A gente poderia fazer tudo com `<div>`:
+
+```html
+<!-- ❌ Funciona, mas não diz nada -->
+<div class="header">
+  <div class="nav">...</div>
+</div>
+<div class="main">
+  <div class="post">...</div>
+</div>
+<div class="footer">...</div>
+```html
+Funciona — o navegador renderiza. Mas leitor de tela vê uma sopa de
+`<div>`s sem distinção. Mecanismo de busca não entende a estrutura. CSS
+fica mais difícil.
+
+O HTML5 trouxe **tags semânticas de seção** que descrevem o **papel** de
+cada região:
+
+```html
+<!-- ✅ Mesma página, agora com significado -->
+<header>
+  <nav>...</nav>
+</header>
+<main>
+  <article>...</article>
+</main>
+<footer>...</footer>
+```html
+Mesma renderização visual (sem CSS), mas com estrutura explícita.
+
+### As tags de landmark (região)
+
+Existem sete tags principais que definem **regiões** da página. São
+chamadas de *landmark regions* — leitores de tela permitem ao usuário
+pular diretamente para qualquer uma delas.
+
+```html
+<header>     <!-- cabeçalho da página ou de uma seção -->
+<nav>        <!-- navegação principal (menu, links de seção) -->
+<main>       <!-- conteúdo único e principal da página -->
+<article>    <!-- conteúdo autocontido (post, notícia, card) -->
+<section>    <!-- seção temática genérica com título -->
+<aside>      <!-- conteúdo relacionado tangencial (sidebar, callout) -->
+<footer>     <!-- rodapé da página ou de uma seção -->
+<address>    <!-- informação de contato -->
+```html
+A regra prática: **uma página tem um único `<main>`** (é o conteúdo
+principal), mas pode ter vários `<header>`, `<footer>`, `<article>` e
+`<section>` (um por bloco lógico).
+
+### Exemplo completo
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Receita de bolo de cenoura</title>
+</head>
+<body>
+  <header>
+    <h1>Cozinha da Ana</h1>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="/">Início</a></li>
+        <li><a href="/receitas">Receitas</a></li>
+        <li><a href="/sobre">Sobre</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <header>
+        <h2>Receita de bolo de cenoura</h2>
+        <p>Postado em 23 de agosto de 2026 por Ana Silva.</p>
+      </header>
+
+      <section>
+        <h3>Ingredientes</h3>
+        <ul>
+          <li>3 cenouras médias</li>
+          <li>4 ovos</li>
+          <!-- ... -->
+        </ul>
+      </section>
+
+      <section>
+        <h3>Modo de preparo</h3>
+        <ol>
+          <li>Preaqueça o forno a 180°C.</li>
+          <li>Bata tudo no liquidificador.</li>
+          <!-- ... -->
+        </ol>
+      </section>
+
+      <footer>
+        <p>Tags: <a href="/tags/bolo">bolo</a>, <a href="/tags/doce">doce</a></p>
+      </footer>
+    </article>
+
+    <aside>
+      <h3>Receitas parecidas</h3>
+      <ul>
+        <li><a href="/receitas/bolo-de-chocolate">Bolo de chocolate</a></li>
+        <li><a href="/receitas/bolo-de-mandioca">Bolo de mandioca</a></li>
+      </ul>
+    </aside>
+  </main>
+
+  <footer>
+    <p>© 2026 Cozinha da Ana. Feito com HTML semântico. 💚</p>
+    <address>Contato: <a href="mailto:ana@cozinha.com">ana@cozinha.com</a></address>
+  </footer>
+</body>
+</html>
+```html
+Note os detalhes:
+
+- **`<header>` aparece duas vezes**: uma na página (com o logo e nav) e
+  outra dentro do `<article>` (com o título do post). Ambos são
+  semanticamente válidos.
+- **`<nav aria-label="Principal">`** — `aria-label` dá um nome acessível
+  ao bloco de navegação, distinguindo-o de outros `nav` (ex: nav de
+  rodapé).
+- **`<aside>`** poderia ser movido para fora do `<main>` (é
+  tangencial). Depende do design.
+- **`<address>`** no rodapé para contato é o uso canônico.
+
+### `<article>` vs. `<section>` vs. `<div>`
+
+A confusão clássica:
+
+- **`<article>`** — conteúdo **independente** que faria sentido sozinho.
+  Post de blog, notícia, card de produto, comentário. Tem seu próprio
+  `<header>`/`<footer>`.
+- **`<section>`** — agrupamento **temático** dentro de um contexto. Se
+  remover, o conteúdo perde o agrupamento. Precisa de um título
+  (`<h2>`, `<h3>`...).
+- **`<div>`** — quando não há significado semântico. Puro container de
+  estilo.
+
+```html
+<article>  <!-- post completo, faz sentido sozinho -->
+  <h2>O lançamento do produto</h2>
+  <p>...</p>
+  <section>  <!-- agrupamento: "features" -->
+    <h3>Features</h3>
+    <p>...</p>
+  </section>
+  <section>  <!-- agrupamento: "preço" -->
+    <h3>Preço</h3>
+    <p>...</p>
+  </section>
+</article>
+```html
+### Headings (títulos) e a hierarquia do documento
+
+A hierarquia `h1` → `h6` é o **esqueleto semântico** mais importante.
+Leitores de tela oferecem "atalho por heading" — o usuário pula direto
+para o `h2` "Ingredientes", por exemplo.
+
+```html
+<body>
+  <h1>Cozinha da Ana</h1>          <!-- nome do site -->
+  <main>
+    <article>
+      <h2>Bolo de cenoura</h2>      <!-- título do post -->
+      <section>
+        <h3>Ingredientes</h3>      <!-- seção -->
+        <section>
+          <h4>Para a massa</h4>    <!-- subseção -->
+          <h4>Para a cobertura</h4>
+        </section>
+      </section>
+      <section>
+        <h3>Modo de preparo</h3>
+      </section>
+    </article>
+  </main>
+</body>
+```html
+Regra: **não pule níveis à toa** (ir de `h1` direto para `h3`).
+Pode pular quando o design exige, mas revise se a hierarquia faz sentido
+como sumário.
+
+### Tags de texto que são "poliglota"
+
+Algumas tags têm **significado duplo** dependendo do contexto:
+
+- **`<small>`** — não é só "texto pequeno". Significa "nota de rodapé,
+  comentário lateral, letra miúda legal". Visual fica pequeno por padrão.
+- **`<s>`** — texto **riscado** porque está errado ou desatualizado. (Não
+  confunda com `<del>`, que é texto deletado, com semântica de mudança.)
+- **`<u>`** — texto **sublinhado** com significado de "termo
+  semântico" (nome próprio chinês, palavra com erro ortográfico marcado,
+  etc.). Por padrão tem sublinhado, mas pode mudar.
+- **`<time datetime="...">`** — marca uma data/hora de forma que
+  máquinas entendam: `<time datetime="2026-08-23">23 de agosto de
+  2026</time>`.
+- **`<mark>`** — texto destacado (como marca-texto amarelo).
+
+- **Use tags semânticas** (`<header>`, `<nav>`, `<main>`, `<article>`,
+  `<section>`, `<aside>`, `<footer>`) em vez de `<div>` quando possível.
+- **Uma página tem um único `<main>`**, mas pode ter vários `<article>` e
+  `<section>`.
+- **Hierarquia de headings** (`h1` → `h6`) é o esqueleto mais importante
+  para acessibilidade.
+- **`<article>`** é conteúdo independente; **`<section>`** é agrupamento
+  temático; **`<div>`** é quando não há semântica.
+
+> Dica: tente instalar a extensão "HeadingsMap" no Chrome/Firefox. Ela
+> mostra a hierarquia de headings da página em tempo real. Se a estrutura
+> parecer confusa, é sinal de que a semântica precisa melhorar.
+
+No próximo nó, vamos colocar **mídia** na página — áudio, vídeo, e quando
+usar cada um.

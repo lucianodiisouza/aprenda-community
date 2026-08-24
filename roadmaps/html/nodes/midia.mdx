@@ -1,0 +1,167 @@
+---
+id: midia
+title: "Áudio, Vídeo e Embeds"
+resources:
+  - title: "Elemento <video> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/video
+    type: doc
+    lang: pt
+    free: true
+  - title: "Elemento <audio> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/audio
+    type: doc
+    lang: pt
+    free: true
+---
+
+Antes do HTML5, colocar vídeo e áudio na web exigia Flash, Silverlight
+ou um player de terceiros. Hoje é nativo.
+
+### `<video>` — vídeo
+
+```html
+<video src="paisagem.mp4" controls width="800">
+  <p>Seu navegador não suporta vídeo HTML5.
+     <a href="paisagem.mp4">Baixe o vídeo</a>.</p>
+</video>
+```html
+- **`src`** — o arquivo. Pode ser substituído por `<source>` (ver
+  abaixo).
+- **`controls`** — mostra os controles nativos (play, pause, volume,
+  timeline). Sem isso, o vídeo aparece, mas sem controles.
+- **`width`** (e **`height`**) — tamanho inicial. Sempre declare, mesmo
+  que o CSS vá sobrescrever, para evitar o pulo de layout.
+- **Conteúdo entre as tags** é **fallback** para navegadores antigos.
+  Pode ser um parágrafo, um link para download, o que for.
+
+Atributos comuns:
+
+- **`autoplay`** — inicia automaticamente. **Quase nunca use.** Bloqueia
+  o carregamento da página, irrita o usuário, e navegadores modernos
+  ignoram sem `muted`.
+- **`muted`** — começa mudo. Combinado com `autoplay` é a única forma de
+  autoplay "aceitável" (ex: vídeo de fundo mudo).
+- **`loop`** — repete automaticamente.
+- **`poster="capa.jpg"`** — imagem mostrada antes do play.
+- **`preload="auto|metadata|none"`** — dica de quão agressivo o
+  navegador deve pré-carregar. `metadata` é o padrão razoável.
+
+### Múltiplos formatos com `<source>`
+
+Nem todo navegador suporta todo formato. Você pode oferecer vários:
+
+```html
+<video controls width="800" poster="capa.jpg">
+  <source src="video.webm" type="video/webm">
+  <source src="video.mp4" type="video/mp4">
+  <p>Seu navegador não suporta vídeo HTML5.</p>
+</video>
+```html
+O navegador escolhe o **primeiro** que consegue tocar. Ordem importa —
+coloque o mais eficiente/compatível primeiro.
+
+### Acessibilidade de vídeo
+
+Vídeo precisa de **legenda** para ser acessível. Use o formato
+**WebVTT** (`.vtt`):
+
+```vtt
+WEBVTT
+
+00:00:00.000 --> 00:00:04.000
+Olá, hoje vamos falar de HTML semântico.
+
+00:00:04.000 --> 00:00:08.000
+É um dos temas mais importantes da web moderna.
+```html
+E conecte ao vídeo:
+
+```html
+<video controls>
+  <source src="video.mp4" type="video/mp4">
+  <track kind="captions" src="legendas.pt-BR.vtt" srclang="pt-BR" label="Português" default>
+  <track kind="subtitles" src="legendas.en.vtt" srclang="en" label="English">
+</video>
+```html
+`<track>` com `kind="captions"` ou `kind="subtitles"` ativa as legendas.
+`default` marca a legenda inicial.
+
+### `<audio>` — áudio
+
+Mesma ideia, sem a parte visual:
+
+```html
+<audio controls>
+  <source src="musica.mp3" type="audio/mpeg">
+  <source src="musica.ogg" type="audio/ogg">
+  <p>Seu navegador não suporta áudio HTML5.</p>
+</audio>
+```html
+`autoplay` aqui é ainda mais irritante que em vídeo. Quase sempre é melhor
+deixar o usuário escolher quando tocar.
+
+### `<iframe>` — incorporando conteúdo de outros lugares
+
+Para embeber um vídeo do YouTube, um mapa do Google Maps, um post do
+CodePen, etc.:
+
+```html
+<iframe
+  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+  width="560"
+  height="315"
+  title="Vídeo engraçado"
+  allowfullscreen
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+</iframe>
+```html
+Cuidados com `<iframe>`:
+
+- **Sempre coloque `title`** — descrever o conteúdo para leitores de tela.
+- **Sandbox por padrão** — se for conteúdo de terceiros em que você não
+  confia, use `sandbox=""` com as permissões mínimas:
+  ```html
+  <iframe src="https://exemplo.com" sandbox="allow-scripts"></iframe>
+  ```
+- **`loading="lazy"`** — não carrega até o usuário rolar perto:
+  ```html
+  <iframe src="..." loading="lazy"></iframe>
+  ```
+- **Evite iframes em escala** — cada iframe é um documento completo, com
+  seu próprio JS, CSS, requisições. Dez iframes = dez sites rodando.
+
+### `<canvas>` e `<svg>` (menção honrosa)
+
+- **`<canvas>`** é uma **superfície de desenho** controlada por JavaScript.
+  Gráficos dinâmicos, jogos, visualizações:
+  ```html
+  <canvas id="grafico" width="400" height="200"></canvas>
+  ```
+  Para saber mais, espere a trilha de **JavaScript**.
+
+- **`<svg>`** é **gráfico vetorial embutido** no HTML. Bom para ícones,
+  logos, ilustrações. Cada elemento do SVG é "vivo" no DOM (pode ter
+  eventos, ser estilizado com CSS):
+  ```html
+  <svg viewBox="0 0 24 24" width="24" height="24" aria-label="Ícone de check">
+    <path d="M5 12l5 5L20 7" stroke="green" stroke-width="2" fill="none"/>
+  </svg>
+  ```
+  Note `aria-label` para acessibilidade do SVG inline.
+
+- **`<video controls poster>`** para vídeo com capa e controles nativos.
+- **`<source>`** dentro do `<video>`/`<audio>` permite múltiplos formatos.
+- **`<track>`** adiciona legendas (WebVTT) — **obrigatório para
+  acessibilidade**.
+- **`<iframe>`** para embeds de terceiros; sempre com `title`; cuidado
+  com `sandbox` quando o conteúdo é menos confiável.
+- **`<canvas>`** é desenhado por JS; **`<svg>`** é declarativo e faz parte
+  do DOM.
+
+> Dica: legendas não são "nice to have". Para qualquer vídeo com fala,
+> elas são **obrigatórias** se você quer ser inclusivo. O custo de criar
+> um arquivo `.vtt` é baixo (você pode gerar automaticamente e revisar
+> depois).
+
+No próximo nó, vamos falar de **acessibilidade** — não só vídeo, mas a
+página inteira. É o nó que une tudo o que vimos até aqui.

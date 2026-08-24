@@ -1,0 +1,295 @@
+---
+id: projeto-final
+title: "Projeto Final: Landing Page Completa"
+resources:
+  - title: "MDN: HTML element reference"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element
+    type: doc
+    lang: pt
+    free: true
+  - title: "HTML5 Boilerplate (template inicial)"
+    url: https://html5boilerplate.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você passou por 13 nós: estrutura, textos, links, imagens, listas, tabelas,
+formulários, semântica, mídia, acessibilidade, meta tags. Hora de juntar
+tudo.
+
+O objetivo deste projeto é produzir uma **landing page completa e
+acessível** — uma página de apresentação de um produto, serviço, evento
+ou projeto pessoal. Ela deve ser:
+
+- **HTML semântico** (tags certas em cada região).
+- **Acessível** (labels, alt, contraste, navegação por teclado).
+- **Responsiva** (a tag `<meta viewport>` no lugar; o CSS fica pra
+  próxima trilha).
+- **Com preview compartilhável** (Open Graph configurado).
+
+### O briefing
+
+**Tema sugerido:** "Lançamento do app X" — pode ser um app fictício ou um
+projeto seu. Se preferir, adapte para:
+
+- Uma **página de evento** (palestra, workshop, meetup).
+- Uma **página de projeto pessoal** (seu portfólio, um side project).
+- Uma **página de produto** (a ferramenta que você sempre quis).
+
+O importante é que tenha um **propósito claro** e **conteúdo suficiente**
+para exercitar todas as tags.
+
+### Estrutura recomendada
+
+```text┌────────────────────────────────────────┐
+│  <header>                              │
+│    Logo + <nav> (âncoras para as       │
+│    seções: Sobre, Features, Preço,     │
+│    Contato)                            │
+├────────────────────────────────────────┤
+│  <main>                                │
+│    <section> Hero: título + subtítulo  │
+│      + CTA + imagem                    │
+│    <section> Features (3-6 itens)      │
+│    <section> Como funciona             │
+│      (passos numerados)                │
+│    <section> Depoimentos               │
+│    <section> Preço/Planos              │
+│    <section> FAQ (<details>)           │
+│    <section> Contato (<form>)          │
+├────────────────────────────────────────┤
+│  <footer>                              │
+│    Links, copyright, <address>         │
+└────────────────────────────────────────┘
+```html
+### Checklist de qualidade
+
+Antes de considerar pronto, cada item aqui:
+
+#### Estrutura e semântica
+- [ ] Tem `<!DOCTYPE html>` e `<html lang="pt-BR">`.
+- [ ] `<head>` tem `charset`, `viewport`, `title` único por página.
+- [ ] Tem um único `<main>`.
+- [ ] Cabeçalho da página em `<header>`, navegação em `<nav>`.
+- [ ] Rodapé em `<footer>`.
+- [ ] Seções com títulos (`h2` ou `h3`) — sem pular de `h1` direto pra
+      `h4`.
+- [ ] Pelo menos um `<article>` (ex: depoimento, feature) com `header`
+      e/ou `footer` próprios.
+- [ ] `<aside>` para conteúdo tangencial (callout, relacionados).
+- [ ] Onde fizer sentido, `<figure>` com `<img>` e `<figcaption>`.
+
+#### Imagens e mídia
+- [ ] Todas as `<img>` têm `alt` descritivo (ou `alt=""` se decorativas).
+- [ ] `<img>` tem `width` e `height` declarados (evita CLS).
+- [ ] Pelo menos uma imagem responsiva com `srcset` ou `<picture>`.
+- [ ] Se houver vídeo, tem `<track>` de legendas.
+
+#### Links e navegação
+- [ ] Texto dos links faz sentido fora do contexto (sem "clique aqui").
+- [ ] Links externos com `target="_blank"` também têm `rel="noopener
+      noreferrer"`.
+- [ ] Pelo menos uma âncora interna (link "#features" rolando para a
+      seção).
+
+#### Formulário (se aplicável)
+- [ ] Cada input tem `<label for>` correspondente.
+- [ ] `name` em todos os inputs que devem ser enviados.
+- [ ] `type` correto (`email`, `tel`, etc.) para teclado certo no
+      celular.
+- [ ] `required` onde for o caso.
+- [ ] Pelo menos um campo com validação (`pattern`, `minlength`).
+- [ ] Mensagens de erro acessíveis (`aria-describedby`, `aria-invalid`).
+
+#### Acessibilidade
+- [ ] Navegação completa só com teclado (Tab por toda a página).
+- [ ] Ordem dos headings faz sentido como sumário.
+- [ ] Contraste de cor adequado (checar com ferramenta).
+- [ ] Foco visível em todos os elementos interativos.
+- [ ] HTML válido (checar no
+      [W3C Validator](https://validator.w3.org/)).
+
+#### Meta tags e preview
+- [ ] `<title>` descritivo e único (~60 chars).
+- [ ] `<meta name="description">` (~155 chars).
+- [ ] Open Graph completo (`og:title`, `og:description`, `og:image`,
+      `og:url`).
+- [ ] Twitter Card configurado.
+- [ ] Favicon presente.
+- [ ] `<link rel="canonical">` apontando para a URL canônica.
+
+### Esqueleto sugerido
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nome do Produto — Frase de Efeito</title>
+  <meta name="description" content="Descrição do produto em até 155 chars.">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Nome do Produto">
+  <meta property="og:description" content="Descrição do produto.">
+  <meta property="og:image" content="https://seusite.com/og.png">
+  <meta property="og:url" content="https://seusite.com/">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+</head>
+<body>
+  <header>
+    <a href="/" aria-label="Página inicial">
+      <img src="/logo.svg" alt="Nome do Produto" width="120" height="40">
+    </a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#como-funciona">Como funciona</a></li>
+        <li><a href="#preco">Preço</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section>
+      <h1>O produto que resolve X de forma simples.</h1>
+      <p>Em uma frase, o que o produto faz e pra quem.</p>
+      <a href="#contato" role="button">Quero experimentar</a>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+      <h2>O que você ganha</h2>
+      <article>
+        <h3>Feature 1</h3>
+        <p>Descrição curta do benefício.</p>
+      </article>
+      <article>
+        <h3>Feature 2</h3>
+        <p>Descrição curta do benefício.</p>
+      </article>
+      <article>
+        <h3>Feature 3</h3>
+        <p>Descrição curta do benefício.</p>
+      </article>
+    </section>
+
+    <!-- Como funciona -->
+    <section id="como-funciona">
+      <h2>Como funciona</h2>
+      <ol>
+        <li>Você se cadastra em 30 segundos.</li>
+        <li>Configura seu espaço.</li>
+        <li>Começa a usar.</li>
+      </ol>
+    </section>
+
+    <!-- Preço -->
+    <section id="preco">
+      <h2>Planos</h2>
+      <article>
+        <h3>Grátis</h3>
+        <p>Para começar.</p>
+        <ul>
+          <li>Feature A</li>
+          <li>Feature B</li>
+        </ul>
+      </article>
+      <article>
+        <h3>Pro</h3>
+        <p>Para times.</p>
+        <ul>
+          <li>Tudo do Grátis</li>
+          <li>Feature C</li>
+          <li>Feature D</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- FAQ com <details> -->
+    <section>
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Como funciona o trial?</summary>
+        <p>Você tem 14 dias para experimentar...</p>
+      </details>
+      <details>
+        <summary>Posso cancelar a qualquer momento?</summary>
+        <p>Sim, sem multa.</p>
+      </details>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato">
+      <h2>Fale com a gente</h2>
+      <form action="/contato" method="post">
+        <div>
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" required minlength="2">
+        </div>
+        <div>
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+          <label for="mensagem">Mensagem</label>
+          <textarea id="mensagem" name="mensagem" rows="5" required></textarea>
+        </div>
+        <button type="submit">Enviar</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 Nome do Produto. Feito com HTML semântico.</p>
+    <address>
+      Contato: <a href="mailto:contato@exemplo.com">contato@exemplo.com</a>
+    </address>
+  </footer>
+</body>
+</html>
+```html
+### Validação e publicação
+
+Quando terminar, valide o HTML no
+[W3C Validator](https://validator.w3.org/) (cola o HTML, vê os erros),
+rode o **Lighthouse → Accessibility** no DevTools, e teste com teclado.
+Depois publique:
+
+- **GitHub Pages** — `index.html` na raiz de um repo + ativar Pages
+  em Settings.
+- **Netlify / Vercel / Cloudflare Pages** — arraste a pasta, publica
+  com HTTPS grátis.
+- **Servidor próprio** — o `index.html` no document root, com HTTPS.
+
+### Compartilhe
+
+Esse projeto é o que tem mais cara de "**isso é seu**" no portfólio.
+Mostra que você entende HTML semântico, acessibilidade, e os
+bastidores de SEO. Coloque no GitHub e compartilhe.
+
+- A **landing page** deve ser o **projeto-showcase** do que você
+  aprendeu.
+- Use a checklist acima como gabarito de qualidade.
+- **Publique** — de nada adianta uma página no seu HD.
+- **Compartilhe** — LinkedIn, GitHub, comunidade.
+
+> Dica: depois de publicar, cole o link no
+> [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/)
+> e no Twitter para confirmar que o preview aparece bonito. Mude o que
+> precisar até ficar do jeito que você quer.
+
+---
+
+🎉 **Você terminou a trilha de HTML.** Daqui pra frente, as próximas
+trilhas (CSS, JavaScript, Frontend) pegam o que você construiu aqui e
+adicionam as outras camadas — estilo, comportamento, framework. Mas
+HTML continua sendo o **alicerce**: domine isso, e tudo o mais fica
+mais fácil.

@@ -1,0 +1,56 @@
+---
+id: introducao
+title: "Introdução: O que é HTML"
+resources:
+  - title: "Introdução ao HTML (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/HTML/Introduction_to_HTML
+    type: doc
+    lang: pt
+    free: true
+  - title: "Como a Internet funciona (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/Common_questions/Web_mechanics/How_does_the_Internet_work
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Antes de qualquer linha de código, uma pergunta: **o que aparece quando você
+abre um site no navegador?**
+
+Você digita `aprenda.oprimo.dev` na barra de endereço, o navegador (Chrome,
+Firefox, Safari…) conversa com um servidor lá na nuvem, e recebe de volta um
+**arquivo de texto**. Esse arquivo é escrito numa linguagem chamada **HTML**.
+
+**HTML** vem de *HyperText Markup Language* — em tradução livre, "linguagem
+de marcação para hipertexto". Não é uma linguagem de programação (não tem
+lógica, loops ou condições). É uma linguagem de **marcação**: você marca o
+texto dizendo "isso é um título", "isso é um parágrafo", "isso é uma imagem",
+"isso é um link". O navegador lê essas marcas e desenha a página na tela.
+
+Pense no HTML como o **esqueleto** de uma página. Depois entra o **CSS**
+(aparência — cores, fontes, layout) e o **JavaScript** (comportamento —
+cliques, animações, carregar dados). Mas sem HTML, não tem página.
+
+Um arquivo HTML nada mais é que isso:
+
+```html
+<p>Olá, mundo!</p>
+```html
+Isso é um parágrafo. O `<p>` é a "marcação" — uma **tag** que diz "aqui
+começa um parágrafo", e o `</p>` diz "aqui termina". Entre as duas, vai o
+texto que aparece na tela.
+
+- **HTML é o esqueleto de toda página web.** Sem ele, o navegador não tem o
+  que mostrar.
+- **Tags** são os "marca-textos" que dizem o que é cada parte.
+- **O navegador lê, interpreta e renderiza.** Você escreve; ele desenha.
+- HTML sozinho é **sem graça** (preto, branco, sem espaçamento bonito), mas
+  é onde tudo começa.
+
+> Dica: existem trilhas específicas de CSS e JavaScript saindo. Mas o caminho
+> recomendado é **HTML primeiro**, porque ele é a fundação de tudo que vem
+> depois. CSS sem HTML não tem o que estilizar; JS sem HTML não tem onde
+> rodar.
+
+No próximo nó, vamos abrir um arquivo `.html` de verdade e ver a **estrutura
+mínima** que toda página precisa ter.

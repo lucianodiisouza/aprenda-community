@@ -1,0 +1,152 @@
+---
+id: imagens
+title: "Imagens, Figuras e SVG"
+resources:
+  - title: "Elemento <img> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/img
+    type: doc
+    lang: pt
+    free: true
+  - title: "Imagens responsivas: srcset e picture (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images
+    type: doc
+    lang: pt
+    free: true
+---
+
+A web é visual. Por isso, imagens são parte central de quase toda página.
+Mas elas vêm com pegadinhas: acessibilidade, performance, responsividade.
+
+O básico:
+
+```html
+<img src="gato.jpg" alt="Gato laranja dormindo em uma caixa de papelão.">
+```html
+Três coisas em uma tag:
+
+- **`src`** — caminho ou URL da imagem. Pode ser local (`gato.jpg`) ou
+  externa (`https://...`).
+- **`alt`** — texto alternativo. **Obrigatório.** Descreve a imagem para
+  quem não consegue vê-la (leitor de tela, conexão lenta, navegador com
+  imagens desabilitadas).
+- **Tag de fechamento** — `<img>` é uma das exceções do HTML: **não tem
+  `</img>`**. Ela é "void", vazia por dentro.
+
+### O `alt` na prática
+
+A regra é: descreva a imagem como se estivesse contando para alguém pelo
+telefone.
+
+```html
+<!-- ✅ Descreve o conteúdo -->
+<img src="grafico.png"
+     alt="Gráfico de barras: vendas subiram 30% de 2024 para 2025.">
+
+<!-- ❌ "imagem1.png" não diz nada -->
+<img src="grafico.png" alt="imagem1">
+
+<!-- ❌ "imagem" também não -->
+<img src="grafico.png" alt="imagem">
+
+<!-- ❌ Repete o nome do arquivo -->
+<img src="grafico.png" alt="grafico.png">
+```html
+Exceção importante: **imagens puramente decorativas** devem ter `alt=""`
+(vazio, mas presente). Isso diz "ignore, sou decoração":
+
+```html
+<img src="textura-fundo.png" alt="">
+```html
+Se você tem dúvida entre "descreve" e "deixa vazio", pergunte: "se essa
+imagem sumisse, a página faria menos sentido?" Se sim, descreve. Se não,
+deixa vazio.
+
+### Largura, altura e layout
+
+Você pode forçar tamanho:
+
+```html
+<img src="foto.jpg" alt="Equipe reunida" width="400" height="300">
+```html
+Mas o mais comum hoje em dia é **não fixar** e deixar o CSS dimensionar.
+A exceção importante: sempre declare `width` e `height` no HTML (mesmo que
+o CSS vá sobrescrever) para evitar o "salto" de layout enquanto a imagem
+carrega. O navegador reserva o espaço com base nessas dimensões.
+
+### Imagens responsivas (`srcset` e `sizes`)
+
+Você tem uma imagem grande (1920px) e quer que o celular baixe a versão
+pequena (480px) em vez de desperdiçar banda:
+
+```html
+<img
+  src="foto-800.jpg"
+  alt="Vista da praia ao entardecer"
+  srcset="foto-400.jpg 400w,
+          foto-800.jpg 800w,
+          foto-1600.jpg 1600w"
+  sizes="(max-width: 600px) 100vw, 800px">
+```html
+O navegador escolhe qual baixar. `srcset` lista as opções; `sizes` diz
+"em telas até 600px, a imagem ocupa toda a largura; senão, ocupa 800px".
+
+### `<picture>` para casos mais complexos
+
+Quando você quer **formatos diferentes** (ex: WebP pra navegadores
+modernos, JPEG pra antigos) ou **arte diferente por breakpoint** (ex: um
+crop mobile vs. desktop), use `<picture>`:
+
+```html
+<picture>
+  <source srcset="foto.webp" type="image/webp">
+  <source srcset="foto-mobile.jpg" media="(max-width: 600px)">
+  <img src="foto.jpg" alt="Vista da praia ao entardecer">
+</picture>
+```html
+`<picture>` é um **container**. A imagem de fato é a tag `<img>` dentro.
+
+### `<figure>` e `<figcaption>` — imagens com legenda
+
+Quando a imagem tem um significado próprio e merece uma legenda, use
+`<figure>`:
+
+```html
+<figure>
+  <img src="grafico-vendas.png" alt="Vendas cresceram 30% entre 2024 e 2025.">
+  <figcaption>Vendas anuais de 2020 a 2025, em milhões de reais.</figcaption>
+</figure>
+```html
+`<figure>` pode envolver imagens, vídeos, diagramas, trechos de código...
+qualquer conteúdo que tem uma legenda.
+
+### SVG inline vs. arquivo
+
+Você pode usar SVG de duas formas:
+
+- **Como arquivo**: `<img src="logo.svg" alt="Logo da empresa">`. Simples,
+  fácil de cachear.
+- **Inline** (colar o XML do SVG dentro do HTML): permite manipular com
+  CSS e JS, mas pesa mais o HTML.
+
+```html
+<!-- Como arquivo -->
+<img src="logo.svg" alt="Logo da Aprenda" width="120" height="40">
+
+<!-- Inline (resumido) -->
+<svg viewBox="0 0 120 40" aria-label="Logo da Aprenda" role="img">
+  <text x="0" y="30" font-size="24" fill="green">Aprenda</text>
+</svg>
+```html
+Note o **`aria-label` e `role="img"`** no SVG inline para acessibilidade.
+
+- **`<img>`** carrega uma imagem. Tem `src` e `alt` (obrigatório).
+- **`alt`** descreve a imagem; `alt=""` para decorativas.
+- **`srcset` e `sizes`** servem imagens de tamanho certo por dispositivo.
+- **`<picture>`** troca o formato ou a arte por breakpoint.
+- **`<figure>` + `<figcaption>`** para imagens com legenda.
+
+> Dica: sempre declare `width` e `height` no HTML para evitar o pulo de
+> layout (CLS). Pode sobrescrever via CSS à vontade.
+
+No próximo nó, vamos organizar informações em **listas** — ordinais,
+não-ordenas e de definição.

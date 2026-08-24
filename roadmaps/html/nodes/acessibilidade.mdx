@@ -1,0 +1,219 @@
+---
+id: acessibilidade
+title: "Acessibilidade: HTML para Todo Mundo"
+resources:
+  - title: "HTML e acessibilidade (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/Accessibility/HTML
+    type: doc
+    lang: pt
+    free: true
+  - title: "Web Content Accessibility Guidelines (WCAG) — versão oficial"
+    url: https://www.w3.org/WAI/standards-guidelines/wcag/
+    type: doc
+    lang: pt
+    free: true
+---
+
+A web é para **todo mundo**. Isso inclui pessoas com deficiência visual
+(que usam leitor de tela), motora (que navegam só com teclado ou com
+comando de voz), cognitiva, auditiva. Boas práticas de HTML cobrem a
+maioria das barreiras.
+
+### Os 4 princípios do WCAG
+
+O padrão internacional de acessibilidade (WCAG) tem 4 princípios,
+mnemônico **POUR**:
+
+- **Perceptível** — a informação tem que ser apresentada de forma que o
+  usuário consiga perceber. Texto alternativo em imagens, legenda em
+  vídeo, contraste de cor.
+- **Operável** — o usuário tem que conseguir interagir. Tudo acessível
+  por teclado, sem limite de tempo impossível, sem conteúdo que pisca
+  (que pode causar convulsão).
+- **Compreensível** — o conteúdo tem que ser legível. Linguagem clara,
+  comportamento previsível, ajuda pra erros em formulários.
+- **Robusto** — o conteúdo tem que funcionar com tecnologias assistivas
+  atuais e futuras. HTML válido, semântico.
+
+### Práticas que já passamos neste trilha
+
+Boa parte da acessibilidade é grátis se você seguir o que já vimos:
+
+| O que você já aprendeu | Por que é acessível                            |
+| ---------------------- | ---------------------------------------------- |
+| `<h1>`-`<h6>` em ordem | Leitor de tela oferece "pular por heading"     |
+| `<label for="id">`     | Rótulo é lido quando o input recebe foco       |
+| `alt` em imagens       | Leitor descreve; conexões lentas veem texto   |
+| Tags semânticas        | Leitor permite pular entre landmarks           |
+| `lang` no `<html>`     | Leitor usa pronúncia certa do idioma           |
+| Texto em link descritivo | "clique aqui" é inútil fora do contexto      |
+| `<caption>` em tabela  | Leitor anuncia o que é a tabela                |
+| `scope` em `<th>`      | Leitor associa célula ao rótulo de coluna/linha |
+| `<track>` de legendas  | Vídeo acessível para surdos                    |
+
+### Atributos `aria-*` — quando o HTML não basta
+
+ARIA (Accessible Rich Internet Applications) é um conjunto de atributos
+que **complementa** a semântica do HTML. A regra geral: **prefira
+HTML semântico; só use ARIA quando HTML não der conta.**
+
+```html
+<!-- Botão que precisa de JS para funcionar -->
+<div role="button" tabindex="0" onclick="abrirMenu()">Menu</div>
+
+<!-- vs. -->
+
+<button type="button" onclick="abrirMenu()">Menu</button>
+```html
+A primeira versão precisa de `role`, `tabindex` e `onclick`. A segunda
+já tem tudo isso de graça. **Use `<button>`.**
+
+Mas há casos em que ARIA ajuda:
+
+```html
+<!-- Marca a região como um banner para leitores de tela -->
+<header role="banner">
+
+<!-- Esconde visualmente, mantém no leitor de tela -->
+<span class="sr-only">Fechar</span>
+
+<!-- Indica que um campo é obrigatório -->
+<input type="text" aria-required="true" required>
+
+<!-- Associa uma mensagem de erro a um input -->
+<input type="email" id="email" aria-describedby="email-ajuda" aria-invalid="true">
+<p id="email-ajuda">Use o formato nome@exemplo.com</p>
+
+<!-- Marca a região como "ao vivo" — anuncia mudanças dinâmicas -->
+<div aria-live="polite">Salvo com sucesso!</div>
+```html
+#### O `sr-only` clássico
+
+Para conteúdo que **deve existir para leitores de tela**, mas não
+precisa aparecer visualmente:
+
+```css
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+```html
+Use para rótulos extras em ícones, instruções contextuais em campos
+complexos, etc.
+
+### Foco de teclado
+
+Usuários de teclado navegam com **Tab** e atalhos. Por padrão, o
+navegador foca: links, botões, inputs, selects, textareas. **Não
+remova o outline de foco** sem oferecer uma alternativa visível:
+
+```css
+/* ❌ Péssimo: remove o indicador de foco para todo mundo */
+:focus { outline: none; }
+
+/* ✅ Mantém o foco padrão, ou usa um estilo claro */
+:focus-visible {
+  outline: 2px solid #1e90ff;
+  outline-offset: 2px;
+}
+```html
+E para elementos não focáveis que precisam ser focáveis (ex: um `<div>`
+que age como botão), use `tabindex="0"`. Para elementos que devem sair
+do fluxo de tab, `tabindex="-1"` (usado em JavaScript para focar
+programaticamente, por exemplo).
+
+### Contraste de cor
+
+Texto sobre fundo precisa de contraste suficiente:
+
+- **Texto normal**: razão de contraste de pelo menos **4.5:1**.
+- **Texto grande** (≥ 18pt ou 14pt bold): pelo menos **3:1**.
+
+Ferramentas para checar:
+
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+- Chrome DevTools → Elements → Accessibility tab
+
+### Formulários acessíveis
+
+```html
+<form>
+  <label for="email">E-mail</label>
+  <input type="email" id="email" name="email"
+         aria-describedby="email-ajuda"
+         required>
+  <p id="email-ajuda">Você vai usar isso para entrar na sua conta.</p>
+
+  <label for="senha">Senha</label>
+  <input type="password" id="senha" name="senha"
+         aria-describedby="senha-ajuda"
+         aria-invalid="false"
+         minlength="8" required>
+  <p id="senha-ajuda">Mínimo 8 caracteres.</p>
+
+  <button type="submit">Entrar</button>
+</form>
+```html
+Detalhe importante: **`aria-describedby`** conecta o campo a uma
+descrição extra (placeholder, ajuda, requisito). Leitor de tela lê o
+rótulo **e** a descrição.
+
+Para erros, use **`aria-invalid="true"`** + **`aria-describedby`** apontando
+para a mensagem de erro:
+
+```html
+<input type="email" id="email" aria-invalid="true"
+       aria-describedby="email-erro">
+<p id="email-erro" role="alert">E-mail inválido. Confira a digitação.</p>
+```html
+`role="alert"` faz o leitor anunciar a mudança imediatamente (em vez de
+esperar o usuário focar o campo).
+
+### Atalhos de teclado
+
+Cada página interativa se beneficia de atalhos. Os universais
+(modifier pode variar) são:
+
+- **Tab / Shift+Tab** — próximo / anterior campo focável.
+- **Enter** — submeter form, ativar botão.
+- **Esc** — fechar modal, cancelar.
+- **Setas** — navegar em radio group, slider, select.
+- **Espaço** — toggle checkbox, ativar botão.
+- **/** — em muitas UIs, foca a busca (convenção).
+
+Documente os atalhos específicos da sua aplicação. Leitores de tela
+têm seus próprios atalhos sobrepostos — pense nisso antes de mapear
+teclas "populares" demais.
+
+### Testes de acessibilidade
+
+- **Navegação por teclado**: tire a mão do mouse, use só Tab. Tudo
+  alcançável? A ordem faz sentido?
+- **Leitor de tela**: NVDA (Windows, grátis), VoiceOver (Mac, nativo),
+  Orca (Linux, grátis). Experimente ouvir sua página.
+- **Lighthouse** (Chrome DevTools → Lighthouse → Accessibility): passa
+  uma checagem automática. Não substitui teste manual, mas pega o
+  básico.
+- **axe DevTools** (extensão de browser): mais detalhado que o
+  Lighthouse, explica o porquê de cada problema.
+
+- **Acessibilidade é parte do HTML, não um "extra".** Seguir
+  semântica já cobre 80%.
+- **HTML semântico primeiro, ARIA depois.** Use ARIA para gaps que
+  HTML não cobre.
+- **Sempre teste com teclado** e, idealmente, com leitor de tela.
+- **Contraste, foco, alt, label, role, keyboard**: as palavras-chave.
+
+> Dica: imagine que você perdeu o mouse por uma semana. Tente usar seu
+> próprio site só com teclado. As barreiras aparecem em minutos.
+
+No próximo nó, vamos ver os bastidores — **meta tags**, Open Graph e
+favicon, que controlam como sua página aparece em mecanismos de busca e
+redes sociais.

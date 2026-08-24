@@ -1,0 +1,104 @@
+---
+id: links
+title: "Links: Navegando Entre Páginas"
+resources:
+  - title: "Elemento <a> (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/a
+    type: doc
+    lang: pt
+    free: true
+  - title: "What is a URL? (MDN EN)"
+    url: https://developer.mozilla.org/en-US/docs/Learn/Common_questions/Web_mechanics/What_is_a_URL
+    type: doc
+    lang: en
+    free: true
+---
+
+O "H" e o "T" de **H**yper**T**ext existem por causa de uma ideia simples:
+um documento pode **apontar** para outro. Esse apontamento é o **link**, e a
+tag que faz isso é a `<a>` (de *anchor*).
+
+```html
+<a href="https://developer.mozilla.org/pt-BR/">MDN em português</a>
+```html
+O atributo `href` (de *hypertext reference*) é o **endereço** pra onde o
+link aponta. Tudo entre `<a>` e `</a>` é o **texto clicável**.
+
+Existem três tipos principais de `href`:
+
+```html
+<!-- 1. URL absoluta: outro site -->
+<a href="https://exemplo.com/pagina">Página externa</a>
+
+<!-- 2. Caminho relativo: outra página do mesmo site -->
+<a href="/sobre">Sobre nós</a>
+<a href="artigos/meu-artigo.html">Meu artigo</a>
+<a href="../contato.html">Contato</a>
+
+<!-- 3. Âncora na mesma página -->
+<a href="#secao-2">Pular para a seção 2</a>
+
+<!-- ...em algum lugar da página -->
+<h2 id="secao-2">Seção 2</h2>
+```html
+Sobre **caminhos relativos**:
+
+- `sobre.html` → mesma pasta.
+- `artigos/post.html` → entra na pasta `artigos/`.
+- `../` → volta uma pasta.
+- `/sobre` → começa da raiz do site (caminho absoluto dentro do próprio site).
+
+Você pode combinar âncoras com caminhos:
+
+```html
+<a href="/artigos/html#semantica">Pula para a seção "Semântica"</a>
+```html
+Isso manda o usuário para `https://seusite.com/artigos/html` e rola até o
+elemento com `id="semantica"`.
+
+Atributos úteis do `<a>`:
+
+- **`target="_blank"`** — abre em nova aba. **Quase sempre adicione
+  `rel="noopener noreferrer"`** junto, por segurança e privacidade:
+
+  ```html
+  <a href="https://exemplo.com" target="_blank" rel="noopener noreferrer">
+    Abre em nova aba
+  </a>
+  ```
+
+  Por quê? Sem `rel="noopener"`, a nova aba consegue controlar a aba
+  original via JavaScript (um vetor de phishing). `noreferrer` ainda esconde
+  de onde veio o tráfego. É o padrão recomendado.
+
+- **`download`** — sugere que o navegador baixe o recurso em vez de abrir:
+
+  ```html
+  <a href="/curriculo.pdf" download>Baixar currículo</a>
+  ```
+
+- **`hreflang="..."`** — idioma do destino (para mecanismos de busca).
+- **`title="..."`** — tooltip ao passar o mouse. Use com moderação; não é
+  acessível por teclado em todos os leitores de tela.
+
+E para **outros protocolos** além de HTTP:
+
+```html
+<a href="mailto:contato@exemplo.com">Mande um e-mail</a>
+<a href="tel:+5511999999999">Ligue pra gente</a>
+```html
+- **`<a href="URL">texto</a>`** é o link. O `href` diz pra onde vai.
+- **URL absoluta** (`https://...`) pra outros sites; **caminho relativo** pra
+  páginas do mesmo site.
+- **Âncoras** (`#id`) rolam até um ponto da mesma página.
+- **`target="_blank"`** com **`rel="noopener noreferrer"`** por segurança.
+- **`mailto:` e `tel:`** disparam o cliente de e-mail e telefone,
+  respectivamente.
+
+> Dica: texto de link deve fazer sentido **fora do contexto**. Evite
+> "clique aqui" ou "leia mais". Prefira
+> `<a href="...">leia o guia de HTML semântico</a>` — isso ajuda leitores
+> de tela e SEO.
+
+No próximo nó, vamos colocar **imagens** na página — outra peça central da
+web, com várias pegadinhas para iniciantes.
