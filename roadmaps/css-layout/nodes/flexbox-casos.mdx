@@ -1,0 +1,172 @@
+---
+id: flexbox-casos
+title: "Flexbox: Casos Clássicos do Dia a Dia"
+resources:
+  - title: "Flexbox Patterns - catálogo de soluções prontas"
+    url: https://www.flexboxpatterns.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Os padrões que você vai escrever **dezenas de vezes** na carreira.
+Salve essa página nos favoritos — sempre que travar, vem aqui.
+
+### Centralizar uma caixa (horizontal e vertical)
+
+O **problema mais resolvido do CSS**:
+
+```css
+.pai {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;  /* ocupa a tela toda */
+}
+```
+
+```html
+<div class="pai">
+  <div class="caixa">Eu sou o centro do universo</div>
+</div>
+```
+
+Três linhas. Funciona com qualquer tamanho de caixa, qualquer
+tamanho de pai. Antes do Flexbox, era `position: absolute` +
+`top: 50%; left: 50%; transform: translate(-50%, -50%)` — funciona
+mas é frágil.
+
+### Navbar com logo à esquerda e menu à direita
+
+```css
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+}
+```
+
+```html
+<nav class="navbar">
+  <a class="logo" href="/">Logo</a>
+  <ul class="menu">
+    <li>Home</li>
+    <li>Sobre</li>
+    <li>Contato</li>
+  </ul>
+</nav>
+```
+
+`space-between` empurra o logo pro começo e o menu pro final,
+deixando o espaço entre eles. `align-items: center` alinha na
+vertical (porque o texto do menu e a logo podem ter alturas
+diferentes).
+
+### Cards em grade responsiva **sem media query**
+
+```css
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.card {
+  flex: 1 1 250px;  /* base 250px, cresce e encolhe */
+}
+```
+
+```html
+<div class="cards">
+  <div class="card">1</div>
+  <div class="card">2</div>
+  <div class="card">3</div>
+  <div class="card">4</div>
+</div>
+```
+
+Em **telas grandes**: 4 cards lado a lado. Em **telas médias**: 2.
+Em **telas pequenas**: 1. Tudo sem `@media`, sem JavaScript — só
+Flexbox fazendo o trabalho.
+
+**Por que funciona**: `flex-wrap: wrap` permite quebrar linha;
+`flex: 1 1 250px` define que cada card prefere 250px, mas encolhe
+se faltar e cresce se sobrar. O navegador decide sozinho.
+
+### Coluna de formulário com label em cima do input
+
+```css
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+```
+
+```html
+<div class="campo">
+  <label for="email">E-mail</label>
+  <input type="email" id="email">
+</div>
+```
+
+Eixo principal agora é vertical (column), `gap` de 4px dá o
+espaçamento entre label e input. O `margin-bottom` separa um campo
+do próximo.
+
+### Footer fixo no fim da página (mesmo com pouco conteúdo)
+
+```css
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.conteudo { flex: 1; }   /* cresce e empurra o footer pra baixo */
+.footer   { /* sem flex, fica no fim */ }
+```
+
+```html
+<body>
+  <header>...</header>
+  <main class="conteudo">...</main>
+  <footer class="footer">© 2026</footer>
+</body>
+```
+
+O `flex: 1` no `<main>` faz ele crescer pra ocupar o espaço
+disponível, empurrando o footer pro final. Sem isso, o footer fica
+logo abaixo do conteúdo (deixando espaço vazio embaixo).
+
+### Ícone + texto alinhados
+
+```css
+.botao {
+  display: inline-flex;     /* não quebra a linha do texto em volta */
+  align-items: center;
+  gap: 8px;
+}
+```
+
+`inline-flex` faz o botão se comportar como `inline` (fica no fluxo
+do texto) mas mantém o layout flex interno. O `gap: 8px` dá o
+espaçamento entre ícone e texto sem precisar de margin.
+
+- **Centralizar**: `display: flex; justify-content: center;
+  align-items: center; min-height: 100vh`.
+- **Navbar com espaço**: `display: flex; justify-content:
+  space-between; align-items: center`.
+- **Cards responsivos**: `flex-wrap: wrap; gap; flex: 1 1 250px`.
+- **Coluna de form**: `display: flex; flex-direction: column; gap`.
+- **Footer no fim**: `body { display: flex; flex-direction: column;
+  min-height: 100vh }` + `main { flex: 1 }`.
+
+> Dica: [Flexbox Patterns](https://www.flexboxpatterns.com/) tem
+> dezenas de soluções prontas com HTML + CSS puro. Quando travar,
+> é o segundo lugar pra olhar (o primeiro é o Google + "css flex
+> X").
+
+No próximo, vamos trocar de eixo: **CSS Grid** resolve o que o
+Flexbox não dá conta — layout em **duas dimensões** (linhas E
+colunas simultaneamente).

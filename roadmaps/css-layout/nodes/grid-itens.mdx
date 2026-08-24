@@ -1,0 +1,144 @@
+---
+id: grid-itens
+title: "Grid: Propriedades dos Itens"
+resources:
+  - title: "Grid - propriedades dos itens (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_grid_layout/Basic_concepts_of_grid_layout#grid_items
+    type: doc
+    lang: pt
+    free: true
+---
+
+Os itens do Grid podem **se posicionar** dentro do grid — escolhendo
+em qual linha/coluna começar, quantas células ocupar, e como se
+alinhar dentro da própria célula. Aqui é onde a mágica 2D acontece.
+
+### Posicionamento numérico: `grid-column` e `grid-row`
+
+```css
+.item {
+  grid-column: 1 / 3;        /* começa na coluna 1, termina na 3 (ocupa 1 e 2) */
+  grid-row: 1 / 2;           /* linha 1 só */
+}
+```
+
+Sintaxe `start / end`. A linha de "término" é **exclusiva** — `1 /
+3` ocupa as colunas 1 e 2 (não inclui a 3).
+
+### Atalho: `grid-area` com quatro valores
+
+```css
+.item {
+  grid-area: 1 / 1 / 2 / 4;
+  /* row-start / column-start / row-end / column-end */
+}
+```
+
+Mesma ordem do `margin` (sentido horário começando por top).
+Confuso à primeira vista; use quando já está acostumado.
+
+### Palavra-chave `span`
+
+```css
+.item {
+  grid-column: 1 / span 2;   /* coluna 1, ocupando 2 colunas */
+  grid-row: 2 / span 3;      /* linha 2, ocupando 3 linhas */
+}
+```
+
+"span" lê "ocupar X trilhas/colunas a partir daqui". Mais legível
+que `1 / 3`.
+
+### `grid-area` com nome (ligado ao `grid-template-areas`)
+
+```css
+.container {
+  grid-template-areas:
+    "header  header"
+    "sidebar main"
+    "footer  footer";
+}
+header { grid-area: header; }
+aside  { grid-area: sidebar; }
+main   { grid-area: main; }
+footer { grid-area: footer; }
+```
+
+Aqui o `grid-area` aceita **um único valor** (o nome da área). É a
+forma **mais legível** de posicionar — você vê o layout no CSS do
+container e o nome da área no item.
+
+### `align-self` e `justify-self` (alinhamento do item na célula)
+
+```css
+.item {
+  justify-self: center;      /* horizontal dentro da célula */
+  align-self: end;           /* vertical dentro da célula */
+}
+```
+
+Valores: `start`, `end`, `center`, `stretch` (padrão). Pensa como
+Flexbox `align-self`, mas por célula.
+
+Útil pra **centralizar uma imagem** dentro de um card sem precisar
+de wrapper:
+
+```css
+.card-imagem {
+  display: grid;             /* vira um grid 1x1 */
+  place-items: center;       /* atalho de justify-items + align-items */
+}
+.card-imagem img { width: 80%; }
+```
+
+### `place-self` (a shorthand)
+
+```css
+.item { place-self: center; }      /* horizontal + vertical */
+.item { place-self: start end; }   /* justify + align */
+```
+
+`place-items` (no container) e `place-self` (no item) são as
+shorthands de `justify-*` + `align-*`.
+
+### Quando o item "transborda" o grid
+
+```css
+.container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+.item-grande {
+  grid-column: 1 / -1;       /* da primeira à última linha */
+}
+```
+
+Linhas negativas contam do **final**: `-1` é a última linha do
+grid. Útil pra forçar um item a ocupar **toda a largura** mesmo em
+um grid de N colunas (ex: banner no meio de uma lista de cards).
+
+### Ordem com `order` (igual ao Flexbox)
+
+```css
+.item { order: 1; }      /* default 0 - ordem do HTML */
+```
+
+Funciona idêntico ao Flexbox. O item com `order` menor aparece
+**primeiro** no fluxo do grid.
+
+- **Posicionamento numérico**: `grid-column: 1 / 3` (start / end
+  exclusivos).
+- **`span N`**: "ocupar N trilhas/colunas a partir daqui".
+- **`grid-area: nome`**: usa o nome definido em
+  `grid-template-areas` (a forma mais legível).
+- **`align-self` / `justify-self`**: alinham o item na célula.
+- **`place-self: center`**: atalho pra centralizar dentro da
+  célula.
+
+> Dica: prefira `grid-template-areas` com nomes semânticos
+> (`header`, `sidebar`, `main`) em vez de números. Ler
+> `grid-area: sidebar` é mais claro que `grid-column: 1 / 2`. Quando
+> voltar pro código em 6 meses, vai agradecer.
+
+No próximo, os **padrões clássicos** que Grid resolve bem: galeria
+responsiva, layout de página inteira, dashboard, e mais.

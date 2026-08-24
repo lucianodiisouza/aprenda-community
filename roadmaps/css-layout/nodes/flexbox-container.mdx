@@ -1,0 +1,139 @@
+---
+id: flexbox-container
+title: "Flexbox: Propriedades do Container"
+resources:
+  - title: "Flexbox - propriedades do container (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox#the_two_axes_of_a_flex_container
+    type: doc
+    lang: pt
+    free: true
+  - title: "Flexbox Defense - joguinho de torres com Flexbox"
+    url: http://www.flexboxdefense.com/
+    type: exercicio
+    lang: en
+    free: true
+---
+
+O container é o **pai** com `display: flex`. As propriedades dele
+definem como o **grupo** de filhos se comporta: direção, espaçamento,
+alinhamento, quebra de linha. Esse é o "coringa" do Flexbox.
+
+### `flex-direction` — qual eixo é o principal
+
+```css
+.container {
+  flex-direction: row;            /* padrão - horizontal, → */
+  flex-direction: row-reverse;    /* horizontal, ← */
+  flex-direction: column;         /* vertical, ↓ */
+  flex-direction: column-reverse; /* vertical, ↑ */
+}
+```
+
+Pensa no eixo principal como a direção em que os itens **fluem**.
+
+### `flex-wrap` — quebrar linha quando não cabe
+
+```css
+.container {
+  flex-wrap: nowrap;        /* padrão - força uma linha só */
+  flex-wrap: wrap;          /* quebra pra próxima linha */
+  flex-wrap: wrap-reverse;  /* quebra pra linha de cima */
+}
+```
+
+`wrap` é o segredo dos **cards responsivos** sem media query:
+`flex-wrap: wrap` + `flex: 1 1 250px` em cada card = eles
+reorganizam sozinhos quando o container encolhe.
+
+### `justify-content` — alinhamento no eixo principal
+
+A propriedade que você mais vai usar:
+
+```css
+.container {
+  justify-content: flex-start;     /* padrão - itens no começo */
+  justify-content: flex-end;       /* itens no final */
+  justify-content: center;         /* itens centralizados */
+  justify-content: space-between;  /* espaço ENTRE os itens */
+  justify-content: space-around;   /* espaço EM VOLTA dos itens (metade nas pontas) */
+  justify-content: space-evenly;   /* espaço IDÊNTICO em todo lugar */
+}
+```
+
+Visual:
+
+```text
+flex-start:     [1] [2] [3]
+flex-end:                    [1] [2] [3]
+center:            [1] [2] [3]
+space-between:  [1]      [2]      [3]
+space-around:   [1]   [2]   [3]   (metade nas pontas)
+space-evenly:   [1]   [2]   [3]   (idêntico)
+```
+
+### `align-items` — alinhamento no eixo cruzado
+
+```css
+.container {
+  align-items: stretch;    /* padrão - esticam pra preencher */
+  align-items: flex-start; /* topo do container */
+  align-items: flex-end;   /* base do container */
+  align-items: center;     /* centralizado no eixo cruzado */
+  align-items: baseline;   /* alinhado pela linha de base do texto */
+}
+```
+
+A combinação clássica de **centralizar** um elemento em qualquer
+lugar: `display: flex; justify-content: center; align-items: center;`
+(única propridade que precisa pro centro perfeito da tela com
+`min-height: 100vh`).
+
+### `align-content` — alinhamento de múltiplas linhas
+
+Pensa como o `justify-content`, mas para **linhas inteiras** (só
+funciona com `flex-wrap: wrap` e quando há mais de uma linha).
+Menos usado no dia a dia — `gap` resolve 90% dos casos.
+
+### `gap` — espaçamento entre itens (o jeito moderno)
+
+```css
+.container {
+  gap: 16px;            /* 16px em todas as direções */
+  gap: 16px 24px;       /* 16px vertical, 24px horizontal */
+  row-gap: 16px;        /* só entre linhas */
+  column-gap: 24px;     /* só entre colunas */
+}
+```
+
+`gap` substitui o truque antigo de dar `margin-right` em cada item
+(exceto o último). Funciona também em Grid e em colunas CSS. **Não
+use margin entre flex items** — a primeira/última vaza e fica
+desigual.
+
+### Shorthand completa do container
+
+```css
+.container {
+  display: flex;
+  flex-flow: row wrap;                 /* direction + wrap */
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+```
+
+`flex-flow` é a shorthand de `flex-direction` + `flex-wrap`. O resto
+não tem shorthand.
+
+- **`flex-direction`** define o eixo principal.
+- **`flex-wrap`** quebra linha quando não cabe.
+- **`justify-content`** alinha no eixo principal.
+- **`align-items`** alinha no eixo cruzado.
+- **`gap`** é o jeito moderno de espaçar (não use margin).
+
+> Dica: 90% dos usos reais são `display: flex` + `gap` +
+> `justify-content` + `align-items`. Quando precisar de mais
+> (ordem, `flex-grow`), passe pro nó dos itens.
+
+No próximo, o outro lado: as propriedades que vão nos **filhos** e
+definem como cada um se comporta individualmente.

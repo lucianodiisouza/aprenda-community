@@ -1,0 +1,119 @@
+---
+id: flexbox-itens
+title: "Flexbox: Propriedades dos Itens"
+resources:
+  - title: "Flexbox - propriedades dos itens (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox#the_flex_item
+    type: doc
+    lang: pt
+    free: true
+---
+
+As propriedades que vão nos **filhos** controlam como cada um se
+comporta **individualmente** dentro do container: crescer, encolher,
+ter tamanho base, ordem visual e alinhamento próprio.
+
+### `flex-grow`, `flex-shrink`, `flex-basis` — o trio do tamanho
+
+```css
+.item {
+  flex-grow: 0;      /* 0 = não cresce pra preencher espaço extra */
+  flex-shrink: 1;    /* 1 = pode encolher se faltar espaço (padrão) */
+  flex-basis: auto;  /* tamanho base antes de crescer/encolher */
+}
+```
+
+- **`flex-grow`**: o quanto esse item **cresce** quando tem espaço
+  sobrando. `0` = não cresce; `1` = divide o espaço igual com outros
+  itens com `1`.
+- **`flex-shrink`**: o quanto esse item **encolhe** quando falta
+  espaço. `1` = encolhe normal; `0` = mantém o tamanho fixo.
+- **`flex-basis`**: o **tamanho base** antes de aplicar grow/shrink.
+  Pode ser `auto` (usa o `width` ou o conteúdo) ou um valor
+  (`200px`, `30%`).
+
+### A shorthand `flex`
+
+```css
+.item { flex: 1; }           /* flex: 1 1 0 */
+.item { flex: 0 0 240px; }    /* grow=0, shrink=0, basis=240px - fixo */
+.item { flex: 1 1 250px; }   /* base 250px, cresce e encolhe */
+```
+
+`flex: 1` é o **mais útil** — faz o item crescer e ocupar todo o
+espaço disponível. É o que faz uma sidebar de 240px ao lado de um
+conteúdo que preenche o resto:
+
+```css
+.sidebar { flex: 0 0 240px; }  /* não mexe - largura fixa */
+.conteudo { flex: 1; }         /* cresce pra preencher o resto */
+```
+
+### `flex: 1` vs `flex: 1 1 auto` — a pegadinha
+
+`flex: 1` é o mesmo que `flex: 1 1 0`. O **`basis: 0`** é o que
+permite três itens `flex: 1` dividirem o espaço **exatamente
+igual**:
+
+```css
+.item { flex: 1; }   /* cada um ocupa 1/3 do espaço */
+```
+
+Se você usar `flex: 1 1 auto`, o tamanho "natural" do conteúdo
+conta, e a divisão fica desigual (o item com texto longo fica maior
+que o com texto curto).
+
+**Quase sempre você quer `flex: 1` puro.**
+
+### `align-self` — sobrescreve o `align-items` do container
+
+```css
+.container { align-items: center; }
+.destaque  { align-self: flex-start; }  /* esse aqui fica no topo */
+```
+
+Útil quando a maioria dos itens está centralizada, mas **um
+específico** precisa estar em outra posição.
+
+### `order` — muda a ordem visual sem mexer no HTML
+
+```css
+.item { order: 2; }       /* padrão é 0 - itens aparecem na ordem do HTML */
+.outro { order: -1; }    /* fica antes de quem tem order: 0 */
+```
+
+Ótimo pra **responsividade**: num mobile você quer o menu antes do
+conteúdo, no desktop o oposto.
+
+```css
+.menu     { order: 2; }   /* mobile: menu embaixo */
+.conteudo { order: 1; }   /* mobile: conteúdo em cima */
+@media (min-width: 768px) {
+  .menu     { order: 1; }   /* desktop: menu em cima */
+  .conteudo { order: 2; }   /* desktop: conteúdo embaixo */
+}
+```
+
+### Truque: nav com espaço entre os itens
+
+```css
+.navbar { display: flex; justify-content: space-between; }
+.navbar .logo { order: 1; }
+.navbar .links { order: 2; }
+.navbar .cta { order: 3; }
+```
+
+Em telas pequenas, você pode **esconder** o `cta` (`.cta { display:
+none }`) e reordenar os outros sem mexer no HTML.
+
+- **`flex: 1`** é o padrão moderno (grow=1, shrink=1, basis=0).
+- **`flex: 0 0 X`** trava o item naquele tamanho.
+- **`align-self`** sobrescreve o alinhamento só pra um item.
+- **`order`** muda a ordem visual sem mexer no HTML.
+
+> Dica: a pegadinha do `flex: 1` vs `flex: 1 1 auto` pega muita
+> gente. Se seus itens não estão dividindo o espaço igual, **troque
+> pra `flex: 1` puro** e teste de novo.
+
+No próximo, a parte mais gostosa: **casos clássicos** que você vai
+usar toda semana (centralizar, navbar, cards responsivos, etc.).
