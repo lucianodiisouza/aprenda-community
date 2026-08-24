@@ -3,6 +3,12 @@
   "title": "Programação do Zero",
   "description": "Trilha para quem nunca programou: do pensamento computacional ao primeiro projeto real, com uma linguagem à sua escolha.",
   "difficulty": "iniciante",
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
   "nodes": [
     {
       "id": "logica",

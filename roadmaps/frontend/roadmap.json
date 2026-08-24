@@ -3,6 +3,12 @@
   "title": "Frontend",
   "description": "Trilha para quem quer construir a parte visual e interativa de sites e apps web: do HTML/CSS até React, com prática do começo ao fim.",
   "difficulty": "intermediario",
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
   "nodes": [
     {
       "id": "introducao-web",
