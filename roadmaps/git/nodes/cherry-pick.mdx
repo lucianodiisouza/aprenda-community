@@ -1,0 +1,44 @@
+---
+id: cherry-pick
+title: "Cherry-pick: Pegando Commits Avulsos"
+resources:
+  - title: "git cherry-pick (documentação oficial)"
+    url: https://git-scm.com/docs/git-cherry-pick
+    type: doc
+    lang: en
+    free: true
+---
+
+Às vezes você quer **um commit específico** de uma branch, sem trazer tudo o que
+veio com ele. Exemplo real: uma correção de bug foi feita na branch de
+desenvolvimento, mas você precisa **só dela** na branch de produção, agora. O
+**cherry-pick** faz exatamente isso - "colhe a cereja".
+
+Você vai para a branch que deve **receber** o commit e aponta o hash:
+
+```bash
+git switch producao
+git cherry-pick a1b2c3d          # aplica esse commit aqui
+git cherry-pick a1b2c3d f4e5d6c  # dá para colher vários de uma vez
+```
+
+O Git reaplica as mudanças daquele commit criando um **novo** commit na branch
+atual (hash diferente, mesmo conteúdo). Se houver conflito, você resolve como num
+merge e segue:
+
+```bash
+git cherry-pick --continue
+git cherry-pick --abort
+```
+
+- **Cherry-pick copia um commit** de uma branch para outra, isoladamente.
+- **Gera um commit novo** (hash diferente) com as mesmas mudanças.
+- **Ótimo para hotfixes:** levar só a correção para produção sem o resto.
+- Conflitos se resolvem como em merge/rebase: **`--continue`** / **`--abort`**.
+
+> Dica: cherry-pick em excesso é cheiro de fluxo mal desenhado - se você vive
+> colhendo os mesmos commits entre branches, talvez o certo fosse um merge ou uma
+> base comum. Use como bisturi, não como rotina.
+
+Falando em salvar o dia: e quando você **acha** que apagou um commit importante?
+Quase sempre dá para recuperar - com o **reflog**.

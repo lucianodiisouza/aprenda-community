@@ -1,0 +1,123 @@
+---
+id: projeto-final
+title: "Projeto Final: Sua Primeira Contribuição Open Source"
+resources:
+  - title: "Como contribuir para open source (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/get-started/exploring-projects-on-github/contributing-to-a-project
+    type: doc
+    lang: pt
+    free: true
+  - title: "First Contributions - projeto feito para o seu primeiro PR"
+    url: https://github.com/firstcontributions/first-contributions
+    type: exercicio
+    lang: en
+    free: true
+---
+
+Você passou por 21 nós: commits, branches, merge, conflitos, remotos, rebase,
+reflog, workflows. Nada disso "gruda" só lendo. Este projeto é a prova real:
+**abrir um Pull Request de verdade** num projeto open source, do fork ao merge.
+
+O objetivo é fazer uma contribuição **pequena e legítima** - corrigir um typo na
+documentação, melhorar uma explicação, adicionar um recurso a uma trilha - usando
+o fluxo completo e correto. O tamanho não importa; o **processo** importa.
+
+### Onde contribuir
+
+- **Este repositório.** Adicionar um recurso a um nó ou corrigir texto é uma
+  contribuição real e bem-vinda. Leia o `CONTRIBUTING.md` na raiz.
+- **[First Contributions](https://github.com/firstcontributions/first-contributions)**
+  - um repo criado só para você treinar seu primeiro PR sem medo de errar.
+- Qualquer projeto que você usa e tem issues marcadas **`good first issue`**.
+
+### O fluxo completo (checklist)
+
+#### Preparação
+- [ ] Fez **fork** do repositório para a sua conta.
+- [ ] **Clonou o seu fork** (não o original) na máquina.
+- [ ] Adicionou o original como remoto **`upstream`**
+      (`git remote add upstream <url>`).
+- [ ] Leu o **`CONTRIBUTING.md`** e o `CODE_OF_CONDUCT.md` do projeto.
+
+#### Trabalho
+- [ ] Criou uma **branch descritiva** a partir da `main` atualizada
+      (`git switch -c fix/corrige-link-quebrado`).
+- [ ] Fez a mudança - **focada e pequena** (um assunto por PR).
+- [ ] Comitou seguindo **Conventional Commits**
+      (`docs: corrige link quebrado no nó de merge`).
+- [ ] Rodou o que o projeto pede antes do PR (lint, testes, validação -
+      neste repo, `pnpm content:validate`).
+
+#### Sincronização e envio
+- [ ] Atualizou sua branch com o `upstream` antes de enviar
+      (`git fetch upstream && git rebase upstream/main`).
+- [ ] Resolveu eventuais **conflitos** com calma.
+- [ ] Deu **push** da branch para o seu fork
+      (`git push -u origin fix/corrige-link-quebrado`).
+
+#### Pull Request
+- [ ] Abriu o PR do seu fork para o repositório original.
+- [ ] Escreveu um **título claro** e uma descrição que explica o **porquê**.
+- [ ] Preencheu o template de PR, se houver.
+- [ ] Respondeu ao **review** com novos commits na mesma branch, sem levar
+      para o pessoal.
+
+### O passo a passo, em comandos
+
+```bash
+# 1. Depois de forkar pela interface do GitHub, clone SEU fork:
+git clone git@github.com:SEU-USUARIO/o-projeto.git
+cd o-projeto
+
+# 2. Aponte para o projeto original, para se manter atualizado:
+git remote add upstream git@github.com:PROJETO-ORIGINAL/o-projeto.git
+
+# 3. Crie a branch da sua contribuição:
+git switch -c docs/corrige-typo-no-readme
+
+# 4. Faça a mudança, depois:
+git add .
+git commit -m "docs: corrige typo no README"
+
+# 5. (Boa prática) Reaplique sua branch sobre o que há de mais novo:
+git fetch upstream
+git rebase upstream/main
+
+# 6. Envie para o SEU fork:
+git push -u origin docs/corrige-typo-no-readme
+
+# 7. Abra o PR pela interface do GitHub (ou com o gh CLI):
+gh pr create --base main --title "docs: corrige typo no README" \
+  --body "Corrige a grafia de 'reposítorio' para 'repositório' no README."
+```
+
+### Critérios de "pronto"
+
+Este projeto está completo quando você tem **um PR aberto** (idealmente
+mergeado) que:
+
+- Saiu de uma **branch própria e bem nomeada**, não da `main`.
+- Tem commits com **mensagens no padrão** do projeto.
+- Passou pelos **checks** do projeto (CI verde).
+- Tem uma descrição que um estranho **entende sem contexto**.
+
+- **Contribuir de verdade** é o que consolida Git - fork, branch, commit, push,
+  PR, review.
+- **Pequeno e focado** vence grande e disperso: um assunto por PR.
+- **Leia o `CONTRIBUTING.md`** antes - seguir as regras do projeto é metade do
+  trabalho.
+- **Review é conversa**, não julgamento. Responda com commits, agradeça o
+  feedback.
+
+> Dica: não trave esperando a contribuição "perfeita" ou "importante". Um typo
+> corrigido é uma contribuição real, ensina o fluxo inteiro, e é assim que
+> praticamente todo mundo no open source começou. O primeiro PR é o mais difícil
+> - depois dele, vira hábito.
+
+---
+
+🎉 **Você terminou a trilha de Git.** Do primeiro `commit` ao seu primeiro Pull
+Request. Git deixou de ser aquele terminal assustador e virou o que ele é de
+verdade: uma **rede de segurança** que te deixa experimentar sem medo, e a
+**língua franca** pela qual o mundo inteiro do software colabora. Agora é
+repetição - use em todo projeto seu, e o resto vira memória muscular.

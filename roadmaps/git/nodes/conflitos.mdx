@@ -1,0 +1,55 @@
+---
+id: conflitos
+title: "Conflitos: Quando o Git Precisa de Você"
+resources:
+  - title: "Resolvendo conflitos de merge (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-using-the-command-line
+    type: doc
+    lang: pt
+    free: true
+---
+
+Conflito de merge assusta, mas é simples: acontece quando **duas branches mudaram
+a mesma linha** do mesmo arquivo, e o Git não tem como adivinhar qual versão vale.
+Aí ele para e pede para **você** decidir. Não é erro - é o Git sendo cuidadoso.
+
+Quando rola um conflito, o `git status` aponta os arquivos "unmerged", e dentro
+deles o Git insere marcadores:
+
+```text
+<<<<<<< HEAD
+cor = "azul"        (o que está na branch atual)
+=======
+cor = "verde"       (o que vem da branch sendo mergeada)
+>>>>>>> minha-feature
+```
+
+Seu trabalho é editar o arquivo e deixá-lo do jeito **final correto** - podendo
+ser uma das versões, as duas combinadas, ou algo novo. Apague os marcadores
+`<<<<<<<`, `=======` e `>>>>>>>`. Depois marque como resolvido e finalize:
+
+```bash
+git add arquivo.txt        # marca esse conflito como resolvido
+git commit                 # conclui o merge (o Git já sugere a mensagem)
+```
+
+Se tudo deu errado e você quer **cancelar** o merge e voltar ao estado anterior:
+
+```bash
+git merge --abort
+```
+
+- **Conflito = mesma linha mudada em duas branches.** O Git não escolhe por você.
+- **Os marcadores `<<<<<<<` / `=======` / `>>>>>>>`** delimitam as versões em
+  disputa. Edite e apague-os.
+- **`git add` + `git commit`** finaliza a resolução; **`git merge --abort`**
+  desiste e volta atrás.
+- Um bom **editor** (VS Code e afins) mostra botões "Accept Current / Incoming /
+  Both" - bem mais fácil que editar na mão.
+
+> Dica: conflitos ficam **menores e mais raros** quando você integra cedo e com
+> frequência. Branches que vivem semanas sem sincronizar com a `main` são as que
+> geram os conflitos monstruosos. Puxe a `main` para a sua branch com frequência.
+
+Até aqui trabalhamos localmente. Agora vamos conectar seu repositório ao mundo:
+os **remotos**.

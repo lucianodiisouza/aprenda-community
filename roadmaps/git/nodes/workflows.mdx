@@ -1,0 +1,59 @@
+---
+id: workflows
+title: "Workflows: Git Flow, Trunk-Based e Conventional Commits"
+resources:
+  - title: "Conventional Commits 1.0.0 (especificação, PT-BR)"
+    url: https://www.conventionalcommits.org/pt-br/v1.0.0/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Comparando workflows de Git (Atlassian, tutorial)"
+    url: https://www.atlassian.com/git/tutorials/comparing-workflows
+    type: artigo
+    lang: en
+    free: true
+---
+
+Você sabe usar branches, merge e rebase. **Workflow** é o acordo do time sobre
+*como* usar tudo isso de forma consistente: quais branches existem, como nascem
+features, quando se faz release. Não há um "certo" universal - há o que combina
+com o time e o produto.
+
+Dois grandes modelos ancoram o espectro:
+
+- **Git Flow** - branches de longa vida (`main`, `develop`) mais `feature/*`,
+  `release/*`, `hotfix/*`. Estruturado, bom para software com **versões e
+  releases agendados** (apps desktop, libs). Pode ser burocrático demais para web.
+- **Trunk-Based** - todo mundo integra cedo e com frequência numa única branch
+  principal (`main`), com feature branches **curtas** (horas/dias) e muito uso de
+  CI/CD. É o padrão do desenvolvimento **web moderno** e de deploy contínuo.
+
+Independente do modelo, uma convenção universal ajuda demais: os **Conventional
+Commits**, um padrão para a mensagem de commit que também é o que este projeto
+usa:
+
+```text
+feat(web): adiciona filtro de trilhas por dificuldade
+fix(pb): corrige cancelamento automático em fetch compartilhado
+docs: atualiza guia de contribuição
+```
+
+O formato é `tipo(escopo): descrição`. Os tipos (`feat`, `fix`, `docs`, `chore`,
+`refactor`, `test`...) deixam o histórico **legível para máquinas** - dá para
+gerar changelog e decidir a próxima versão SemVer automaticamente.
+
+- **Workflow = o acordo do time** sobre branches, integração e release.
+- **Git Flow** é estruturado (releases agendados); **Trunk-Based** é enxuto
+  (deploy contínuo, branches curtas).
+- **Conventional Commits** padroniza a mensagem (`tipo(escopo): descrição`) e
+  automatiza changelog e versão.
+- **Branches de vida curta** e integração frequente reduzem conflitos em qualquer
+  workflow.
+
+> Dica: o melhor workflow é o **mais simples que o seu time consegue seguir com
+> disciplina**. Time pequeno adotando Git Flow completo costuma sofrer sem
+> necessidade. Comece simples (trunk-based + PRs + CI) e só adicione cerimônia
+> quando a dor aparecer.
+
+Chegou a hora de juntar tudo num objetivo real - o **projeto final**: sua
+primeira contribuição para um projeto open source.

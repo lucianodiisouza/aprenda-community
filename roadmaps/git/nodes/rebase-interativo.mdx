@@ -1,0 +1,55 @@
+---
+id: rebase-interativo
+title: "Rebase Interativo: squash, reword e reorder"
+resources:
+  - title: "Reescrevendo o histórico (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Reescrevendo-o-Hist%C3%B3rico
+    type: doc
+    lang: pt
+    free: true
+---
+
+O rebase **interativo** te deixa editar sua sequência de commits antes de
+finalizá-los: juntar vários em um, renomear mensagens, reordenar, apagar. É como
+o rebase se torna uma ferramenta de **limpeza de história** - transformar 8
+commits bagunçados de "wip", "arruma", "agora vai" em 1 ou 2 commits limpos.
+
+Você abre o editor pedindo os últimos N commits (aqui, os 3 últimos):
+
+```bash
+git rebase -i HEAD~3
+```
+
+O Git abre uma lista, do mais antigo para o mais novo, cada linha com um verbo:
+
+```text
+pick a1b2c3d Adiciona formulário de login
+squash e4f5g6h Corrige validação
+squash i7j8k9l Ajusta CSS do botão
+```
+
+Trocar `pick` pelo verbo certo é o que dá o poder:
+
+- **`pick`** - mantém o commit como está.
+- **`reword`** - mantém o commit, mas abre o editor para reescrever a mensagem.
+- **`squash`** - funde este commit no de cima, combinando as mensagens.
+- **`fixup`** - como squash, mas descarta a mensagem deste commit.
+- **`drop`** - remove o commit (e suas mudanças).
+- Reordenar as linhas **reordena** os commits.
+
+Salvou e fechou o editor? O Git reaplica tudo conforme suas instruções.
+
+- **`git rebase -i HEAD~N`** abre os últimos N commits para edição.
+- **`squash`/`fixup`** juntam commits; **`reword`** renomeia; **`drop`** apaga.
+- **Serve para limpar a história** de uma feature antes do PR - contar a estória
+  em commits coerentes.
+- **Vale a regra de ouro:** só reescreva o que ainda é **privado** (não
+  compartilhado).
+
+> Dica: no dia a dia, um combo poderoso é comitar correções com
+> `git commit --fixup <hash>` e depois rodar `git rebase -i --autosquash` - o Git
+> já posiciona os fixups no lugar certo automaticamente. Vale aprender depois que
+> o `-i` básico virar natural.
+
+Reescrever a **sequência** é uma coisa; pegar **um commit específico** de outra
+branch é outra. Isso é o **cherry-pick**.

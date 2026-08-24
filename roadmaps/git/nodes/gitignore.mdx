@@ -1,0 +1,57 @@
+---
+id: gitignore
+title: ".gitignore: O Que o Git Deve Ignorar"
+resources:
+  - title: "Ignorando arquivos (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/get-started/git-basics/ignoring-files
+    type: doc
+    lang: pt
+    free: true
+  - title: "gitignore.io - gera .gitignore por linguagem/ferramenta"
+    url: https://www.toptal.com/developers/gitignore
+    type: doc
+    lang: en
+    free: true
+---
+
+Nem tudo na sua pasta deve entrar no Git. Dependências baixadas (`node_modules/`),
+segredos (`.env`), arquivos gerados na build (`dist/`) e lixo do sistema
+(`.DS_Store`) só poluem o repositório - e, no caso de segredos, são um risco de
+segurança.
+
+A solução é um arquivo chamado **`.gitignore`** na raiz do projeto. Cada linha é
+um padrão do que o Git deve **ignorar** - ele nem mostra esses arquivos no
+`git status`:
+
+```gitignore
+# comentário começa com #
+node_modules/        # pasta inteira
+*.log                # qualquer arquivo terminando em .log
+.env                 # arquivo de variáveis secretas
+dist/                # saída de build
+.DS_Store            # lixo do macOS
+```
+
+O `.gitignore` **em si** entra no repositório (ele é útil para todo mundo do
+time). Um detalhe que pega iniciante: o `.gitignore` só afeta arquivos **ainda
+não rastreados**. Se você já comitou algo por engano, precisa removê-lo do
+controle sem apagar do disco:
+
+```bash
+git rm --cached .env       # para de rastrear, mantém o arquivo local
+```
+
+- **`.gitignore`** lista padrões de arquivos que o Git deve ignorar.
+- **Segredos (`.env`, chaves, tokens) nunca vão pro Git.** Ignorados desde o
+  início.
+- **Só vale para arquivos não rastreados.** Já comitou? Use `git rm --cached`.
+- Existem **templates prontos** por linguagem (Node, Python, etc.) - não precisa
+  escrever do zero.
+
+> Dica: se um segredo já foi **enviado** para um repositório remoto, apenas
+> apagá-lo num commit novo **não basta** - ele continua no histórico. Considere o
+> segredo comprometido e **rotacione a chave**. Reescrever histórico (nó avançado)
+> ajuda, mas a chave já vazou.
+
+Agora que sabemos o que entra no repo, vamos aprender a **navegar no histórico**
+que estamos criando.

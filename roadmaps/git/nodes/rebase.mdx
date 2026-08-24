@@ -1,0 +1,58 @@
+---
+id: rebase
+title: "Rebase: Reescrevendo a Base da Branch"
+resources:
+  - title: "Rebasing (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ramifica%C3%A7%C3%A3o-Branching-no-Git-Rebasing
+    type: doc
+    lang: pt
+    free: true
+  - title: "Merge vs Rebase (Atlassian, tutorial)"
+    url: https://www.atlassian.com/git/tutorials/merging-vs-rebasing
+    type: artigo
+    lang: en
+    free: true
+---
+
+O **rebase** faz o que o merge faz - integra o trabalho de uma branch com outra -
+mas de um jeito diferente. Em vez de criar um merge commit, ele **pega seus
+commits e os reaplica** por cima da ponta atual da outra branch. O resultado é um
+histórico em **linha reta**, como se você tivesse partido do estado mais novo.
+
+Cenário clássico: sua branch começou faz dois dias, e a `main` andou desde então.
+Para atualizar sua branch "por baixo":
+
+```bash
+git switch minha-feature
+git rebase main
+```
+
+O Git "descola" seus commits, avança até o topo da `main` e recoloca seus
+commits um a um ali em cima. Se houver conflito, ele para em cada commit para
+você resolver, e você continua:
+
+```bash
+# resolve o conflito, git add nos arquivos, e:
+git rebase --continue
+git rebase --abort        # ou desiste e volta ao estado anterior
+```
+
+Merge **preserva** a bifurcação; rebase a **apaga** em favor de uma história
+limpa. Mas há um preço, e é **a regra de ouro do rebase**: nunca reescreva
+commits que já foram compartilhados (que já estão numa branch pública). Rebase
+cria commits **novos** (hashes novos); se outra pessoa tinha os antigos, você
+bagunça a história dela.
+
+- **Rebase reaplica seus commits** sobre outra base - histórico fica linear.
+- **`git rebase main`** atualiza sua feature "por baixo" com o que há de novo na
+  `main`.
+- **Conflitos são resolvidos commit a commit:** `--continue` / `--abort`.
+- **Regra de ouro:** só faça rebase de commits **locais/privados**. Nunca de
+  história já publicada e compartilhada.
+
+> Dica: uma prática comum e segura é dar rebase da **sua** feature branch na
+> `main` antes de abrir/atualizar o PR - assim ela aplica limpo. O que você
+> **não** faz é rebase da `main` compartilhada em cima de você.
+
+O rebase fica ainda mais poderoso na versão **interativa**, onde você edita a
+própria lista de commits. É o próximo nó.

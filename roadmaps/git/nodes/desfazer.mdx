@@ -1,0 +1,66 @@
+---
+id: desfazer
+title: "Desfazendo Coisas: restore, reset e revert"
+resources:
+  - title: "Desfazendo coisas (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Fundamentos-de-Git-Desfazendo-Coisas
+    type: doc
+    lang: pt
+    free: true
+  - title: "Dangit, Git!?! - saídas rápidas para enrascadas comuns (PT-BR)"
+    url: https://dangitgit.com/pt
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Errar faz parte. O Git tem uma ferramenta certa para cada tipo de "ops" - e
+escolher a errada é o que assusta iniciante. Vamos separar por **onde** está o
+erro.
+
+**Mexi no arquivo e quero voltar ao último commit** (descartar a edição):
+
+```bash
+git restore arquivo.txt        # cuidado: perde as mudanças não comitadas
+```
+
+**Fiz `git add` sem querer** e quero tirar do staging (sem perder a edição):
+
+```bash
+git restore --staged arquivo.txt
+```
+
+**A mensagem do último commit saiu errada** ou esqueci um arquivo nele:
+
+```bash
+git commit --amend -m "Mensagem corrigida"
+```
+
+**Quero desfazer um commit que já foi enviado** para outras pessoas. Aqui **não**
+se reescreve história - cria-se um commit novo que anula o anterior:
+
+```bash
+git revert a1b2c3d       # gera um commit que desfaz as mudanças de a1b2c3d
+```
+
+Já o `git reset` **move a branch para trás**, mexendo no histórico local. É
+poderoso e perigoso: use só em commits que **ainda não** compartilhou.
+
+```bash
+git reset --soft HEAD~1    # desfaz o commit, mantém as mudanças no staging
+git reset --hard HEAD~1    # desfaz o commit E descarta as mudanças (irreversível-ish)
+```
+
+- **`restore`** volta arquivos; **`reset`** move a branch; **`revert`** cria um
+  commit que anula outro.
+- **Já compartilhou o commit? Use `revert`.** `reset` reescreve história e
+  bagunça quem já baixou.
+- **`--amend`** conserta o **último** commit (mensagem ou conteúdo).
+- **`reset --hard` descarta trabalho de verdade.** Respire antes de rodar.
+
+> Dica: quase nada some "para sempre" no Git - até um `reset --hard` costuma ser
+> recuperável pelo **reflog** (nó avançado). Mas trabalho que você **nunca
+> comitou** não tem essa rede. Comite cedo, comite com frequência.
+
+Com o básico dominado - criar, comitar, olhar, desfazer - subimos de nível: as
+**branches**, o recurso que faz do Git o que ele é.

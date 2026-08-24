@@ -1,0 +1,56 @@
+---
+id: reescrever-historia
+title: "Reescrevendo a História (com Responsabilidade)"
+resources:
+  - title: "Reescrevendo o histórico (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ferramentas-do-Git-Reescrevendo-o-Hist%C3%B3rico
+    type: doc
+    lang: pt
+    free: true
+  - title: "git-filter-repo - reescrita segura de histórico (ferramenta oficial)"
+    url: https://github.com/newren/git-filter-repo
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já viu peças de reescrita (`amend`, `rebase -i`). Este nó amarra o tema com
+a parte séria: quando você reescreve história **compartilhada** e como o
+`--force` deixa de ser palavrão e vira ferramenta - com trava de segurança.
+
+Reescrever muda os **hashes** dos commits. Se esses commits já estão no remoto, um
+`push` normal é recusado, porque o remoto tem a história antiga. O caminho é o
+push forçado - mas **nunca** o `--force` cru numa branch compartilhada. Use a
+versão com trava:
+
+```bash
+git push --force-with-lease
+```
+
+O `--force-with-lease` só sobrescreve o remoto se **ninguém** tiver enviado nada
+desde o seu último `fetch`. Se um colega empurrou algo que você não viu, ele
+**recusa** - evitando que você apague o trabalho alheio. É a diferença entre
+"forçar com cuidado" e "atropelar".
+
+Para reescritas cirúrgicas em **todo** o histórico - remover um segredo que
+vazou, apagar um arquivo gigante de todos os commits - o `rebase -i` não dá conta.
+A ferramenta recomendada é o **`git filter-repo`**:
+
+```bash
+git filter-repo --path caminho/do/segredo.env --invert-paths   # remove o arquivo de TODA a história
+```
+
+- **Reescrever muda hashes** - por isso o remoto recusa o push normal depois.
+- **`--force-with-lease`** é o push forçado seguro: recusa se alguém enviou algo
+  que você não tem.
+- **`git filter-repo`** reescreve o histórico inteiro (remover segredos/arquivos
+  grandes) melhor que o antigo `filter-branch`.
+- **Só reescreva história compartilhada com combinado do time.** É a operação
+  mais disruptiva do Git.
+
+> Dica: vazou um segredo? Reescrever o histórico **remove** o rastro, mas a chave
+> já foi exposta a quem clonou. A ordem certa é: **rotacione a chave primeiro**,
+> depois limpe o histórico. Segurança antes de cosmética.
+
+Reescrita manual é poderosa; automatizar checagens de qualidade é o próximo
+nível. Vamos aos **git hooks**.

@@ -1,0 +1,53 @@
+---
+id: branches
+title: "Branches: Trabalhando em Paralelo"
+resources:
+  - title: "Branches em poucas palavras (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ramifica%C3%A7%C3%A3o-Branching-no-Git-Branches-em-poucas-palavras
+    type: doc
+    lang: pt
+    free: true
+  - title: "Learn Git Branching (exercícios interativos, PT-BR)"
+    url: https://learngitbranching.js.org/?locale=pt_BR
+    type: exercicio
+    lang: pt
+    free: true
+---
+
+Uma **branch** (ramo) é uma linha de trabalho independente. Você cria uma para
+desenvolver uma feature ou corrigir um bug **sem tocar** na versão estável -
+enquanto isso, a `main` segue intacta. É o que permite várias pessoas (ou vários
+"você") trabalharem em paralelo.
+
+O truque é que branch no Git é **barata**: é só um ponteiro para um commit. Criar
+uma não copia arquivos, é instantâneo. Criar e já pular para ela:
+
+```bash
+git switch -c minha-feature      # cria a branch e muda para ela
+# (equivalente antigo: git checkout -b minha-feature)
+```
+
+Você comita normalmente ali. Para listar, trocar e voltar:
+
+```bash
+git branch                 # lista as branches (a atual tem *)
+git switch main            # volta para a main
+git switch minha-feature   # volta para a feature
+```
+
+O ponteiro especial **`HEAD`** aponta para "onde você está agora". Quando você
+troca de branch, o Git reescreve os arquivos do diretório para o estado daquela
+branch - por isso é bom comitar (ou dar um stash) antes de trocar.
+
+- **Branch = linha de trabalho isolada.** Experimente sem medo de quebrar a
+  `main`.
+- **`git switch -c nome`** cria e entra; **`git switch nome`** troca.
+- **`HEAD`** é o "você está aqui" - aponta para a branch/commit atual.
+- Branches são **baratas e descartáveis.** Uma por feature/bug é o padrão.
+
+> Dica: `git switch` e `git restore` são versões modernas (Git 2.23+) que
+> separam duas tarefas que o antigo `git checkout` fazia junto - trocar de branch
+> e restaurar arquivos. Você ainda vai ver `checkout` por aí; os dois convivem.
+
+Ter branches só é útil se você conseguir **juntá-las** de volta. Esse é o próximo
+nó: o **merge**.

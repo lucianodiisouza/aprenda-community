@@ -1,0 +1,47 @@
+---
+id: introducao
+title: "Introdução: O que é Controle de Versão"
+resources:
+  - title: "Pro Git - Capítulo 1: Começando (livro oficial, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2
+    type: doc
+    lang: pt
+    free: true
+  - title: "Sobre controle de versão com Git (GitHub Docs PT-BR)"
+    url: https://docs.github.com/pt/get-started/using-git/about-git
+    type: doc
+    lang: pt
+    free: true
+---
+
+Imagine que você está escrevendo um trabalho e vai salvando `trabalho_final.doc`,
+`trabalho_final_v2.doc`, `trabalho_final_AGORA_VAI.doc`. No fim, ninguém sabe
+qual é o certo. **Controle de versão** existe para acabar com isso.
+
+**Git** é um sistema de controle de versão: um programa que guarda o histórico
+completo do seu projeto. A cada ponto importante, você tira uma "foto" do estado
+dos arquivos - isso se chama **commit**. Depois você pode ver o que mudou, quando,
+por quem, e voltar para qualquer foto anterior.
+
+O detalhe que muda tudo: Git é **distribuído**. Cada pessoa tem uma cópia
+**completa** do histórico na própria máquina - não só a versão atual. Você
+trabalha offline, e sincroniza com os outros quando quiser.
+
+Não confunda **Git** com **GitHub**. Git é a ferramenta (roda no seu computador).
+GitHub (e GitLab, Bitbucket...) é um site que **hospeda** repositórios Git na
+nuvem, para você colaborar e fazer backup. Dá pra usar Git sem nunca abrir o
+GitHub - mas juntos eles ficam poderosos.
+
+- **Git guarda o histórico** do projeto em "fotos" chamadas **commits**.
+- **Cada clone é completo.** Você tem todo o histórico localmente, não só a
+  versão atual.
+- **Git ≠ GitHub.** Git é a ferramenta; GitHub é onde você hospeda e colabora.
+- Controle de versão não é só para times: **funciona sozinho** também, como um
+  "desfazer" infinito e documentado.
+
+> Dica: quase todo projeto de software no mundo usa Git. Aprender bem aqui é um
+> daqueles investimentos que pagam por anos - independente da linguagem que você
+> programa.
+
+No próximo nó, vamos **instalar** o Git e fazer a configuração mínima para que
+cada commit saiba quem é você.

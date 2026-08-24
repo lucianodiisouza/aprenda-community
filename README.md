@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-1-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-4-success.svg)](./roadmaps)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Discussions](https://img.shields.io/badge/💬-Discussions-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/discussions)
 
@@ -29,6 +29,10 @@ Trilhas hoje:
 - 🟣 [**Frontend**](./roadmaps/frontend) - para quem quer construir a
   parte visual e interativa da web: HTML, CSS, JavaScript, React.
   **12 nós**. Assume o básico de JS.
+- 🔀 [**Git**](./roadmaps/git) - controle de versão do zero ao avançado:
+  commits, branches, merge, remotos, rebase, reflog, workflows e uma
+  primeira contribuição open source. **23 nós**, cobrindo básico,
+  intermediário e avançado com prática.
 
 > Mais trilhas chegando: Programação do Zero, Frontend, Backend, Python…
 > Acompanhe nas [Discussions](https://github.com/lucianodiisouza/aprenda-community/discussions).

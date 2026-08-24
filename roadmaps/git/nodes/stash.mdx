@@ -1,0 +1,46 @@
+---
+id: stash
+title: "Stash: Guardando Trabalho Pela Metade"
+resources:
+  - title: "Git stash - guardando alterações (Atlassian, tutorial)"
+    url: https://www.atlassian.com/git/tutorials/saving-changes/git-stash
+    type: artigo
+    lang: en
+    free: true
+---
+
+Cena comum: você está no meio de uma mudança, nada pronto para comitar, e
+**precisa** trocar de branch agora (um bug urgente na `main`). Comitar pela
+metade é feio; perder o trabalho, pior. O **stash** resolve: ele guarda suas
+mudanças num "bolso" e deixa o diretório limpo.
+
+```bash
+git stash              # guarda as mudanças e limpa o diretório de trabalho
+git stash push -m "wip: formulário de login"   # com um rótulo, para lembrar depois
+```
+
+Agora seu diretório está igual ao último commit - livre para trocar de branch,
+puxar a `main`, resolver o urgente. Quando voltar, recupere o que guardou:
+
+```bash
+git stash list         # mostra a pilha de stashes (stash@{0}, stash@{1}...)
+git stash pop          # aplica o mais recente e o remove da pilha
+git stash apply        # aplica mas mantém guardado (útil para reaplicar em outra branch)
+```
+
+O stash funciona como uma **pilha**: dá para empilhar vários. Por padrão ele
+guarda só arquivos rastreados; para incluir os novos (untracked), use
+`git stash -u`.
+
+- **Stash guarda mudanças não comitadas** e limpa o diretório - sem criar commit.
+- **`pop`** aplica e remove; **`apply`** aplica e mantém guardado.
+- **É uma pilha:** vários stashes convivem; identifique-os com rótulos (`-m`).
+- Ótimo para **trocar de contexto rápido**, não para guardar coisas por semanas
+  (para isso, uma branch é melhor).
+
+> Dica: stash é conveniente, mas some do histórico e é fácil esquecer o que está
+> lá. Se o trabalho vai demorar, prefira uma **branch de rascunho** com um commit
+> "wip" - fica visível, sincronizável e nomeado. Stash é para o "já volto".
+
+A seguir, como marcar pontos importantes do projeto - versões e lançamentos - com
+**tags**.

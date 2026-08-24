@@ -1,0 +1,52 @@
+---
+id: merge
+title: "Merge: Juntando Branches"
+resources:
+  - title: "Merge básico (Pro Git, PT-BR)"
+    url: https://git-scm.com/book/pt-br/v2/Ramifica%C3%A7%C3%A3o-Branching-no-Git-Merge-B%C3%A1sico
+    type: doc
+    lang: pt
+    free: true
+---
+
+Terminou a feature na sua branch? Hora de trazer esse trabalho de volta para a
+`main`. Isso é o **merge**: o Git junta duas linhas de desenvolvimento em uma.
+
+A regra de ouro: você faz o merge **de dentro da branch que vai receber**. Para
+levar `minha-feature` para a `main`, primeiro vá para a `main`:
+
+```bash
+git switch main
+git merge minha-feature
+```
+
+Existem dois jeitos de o Git resolver isso. Se a `main` não andou desde que você
+criou a branch, ele faz um **fast-forward**: só empurra o ponteiro para frente,
+sem criar commit novo. Se as duas branches andaram, ele cria um **merge commit**
+- um commit especial com **dois pais** que amarra as duas histórias.
+
+```bash
+git merge --no-ff minha-feature   # força um merge commit mesmo quando daria fast-forward
+```
+
+Muita gente prefere `--no-ff` porque o merge commit deixa **registrado** que ali
+existiu uma feature branch. Depois de mergeado, é seguro apagar a branch:
+
+```bash
+git branch -d minha-feature       # -d só apaga se já foi mergeada
+```
+
+- **Merge junta branches.** Faça sempre a partir da branch que vai **receber**.
+- **Fast-forward** só avança o ponteiro (histórico linear); **merge commit** tem
+  dois pais e preserva a bifurcação.
+- **`--no-ff`** força o merge commit - útil para deixar a feature visível no
+  histórico.
+- **`git branch -d`** limpa branches já integradas. Higiene do repositório.
+
+> Dica: merge **preserva** a história exatamente como aconteceu (bifurcações e
+> tudo). Mais adiante veremos o **rebase**, que reescreve para uma linha reta.
+> Não é "um melhor que o outro" - são escolhas de como você quer que o histórico
+> conte a estória.
+
+Nem todo merge é tranquilo. Quando as duas branches mexem na **mesma linha** do
+mesmo arquivo, dá **conflito** - e é isso que resolvemos a seguir.
