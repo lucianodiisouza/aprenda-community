@@ -1,0 +1,150 @@
+---
+id: logical-properties
+title: "Logical Properties: margin-inline e afins"
+resources:
+  - title: "Propriedades lógicas (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_logical_properties_and_values
+    type: doc
+    lang: pt
+    free: true
+  - title: "Logical properties - guia visual (em inglês)"
+    url: https://css-tricks.com/css-logical-properties/
+    type: doc
+    lang: en
+    free: true
+---
+
+A web é **multilíngue** — e alguns idiomas se escrevem da **direita
+pra esquerda** (árabe, hebraico, persa, urdu). CSS tradicional com
+`margin-left`/`margin-right` **quebra** nesses idiomas. **Logical
+Properties** são a solução: você pensa em "começo/fim" e "linha
+base/texto", o navegador cuida do resto.
+
+### As propriedades físicas (que você já conhece)
+
+```css
+.caixa {
+  margin-left: 16px;       /* sempre à esquerda (físico) */
+  margin-right: 16px;      /* sempre à direita (físico) */
+  padding-top: 8px;        /* sempre em cima (físico) */
+  border-bottom: 2px solid black;
+}
+```
+
+Funciona em português/inglês. **Quebra em árabe**: o que era
+"esquerda" vira "direita" fisicamente, mas o CSS continua aplicando
+à esquerda (que agora é a direita do leitor).
+
+### As propriedades lógicas
+
+```css
+.caixa {
+  margin-inline-start: 16px;   /* onde o texto começa (esquerda em LTR, direita em RTL) */
+  margin-inline-end: 16px;     /* onde o texto termina */
+  margin-inline: 16px;         /* shorthand: start e end ao mesmo tempo */
+
+  padding-block-start: 8px;    /* começo do bloco (topo em horizontal) */
+  padding-block-end: 8px;      /* fim do bloco (base) */
+  padding-block: 8px;          /* shorthand: start e end */
+}
+```
+
+A correspondência:
+
+| Físico          | Lógico (em LTR)       | Lógico (em RTL)       |
+| --------------- | --------------------- | --------------------- |
+| `margin-left`   | `margin-inline-start` | `margin-inline-end`   |
+| `margin-right`  | `margin-inline-end`   | `margin-inline-start` |
+| `margin-top`    | `margin-block-start`  | `margin-block-start`  |
+| `margin-bottom` | `margin-block-end`    | `margin-block-end`    |
+| `width`         | `inline-size`         | `inline-size`         |
+| `height`        | `block-size`          | `block-size`          |
+
+Em **LTR** (português, inglês, espanhol), `inline-start` =
+esquerda, `inline-end` = direita. Em **RTL** (árabe, hebraico), é
+o oposto — sem você mexer no CSS.
+
+### A regra: pense em "começo" e "fim", não em "esquerda" e "direita"
+
+```css
+/* Antes (físico): */
+.paragrafo {
+  margin-left: 24px;     /* "recuo à esquerda" - quebra em RTL */
+  text-align: left;      /* também quebra */
+}
+
+/ Depois (lógico): */
+.paragrafo {
+  margin-inline-start: 24px;   /* "recuo no começo do texto" - funciona em LTR e RTL */
+  text-align: start;            /* alinhado no começo - mesmo comportamento */
+}
+```
+
+### Propriedades lógicas mais comuns
+
+```css
+.botao {
+  margin-inline: auto;             /* centraliza horizontalmente em qualquer direção */
+  padding-block: 12px;             /* padding vertical */
+  padding-inline: 24px;            /* padding horizontal */
+  border-inline-start: 4px solid;  /* borda no começo da linha */
+  border-block-end: 2px solid;     /* borda no fim do bloco */
+  inset-block-start: 0;            /* top, em qualquer direção de escrita */
+  inset-inline-end: 0;             /* right em LTR, left em RTL */
+  inline-size: 200px;              /* width */
+  block-size: 100px;               /* height */
+}
+```
+
+### A pegadinha: `text-align: start` vs `end`
+
+```css
+.esquerda  { text-align: left; }      /* sempre à esquerda, mesmo em RTL */
+.inicio    { text-align: start; }     /* começo do texto, adapta ao idioma */
+```
+
+Se você quer **alinhar no começo da leitura** (que é o normal pra
+texto), use `start`. Se quer **fixar na esquerda visual** (raro),
+use `left`. **Na dúvida, prefira `start`/`end`** — o site fica
+correto em qualquer idioma.
+
+### Adicionando suporte a RTL no site
+
+```html
+<html lang="pt-BR" dir="ltr">    <!-- padrão -->
+<html lang="ar"   dir="rtl">     <!-- ativa RTL -->
+```
+
+```css
+/* usando só propriedades lógicas, o CSS não muda */
+body {
+  margin-inline-start: 16px;
+  /* funciona igual em ambos */
+}
+```
+
+**Se você usou só propriedades lógicas**, mudar o `dir="rtl"` no
+`<html>` é o **único trabalho** pra ter um site em árabe. Não
+precisa duplicar CSS, não precisa `:dir()` em cada regra, não
+precisa de framework.
+
+### Suporte
+
+Logical Properties estão em **todos os navegadores modernos** desde
+2021. Pode usar sem medo em produção.
+
+- **Inline** = direção do texto (horizontal, LTR ou RTL).
+- **Block** = perpendicular (vertical, em horizontal).
+- **`start`/`end`** se adaptam à direção de escrita.
+- **Em LTR**: `inline-start` = esquerda. **Em RTL**: `inline-start`
+  = direita.
+- **Use `start`/`end`** em vez de `left`/`right` quando o conteúdo
+  é multilíngue.
+
+> Dica: pra sites só em português/inglês, logical properties são
+> "nice to have". Pra sites multilíngues, são **obrigatórias** —
+> economizam horas de teste em árabe, hebraico e persa.
+
+No próximo, vamos sair do "como cada propriedade funciona" e
+pensar no **todo**: **arquitetura CSS** — como organizar o CSS de
+um projeto grande sem virar espaguete.

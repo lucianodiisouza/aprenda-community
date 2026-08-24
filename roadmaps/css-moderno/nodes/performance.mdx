@@ -1,0 +1,209 @@
+---
+id: performance
+title: "Performance: will-change, Reflow e Critical CSS"
+resources:
+  - title: "Otimizando CSS (web.dev, em inglês)"
+    url: https://web.dev/articles/optimize-css
+    type: doc
+    lang: en
+    free: true
+  - title: "CSS Triggers - propriedade x custo (em inglês)"
+    url: https://csstriggers.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+CSS pode parecer "leve", mas cada propriedade tem um **custo** pro
+navegador. Animar a propriedade errada trava o site em mobile.
+Carregar o CSS errado atrasa o First Paint. **Saber o que pesa é
+parte do trabalho**.
+
+### As três operações do navegador
+
+Quando algo muda na tela, o navegador pode:
+
+1. **Layout (reflow)**: recalcula posição e tamanho de elementos.
+   **Caro** — pode afetar toda a página.
+2. **Paint (repaint)**: redesenha pixels (cor, sombra, borda).
+   **Médio** — afeta a região do elemento.
+3. **Composite**: o navegador usa a GPU pra mover a "textura" do
+   elemento. **Barato** — não recalcula nada, só move a textura.
+
+**Animar `transform` e `opacity` é barato** (só composite).
+**Animar `width`, `top`, `margin` é caro** (reflow + repaint +
+composite).
+
+### O site csstriggers.com (referência)
+
+Tabela viva do **custo** de cada propriedade:
+
+- **Layout (reflow)**: `width`, `height`, `margin`, `padding`,
+  `display`, `position`, `top`/`left`/`right`/`bottom`, `font-size`,
+  `border-width`...
+- **Paint (repaint)**: `color`, `background`, `box-shadow`,
+  `border-color`, `border-radius`, `outline`...
+- **Composite (barato)**: `transform`, `opacity`, `filter` (em
+  alguns casos), `clip-path`...
+
+**Regra de ouro**: anime **`transform`** e **`opacity`**. Quase
+sempre. Pra mudar posição, use `transform: translate(...)` em vez
+de `top`/`left`.
+
+### `will-change` — avisa o navegador (use com cuidado)
+
+```css
+.carta-que-vai-animar {
+  will-change: transform;            /* "vou animar isso" */
+}
+```
+
+O navegador **promove o elemento pra uma camada da GPU** antes da
+animação começar. Resultado: animação mais suave, sem "engasgo" no
+primeiro frame.
+
+**Cuidado**: `will-change` em **muitos elementos ao mesmo tempo**
+**lota a memória da GPU**. Use só em elementos que **vão** animar,
+e **remova** quando a animação acaba:
+
+```css
+.carta { will-change: transform; }
+.carta.animada { will-change: auto; }    /* remove depois */
+```
+
+Ou via JS:
+
+```js
+elemento.addEventListener('animationend', () => {
+  elemento.style.willChange = 'auto';
+});
+```
+
+**Regra prática**: use `will-change` em **máximo 2-3 elementos
+visíveis ao mesmo tempo**. Mais que isso, performance cai.
+
+### Critical CSS — renderiza o "above the fold" primeiro
+
+```html
+<head>
+  <style>
+    /* CSS crítico inline - só o que aparece na primeira tela */
+    body { margin: 0; font-family: system-ui; }
+    .hero { padding: 48px 24px; background: #6366f1; }
+    .hero h1 { font-size: 32px; color: white; }
+  </style>
+  <link rel="stylesheet" href="resto-do-css.css">
+</head>
+```
+
+O navegador **bloqueia a renderização** esperando o CSS carregar.
+Inline do CSS crítico (o que aparece na primeira tela) faz o site
+**pintar mais rápido**. O resto carrega depois.
+
+Ferramentas que automatizam: **Critical** (Node), **Penthouse**,
+**Critters** (Webpack plugin).
+
+### Outras otimizações que custam pouco e ajudam muito
+
+**1. CSS minificado em produção:**
+
+```css
+/* dev */
+.card { display: flex; padding: 16px; background: white; }
+
+/* prod */
+.card{display:flex;padding:16px;background:white;}
+```
+
+Reduz 30-50% do tamanho. Use Vite, Webpack, esbuild — todos têm
+essa opção.
+
+**2. `content-visibility: auto` para listas longas:**
+
+```css
+.card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;     /* tamanho estimado */
+}
+```
+
+O navegador **só renderiza** os cards que estão **visíveis na tela**.
+Lista de 10.000 cards? Só renderiza os ~20 visíveis. **Ganho
+gigantesco** em scroll performance.
+
+**3. Remova CSS não usado:**
+
+```css
+/* PurgeCSS, PurifyCSS - varrem o HTML/JS e tiram CSS não usado */
+```
+
+Menos CSS pra baixar, menos pra parsear, menos pra aplicar. Cuidado
+com classes **adicionadas via JS** — elas precisam estar em uma
+"whitelist" pra não serem removidas.
+
+**4. Use `@import` com moderação:**
+
+```css
+/* NÃO: cada @import é uma requisição nova */
+@import url("a.css");
+@import url("b.css");
+
+/* SIM: combine em build time */
+```
+
+Cada `@import` é **uma ida ao servidor** separada (latência).
+Combine arquivos no build (Vite, Webpack fazem isso automático).
+
+### Mídia: imagens e vídeo
+
+CSS controla a **forma** das imagens, mas o **peso** é do arquivo.
+Use:
+
+- **`<img loading="lazy">`** pra imagens abaixo da dobra.
+- **`srcset`** pra servir versões menores em telas pequenas.
+- **`width`/`height` definidos** no HTML/CSS (evita layout shift).
+
+```html
+<img
+  src="foto.jpg"
+  width="800"
+  height="600"
+  loading="lazy"
+  alt="Descrição"
+>
+```
+
+### Métricas pra observar
+
+Abra o DevTools → aba **Performance** ou **Lighthouse** e olhe:
+
+- **First Contentful Paint (FCP)**: tempo até a primeira coisa
+  aparecer. **< 1.8s** é bom.
+- **Largest Contentful Paint (LCP)**: tempo até o **maior**
+  elemento visível aparecer. **< 2.5s** é bom.
+- **Cumulative Layout Shift (CLS)**: quanto a página "pula" durante
+  o carregamento. **< 0.1** é bom.
+- **Total Blocking Time (TBT)**: quanto a página fica "travada"
+  durante carregamento. **< 200ms** é bom.
+
+CSS impacta **todas essas métricas**. **Critical CSS** melhora
+FCP/LCP. **`width`/`height` em imagens** melhora CLS.
+**Propriedades baratas** em animações melhoram TBT.
+
+- **Anima `transform` e `opacity`**. São as mais baratas.
+- **`will-change` com cuidado** (2-3 elementos por vez).
+- **Critical CSS inline** pra primeira tela.
+- **`content-visibility: auto`** pra listas longas.
+- **CSS minificado** em produção.
+- **Métricas**: FCP, LCP, CLS, TBT (veja no Lighthouse).
+
+> Dica: a **ferramenta mais subestimada** de performance é o DevTools
+> → Performance → "Screenshots". Você vê a página **pintando
+> frame a frame** — vê exatamente o que está sendo recalculado.
+> Se um clique de botão dispara 200ms de reflow, vai aparecer
+> como um "monte amarelo" no flame chart. Resolve e mede de novo.
+
+No próximo, vamos olhar **fora do CSS puro**: o ecossistema de
+frameworks (Tailwind), pré-processadores (Sass) e CSS-in-JS
+(styled-components). É um **mapa de opções**, não tutorial — você
+decide se quer (e quando) usar.

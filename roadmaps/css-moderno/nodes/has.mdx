@@ -1,0 +1,186 @@
+---
+id: has
+title: ":has(): o Seletor que 'Sobe' pro Pai"
+resources:
+  - title: ":has() (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/:has
+    type: doc
+    lang: pt
+    free: true
+  - title: ":has() - o seletor pai (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-has-selector
+    type: doc
+    lang: en
+    free: true
+---
+
+Por décadas, CSS só permitia estilizar **descendentes** (`A B`,
+`A > B`), nunca **ancestrais**. `:has()` (Chrome 105+, Firefox 121+,
+Safari 15.4+) quebra isso: permite selecionar um elemento **com base
+nos filhos que ele tem**. É o "seletor pai" que faltava.
+
+### O caso clássico: imagem com legenda
+
+```html
+<figure>
+  <img src="foto.jpg">
+  <figcaption>Praia ao pôr do sol</figcaption>
+</figure>
+```
+
+```css
+/* figura SEM figcaption - cantos suaves */
+figure { border-radius: 8px; overflow: hidden; }
+
+/* figura COM figcaption - cantos só em cima, espaço pra legenda */
+figure:has(figcaption) {
+  border-radius: 8px 8px 0 0;
+  padding-bottom: 8px;
+}
+```
+
+**Antes do `:has()`**: adicionar classe `<figure class="com-legenda">`
+no HTML. **Com `:has()`**: o CSS descobre sozinho. Mudou o jogo.
+
+### Formulário: campo com erro
+
+```html
+<div class="campo">
+  <label>E-mail</label>
+  <input type="email" required>
+  <span class="erro">E-mail inválido</span>
+</div>
+```
+
+```css
+.campo:has(input:invalid) {                /* campo com input inválido */
+  --cor-borda: red;
+}
+
+.campo:has(.erro) .label {                 /* campo que tem .erro */
+  color: red;
+}
+```
+
+O **wrapper** reage ao estado dos filhos, sem precisar de JS pra
+trocar classe.
+
+### Card com imagem: layout muda com presença de mídia
+
+```css
+.card {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;          /* padrão: sem imagem, 1 coluna */
+}
+
+.card:has(img) {
+  grid-template-columns: 200px 1fr;   /* com imagem: 2 colunas */
+}
+```
+
+```html
+<div class="card">
+  <h3>Notícia</h3>
+  <p>Texto...</p>
+</div>
+
+<div class="card">                <!-- com imagem -->
+  <img src="...">
+  <h3>Notícia</h3>
+  <p>Texto...</p>
+</div>
+```
+
+O **mesmo componente** se adapta: com imagem vira horizontal, sem
+imagem fica vertical. Sem classe extra no HTML, sem JS.
+
+### Nav: item ativo com base no link atual
+
+```html
+<nav>
+  <a href="/">Home</a>
+  <a href="/sobre" aria-current="page">Sobre</a>
+  <a href="/contato">Contato</a>
+</nav>
+```
+
+```css
+nav:has(a[aria-current="page"]) {
+  /* nav tem um link ativo - mostra indicador */
+  background: #f0f9ff;
+}
+
+nav a[aria-current="page"] {
+  color: var(--destaque);
+  font-weight: bold;
+}
+```
+
+### `:has()` + `:not()` — poder máximo
+
+```css
+/* form que NÃO tem nenhum campo required */
+form:not(:has(input:required)) {
+  border: 2px dashed #aaa;          /* "form simples" visualmente */
+}
+
+/* lista que SÓ tem itens completos (checked) */
+.lista:has(li:only-child:checked) {
+  text-decoration: line-through;
+}
+```
+
+### `:has()` com `@container`
+
+```css
+@container (min-width: 500px) {
+  .card:has(img) {
+    grid-template-columns: 200px 1fr;
+  }
+}
+```
+
+Container query **+** `:has()` = componente **verdadeiramente
+inteligente**. Adapta ao espaço E ao conteúdo.
+
+### A pegadinha: `:has()` é mais "caro"
+
+```css
+/* o navegador precisa "olhar pra frente" pra ver se ACHE o filho */
+.pai:has(.filho) { ... }
+```
+
+`:has()` é mais custoso pro navegador que seletores tradicionais
+(o navegador precisa verificar se o filho existe antes de aplicar
+a regra). **Não use em loop** (ex: `:has()` dentro de uma lista
+de 10.000 itens). Pra casos comuns (cards, formulários, layouts
+de página) é **perfeito**.
+
+### Suporte e fallback
+
+```css
+/* sem fallback - em navegadores antigos, simplesmente não aplica */
+.card:has(img) { ... }
+```
+
+Não tem `@supports` específico pra `:has()` que valha a pena
+(cobriria só Internet Explorer e antigos Edge). **Não é
+necessário fallback na prática** — todos os navegadores modernos
+suportam.
+
+- **`:has()`** seleciona o **pai** com base nos filhos.
+- **Combina** com seletores de filhos (`input:invalid`), pseudo-classes
+  (`:checked`), atributos (`[aria-current]`).
+- **Use pra**: form com erro, card com/sem imagem, nav com item
+  ativo, fieldset com filhos.
+- **Mais caro** que seletores tradicionais — não abuse em loops.
+
+> Dica: o caso de uso mais impactante é **formulário com erro**.
+> Antes: adicionar/remover classe `.erro` no wrapper via JS.
+> Agora: o CSS detecta o `:invalid` e estiliza. **Menos JS,
+> menos bugs**, mesma experiência.
+
+No próximo, vamos **pensar em direções lógicas** (não físicas):
+Logical Properties deixam o site certo em qualquer idioma — incluindo
+RTL (árabe, hebraico).

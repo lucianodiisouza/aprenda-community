@@ -1,0 +1,192 @@
+---
+id: container-queries
+title: "Container Queries: @container Responde ao Pai"
+resources:
+  - title: "Container queries (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_container_queries
+    type: doc
+    lang: pt
+    free: true
+  - title: "Guia de Container Queries (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-container-queried-component
+    type: doc
+    lang: en
+    free: true
+---
+
+A maior limitação do CSS por décadas: **media queries só olham pra
+viewport** (a tela inteira). Container Queries (Chrome 105+, Firefox
+110+, Safari 16+) deixam o CSS reagir ao **tamanho do elemento pai**.
+Componente vira **realmente reutilizável**.
+
+### O problema que resolve
+
+```css
+/* card dentro de uma sidebar de 300px */
+.card { display: flex; flex-direction: row; }
+
+/* mesmo card dentro de uma coluna de 800px */
+.card { display: flex; flex-direction: column; }   /* como diferenciar? */
+```
+
+Com media query, você teria que adivinhar o breakpoint do **pai**.
+Com **container query**, o card sabe o tamanho que **lhe foi dado**:
+
+```css
+@container (min-width: 500px) {
+  .card { flex-direction: row; }
+}
+
+@container (max-width: 499px) {
+  .card { flex-direction: column; }
+}
+```
+
+O card reage ao **próprio espaço**, não à tela. Use o mesmo
+componente em 10 lugares e ele se adapta sozinho.
+
+### A sintaxe
+
+**1.** Marcar o **pai** como container:
+
+```css
+.pai {
+  container-type: inline-size;
+  /* ou 'size' (inline + block) ou 'normal' (sem container) */
+}
+```
+
+`inline-size` é mais comum (afeta largura, que é o que mais
+importa pra layout). `size` afeta largura E altura, mas exige que o
+container tenha altura definida.
+
+**2.** Usar `@container` no **filho**:
+
+```css
+.card {
+  /* estilos padrão (mobile/narrow) */
+  display: flex;
+  flex-direction: column;
+}
+
+@container (min-width: 500px) {
+  .card {
+    flex-direction: row;       /* vira horizontal quando tem espaço */
+  }
+}
+```
+
+### `container-name` (múltiplos containers)
+
+```css
+.pai {
+  container-type: inline-size;
+  container-name: card-container;
+}
+
+.outro-pai {
+  container-type: inline-size;
+  container-name: sidebar-container;
+}
+
+@container card-container (min-width: 400px) {
+  .card { /* ... */ }
+}
+
+@container sidebar-container (min-width: 300px) {
+  .widget { /* ... */ }
+}
+```
+
+Quando você tem **vários containers aninhados**, dá pra escolher
+qual observar pelo nome. Sem nome, `@container` olha o **ancestral
+container mais próximo**.
+
+### Container queries + unidades do container
+
+```css
+.pai {
+  container-type: inline-size;
+}
+
+.card {
+  /* usa a largura do CONTAINER, não da viewport */
+  padding: 5cqw;             /* 5% da largura do container */
+  font-size: 4cqw;            /* tipografia fluida baseada no container */
+  border-radius: 2cqw;
+}
+```
+
+`cqw` = "container query width" (1% da largura do container).
+`cqh` = altura. `cqi` = inline-size. `cqb` = block-size. **Pensa
+em `vw`/`vh` mas do container**.
+
+Perfeito pra **componentes que escalam sozinhos**: uma card grande
+tem texto grande, uma card pequena tem texto pequeno. Sem media
+query.
+
+### A pegadinha: o container precisa de tamanho
+
+```css
+.pai {
+  container-type: inline-size;     /* só inline-size */
+  /* funciona com width definida por parent, flex/grid, etc. */
+}
+
+.pai {
+  container-type: size;            /* inline + block */
+  /* precisa de height definida! */
+}
+```
+
+Se o pai não tem largura (ex: `display: inline` em texto corrido),
+o container não tem tamanho pra observar e `@container` nunca
+dispara. Use `display: block`, `flex` ou `grid` no pai.
+
+### `@supports` como fallback
+
+```css
+.card { display: flex; flex-direction: column; }
+
+@supports (container-type: inline-size) {
+  .pai { container-type: inline-size; }
+  @container (min-width: 500px) {
+    .card { flex-direction: row; }
+  }
+}
+```
+
+Em navegadores **sem suporte** a container queries (improvável
+hoje, mas...), o card fica sempre em `column` (não muda). **Não
+há degradação** — só não há a versão responsiva.
+
+### Quando usar Container vs Media
+
+| Caso                                          | Use          |
+| --------------------------------------------- | ------------ |
+| Site inteiro, layout de página                | **Media** query |
+| Componente reutilizável (card, modal, lista)   | **Container** query |
+| Tipografia fluida baseada no pai              | **Container** (com `cqw`) |
+| Tipografia fluida baseada na tela             | **Media** query + `vw` |
+| Dark mode                                     | **Media** query |
+
+A regra: **media query é pra página**, **container query é pra
+componente**. O primeiro cuida de como a página se adapta à tela;
+o segundo cuida de como o componente se adapta ao espaço que
+ganhou.
+
+- **Marque o pai** com `container-type: inline-size`.
+- **Use `@container`** no filho pra reagir.
+- **`container-name`** quando tem vários containers aninhados.
+- **`cqw`/`cqh`** são unidades do container (1% da largura/altura).
+- **`@supports`** como fallback pra navegadores antigos.
+
+> Dica: container queries é a feature que **muda como você pensa
+> componentes**. Antes, você projetava "isso vai ficar numa sidebar
+> de 300px" (frágil). Agora, projeta "isso se adapta ao espaço que
+> ganhar" (robusto). Salve pra revisitar quando estiver construindo
+> design system.
+
+No próximo, vamos conhecer o **seletor que faltava**: `:has()`, que
+permite estilizar o **pai** com base nos filhos. Acabou o "tem que
+adicionar classe no HTML".

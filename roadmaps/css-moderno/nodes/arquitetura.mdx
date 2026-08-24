@@ -1,0 +1,187 @@
+---
+id: arquitetura
+title: "Arquitetura CSS: BEM e Organização de Estilos"
+resources:
+  - title: "BEM - documentação oficial (em inglês)"
+    url: http://getbem.com/
+    type: doc
+    lang: en
+    free: true
+  - title: "ITCSS - arquitetura escalável (Harry Roberts, em inglês)"
+    url: https://www.xfive.co/blog/itcss-flipped-cube-ic/
+    type: doc
+    lang: en
+    free: true
+---
+
+CSS é fácil de começar e **fácil de virar caos**. Em projeto
+pequeno, qualquer estilo funciona. Em projeto com 50+ componentes
+e 3+ devs, **sem convenção** vira `"!important"` em cima de
+`!important` e medo de mexer. **Arquitetura** é o que separa os
+dois.
+
+### O problema que resolve
+
+```css
+/* 3 anos depois, 3 devs diferentes, sem padrão: */
+.card { ... }
+.product-card { ... }
+.card-novo { ... }
+.card-novo-v2 { ... }
+.card-novo-v2-final { ... }
+.card-novo-v2-final-2 { ... }
+```
+
+Sem convenção, cada dev inventa um nome. O arquivo vira um
+**lixão**. **BEM** é a convenção mais famosa — e simples o
+suficiente pra não atrapalhar.
+
+### BEM: Block, Element, Modifier
+
+**Três tipos de "coisa"** num componente:
+
+- **Block**: o componente em si (`.card`, `.navbar`, `.modal`).
+- **Element**: uma **parte** do componente (`.card__title`,
+  `.navbar__link`).
+- **Modifier**: uma **variação** (`.card--featured`,
+  `.btn--primary`).
+
+```html
+<article class="card card--featured">
+  <h2 class="card__title">Título</h2>
+  <p class="card__body">Texto...</p>
+  <button class="btn btn--primary">Comprar</button>
+</article>
+```
+
+```css
+.card { ... }                          /* bloco */
+.card__title { ... }                   /* elemento (parte do card) */
+.card__body { ... }                    /* elemento (parte do card) */
+.card--featured { ... }                /* modificador (variação) */
+.btn { ... }
+.btn--primary { ... }
+```
+
+Regras:
+
+- **`block`**: nome curto, do que o componente **é** (`card`,
+  `modal`, `navbar`). Camel ou kebab: `user-card` ou `userCard` —
+  escolha um.
+- **`__element`**: dois underscores, indica **parte do bloco**
+  (`card__title` é "título do card").
+- **`--modifier`**: dois hífens, indica **variação** (`btn--primary`
+  é "botão na variação primária").
+- **Sem aninhamento**: `card__title__link` é **errado**. O link
+  dentro do título do card é **um bloco independente**:
+  `<a class="link">` dentro de `<h2 class="card__title">`.
+- **Sem tag HTML no seletor**: nunca `.card h2` ou `.btn > span`.
+  O CSS fica preso à estrutura HTML.
+
+### Por que BEM funciona
+
+- **Nomes descritivos** sem ambiguidade: `.card__title` é
+  inequivocamente "o título do card".
+- **Especificidade plana**: tudo é classe simples (`.x`,
+  `.x__y`, `.x--z`). Especificidade `(0, 1, 0)` constante — não
+  tem `#id` nem `.parent .child .grandchild` que vence tudo.
+- **Sem dependência de estrutura HTML**: posso mover o
+  `.card__title` pra qualquer lugar do `.card` que o estilo segue
+  valendo.
+- **Componentes isolados**: dá pra pegar o CSS do `.card` e jogar
+  em outro projeto sem reescrever nada.
+
+### Alternativas ao BEM
+
+- **SMACSS** (Scalable and Modular Architecture for CSS): categorias
+  (base, layout, module, state, theme). Mais opinativo.
+- **OOCSS** (Object-Oriented CSS): separa estrutura de skin.
+- **ITCSS** (Inverted Triangle): organiza por **especificidade**
+  crescente (geral → específico).
+- **CSS-in-JS** (styled-components, Emotion): CSS dentro do
+  JavaScript. **Mudou o jogo** mas tem trade-offs (runtime, SSR,
+  bundle size).
+- **Tailwind CSS**: utility-first (classes pra cada propriedade,
+  compõe no HTML). **Mais popular** hoje.
+- **CSS Modules**: arquivo `.module.css` por componente, classes
+  viram hashes únicos. Combina com qualquer framework JS.
+
+**Não existe "melhor"**. O importante é **escolher um e seguir
+consistente**. BEM é o melhor pra começar (puro CSS, sem
+ferramenta, funciona em qualquer projeto).
+
+### Organização de pastas (padrão simples)
+
+```text
+src/
+  styles/
+    base/             /* reset, tipografia, variáveis globais */
+      reset.css
+      variaveis.css
+      tipografia.css
+    components/       /* cada componente tem um arquivo */
+      button.css
+      card.css
+      navbar.css
+    layout/           /* grid, header, footer */
+      grid.css
+      header.css
+      footer.css
+    pages/            /* estilos específicos de página */
+      home.css
+      produto.css
+    index.css         /* importa tudo na ordem */
+```
+
+**Regra de ouro**: o CSS cresce **junto com o componente**. Componente
+novo → arquivo novo. **Não fica nada em arquivo genérico**.
+
+### O anti-pattern: aninhamento profundo
+
+```css
+/* NÃO FAÇA ISSO */
+.page .container .row .col-md-6 .card .card-body p.text a.link {
+  color: blue;
+}
+
+/* ESPECIFICIDADE: (0, 6, 1) = monstruosa */
+```
+
+```css
+/* FAÇA ASSIM */
+.link { color: blue; }      /* especificidade (0, 1, 0) - plana */
+```
+
+**Cada seletor deve ter no máximo 2-3 classes**. Se precisa de
+mais, o componente está mal modelado.
+
+### `:where()` e `:is()` (seletores com "especificidade zero")
+
+```css
+/* :is() pega o mais específico dos argumentos */
+:is(.card, .modal, .toast) button { ... }
+/* especificidade: a de "button" (1) */
+
+/* :where() sempre tem especificidade 0 */
+:where(.card, .modal, .toast) button { ... }
+/* especificidade: 0 - nunca vence conflito */
+```
+
+`:where()` é a forma **certa** de agrupar seletores em
+**CSS reset** ou base styles — não aumenta especificidade, então
+qualquer regra do usuário sobrescreve.
+
+- **BEM**: `.block`, `.block__element`, `.block--modifier`. Convenção
+  plana, sem dependência de HTML.
+- **Organização por componente**: cada componente tem seu arquivo.
+- **Sem aninhamento**: máximo 2-3 classes por seletor.
+- **Escolha UMA convenção** e siga consistente.
+
+> Dica: pra decidir entre BEM, Tailwind ou CSS-in-JS, considere o
+> time: BEM é melhor pra quem tá aprendendo CSS (puro, sem
+> ferramenta). Tailwind é melhor pra quem já sabe CSS e quer
+> velocidade. CSS-in-JS é melhor pra apps React complexos. **Nenhuma
+> é errada** — escolha e mantenha.
+
+No próximo, vamos **medir**: o que torna um site **lento** ou
+**rápido**, e como o CSS impacta performance.

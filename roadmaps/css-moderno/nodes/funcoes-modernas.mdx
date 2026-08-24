@@ -1,0 +1,153 @@
+---
+id: funcoes-modernas
+title: "Funções Modernas: clamp(), min(), max() e calc()"
+resources:
+  - title: "Funções CSS (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/CSS_functions
+    type: doc
+    lang: pt
+    free: true
+  - title: "Modern CSS - funções úteis (web.dev, em inglês)"
+    url: https://web.dev/articles/building/a-modern-css-workflow
+    type: doc
+    lang: en
+    free: true
+---
+
+CSS tem **funções** que calculam valores em tempo real. As quatro
+mais úteis: `calc()`, `min()`, `max()` e `clamp()`. Juntas com
+variáveis e media queries, substituem **dezenas de regras**
+tradicionais.
+
+### `calc()` — aritmética no CSS
+
+```css
+.largura { width: calc(100% - 40px); }     /* 100% menos 40px de padding total */
+.altura  { height: calc(100vh - 64px); }   /* tela inteira menos header de 64px */
+.margem  { margin: calc(1rem * 1.5); }     /* 1.5x de 1rem */
+```
+
+Use pra **combinar unidades diferentes** (que o CSS normal não
+deixa): `100% - 40px` funciona em `calc()`, mas `100% - 40px` em
+`width` direto **não funciona**.
+
+Truque clássico: layout "sidebar fixa + conteúdo flexível":
+
+```css
+.layout {
+  display: grid;
+  grid-template-columns: 240px calc(100% - 240px);
+}
+```
+
+### `min()` — pega o menor valor
+
+```css
+.caixa {
+  width: min(100%, 800px);
+  /* se 100% do pai for menor que 800px, usa 100%
+     se for maior que 800px, trava em 800px */
+  padding: 0 min(4%, 24px);
+}
+```
+
+Pensa: "use **no máximo** X". `min(100%, 800px)` = "largura máxima
+de 800px, mas pode ser menor". Perfeito pra **conteúdo que não
+deve estourar** um limite.
+
+### `max()` — pega o maior valor
+
+```css
+.botao {
+  width: max(200px, 50%);
+  /* pelo menos 200px, mesmo que 50% seja menor */
+  font-size: max(16px, 1rem);
+}
+```
+
+Pensa: "use **pelo menos** X". `max(200px, 50%)` = "largura mínima
+de 200px, mesmo se 50% do pai for 100px". Útil pra **elementos
+que não podem ficar pequenos demais** (botões em mobile, texto
+legível).
+
+### `clamp()` — mínimo, ideal, máximo (o mais útil)
+
+```css
+h1 {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  /* mínimo: 1.5rem (não fica menor que isso)
+     ideal:   4vw (cresce com a tela)
+     máximo:  3rem (não fica maior que isso) */
+}
+
+.container {
+  width: clamp(320px, 90%, 1200px);
+  /* mobile: 90% do pai (mas no mínimo 320px)
+     tablet: 90% do pai
+     desktop: trava em 1200px */
+}
+```
+
+**A função mais útil pra tipografia fluida e layout responsivo**.
+Resolve o problema "tamanho que cresce com a tela mas tem limite
+mínimo e máximo" sem precisar de media query.
+
+`clamp(MIN, IDEAL, MAX)` lê: "use IDEAL, mas nunca abaixo de MIN
+nem acima de MAX".
+
+### A combinação poderosa: `clamp` + media query lógica
+
+```css
+/* sem media query: */
+h1 { font-size: clamp(1.5rem, 4vw + 1rem, 4rem); }
+```
+
+Funciona, mas o **"ideal"** é uma linha reta. Pra fazer com que
+**cresça mais devagar no mobile e mais rápido no desktop**, a
+fórmula `4vw + 1rem` (unidades que se somam) é o truque:
+
+- **Mobile (375px)**: 4vw = 15px, + 16px = 31px (≈ 1.94rem)
+- **Desktop (1440px)**: 4vw = 57.6px, + 16px = 73.6px (≈ 4.6rem)
+  - mas trava no max de 4rem
+
+A **constante `1rem`** adicionada faz a curva ter um **intercepto
+não-zero** — começa maior e cresce mais suavemente.
+
+### `min()`/`max()` para layouts complexos
+
+```css
+.layout {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 1fr)         /* sidebar: 200px-1fr */
+    minmax(0, 3fr);             /* main: cresce mas pode encolher até 0 */
+}
+```
+
+`minmax(MIN, MAX)` é uma função **de Grid** (vimos em css-layout),
+mas a **lógica** é a mesma: mínimo e máximo.
+
+### Resumo das quatro
+
+| Função      | O que faz                          | Caso típico                  |
+| ----------- | ---------------------------------- | ---------------------------- |
+| `calc()`    | Aritmética com unidades mistas     | `100% - 40px`                |
+| `min()`     | Pega o **menor** valor             | Largura máx: `min(100%, Xpx)` |
+| `max()`     | Pega o **maior** valor             | Largura mín: `max(200px, X%)` |
+| `clamp()`   | Mínimo, ideal, máximo              | Fonte fluida: `clamp(...)`   |
+
+- **`calc()`** mistura unidades (`100% - 40px`).
+- **`min()`** é "no máximo X". **`max()`** é "pelo menos X".
+- **`clamp(MIN, IDEAL, MAX)`** é a ferramenta de tipografia fluida.
+- **Combinar com variáveis CSS** permite controlar tudo num lugar
+  só.
+
+> Dica: copie e cole nos favoritos:
+> `font-size: clamp(1.5rem, 2.5vw + 1rem, 3rem);` é a fonte
+> "fluida" padrão pra títulos. Ajuste os números pro seu projeto.
+> `2.5vw` é a "velocidade de crescimento" — maior = cresce mais
+> rápido.
+
+No próximo, vamos além do `vw`/`vh`: **Container Queries** permitem
+que o layout reaja ao **tamanho do elemento pai**, não da tela.
+Jogo muda completamente pra componentes.
