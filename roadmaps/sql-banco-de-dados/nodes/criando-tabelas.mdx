@@ -1,0 +1,63 @@
+---
+id: criando-tabelas
+title: "CREATE TABLE, Chaves e Restrições"
+resources:
+  - title: "CREATE TABLE (documentação oficial do PostgreSQL, em inglês)"
+    url: https://www.postgresql.org/docs/current/sql-createtable.html
+    type: doc
+    lang: en
+    free: true
+---
+
+`CREATE TABLE` transforma a entidade que você modelou em algo que o
+banco entende. Além do tipo de cada coluna, você declara restrições:
+regras que o banco garante sozinho, sem depender do código da
+aplicação lembrar de checar.
+
+```sql
+CREATE TABLE clientes (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL
+);
+```
+
+- **`PRIMARY KEY`**: identifica cada linha de forma única. Toda
+  tabela deveria ter uma.
+- **`NOT NULL`**: a coluna não pode ficar vazia.
+- **`UNIQUE`**: não pode haver dois valores iguais nessa coluna
+  (dois clientes com o mesmo e-mail, por exemplo).
+
+### Chave estrangeira: a ligação entre tabelas
+
+```sql
+CREATE TABLE pedidos (
+  id SERIAL PRIMARY KEY,
+  cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+  criado_em TIMESTAMP DEFAULT now()
+);
+```
+
+`cliente_id` guarda o `id` de uma linha da tabela `clientes`.
+`REFERENCES clientes(id)` diz ao banco: "esse valor precisa existir
+na tabela clientes". Tentar inserir um pedido com `cliente_id` que
+não existe gera erro, não dado inconsistente.
+
+```sql
+-- o banco recusa: cliente_id 999 não existe em clientes
+INSERT INTO pedidos (cliente_id) VALUES (999);
+```
+
+- **`PRIMARY KEY`** identifica cada linha.
+- **`FOREIGN KEY`** (via `REFERENCES`) garante que a ligação entre
+  tabelas aponta para algo real.
+- **`NOT NULL`** e **`UNIQUE`** bloqueiam dado inválido na porta de
+  entrada, não depois.
+
+> Dica: deixe o banco garantir essas regras, mesmo que sua aplicação
+> já valide o mesmo no código. Bug de aplicação acontece; a
+> restrição no banco é a última linha de defesa contra dado
+> corrompido.
+
+No próximo nó, você vai finalmente consultar dado com `SELECT`,
+`WHERE`, `ORDER BY` e `LIMIT`.

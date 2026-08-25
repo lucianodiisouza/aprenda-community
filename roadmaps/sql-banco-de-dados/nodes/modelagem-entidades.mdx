@@ -1,0 +1,55 @@
+---
+id: modelagem-entidades
+title: "Modelando Entidades Antes de Criar Tabela"
+resources:
+  - title: "Modelo entidade relacionamento (Wikipédia PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Modelo_entidade_relacionamento
+    type: doc
+    lang: pt
+    free: true
+---
+
+Criar tabela direto no banco, sem planejar, custa caro depois: uma
+coluna que falta, um relacionamento que devia existir e não existe.
+Antes de escrever `CREATE TABLE`, vale desenhar no papel o que o
+sistema precisa guardar.
+
+### Entidade: a "coisa" que você guarda
+
+Numa livraria, as entidades são `livro`, `autor`, `cliente`,
+`pedido`. Cada entidade vira, mais tarde, uma tabela.
+
+### Atributo: o que descreve a entidade
+
+```text
+Entidade: livro
+Atributos: titulo, isbn, preco, ano_publicacao
+```
+
+Cada atributo vira, mais tarde, uma coluna dessa tabela.
+
+### Relacionamento: como as entidades se conectam
+
+```text
+autor  ----escreve---->  livro
+cliente  ----faz---->  pedido
+pedido  ----contem---->  livro
+```
+
+Um relacionamento descreve como duas entidades se conectam, e
+quantas vezes essa conexão acontece: um autor escreve vários livros,
+um cliente faz vários pedidos. Esse "quantas vezes" tem nome:
+cardinalidade. Você vai ver isso em detalhe no nó de
+relacionamentos, mais à frente.
+
+- **Entidade** vira tabela.
+- **Atributo** vira coluna.
+- **Relacionamento** define como tabelas vão se conectar via chave
+  estrangeira.
+
+> Dica: desenhe as entidades e as setas de relacionamento num papel
+> ou numa ferramenta simples antes de abrir o banco de dados. Cinco
+> minutos de desenho evitam horas de `ALTER TABLE` depois.
+
+No próximo nó, você vai aprender normalização: as regras que evitam
+que o mesmo dado fique repetido em várias linhas da tabela.

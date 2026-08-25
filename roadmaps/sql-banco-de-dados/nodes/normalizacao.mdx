@@ -1,0 +1,66 @@
+---
+id: normalizacao
+title: "Normalização: 1FN, 2FN e 3FN"
+resources:
+  - title: "Normalização de dados (Wikipédia PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Normaliza%C3%A7%C3%A3o_de_dados
+    type: doc
+    lang: pt
+    free: true
+---
+
+Normalizar é organizar as tabelas para que cada dado exista em um
+único lugar. Sem isso, atualizar uma informação vira uma caça a
+todas as linhas que a repetem, e alguma sempre fica desatualizada.
+
+### O problema: dado repetido
+
+```text
+tabela "pedidos" (sem normalizar)
+| id | cliente_nome | cliente_email      | produto  |
+|----|--------------|---------------------|----------|
+| 1  | Ana Silva    | ana@email.com       | Teclado  |
+| 2  | Ana Silva    | ana@email.com       | Mouse    |
+```
+
+Se o e-mail da Ana mudar, você precisa atualizar as duas linhas. Se
+esquecer uma, o banco fica com dois e-mails diferentes para a mesma
+pessoa.
+
+### 1ª Forma Normal: sem lista dentro de uma célula
+
+```text
+errado:  telefones = "11999990000, 11888880000"
+certo:   uma linha por telefone, numa tabela separada
+```
+
+Cada coluna guarda um valor só, não uma lista disfarçada de texto.
+
+### 2ª Forma Normal: todo atributo depende da chave inteira
+
+Quando a chave é composta por mais de uma coluna, todo outro
+atributo precisa depender das duas, não só de uma parte dela.
+
+### 3ª Forma Normal: sem depender de outro atributo que não é chave
+
+```text
+tabela "pedidos" com cliente_nome e cliente_email
+depende de cliente_id, não da chave do pedido
+→ extrai para uma tabela "clientes" separada
+```
+
+O nome e o e-mail do cliente pertencem à entidade cliente, não à
+entidade pedido. Separar as duas tabelas resolve o problema do
+exemplo anterior.
+
+- **1FN**: cada coluna guarda um valor atômico, sem lista.
+- **2FN**: atributo depende da chave completa, não de parte dela.
+- **3FN**: atributo depende só da chave, não de outro atributo.
+- Normalizar reduz repetição e evita dado desatualizado.
+
+> Dica: normalizar até a 3ª forma resolve a maioria dos problemas
+> reais. Ir além disso (4FN, 5FN) raramente compensa fora de casos
+> muito específicos.
+
+No próximo nó, você vai escolher os tipos de dado certos para cada
+coluna antes de criar a primeira tabela de verdade.

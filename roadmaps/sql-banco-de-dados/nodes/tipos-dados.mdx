@@ -1,0 +1,60 @@
+---
+id: tipos-dados
+title: "Tipos de Dados: Escolhendo a Coluna Certa"
+resources:
+  - title: "Data Types (documentação oficial do PostgreSQL, em inglês)"
+    url: https://www.postgresql.org/docs/current/datatype.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Cada coluna de uma tabela declara um tipo, e o banco rejeita
+qualquer valor que não seja compatível. Isso evita erro bobo, como
+guardar texto onde devia ter número.
+
+### Os tipos que cobrem a maioria dos casos
+
+```sql
+CREATE TABLE produtos (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  descricao TEXT,
+  preco NUMERIC(10, 2) NOT NULL,
+  em_estoque BOOLEAN DEFAULT true,
+  criado_em TIMESTAMP DEFAULT now()
+);
+```
+
+- **`SERIAL`**: número inteiro que se auto-incrementa, comum em
+  chave primária.
+- **`VARCHAR(n)`**: texto curto, com limite de tamanho (nome,
+  título, e-mail).
+- **`TEXT`**: texto longo, sem limite prático (descrição,
+  comentário).
+- **`NUMERIC(10, 2)`**: número decimal exato, essencial para dinheiro
+  (10 dígitos no total, 2 depois da vírgula).
+- **`BOOLEAN`**: verdadeiro ou falso.
+- **`TIMESTAMP`**: data e hora juntas.
+
+### A pegadinha do dinheiro
+
+```sql
+-- errado: FLOAT perde precisão em cálculo com dinheiro
+preco FLOAT
+
+-- certo: NUMERIC guarda o valor exato
+preco NUMERIC(10, 2)
+```
+
+`FLOAT` representa número decimal de forma aproximada. Para preço,
+essa aproximação pode gerar diferença de centavos depois de várias
+operações. `NUMERIC` guarda o valor exato, sem arredondamento
+oculto.
+
+> Dica: na dúvida entre `VARCHAR(n)` e `TEXT`, use `TEXT` se não
+> souber o limite real. No PostgreSQL, os dois têm a mesma
+> performance. O limite do `VARCHAR` serve só como validação.
+
+No próximo nó, você vai criar a primeira tabela de verdade, com
+chave primária e restrições.

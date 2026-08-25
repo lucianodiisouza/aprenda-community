@@ -1,0 +1,75 @@
+---
+id: select-where
+title: "SELECT, WHERE, ORDER BY e LIMIT"
+resources:
+  - title: "SQL SELECT (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_select.asp
+    type: doc
+    lang: en
+    free: true
+  - title: "SQL WHERE (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_where.asp
+    type: doc
+    lang: en
+    free: true
+---
+
+`SELECT` é o comando que você mais vai usar. Ele lê linhas de uma
+tabela e devolve só o que você pediu.
+
+```sql
+SELECT nome, preco FROM produtos;
+```
+
+Isso devolve duas colunas de todas as linhas da tabela `produtos`.
+Para pegar todas as colunas, use `*`, mas evite isso em código de
+produção: pedir só o que precisa é mais rápido e mais claro.
+
+### WHERE: filtrando linhas
+
+```sql
+SELECT nome, preco
+FROM produtos
+WHERE preco < 100 AND em_estoque = true;
+```
+
+`WHERE` filtra as linhas antes de devolver o resultado. `AND`,
+`OR` e `NOT` combinam condições, do jeito que combinariam num `if`
+de qualquer linguagem.
+
+### ORDER BY: definindo a ordem
+
+```sql
+SELECT nome, preco
+FROM produtos
+ORDER BY preco DESC;
+```
+
+`DESC` ordena do maior para o menor. `ASC` (padrão, pode omitir)
+ordena do menor para o maior.
+
+### LIMIT: pegando só um pedaço
+
+```sql
+SELECT nome, preco
+FROM produtos
+ORDER BY preco DESC
+LIMIT 5;
+```
+
+Devolve só as 5 linhas mais caras. Sem `LIMIT`, uma tabela com
+milhões de linhas devolveria tudo de uma vez, o que trava a
+aplicação e desperdiça memória.
+
+- **`SELECT colunas FROM tabela`**: o que buscar e de onde.
+- **`WHERE`**: filtra quais linhas entram no resultado.
+- **`ORDER BY coluna DESC/ASC`**: define a ordem do resultado.
+- **`LIMIT n`**: corta o resultado nas primeiras `n` linhas.
+
+> Dica: a ordem de escrita do SQL (`SELECT` primeiro) não é a ordem
+> real de execução. O banco processa `FROM` e `WHERE` antes de
+> decidir quais colunas devolver. Entender isso ajuda a lembrar por
+> que `WHERE` não pode usar um apelido definido no `SELECT`.
+
+No próximo nó, você vai aprender a inserir, atualizar e apagar
+linhas com `INSERT`, `UPDATE` e `DELETE`.

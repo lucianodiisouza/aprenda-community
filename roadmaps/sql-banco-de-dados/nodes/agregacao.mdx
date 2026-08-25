@@ -1,0 +1,70 @@
+---
+id: agregacao
+title: "GROUP BY, HAVING e Funções de Agregação"
+resources:
+  - title: "SQL GROUP BY (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_groupby.asp
+    type: doc
+    lang: en
+    free: true
+---
+
+Perguntas como "quantos pedidos cada cliente fez?" ou "qual o total
+vendido por mês?" não pedem uma linha por vez. Pedem um resumo.
+`GROUP BY` junta linhas parecidas e uma função de agregação calcula
+um valor sobre cada grupo.
+
+### Contando e somando por grupo
+
+```sql
+SELECT cliente_id, COUNT(*) AS total_pedidos
+FROM pedidos
+GROUP BY cliente_id;
+```
+
+Isso agrupa todas as linhas de `pedidos` por `cliente_id` e conta
+quantas linhas caem em cada grupo.
+
+```sql
+SELECT cliente_id, SUM(valor) AS total_gasto
+FROM pedidos
+GROUP BY cliente_id;
+```
+
+### As funções de agregação mais usadas
+
+```sql
+COUNT(*)      -- quantas linhas
+SUM(coluna)   -- soma dos valores
+AVG(coluna)   -- média
+MAX(coluna)   -- maior valor
+MIN(coluna)   -- menor valor
+```
+
+### HAVING: filtrando depois de agrupar
+
+```sql
+SELECT cliente_id, COUNT(*) AS total_pedidos
+FROM pedidos
+GROUP BY cliente_id
+HAVING COUNT(*) > 5;
+```
+
+`WHERE` filtra linhas antes de agrupar. `HAVING` filtra grupos
+depois de agrupar. Por isso `WHERE preco > 100` funciona, mas
+`WHERE COUNT(*) > 5` não: naquele ponto da consulta, o `COUNT`
+ainda não existe.
+
+- **`GROUP BY coluna`**: agrupa linhas que têm o mesmo valor nessa
+  coluna.
+- **`COUNT`, `SUM`, `AVG`, `MAX`, `MIN`**: calculam um valor por
+  grupo.
+- **`HAVING`**: filtra grupos, não linhas individuais. Vem depois do
+  `GROUP BY`.
+
+> Dica: toda coluna no `SELECT` que não está dentro de uma função de
+> agregação precisa aparecer no `GROUP BY`. Se o banco reclamar
+> disso, é sinal de que falta uma coluna no agrupamento.
+
+No próximo nó, você vai aprender subquery e CTE: formas de quebrar
+uma consulta complexa em partes mais claras.

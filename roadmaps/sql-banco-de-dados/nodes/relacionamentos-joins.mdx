@@ -1,0 +1,78 @@
+---
+id: relacionamentos-joins
+title: "Relacionamentos entre Tabelas e JOIN"
+resources:
+  - title: "SQL JOIN (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_join.asp
+    type: doc
+    lang: en
+    free: true
+---
+
+Dado normalizado fica espalhado em várias tabelas. `JOIN` junta
+essas tabelas numa consulta só, seguindo a chave estrangeira que
+liga uma à outra.
+
+### Um para muitos (1:N)
+
+```sql
+-- um cliente tem muitos pedidos
+SELECT clientes.nome, pedidos.id, pedidos.criado_em
+FROM pedidos
+INNER JOIN clientes ON pedidos.cliente_id = clientes.id;
+```
+
+`INNER JOIN` devolve só as linhas que têm correspondência nas duas
+tabelas. Um pedido sem cliente válido (o que a chave estrangeira já
+impede) não apareceria.
+
+### Trazendo tudo, mesmo sem correspondência
+
+```sql
+-- todo cliente, mesmo o que nunca fez pedido
+SELECT clientes.nome, pedidos.id
+FROM clientes
+LEFT JOIN pedidos ON pedidos.cliente_id = clientes.id;
+```
+
+`LEFT JOIN` devolve todas as linhas da tabela da esquerda
+(`clientes`), preenchendo com `NULL` quando não existe pedido
+correspondente. Use isso quando a ausência de relação também
+importa (por exemplo, para achar clientes que nunca compraram).
+
+### Muitos para muitos (N:N)
+
+```sql
+CREATE TABLE livros_autores (
+  livro_id INTEGER REFERENCES livros(id),
+  autor_id INTEGER REFERENCES autores(id),
+  PRIMARY KEY (livro_id, autor_id)
+);
+```
+
+Um livro pode ter vários autores, e um autor pode ter vários livros.
+Isso não cabe numa única chave estrangeira: precisa de uma tabela
+extra (tabela pivot ou tabela de associação) que guarda cada par
+livro-autor.
+
+```sql
+SELECT livros.titulo, autores.nome
+FROM livros_autores
+INNER JOIN livros ON livros_autores.livro_id = livros.id
+INNER JOIN autores ON livros_autores.autor_id = autores.id;
+```
+
+- **1:N** (um para muitos): chave estrangeira direto na tabela do
+  lado "muitos".
+- **N:N** (muitos para muitos): tabela pivot com duas chaves
+  estrangeiras.
+- **`INNER JOIN`**: só linhas com correspondência nas duas tabelas.
+- **`LEFT JOIN`**: todas as linhas da esquerda, com `NULL` onde não
+  há correspondência.
+
+> Dica: se uma consulta parece impossível de escrever, o problema
+> geralmente é modelagem, não SQL. Volte no desenho de entidades e
+> confira se falta uma tabela pivot ou uma chave estrangeira.
+
+No próximo nó, você vai resumir dado de várias linhas em um único
+número: `GROUP BY` e funções de agregação.
