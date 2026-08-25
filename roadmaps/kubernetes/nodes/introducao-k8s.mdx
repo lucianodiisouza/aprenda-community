@@ -52,13 +52,13 @@ Um cluster k8s tem dois tipos de máquina:
   node tem um `kubelet` (agente que fala com o control plane) e um
   `container runtime` (normalmente `containerd` ou `CRI-O`).
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     User["Você (kubectl)"]
 
     subgraph CP["Control Plane"]
-        API["kube-apiserver\n(a API)"]
-        ETCD[("etcd\nestado do cluster")]
+        API["kube-apiserver\\n(a API)"]
+        ETCD[("etcd\\nestado do cluster")]
         SCHED["kube-scheduler"]
         CM["kube-controller-manager"]
         API <--> ETCD
@@ -91,8 +91,9 @@ flowchart TB
     classDef user fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
     class API,ETCD,SCHED,CM cp
     class K1,R1,P1,P2,K2,R2,P3 node
-    class User user
-```
+    class User user`}
+  caption="Cluster k8s: control plane + worker nodes."
+/>
 
 Você nunca fala direto com um node. Fala com o `kube-apiserver` via
 `kubectl`, e o control plane distribui as instruções pros nodes

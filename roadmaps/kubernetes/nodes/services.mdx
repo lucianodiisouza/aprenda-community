@@ -33,33 +33,33 @@ o k8s cria:
 
 ## Os 4 tipos principais
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     Client["Cliente (Pod, browser, etc.)"]
 
     subgraph Cluster["Cluster k8s"]
         subgraph Internal["ClusterIP (default)"]
-            SVC1[("Service\nClusterIP: 10.96.0.10")]
-            P1[("Pod 1\n10.244.1.5")]
-            P2[("Pod 2\n10.244.2.7")]
+            SVC1[("Service\\nClusterIP: 10.96.0.10")]
+            P1[("Pod 1\\n10.244.1.5")]
+            P2[("Pod 2\\n10.244.2.7")]
             SVC1 --> P1
             SVC1 --> P2
         end
 
         subgraph NodePort["NodePort (expõe 30000-32767)"]
-            SVC2[("Service\nNodePort: 30080")]
+            SVC2[("Service\\nNodePort: 30080")]
             P3[("Pod")]
             SVC2 --> P3
         end
 
         subgraph LB["LoadBalancer (cloud)"]
-            SVC3[("Service\nLB externo")]
+            SVC3[("Service\\nLB externo")]
             P4[("Pod")]
             SVC3 --> P4
         end
 
         subgraph Ext["ExternalName (CNAME)"]
-            SVC4[("Service\nCNAME: db.rds.amazonaws.com")]
+            SVC4[("Service\\nCNAME: db.rds.amazonaws.com")]
         end
     end
 
@@ -73,8 +73,9 @@ flowchart TB
     classDef ext fill:#7c2d12,stroke:#fb923c,color:#fff7ed
     class SVC1,SVC2,SVC3,SVC4 svc
     class P1,P2,P3,P4 pod
-    class Client ext
-```
+    class Client ext`}
+  caption="Tipos de Service: ClusterIP, NodePort, LoadBalancer e ExternalName."
+/>
 
 - **`ClusterIP`** (padrão) - só acessível **dentro do cluster**.
   É o que você usa pra service-to-service (api -> db).

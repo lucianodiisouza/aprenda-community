@@ -30,12 +30,12 @@ oferece 3 camadas: `Volume` (declaração no Pod), `PersistentVolume`
   de 10 GB read-write-once." O k8s casa o pedido com um PV
   disponível e vincula.
 
-```mermaid
-flowchart LR
+<Mermaid
+  chart={`flowchart LR
     App["Pod (Deployment)"]
-    PVC[("PVC\n'quero 10GB RWO'")]
-    PV[("PV\ndisco EBS 50GB")]
-    SC["StorageClass\n(gp3 on AWS)"]
+    PVC[("PVC\\n'quero 10GB RWO'")]
+    PV[("PV\\ndisco EBS 50GB")]
+    SC["StorageClass\\n(gp3 on AWS)"]
     SC -.->|"provisiona"| PV
     PVC -.->|"bind"| PV
     App -->|"usa"| PVC
@@ -47,8 +47,9 @@ flowchart LR
     class App app
     class PVC pvc
     class PV pv
-    class SC sc
-```
+    class SC sc`}
+  caption="Relacao entre StorageClass, PV e PVC."
+/>
 
 ## Exemplo: Postgres com PVC dinâmico
 

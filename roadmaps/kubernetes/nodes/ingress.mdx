@@ -24,20 +24,20 @@ Ingress é um objeto k8s que diz: "para requisições com host
 `app.exemplo.com` e path `/api`, mande pro service `api`. Para host
 `app.exemplo.com` e path `/`, mande pro service `frontend`."
 
-```mermaid
-flowchart LR
-    User["Usuário\n(browser)"]
-    DNS["DNS\napp.exemplo.com (IP do LB)"]
-    LB["Cloud Load Balancer\n(nginx-ingress controller)"]
+<Mermaid
+  chart={`flowchart LR
+    User["Usuário\\n(browser)"]
+    DNS["DNS\\napp.exemplo.com (IP do LB)"]
+    LB["Cloud Load Balancer\\n(nginx-ingress controller)"]
 
     subgraph Cluster["Cluster k8s"]
         subgraph Rule["Ingress: app.exemplo.com"]
-            R1["/api/*\nrota: service: api"]
-            R2["/\nrota: service: frontend"]
+            R1["/api/*\\nrota: service: api"]
+            R2["/\\nrota: service: frontend"]
         end
 
-        SVC1[("Service: api\nClusterIP")]
-        SVC2[("Service: frontend\nClusterIP")]
+        SVC1[("Service: api\\nClusterIP")]
+        SVC2[("Service: frontend\\nClusterIP")]
         P1[("Pod: api")]
         P2[("Pod: frontend")]
         SVC1 --> P1
@@ -57,8 +57,9 @@ flowchart LR
     class User,DNS,LB ext
     class Rule,R1,R2 ing
     class SVC1,SVC2 svc
-    class P1,P2 pod
-```
+    class P1,P2 pod`}
+  caption="Fluxo: navegador -> DNS -> Load Balancer -> Ingress -> Service -> Pod."
+/>
 
 Pontos do diagrama:
 

@@ -21,18 +21,18 @@ network e storage entre os containers que abriga.
 
 ## Anatomia de um Pod
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     subgraph Pod["Pod (1 IP, 1 namespace de network)"]
         direction TB
-        C1["Container 1\nimagem: node:20-alpine\nporta: 3000"]
-        C2["Container 2\nimagem: meu-sidecar\n(volume compartilhado)"]
-        VS["Volume compartilhado\n(emptyDir)"]
+        C1["Container 1\\nimagem: node:20-alpine\\nporta: 3000"]
+        C2["Container 2\\nimagem: meu-sidecar\\n(volume compartilhado)"]
+        VS["Volume compartilhado\\n(emptyDir)"]
         C1 <-.-> VS
         C2 <-.-> VS
     end
 
-    Node["Worker Node\n(IP do node: 10.0.0.5)"]
+    Node["Worker Node\\n(IP do node: 10.0.0.5)"]
     Pod --- Node
 
     classDef pod fill:#1e3a8a,stroke:#60a5fa,color:#eff6ff
@@ -42,8 +42,9 @@ flowchart TB
     class Pod pod
     class C1,C2 c
     class VS v
-    class Node n
-```
+    class Node n`}
+  caption="Pod: containers, volume compartilhado e IP do cluster."
+/>
 
 Pontos importantes do diagrama:
 
