@@ -43,8 +43,11 @@ Esta trilha **assume** que a pessoa já passou por:
 - [**Docker Fundamentos**](../../docker-fundamentos) - tudo daquela
   trilha é pré-requisito desta. Em particular: ciclo de vida de
   container, imagens, Dockerfile, volumes, networks.
-- **Terminal Linux/macOS básico** e **Git mínimo** - mesmas
-  premissas da trilha anterior.
+- [**Terminal para Devs**](../../terminal-para-devs) - os comandos
+  de shell que esta trilha assume sem reintroduzir (cd, ls, cat,
+  grep, env vars, ssh básico). Pré-req formal declarado.
+- **Git mínimo** - clonar, commitar, branch. Suficiente pra
+  versionar o `docker-compose.yml`.
 
 Não exige Kubernetes, cloud, nem qualquer conhecimento prévio de
 orquestração.
