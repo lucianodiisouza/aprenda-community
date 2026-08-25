@@ -152,7 +152,82 @@ na trilha, e o `children` reflete isso.
 - ❌ Tag deprecada sem marcar (`<center>`, `<font>`, `<marquee>`, etc. -
   sempre mencione que caiu em desuso e indique a substituta).
 
-## 8. Checklist antes de abrir PR
+## 8. Diagramas (Mermaid)
+
+Diagramas servem quando **a figura é mais clara que o texto sozinho**:
+arquitetura de sistema, fluxo de dados, relação entre entidades,
+sequência de eventos. Não use diagrama pra coisas que uma lista de
+3 itens já resolve - é ruído.
+
+### Quando usar
+
+- Arquitetura de um sistema (componentes, quem fala com quem).
+- Fluxo de dados (request -> service -> banco -> response).
+- Relação entre entidades que têm cardinalidade (1-N, N-M).
+- Comparação visual de arquiteturas (VM vs container, monólito vs
+  microsserviço).
+- Pipeline / sequência de etapas com dependências.
+
+### Quando **não** usar
+
+- Lista de 3-5 conceitos (uma lista `- **termo**: descrição` é
+  melhor que um diagrama com 3 nodes).
+- Tudo que o texto já diz com clareza.
+- "Diagrama bonito" sem função pedagógica. Não decore.
+
+### Como escrever
+
+Use o componente `<Mermaid>` do app, **numa linha própria**:
+
+```mdx
+<Mermaid
+  chart={`flowchart LR
+    A[Cliente] --> B[API]
+    B --> C[(Banco)]`}
+  caption="Fluxo básico de uma request."
+/>
+```
+
+A prop `chart` recebe a sintaxe Mermaid (template literal). A prop
+`caption` é a legenda visível abaixo do diagrama e vira o `alt`
+pra acessibilidade.
+
+**Sintaxe Mermaid mais comum nas trilhas:**
+
+- `flowchart LR` / `flowchart TB` - diagramas de fluxo (o mais
+  usado).
+- `sequenceDiagram` - sequência temporal de mensagens entre
+  participantes.
+- `classDiagram` - classes e relações.
+- `stateDiagram-v2` - máquina de estados.
+- `erDiagram` - entidade-relacionamento (banco de dados).
+
+### Boas práticas
+
+- **Sempre inclua `caption`** descritivo do que o diagrama mostra.
+  O `caption` é o que o leitor de tela lê, e a primeira coisa que
+  a pessoa vê se o diagrama falhar em renderizar.
+- **Subgraphs** agrupam componentes (ex: "Control Plane" vs
+  "Worker Nodes"). Use pra dar contexto visual.
+- **`classDef` + `class`** pra colorir nós por papel
+  (ex: serviço, banco, rede). Sem cor, o diagrama fica cinza e
+  as relações se confundem.
+- **Teste no app** - o preview do GitHub em `.mdx` **não
+  renderiza** Mermaid (só em `.md`). Sempre suba e veja no app
+  antes de abrir PR.
+- **Máximo ~10-12 nós por diagrama** - além disso, o diagrama
+  vira um mapa ilegível. Quebre em dois ou use drill-down.
+
+### Erros comuns
+
+- Esquecer o `caption` (deixa a figura sem contexto).
+- Setas sem label em fluxos com mais de 2 ramos (a pessoa não sabe
+  o que passa por cada caminho).
+- Misturar `flowchart` e `sequence` no mesmo diagrama (escolha um).
+- Diagrama com texto grande dentro dos nós - quebra o layout.
+  Use label curto, detalhe no texto ao redor.
+
+## 9. Checklist antes de abrir PR
 
 - [ ] CI local (`pnpm validate` ou equivalente) passa.
 - [ ] Slug único na trilha; `children` aponta pra IDs existentes.
@@ -161,3 +236,6 @@ na trilha, e o `children` reflete isso.
 - [ ] Texto revisado em voz alta - se trai, simplifica.
 - [ ] Nó novo tá linkado no `roadmap.json` e na ordem certa.
 - [ ] Mudanças de escopo de uma trilha vão pra `meta/editorial-decisions.md`.
+- [ ] Se adicionou diagrama: `caption` presente, sintaxe Mermaid
+      validada no app, e está num lugar onde a figura realmente
+      agrega (não é decoração).

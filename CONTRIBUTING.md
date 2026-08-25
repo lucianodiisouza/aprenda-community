@@ -205,6 +205,52 @@ até lá aparece só a miniatura, então não pesa no carregamento da aula:
 Prefira vídeos em **PT-BR** e de canais estáveis (evite vídeos que sabidamente
 vão sair do ar).
 
+### Diagramas (Mermaid)
+
+Diagramas são renderizados pelo app como SVG, via o componente
+`<Mermaid>`. Use quando a figura for **mais clara que o texto**:
+arquitetura, fluxo de dados, relação entre componentes. Não decore -
+se uma lista de 3 itens resolve, vá de lista.
+
+**Onde usar:** numa **linha própria** dentro do `.mdx` do nó:
+
+```mdx
+<Mermaid
+  chart={`flowchart LR
+    A[Cliente] --> B[API]
+    B --> C[(Banco)]`}
+  caption="Fluxo básico de uma request."
+/>
+```
+
+- `chart` recebe a sintaxe Mermaid (template literal, com crase).
+- `caption` é a legenda visível **e** o `alt` de acessibilidade -
+  sempre descreva o que o diagrama mostra, em 1 frase.
+- O `chart` é renderizado client-side pela lib `mermaid`. A
+  primeira renderização tem latência pequena (~100ms) - o componente
+  mostra "Carregando diagrama..." nesse intervalo.
+
+**Quando vale a pena um diagrama:** arquitetura de sistema (quem
+fala com quem), fluxo de request, comparação visual (ex: VM vs
+container), pipeline com dependências, sequência temporal de
+eventos. **Quando NÃO vale:** lista curta de conceitos, coisas que
+o texto já diz com clareza, "diagrama bonito" sem função.
+
+**Tipos Mermaid mais usados nas trilhas:** `flowchart LR|TB` (o
+mais comum), `sequenceDiagram` (mensagens temporais), `classDiagram`
+(modelo de classes), `stateDiagram-v2` (estados), `erDiagram`
+(banco de dados). Detalhes de cada tipo na
+[doc oficial do Mermaid](https://mermaid.js.org/syntax/flowchart.html).
+
+**Atenção:** o preview do GitHub em arquivos `.mdx` **não renderiza**
+Mermaid (só renderiza em `.md` e em issues/discussions). O
+`<Mermaid>` aparece como tag crua no PR. Sempre teste no app
+local antes de abrir o PR - `pnpm dev` no `primo-academy` e abra o
+nó.
+
+Detalhes de quando usar, como escrever e erros comuns no
+[**Style Guide → Diagramas**](./docs/style-guide.md#8-diagramas-mermaid).
+
 ---
 
 ## Anatomia de um `roadmap.json`
