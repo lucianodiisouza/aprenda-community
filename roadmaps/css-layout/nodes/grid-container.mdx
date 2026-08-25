@@ -138,5 +138,25 @@ container; `justify-items` alinha **cada item dentro de sua célula**.
 > vale ouro. Copie e cole em qualquer galeria de cards. Substitua
 > `250px` pelo mínimo que faz sentido e pronto.
 
+<VisualCheckpoint
+  challenge="Faça a .grade virar um grid de 3 colunas iguais, com 16px de espaço entre elas."
+  hint="display: grid + grid-template-columns: repeat(3, 1fr) + gap."
+  starterHtml={`<div class="grade"><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div></div>`}
+  starterCss={`.grade {\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const g = root.querySelector('.grade');
+    if (!g) return { pass: false, message: 'Não achei a .grade.' };
+    const s = getComputedStyle(g);
+    const cols = s.gridTemplateColumns.split(' ').filter(Boolean);
+    const iguais = cols.length === 3 && cols.every(c => c === cols[0]);
+    return {
+      pass: s.display === 'grid' && iguais && (s.columnGap === '16px' || s.gap.startsWith('16px')),
+      message: 'A .grade precisa de display: grid, 3 colunas iguais (repeat(3, 1fr)) e gap: 16px.'
+    };
+  `}
+  slug="css-layout"
+  nodeId="grid-container"
+/>
+
 No próximo, o outro lado: as propriedades que vão nos **filhos** e
 definem **em qual célula** cada um fica.
