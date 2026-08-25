@@ -41,3 +41,12 @@ que não existe, devolva `404`.
 
 No próximo nó, vamos ver o **Node.js**, o runtime que te permite escrever
 JavaScript fora do navegador - no servidor.
+
+<Quiz
+  question="Qual método HTTP é idempotente e usado para buscar dados sem alterá-los?"
+  options={[
+    { text: "GET", correct: true },
+    { text: "POST", correct: false, explanation: "POST cria/altera e não é idempotente (repetir pode duplicar)." },
+    { text: "DELETE", correct: false, explanation: "DELETE altera estado (remove) — não serve pra só buscar." }
+  ]}
+/>
