@@ -13,6 +13,15 @@
   // Dificuldade inicial. Pode evoluir pra "intermediario"/"avancado" depois.
   "difficulty": "iniciante",
 
+  // (Opcional) Vídeo de boas-vindas exibido no header da trilha.
+  // Remova este bloco se a trilha não tiver vídeo de introdução.
+  // "url" precisa ser um vídeo do YouTube (watch, youtu.be, embed ou shorts).
+  // "title" é opcional (legenda/acessibilidade). Prefira vídeos em PT-BR.
+  "intro_video": {
+    "url": "https://youtu.be/<id-do-video>",
+    "title": "<Boas-vindas à trilha>"
+  },
+
   "nodes": [
     {
       // ID único dentro da trilha. kebab-case. Vira o nome do arquivo .mdx.

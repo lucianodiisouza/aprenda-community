@@ -217,6 +217,13 @@ Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
   "title": "HTML",
   "description": "Trilha completa de HTML, do zero absoluto até HTML semântico avançado.",
   "difficulty": "iniciante",  // iniciante | intermediario | avancado
+
+  // (Opcional) Vídeo de boas-vindas no header da trilha. Remova se não houver.
+  "intro_video": {
+    "url": "https://youtu.be/8aGhZQkoFbQ",  // watch, youtu.be, embed ou shorts
+    "title": "Boas-vindas à trilha de HTML"  // opcional
+  },
+
   "nodes": [
     {
       "id": "introducao",
@@ -244,6 +251,11 @@ Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
   com frontmatter `id` igual (o CI valida).
 - `milestone` é um nó de fechamento (ex: "Projeto Final"). Idealmente com
   `children: []`.
+- `intro_video` é **opcional**. Quando presente, precisa ser um objeto com
+  `url` (um vídeo do YouTube — `watch`, `youtu.be`, `embed` ou `shorts`) e,
+  opcionalmente, `title`. O site extrai o id da URL e mostra o vídeo no header
+  da trilha (só carrega o player ao clicar). Prefira vídeos em **PT-BR** e de
+  canais estáveis. O CI valida que a URL é de fato do YouTube.
 
 ---
 

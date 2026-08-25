@@ -31,6 +31,28 @@ const err = (msg) => {
 };
 const ok = (msg) => console.log(`✅ ${msg}`);
 
+/**
+ * Extrai o id do vídeo de uma URL do YouTube (watch, youtu.be, embed, shorts,
+ * incluindo o domínio youtube-nocookie.com). Retorna null se não reconhecer.
+ * Espelha `youTubeId` do schema do app (packages/content/src/schema.ts).
+ */
+function youTubeIdFromUrl(url) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^www\./, "").replace(/^m\./, "");
+  if (host === "youtu.be") return u.pathname.slice(1) || null;
+  if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    if (u.pathname === "/watch") return u.searchParams.get("v") || null;
+    const m = u.pathname.match(/^\/(?:embed|shorts)\/([^/?#]+)/);
+    if (m) return m[1] ?? null;
+  }
+  return null;
+}
+
 async function listRoadmaps() {
   let entries;
   try {
@@ -83,6 +105,24 @@ async function validateRoadmap(slug) {
   if (!["iniciante", "intermediario", "avancado"].includes(roadmap.difficulty)) {
     err(`  roadmap.json: difficulty deve ser iniciante|intermediario|avancado (recebido: ${roadmap.difficulty})`);
   }
+
+  // intro_video (opcional): objeto { url, title? } com URL de YouTube válida.
+  if (roadmap.intro_video !== undefined) {
+    const iv = roadmap.intro_video;
+    if (typeof iv !== "object" || iv === null || Array.isArray(iv)) {
+      err(`  roadmap.json: "intro_video" deve ser um objeto { url, title? }`);
+    } else {
+      if (typeof iv.url !== "string" || !iv.url) {
+        err(`  roadmap.json: "intro_video.url" ausente ou não é string`);
+      } else if (youTubeIdFromUrl(iv.url) === null) {
+        err(`  roadmap.json: "intro_video.url" deve ser um vídeo do YouTube válido (recebido: ${iv.url})`);
+      }
+      if (iv.title !== undefined && typeof iv.title !== "string") {
+        err(`  roadmap.json: "intro_video.title" deve ser string`);
+      }
+    }
+  }
+
   if (!Array.isArray(roadmap.nodes) || roadmap.nodes.length === 0) {
     err(`  roadmap.json: "nodes" deve ser um array não-vazio`);
     return;
