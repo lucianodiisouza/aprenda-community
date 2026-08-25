@@ -1,0 +1,112 @@
+---
+id: volumes
+title: "Persistindo dados fora do container"
+resources:
+  - title: "Volumes (docs oficial, EN)"
+    url: https://docs.docker.com/engine/storage/volumes/
+    type: doc
+    lang: en
+    free: true
+  - title: "Bind mounts (docs oficial, EN)"
+    url: https://docs.docker.com/engine/storage/bind-mounts/
+    type: doc
+    lang: en
+    free: true
+---
+
+Container é por design **efêmero** - se ele morre, os dados internos
+morrem junto. Isso é ótimo pra rodar uma função e jogar fora, mas péssimo
+pra um banco de dados, onde o conteúdo é justamente o que importa. A
+solução é **mover os dados pra fora** do container usando volumes ou
+bind mounts.
+
+## O problema na prática
+
+```bash
+docker run -d --name meu-postgres -e POSTGRES_PASSWORD=secret postgres:16
+docker exec -it meu-postgres psql -U postgres -c "CREATE DATABASE teste;"
+docker exec -it meu-postgres psql -U postgres -c "\\l"
+docker rm -f meu-postgres
+docker run -d --name meu-postgres2 -e POSTGRES_PASSWORD=secret postgres:16
+docker exec -it meu-postgres2 psql -U postgres -c "\\l"   # vazio! perdeu tudo
+```
+
+Os dados sumiram. Pra resolver: volume.
+
+## Volumes (o jeito Docker de fazer)
+
+Volume é uma **pasta gerenciada pelo Docker**, guardada em
+`/var/lib/docker/volumes/`. Você não mexe nela diretamente - só diz
+"esse diretório do container aponta pra esse volume".
+
+```bash
+docker volume create dados-postgres
+docker run -d --name meu-postgres \
+  -e POSTGRES_PASSWORD=secret \
+  -v dados-postgres:/var/lib/postgresql/data \
+  postgres:16
+```
+
+Agora, mesmo se o container for removido, o volume `dados-postgres`
+persiste. Subir um novo container apontando pro mesmo volume = todos
+os dados voltam.
+
+```bash
+docker volume ls                  # lista
+docker volume inspect dados-postgres  # vê onde fica no host
+docker volume rm dados-postgres   # remove (precisa não estar em uso)
+docker volume prune               # remove os não usados
+```
+
+## Bind mounts (o jeito "pasta do meu PC")
+
+Bind mount **mapeia uma pasta do seu host pra dentro do container**.
+É o jeito que você mais usa em desenvolvimento, porque editar código
+no seu editor e ver a mudança no container fica instantâneo.
+
+```bash
+docker run -d --name meu-app \
+  -p 3000:3000 \
+  -v $(pwd)/src:/app/src \
+  minha-app
+```
+
+`-v $(pwd)/src:/app/src` significa: "a pasta `./src` no meu PC
+(atual) fica disponível em `/app/src` dentro do container".
+
+> **Volume ou bind mount?**
+> - **Volume**: produção, dados que precisam sobreviver, bancos,
+>   uploads. Docker gerencia onde fica.
+> - **Bind mount**: desenvolvimento, quando você quer editar código
+>   no host e ver no container. Útil pra logs também.
+
+## Quando o container escreve como root
+
+Por padrão, processos dentro do container rodam como `root` (diferente
+do root do host, mas ainda root do container). Em sistemas Linux, isso
+faz com que os arquivos criados no host apareçam como `root:root`,
+sujando seu `ls`. A solução:
+
+```bash
+# roda como seu usuário
+docker run -u $(id -u):$(id -g) -v $(pwd):/app minha-app
+
+# ou: chown no Dockerfile
+# COPY --chown=node:node . .
+```
+
+Três conceitos que você acabou de aprender:
+
+- **Volume** = pasta gerenciada pelo Docker. Ideal pra dados
+  persistentes (bancos, uploads).
+- **Bind mount** = pasta do host montada no container. Ideal pra
+  desenvolvimento.
+- **Container é efêmero** = qualquer coisa que importa precisa
+  estar fora dele.
+
+> Dica: dá pra montar **arquivo** também, não só pasta. Ex: `-v
+> $(pwd)/config.json:/app/config.json:ro` (`:ro` = read-only).
+> Útil pra passar configuração sem dar permissão de escrita.
+
+No próximo, vamos ver como fazer dois containers **conversarem** -
+banco e aplicação, por exemplo.

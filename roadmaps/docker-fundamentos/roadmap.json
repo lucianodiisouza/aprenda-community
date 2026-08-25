@@ -1,0 +1,85 @@
+{
+  "slug": "docker-fundamentos",
+  "title": "Docker Fundamentos",
+  "description": "Trilha para quem quer entender e usar **containers** no dia a dia: o que são, por que existem, como rodar, criar imagens com Dockerfile, persistir dados, fazer containers conversarem e empacotar uma aplicação de verdade. Pré-requisito: terminal Linux/macOS e noções de Git.",
+  "difficulty": "intermediario",
+  "skills": ["docker", "containers", "devops", "linux", "imagens"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-containers",
+      "title": "Containers e Docker: o que são e por que existem",
+      "type": "topic",
+      "recommended": true,
+      "children": ["instalacao-docker"]
+    },
+    {
+      "id": "instalacao-docker",
+      "title": "Instalando o Docker",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["primeiro-container"]
+    },
+    {
+      "id": "primeiro-container",
+      "title": "Rodando seu primeiro container",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["imagens-e-registries"]
+    },
+    {
+      "id": "imagens-e-registries",
+      "title": "Imagens, layers e Docker Hub",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["dockerfile-basico"]
+    },
+    {
+      "id": "dockerfile-basico",
+      "title": "Escrevendo seu primeiro Dockerfile",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["comandos-essenciais"]
+    },
+    {
+      "id": "comandos-essenciais",
+      "title": "Os comandos do dia a dia",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["volumes"]
+    },
+    {
+      "id": "volumes",
+      "title": "Persistindo dados fora do container",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["networks"]
+    },
+    {
+      "id": "networks",
+      "title": "Fazendo containers conversarem",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["imagens-eficientes"]
+    },
+    {
+      "id": "imagens-eficientes",
+      "title": "Imagens menores e multi-stage build",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: empacotando uma aplicação",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

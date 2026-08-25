@@ -1,0 +1,75 @@
+---
+id: instalacao-docker
+title: "Instalando o Docker"
+resources:
+  - title: "Get Docker (docs oficial, EN)"
+    url: https://docs.docker.com/get-docker/
+    type: doc
+    lang: en
+    free: true
+  - title: "Instalando Docker no Ubuntu (docs oficial, PT-BR)"
+    url: https://docs.docker.com/engine/install/ubuntu/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Antes de tudo: **instale o Docker Engine** (o motor que roda containers),
+não fique só com extensões de editor ou "Docker sem Docker". A forma mais
+simples depende do seu sistema.
+
+## No Linux (recomendado)
+
+A doc oficial tem um script de conveniência que instala tudo:
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+No Ubuntu 22.04+ e derivados, dá pra usar o `apt` direto, sem script
+(vai na doc oficial linkada nos recursos). Depois de instalar, adicione
+seu usuário ao grupo `docker` pra não precisar de `sudo` a cada comando:
+
+```bash
+sudo usermod -aG docker $USER
+# faça logout e login de novo, ou:
+newgrp docker
+```
+
+## No macOS e Windows
+
+Baixe o **Docker Desktop** em [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+Ele instala o motor, a CLI e uma interface gráfica. Requer:
+- **macOS 11+** com Apple Silicon ou Intel.
+- **Windows 10/11** com WSL 2 habilitado (o instalador oferece isso).
+
+Docker Desktop é gratuito para uso pessoal e em empresas pequenas (até
+250 funcionários e US$ 10 milhões/ano de receita). Acima disso, é pago -
+vale considerar alternativas como **Rancher Desktop** ou
+**Colima** no macOS.
+
+## Testando se funcionou
+
+```bash
+docker --version
+docker run hello-world
+```
+
+O `hello-world` baixa uma imagem minúscula do Docker Hub, sobe um
+container, imprime uma mensagem de boas-vindas e sai. Se você viu esse
+texto, **Docker está instalado e rodando**.
+
+Três conceitos que você acabou de usar sem saber:
+
+- **`docker --version`** - consulta a versão da CLI instalada.
+- **`docker run`** - baixa a imagem (se necessário) e sobe um container.
+- **`hello-world`** - nome da imagem no Docker Hub. O Docker procura
+  sempre em `docker.io/<nome>` por padrão.
+
+> Dica: o primeiro `docker run` costuma demorar um pouquinho - ele baixa
+> a imagem. As próximas execuções são instantâneas porque a imagem fica
+> cacheada localmente.
+
+No próximo, vamos rodar containers **úteis** - e aprender a controlar
+eles.
