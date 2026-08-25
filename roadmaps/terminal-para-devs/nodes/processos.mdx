@@ -1,0 +1,171 @@
+---
+id: processos
+title: "Processos: ps, top, kill, jobs e sinais"
+resources:
+  - title: "Processos e jobs (linuxcommand.org, EN)"
+    url: https://linuxcommand.org/lc3_lts0100.php
+    type: doc
+    lang: en
+    free: true
+  - title: "Sinais POSIX - lista completa"
+    url: https://man7.org/linux/man-pages/man7/signal.7.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando um processo trava, consome 100% de CPU, ou você precisa
+parar de forma limpa - é aqui que entra. Linux trata tudo
+(processos, threads, daemons) como **processos** com um PID
+(Process ID) numérico.
+
+## Vendo o que tá rodando: `ps`
+
+```bash
+ps                                 # processos do shell atual
+ps -e                              # todos
+ps -ef                             # todos, formato full (Linux)
+ps aux                             # todos, formato BSD (macOS, Linux também funciona)
+ps aux | grep nginx                # filtra
+ps -ef --forest                    # mostra árvore de processos (Linux)
+pstree -p                          # alternativa dedicada (se instalado)
+```
+
+O `ps` tem **dois dialetos**:
+- **BSD** (macOS, opcional no Linux): `ps aux`
+- **POSIX/SysV** (Linux default): `ps -ef`
+
+Os dois mostram a mesma coisa com colunas em ordem diferente. Se
+um script não funcionar no outro OS, geralmente é isso.
+
+As colunas mais úteis do `ps aux`:
+
+```text
+USER  PID   %CPU  %MEM  VSZ    RSS    TTY  STAT  START  TIME  COMMAND
+root  1234  0.5   1.2   123456 78901  ?    Ssl   Aug20  1:23  /usr/sbin/nginx
+```
+
+- `USER` - dono
+- `PID` - Process ID
+- `%CPU` / `%MEM` - uso atual
+- `STAT` - estado: `R` running, `S` sleeping, `Z` zombie, `T` stopped
+- `COMMAND` - qual binário/script
+
+## Monitoramento ao vivo: `top` / `htop`
+
+```bash
+top                                # monitor clássico, atualiza a cada 3s
+htop                               # versão melhorada (instale: brew/apt install htop)
+```
+
+Dentro do `top`:
+- `P` - ordena por CPU
+- `M` - ordena por memória
+- `k` - mata processo (pede PID)
+- `q` - sai
+
+`htop` é a mesma coisa, com UI melhor: cores, scroll com mouse,
+árvore de processos visível. Vale instalar.
+
+> **Cuidado com `top` em servidores de produção**: rodar
+> interativamente é OK, mas em CI/CD prefira `ps` ou leitura de
+> `/proc`. `top` em loop infinito pode esconder processo crítico
+> da tela.
+
+## Matando processos: `kill` e sinais
+
+```bash
+kill 1234                          # SIGTERM (15) - pede pra fechar limpo
+kill -9 1234                       # SIGKILL (9) - mata sem chance de cleanup
+kill -HUP 1234                     # SIGHUP (1) - "recarrega config" (nginx, etc)
+kill -l                            # lista todos os sinais
+```
+
+Os **sinais** são a forma de comunicação com processos. Os mais
+comuns:
+
+- `SIGTERM` (15) - "termine, mas faça cleanup" - primeiro a
+  tentar. Permite o processo fechar arquivos, conexões, banco.
+- `SIGKILL` (9) - "morre agora" - o kernel mata sem chance de
+  cleanup. Use **só** se `SIGTERM` não funcionar.
+- `SIGHUP` (1) - "recarregue a configuração" - nginx, postgres,
+  sshd usam. Não mata, só recarrega.
+- `SIGINT` (2) - o que o `Ctrl + C` manda. Interrupção.
+
+> **Regra de ouro**: sempre tente `kill PID` antes de `kill -9
+> PID`. O `-9` não dá chance do processo fechar conexões de banco
+> e deixar dados consistentes.
+
+Por nome:
+
+```bash
+killall nginx                      # mata todos os processos "nginx"
+pkill -f "node server.js"          # mata pelo padrão de command line
+```
+
+## Background e jobs: `&`, `fg`, `bg`, `jobs`
+
+```bash
+comando-longo &                    # roda em background, libera o terminal
+                                    # imprime o PID
+[1] 12345
+
+jobs                               # lista jobs do shell atual
+fg %1                              # traz job 1 pro foreground
+bg %1                              # continua job 1 em background
+Ctrl + Z                           # suspende o job atual (depois fg/bg pra retomar)
+Ctrl + C                           # mata o job atual
+```
+
+O `&` é como você "dispara e esquece" um comando. Útil pra
+builds longos, downloads, ou subir um servidor de dev.
+
+O `Ctrl + Z` suspende o processo (vira job parado, sem executar).
+`bg %1` continua ele em background, `fg %1` traz de volta pro
+foreground.
+
+> **Atenção**: jobs são do **shell atual**. Se você fechar o
+> terminal, os jobs podem morrer (depende do shell e do OS). Pra
+> processos que precisam sobreviver ao logout, use `nohup` ou
+> `tmux` (próximos nós).
+
+## `nohup` e `disown` - processos que sobrevivem ao logout
+
+```bash
+nohup comando-longo &              # ignora SIGHUP, redireciona output pra nohup.out
+disown %1                          # remove job da tabela do shell (mas deixa rodando)
+```
+
+`nohup` faz o processo **ignorar o sinal de logout** (SIGHUP).
+Útil pra iniciar um script, fazer logout, e o script continua
+rodando no servidor.
+
+## `/proc` - tudo é arquivo
+
+No Linux, cada processo tem um diretório em `/proc/<PID>/` com
+informações:
+
+```bash
+ls /proc/1234/                      # info do processo 1234
+cat /proc/1234/cmdline              # linha de comando completa
+cat /proc/1234/status               # status detalhado
+cat /proc/1234/cgroup               # container/cgroup
+```
+
+Três conceitos que você acabou de aprender:
+
+- **PID identifica o processo**. `ps` acha por ele, `kill` age
+  nele, `/proc/<PID>/` tem os detalhes.
+- **Sinais são o "como" você se comunica com o processo**.
+  `SIGTERM` antes de `SIGKILL` - sempre.
+- **`&` é pra "disparar e esquecer"**, `Ctrl + Z` é pra suspender.
+  `nohup`/`disown` são pra processos que precisam sobreviver ao
+  logout.
+
+> Dica: o `htop` tem um atalho legal: seleciona um processo e
+> aperta `F9` pra mandar sinal, `F7`/`F8` pra mudar prioridade
+> (nice), `L` pra ver arquivos abertos pelo processo. Mais
+> produtivo que `ps` + `kill` na unha.
+
+No próximo, **pipes e redirecionamento** - a peça que cola
+tudo. Quando você entende pipe, o terminal vira uma linguagem.

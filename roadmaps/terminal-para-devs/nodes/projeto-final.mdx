@@ -1,0 +1,210 @@
+---
+id: projeto-final
+title: "Projeto Final: diagnosticar e arrumar um servidor"
+resources:
+  - title: "Linux troubleshooting 101 (linuxuprising.com, EN)"
+    url: https://www.linuxuprising.com/2018/09/linux-troubleshooting-101.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Brendan Gregg - performance methodology (EN)"
+    url: http://www.brendangregg.com/methodology.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Você chegou no fim da trilha de Terminal. Hora de **unir tudo**
+- os 14 nós anteriores viram ferramentas. Esse nó é sobre
+**raciocínio**: quando algo tá quebrado num servidor, qual
+ferramenta usar, em que ordem.
+
+## A missão
+
+Você recebe um servidor Linux (pode ser uma VM local, um
+container, ou uma VPS barata). O cenário é uma empresa fictícia
+chamada **Acme API** rodando uma API Node. O time reporta:
+
+> "A API tá fora. Cliente reclama que recebe 502 Bad Gateway. Tá
+> tudo estranho. Pode ver?"
+
+Você tem **acesso SSH** ao servidor. Sem mais informações. O
+objetivo é **triar, identificar e corrigir** a cadeia de
+problemas. Use **só o que aprendeu** (mais pesquisa se
+necessário, mas o exercício é justamente improvisar com o
+básico).
+
+## Setup (faça isso primeiro)
+
+Pra praticar de verdade, suba uma VM ou container local:
+
+```bash
+# opção 1: docker run um Ubuntu interativo
+docker run -it --rm -p 8080:80 --name servidor-quebrado ubuntu:24.04 bash
+
+# opção 2: VM local (multipass, vagrant, kvm, etc)
+multipass launch --name servidor-quebrado
+multipass shell servidor-quebrado
+```
+
+Ou use o exercício abaixo como leitura e anote **o que você
+rodaria** em cada passo. A resposta do "certo" é importante
+mais que a prática mecânica.
+
+## Cenário passo a passo
+
+### Passo 1: Conectar e olhar em volta
+
+```bash
+ssh usuario@servidor
+whoami                              # confirma quem você é
+hostname                            # nome da máquina
+uptime                              # há quanto tempo tá rodando
+date                                # hora atual (timezone certo?)
+pwd                                 # onde você loga
+ls -la                              # o que tem aqui
+```
+
+**O que procurar**: hostname bate com o que te falaram?
+Algum arquivo estranho na home? (criptominer?)
+
+### Passo 2: A API tá viva?
+
+```bash
+curl -v http://localhost:3000/health
+# ou
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000
+```
+
+**Possíveis resultados**:
+- `200 OK` - API responde. Problema é outro.
+- `Connection refused` - porta 3000 não tá escutando. Serviço
+  caiu.
+- `502 Bad Gateway` - tem algo na frente (nginx, traefik) que
+  tá reportando erro do backend.
+- `timeout` - rede/firewall.
+
+### Passo 3: Verificar processos
+
+```bash
+ps aux | grep -E "node|npm|pm2" | grep -v grep
+```
+
+**O que procurar**: o processo da API (`node server.js` ou
+`pm2 start`) tá rodando? Se não, é serviço caído.
+
+### Passo 4: Olhar logs
+
+```bash
+# logs do sistema
+sudo journalctl -u minha-api --since "1 hour ago"
+sudo journalctl -u nginx --since "1 hour ago"
+
+# logs da app (depende de onde estão)
+tail -f /var/log/minha-api/app.log
+ls -la /var/log/minha-api/          # tem arquivo? tamanho crescendo?
+```
+
+**O que procurar**: stack trace? "Out of memory"? "Cannot
+connect to database"? "EADDRINUSE" (porta ocupada)?
+
+### Passo 5: Verificar portas e conexões
+
+```bash
+ss -tulnp                           # o que tá escutando
+ss -tnp | grep :3000                # específico: quem tá na 3000
+ss -tnp | grep :5432                # banco escutando?
+```
+
+**Cenário comum**: o `nginx` escutando na 80, mas nada na
+3000. API caiu.
+
+### Passo 6: Verificar permissões
+
+```bash
+ls -la /var/log/minha-api/          # quem pode ler o log?
+ls -la /etc/minha-api/config.json   # config tem permissão certa?
+ls -la ~/                           # home do user da app
+```
+
+**Cenário comum**: alguém rodou `chmod 000` num arquivo de
+config por engano, ou a app não consegue ler o certificado SSL.
+
+### Passo 7: Verificar uso de recursos
+
+```bash
+df -h                               # disco cheio?
+free -h                             # memória?
+uptime                              # load average
+top                                # quem tá consumindo?
+```
+
+**Cenário comum**: disco 100% (logs gigantes que ninguém
+rotaciona), OOM killer matando o processo, load average
+alto (CPU saturada).
+
+### Passo 8: Verificar conectividade com dependências
+
+```bash
+curl -v postgres://user:pass@db.internal:5432     # depende do driver
+nc -zv db.internal 5432              # porta 5432 responde?
+dig db.internal                      # resolve DNS?
+ping db.internal                     # ou falha por ICMP bloqueado (irrelevante)
+```
+
+**Cenário comum**: a app conecta no banco "db.internal" mas o
+DNS não resolve (typo em `/etc/hosts`, serviço DNS caiu).
+
+## Possíveis bugs pra "consertar"
+
+Cada um dos passos acima pode ser um bug diferente. O exercício
+real seria **criar uma máquina quebrada** com vários bugs
+conhecidos, e o aluno **achar e consertar**. Pra reproduzir
+em casa:
+
+```bash
+# bug 1: processo da API caiu
+sudo systemctl stop minha-api
+
+# bug 2: porta ocupada por outro processo
+node -e "require('http').createServer(()=>{}).listen(3000)" &
+sudo systemctl start minha-api    # vai dar EADDRINUSE
+
+# bug 3: permissão errada no arquivo de config
+chmod 000 /etc/minha-api/config.json
+
+# bug 4: disco cheio
+dd if=/dev/zero of=/var/log/big.log bs=1M count=10000
+
+# bug 5: DNS não resolve
+echo "127.0.0.1 db.wrong-name" >> /etc/hosts
+# (ou remova a entrada certa)
+```
+
+Tente reproduzir **um bug de cada vez** e use só o terminal pra
+diagnosticar e consertar. A repetição é o que cria a
+intuição.
+
+## Checklist de "saída"
+
+A prática valeu se você consegue, **dado um problema novo**,
+formar uma hipótese em segundos:
+
+- "API 502" -> "nginx fala com backend, mas backend caiu. Olhar
+  processos e logs."
+- "Disco cheio" -> "Olhar `df -h`, achar pasta grande, investigar."
+- "Não consigo logar" -> "Permissão errada em `~/.ssh`, ou
+  serviço SSH caiu, ou firewall."
+- "Comando não encontrado" -> "PATH errado ou binário não
+  instalado."
+
+## Compartilhe
+
+Poste o cenário no LinkedIn, mande pra amigos, abra issue no
+nosso GitHub com a tag `meu-projeto`. Mostrar o raciocínio - "eu
+tava com X quebrado, fiz A, B, C e descobri Y" - vale mais que
+o sintoma em si.
+
+> Próximo passo: vá pra trilha de **Docker Fundamentos** (que
+> assume essa trilha como pré-requisito). Você tem a base. O
+> resto é subir stack.

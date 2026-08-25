@@ -1,0 +1,136 @@
+---
+id: compressao-arquivos
+title: "Compactação: tar, gzip e zip"
+resources:
+  - title: "GNU tar manual (EN)"
+    url: https://www.gnu.org/software/tar/manual/tar.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Compactar e empacotar é o que você faz antes de mandar logs pro
+suporte, fazer backup de pasta, ou baixar release de projeto.
+Três formatos dominam unix: `tar` (empacotador puro), `gzip`
+(compressor), e `zip` (ambos juntos, cross-platform).
+
+## `tar` - empacotador (não comprime sozinho)
+
+O `tar` (Tape ARchive) junta vários arquivos/pastas em **um
+só arquivo** (`.tar`). Por si só, não comprime - o tamanho
+final fica igual à soma dos originais. Mas pode chamar um
+compressor:
+
+```bash
+# criar arquivo .tar (sem compressão)
+tar -cf arquivo.tar pasta/            # c=create, f=file
+
+# criar .tar.gz (gzip - mais comum)
+tar -czf arquivo.tar.gz pasta/        # z=gzip
+
+# criar .tar.bz2 (bzip2 - melhor compressão, mais lento)
+tar -cjf arquivo.tar.bz2 pasta/       # j=bzip2
+
+# criar .tar.xz (xz - melhor ainda, ainda mais lento)
+tar -cJf arquivo.tar.xz pasta/       # J=xz (capital)
+
+# listar conteúdo
+tar -tf arquivo.tar.gz                # t=list
+
+# extrair
+tar -xf arquivo.tar.gz                # x=extract (auto-detecta formato)
+tar -xzf arquivo.tar.gz               # -z explícito (alguns tars antigos precisam)
+tar -xf arquivo.tar.gz -C /destino/   # extrai em diretório específico
+
+# extrair arquivo único de dentro do tar
+tar -xf arquivo.tar.gz caminho/dentro.txt
+
+# ver detalhes enquanto cria
+tar -czvf arquivo.tar.gz pasta/      # v=verbose
+```
+
+> **Por que `.tar.gz` e não só `.gz`?** Porque `gzip` comprime
+> **um arquivo só**. Pra comprimir **vários**, primeiro junta
+> em `.tar` (sem compressão), depois aplica `gzip`. Resultado:
+> `.tar.gz`. É a convenção histórica (e a mais comum).
+
+> **Diferença macOS vs Linux no `tar`**: ambos vêm com `tar`
+> mas o do macOS (BSD) tem flags diferentes do GNU (Linux).
+> `-czf` funciona igual nos dois. `-C` (extract em diretório)
+> também. `--exclude` e `--strip-components` variam mais -
+> cuidado em scripts.
+
+## `gzip` e `gunzip` - compressão standalone
+
+Quando você já tem um arquivo e quer só comprimir:
+
+```bash
+gzip arquivo.txt                     # comprime -> arquivo.txt.gz (substitui o original)
+gzip -k arquivo.txt                  # mantém o original (-k = keep)
+gzip -9 arquivo.txt                  # compressão máxima (mais lento)
+gunzip arquivo.txt.gz                # descomprime
+zcat arquivo.txt.gz                  # imprime sem descomprimir (vai pra stdout)
+```
+
+Mesma família: `bzip2` (`.bz2`) e `xz` (`.xz`). Use `gzip` por
+padrão - é o mais compatível.
+
+## `zip` e `unzip` - cross-platform
+
+`zip` é o padrão de Windows e por isso comum em ambientes
+mistos. Diferente do `tar`+`gzip` (que junta **e depois**
+comprime), `zip` faz os dois num comando só.
+
+```bash
+# criar
+zip -r arquivo.zip pasta/            # -r recursivo (essencial pra diretórios)
+zip arquivo.zip arquivo1.txt arquivo2.txt  # comprime múltiplos
+
+# listar conteúdo
+unzip -l arquivo.zip
+
+# extrair
+unzip arquivo.zip                    # extrai no diretório atual
+unzip arquivo.zip -d /destino/       # extrai em diretório específico
+
+# extrair arquivo único
+unzip arquivo.zip caminho/dentro.txt
+```
+
+> **Quando usar `zip` vs `tar.gz`?** Regra prática: `tar.gz` em
+> mundo unix-only (servidores, scripts, CI). `zip` quando o
+> destino tem Windows ou usuário final leigo. O `zip` não é tão
+> eficiente em compressão quanto `tar.gz` (tipicamente 5-15%
+> pior), mas é universal.
+
+## Tamanho, integridade
+
+```bash
+# ver tamanho do diretório
+du -sh pasta/                        # -s summary, -h human
+
+# ver tamanho de cada arquivo/pasta
+du -sh */ | sort -h
+
+# integridade de arquivo grande (checksum)
+md5sum arquivo.tar.gz                # ou shasum -a 256 arquivo.tar.gz
+sha256sum arquivo.tar.gz             # mais seguro (SHA-2)
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`tar`** junta, **não comprime sozinho**. `gzip` comprime,
+  não junta. Juntos, viram `tar.gz` (ou `.tgz`).
+- **Flag muda por formato**: `-z` (gzip), `-j` (bzip2), `-J` (xz).
+  `tar` auto-detecta na extração.
+- **`zip`** é cross-platform, `tar.gz` é mais eficiente e padrão
+  unix. Escolha baseado no consumidor do arquivo.
+
+> Dica: antes de mandar logs pro suporte, faça `tar -czf
+> logs-2026-08-25.tar.gz /var/log/app/` e anexe num email. O
+> suporte agradece. Melhor: `tar -czf logs-$(date +%F).tar.gz
+> /var/log/app/` num cron semanal com cleanup por idade.
+
+No próximo, **rede no terminal**: `curl`, `ping`, `dig`, `ss` -
+as ferramentas pra debugar problemas de rede e fazer requests
+HTTP direto da linha de comando.
