@@ -1,0 +1,121 @@
+---
+id: cluster-local
+title: "Subindo um cluster local com minikube ou k3d"
+resources:
+  - title: "minikube - quickstart (docs oficial, EN)"
+    url: https://minikube.sigs.k8s.io/docs/start/
+    type: doc
+    lang: en
+    free: true
+  - title: "k3d - quickstart (docs oficial, EN)"
+    url: https://k3d.io/stable/quickstart/
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de falar com cluster de produção, você precisa de um cluster
+local. As duas opções mais usadas em 2026 são **minikube** e
+**k3d**. Ambas rodam **todo o cluster dentro de containers** na sua
+máquina - sem precisar de cloud nem de máquina virtual.
+
+## minikube (a mais fácil de começar)
+
+O minikube sobe um **node único** com todo o control plane e os
+componentes de worker juntos. Ideal pra aprender.
+
+```bash
+# Instalar (macOS)
+brew install minikube
+
+# Iniciar o cluster (baixa ISO na primeira vez)
+minikube start --driver=docker
+
+# Status
+minikube status
+
+# Parar e apagar
+minikube stop
+minikube delete
+```
+
+Quando o `minikube start` termina, ele configura o `kubectl`
+automaticamente (`~/.kube/config`). Teste:
+
+```bash
+kubectl get nodes
+# NAME       STATUS   ROLES           AGE     VERSION
+# minikube   Ready    control-plane   1m      v1.31.0
+```
+
+## k3d (mais leve, multi-node)
+
+[k3s](https://k3s.io/) é uma distribuição de k8s leve feita pela
+Rancher (agora SUSE). [k3d](https://k3d.io/) roda o k3s **dentro
+de containers Docker** - sobe quase instantâneo e permite multi-node
+fácil.
+
+```bash
+# Instalar (macOS)
+brew install k3d
+
+# Criar cluster com 1 control-plane + 2 workers
+k3d cluster create meu-cluster \
+  --agents 2 \
+  --port "8080:80@loadbalancer"   # expõe 8080 do host -> 80 do cluster
+
+# Listar clusters
+k3d cluster list
+
+# Deletar
+k3d cluster delete meu-cluster
+```
+
+## minikube vs k3d
+
+|                       | minikube                       | k3d                                |
+| --------------------- | ------------------------------ | ---------------------------------- |
+| Setup                 | Inicia uma VM/cluster         | Roda k3s em containers Docker      |
+| Tempo de start        | 1-3 min (primeira vez, baixa ISO) | 5-10s                              |
+| Multi-node            | Sim (com `--nodes N`)          | **Nativo** (`--agents N`)          |
+| Load balancer         | `minikube service` (manual)   | **Mapeamento de porta automático** |
+| RAM mínima            | 2 GB                           | 1 GB                               |
+| Melhor pra            | Aprender, simular 1 node       | Simular produção (multi-node)      |
+
+**Minha recomendação pra esta trilha: comece com minikube** (mais
+documentado, mais exemplos), passe pro k3d quando precisar simular
+multi-node.
+
+## Habilitando addons úteis
+
+minikube vem com addons que simulam serviços de cloud:
+
+```bash
+minikube addons list                # ver todos
+minikube addons enable metrics-server  # necessário pra HPA
+minikube addons enable ingress        # controller de Ingress
+minikube addons enable dashboard      # UI web do cluster
+```
+
+Acessar o dashboard:
+
+```bash
+minikube dashboard
+# abre no navegador
+```
+
+Três conceitos que você acabou de aprender:
+
+- **Cluster local** é um k8s real rodando na sua máquina. Tudo que
+  você aprender aqui vale pra AWS EKS, Google GKE, Azure AKS.
+- **minikube** = 1 node, mais didático. **k3d** = multi-node, mais
+  parecido com produção.
+- **Addons** ligam features que existem em provedores reais (métricas,
+  ingress, dashboard) com um comando.
+
+> Dica: pra limpar tudo e começar do zero, `minikube delete && minikube
+> start`. Custa 1-2 min na primeira vez (download da ISO), segundos
+> nas próximas.
+
+No próximo, vamos abrir o **`kubectl`** - o canivete suíço pra falar
+com qualquer cluster.

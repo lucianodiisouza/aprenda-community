@@ -1,0 +1,178 @@
+---
+id: ingress
+title: "Ingress: expondo o cluster pro mundo"
+resources:
+  - title: "Ingress (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/concepts/services-networking/ingress/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Ingress Controllers (docs oficial, EN)"
+    url: https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/
+    type: doc
+    lang: en
+    free: true
+---
+
+Service do tipo `LoadBalancer` provisiona um LB externo (e custa
+ caro em cloud). Pra ter **vários apps no mesmo LB, com rotas
+diferentes e TLS centralizado**, você usa **Ingress**.
+
+## O que Ingress faz
+
+Ingress é um objeto k8s que diz: "para requisições com host
+`app.exemplo.com` e path `/api`, mande pro service `api`. Para host
+`app.exemplo.com` e path `/`, mande pro service `frontend`."
+
+<Mermaid
+  chart={`flowchart LR
+    User["Usuário\\n(browser)"]
+    DNS["DNS\\napp.exemplo.com (IP do LB)"]
+    LB["Cloud Load Balancer\\n(nginx-ingress controller)"]
+
+    subgraph Cluster["Cluster k8s"]
+        subgraph Rule["Ingress: app.exemplo.com"]
+            R1["/api/*\\nrota: service: api"]
+            R2["/\\nrota: service: frontend"]
+        end
+
+        SVC1[("Service: api\\nClusterIP")]
+        SVC2[("Service: frontend\\nClusterIP")]
+        P1[("Pod: api")]
+        P2[("Pod: frontend")]
+        SVC1 --> P1
+        SVC2 --> P2
+    end
+
+    User -->|"app.exemplo.com"| DNS
+    DNS --> LB
+    LB -->|"host match"| Rule
+    R1 --> SVC1
+    R2 --> SVC2
+
+    classDef ext fill:#7c2d12,stroke:#fb923c,color:#fff7ed
+    classDef ing fill:#581c87,stroke:#c084fc,color:#faf5ff
+    classDef svc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef pod fill:#1e3a8a,stroke:#60a5fa,color:#eff6ff
+    class User,DNS,LB ext
+    class Rule,R1,R2 ing
+    class SVC1,SVC2 svc
+    class P1,P2 pod`}
+  caption="Fluxo: navegador -> DNS -> Load Balancer -> Ingress -> Service -> Pod."
+/>
+
+Pontos do diagrama:
+
+- **DNS aponta pro LB do ingress controller** (não pros Pods).
+- **Ingress Controller** (nginx, Traefik, HAProxy) é o pod que
+  recebe as requisições e aplica as regras. O objeto `Ingress` é
+  só a configuração.
+- **Regras por host e path** - roteamento baseado em URL.
+- **Service interno** (`ClusterIP`) recebe o tráfego do controller.
+
+## Manifesto
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.exemplo.com
+      secretName: app-tls     # Secret com cert + key
+  rules:
+    - host: app.exemplo.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+```
+
+Aplique:
+
+```bash
+kubectl apply -f ingress.yaml
+kubectl get ingress
+kubectl describe ingress app
+```
+
+## Ingress Controller (a parte que falta)
+
+O objeto `Ingress` sozinho não faz nada. Você precisa de um
+**Ingress Controller** rodando no cluster (geralmente como
+Deployment próprio). Os mais comuns:
+
+- **nginx-ingress** - o padrão da indústria, mantido pela
+  comunidade Kubernetes.
+- **Traefik** - configuração via labels, bom pra múltiplos
+  ambientes.
+- **HAProxy** - performático, configuração complexa.
+- **Contour** - baseado em Envoy.
+- **Em cloud gerenciado** (EKS, GKE, AKS), o provedor oferece o
+  controller como add-on.
+
+Em minikube:
+
+```bash
+minikube addons enable ingress
+kubectl get pods -n ingress-nginx    # controller rodando
+```
+
+## TLS / HTTPS
+
+Ingress suporta TLS nativo: você cria um Secret com o certificado
++ chave privada, e o controller serve HTTPS na porta 443.
+
+```bash
+# Com cert-manager (geralmente já instalado em cluster moderno)
+kubectl apply -f - <<EOF
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: app-tls
+spec:
+  secretName: app-tls
+  dnsNames:
+    - app.exemplo.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+EOF
+```
+
+`cert-manager` é um controller que fala com a Let's Encrypt e
+renova o certificado automaticamente. Sem ele, você geraria o cert
+manualmente (ou usaria um serviço pago).
+
+Três conceitos que você acabou de aprender:
+
+- **Ingress = objeto de configuração**. Sem Ingress Controller
+  rodando, ele é só YAML.
+- **Regras por host + path** permitem múltiplos apps no mesmo LB
+  - muito mais barato que um LoadBalancer por app.
+- **TLS via Secret** - coloca o cert no cluster e o controller
+  serve HTTPS. Com `cert-manager`, renovação é automática.
+
+> Dica: em produção real, **não** exponha apps sem Ingress. A
+> alternativa (LoadBalancer por app) custa caro e cada LB é mais
+> um ponto de gestão. Ingress é a forma idiomática.
+
+No próximo nó, vamos falar de **probes, HPA e resource limits** - o
+que faz o cluster se auto-cuidar.

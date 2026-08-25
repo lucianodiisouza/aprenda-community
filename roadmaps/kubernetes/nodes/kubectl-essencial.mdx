@@ -1,0 +1,123 @@
+---
+id: kubectl-essencial
+title: "kubectl: os comandos do dia a dia"
+resources:
+  - title: "kubectl reference (docs oficial, EN)"
+    url: https://kubernetes.io/docs/reference/kubectl/
+    type: doc
+    lang: en
+    free: true
+  - title: "kubectl cheat sheet (docs oficial, EN)"
+    url: https://kubernetes.io/docs/reference/kubectl/cheatsheet/
+    type: doc
+    lang: en
+    free: true
+---
+
+`kubectl` é a CLI oficial pra falar com qualquer cluster k8s. Os
+comandos seguem um padrão consistente:
+
+```bash
+kubectl <verbo> <recurso> [nome] [-n namespace] [-o formato] [-f arquivo]
+```
+
+Onde o **verbo** é o que você quer fazer (`get`, `describe`, `apply`,
+`delete`, `logs`, `exec`, `top`, `port-forward`) e o **recurso** é
+o tipo de objeto (`pod`, `deployment`, `service`, `node`, `configmap`,
+`secret`, `ingress`).
+
+## Inspecionando
+
+```bash
+kubectl get nodes                    # nodes do cluster
+kubectl get pods                     # pods do namespace atual
+kubectl get pods -A                  # todos os namespaces
+kubectl get pods -n kube-system      # namespace específico
+kubectl get pods -o wide             # info extra (IP, node)
+kubectl get pods -o yaml             # manifesto completo
+kubectl get pods --show-labels       # com labels
+kubectl get all                      # tudo no namespace
+kubectl describe pod <nome>          # detalhes + eventos
+kubectl get events --sort-by=.metadata.creationTimestamp
+```
+
+`-o yaml` é o melhor amigo do debug: mostra o manifesto **exato**
+que o k8s tem armazenado, depois de aplicar defaults e mutações.
+Muitas vezes o que você escreveu no YAML não é o que está rodando.
+
+## Aplicando e removendo
+
+```bash
+kubectl apply -f deployment.yaml    # cria/atualiza recursos do arquivo
+kubectl apply -f ./pasta/           # todos os .yaml da pasta
+kubectl apply -k ./overlay/         # kustomization
+kubectl delete -f deployment.yaml   # remove os recursos do arquivo
+kubectl delete pod <nome>           # remove um pod (k8s recria se for de um Deployment)
+kubectl delete pod --all -n app      # remove todos os pods do namespace app
+```
+
+`apply` é **idempotente** - pode rodar 10 vezes no mesmo arquivo, o
+resultado é o mesmo. `kubectl diff -f deployment.yaml` mostra o que
+muda antes de aplicar.
+
+## Logs e debug
+
+```bash
+kubectl logs <pod>                   # stdout do pod
+kubectl logs <pod> -c <container>    # container específico (pod multi-container)
+kubectl logs <pod> --previous        # logs do container que crashou
+kubectl logs -f <pod>                # segue em tempo real
+kubectl logs -l app=api              # todos os pods com label app=api
+kubectl exec -it <pod> -- sh         # entra no container
+kubectl exec -it <pod> -- env        # roda comando sem entrar
+kubectl port-forward <pod> 8080:80   # localhost:8080 -> pod:80
+```
+
+`port-forward` é o jeito mais rápido de debugar um pod específico
+sem expor via Service.
+
+## Contexto e namespace
+
+```bash
+kubectl config get-contexts          # clusters configurados
+kubectl config use-context <nome>    # troca de cluster
+kubectl config current-context       # qual está ativo
+kubectl get pods -n <namespace>      # namespace específico
+kubectl get pods --all-namespaces    # todos
+kubectl create namespace dev         # cria namespace
+```
+
+Namespaces são "pastas" dentro do cluster - úteis pra separar dev,
+staging, prod, ou times diferentes no mesmo cluster físico.
+
+## Atalhos e qualidade de vida
+
+```bash
+alias k=kubectl                     # o clássico
+kubectl completion bash > ~/.kubectl-completion
+source <(kubectl completion bash)    # autocomplete no bash
+
+# Reiniciar um deployment (rollout novo)
+kubectl rollout restart deployment/api
+
+# Stats de recursos
+kubectl top nodes                    # CPU/memória por node
+kubectl top pods                     # CPU/memória por pod
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`<verbo> <recurso>`** é o padrão universal. Decorar uns 8 verbos
+  (`get`, `describe`, `apply`, `delete`, `logs`, `exec`, `port-forward`,
+  `rollout`) cobre 90% do uso.
+- **`-o yaml` + `describe`** são as duas ferramentas de debug: o
+  primeiro mostra o estado, o segundo mostra eventos e o que o
+  control plane está pensando.
+- **Context** (cluster) e **namespace** (pasta dentro do cluster) são
+  os dois eixos de isolamento. Sempre saiba em qual você está.
+
+> Dica: shell prompt que mostra contexto e namespace é vida. Tem
+> plugins como `kube-ps1` (zsh/bash) e `kubie` que cuidam disso.
+
+No próximo, vamos abrir o **Pod** - a menor unidade que o k8s roda,
+e base de tudo que vem depois.
