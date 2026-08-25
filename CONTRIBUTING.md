@@ -207,6 +207,83 @@ vão sair do ar).
 
 ---
 
+## Interatividade: quiz e checkpoints
+
+Três componentes deixam o nó praticável. **Só checkpoints validados e projetos
+contam pro certificado de bootcamp**; quiz é auto-verificação (formativo) e não
+conta.
+
+### `<Quiz>` — múltipla escolha (formativo)
+
+```mdx
+<Quiz
+  question="O que `text-align: center` faz?"
+  options={[
+    { text: "Centraliza o texto no bloco", correct: true },
+    { text: "Centraliza o bloco na página", correct: false,
+      explanation: "Isso seria margin: auto; text-align alinha o conteúdo." },
+  ]}
+/>
+```
+
+Feedback na hora, com `explanation` opcional. O gabarito fica visível no repo
+(é open-source) — por isso quiz é **formativo**, não vale nota.
+
+### `<Checkpoint>` — exercício de JS validado (vale XP)
+
+Roda o código do aluno e compara a saída de `console.log` com o esperado. Ao
+passar, credita XP e marca o nó como concluído.
+
+```mdx
+<Checkpoint
+  challenge="Imprima a soma de 2 + 3."
+  starterCode="console.log()"
+  expected="5"
+  slug="programacao-do-zero"
+  nodeId="operadores"
+/>
+```
+
+Só serve pra conteúdo **JavaScript** que produz saída de console.
+
+### `<VisualCheckpoint>` — exercício de HTML/CSS validado (vale XP)
+
+Renderiza o HTML/CSS do aluno num preview isolado e roda uma asserção contra o
+DOM (`getComputedStyle`, `querySelector`). Ao passar, credita XP e conclui o nó.
+
+```mdx
+<VisualCheckpoint
+  challenge="Deixe o título vermelho e centralizado."
+  starterHtml="<h1>Olá</h1>"
+  starterCss={`h1 {\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const h1 = root.querySelector('h1');
+    const s = getComputedStyle(h1);
+    return {
+      pass: s.color === 'rgb(255, 0, 0)' && s.textAlign === 'center',
+      message: 'O h1 precisa ser vermelho e centralizado.'
+    };
+  `}
+  slug="css-fundamentos"
+  nodeId="cores"
+/>
+```
+
+- `assert` é um corpo de função que recebe `root` (onde o HTML foi renderizado) e
+  devolve `{ pass, message }`. Compare a **cor computada** (`rgb(...)`), não a
+  string escrita — assim qualquer formato válido (nome/hex/rgb/hsl) passa.
+- `slug`/`nodeId` precisam bater com a trilha e o `id` do nó.
+
+### Quanto usar (meta de cobertura)
+
+Proporcional e **viável ao tipo** — não force interatividade em nó conceitual:
+
+- **Trilha JS** (programação, algoritmos): ~1 `<Checkpoint>` a cada 4 nós + no fechamento.
+- **Trilha visual (CSS/HTML)**: ~1 `<VisualCheckpoint>` a cada 5 nós + no fechamento.
+- **git / SQL** (sem validação automática viável): `<Quiz>` formativo + projeto no fim.
+
+---
+
 ## Anatomia de um `roadmap.json`
 
 Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
@@ -300,9 +377,11 @@ exame - é conversa.
 - **Slug** - o identificador kebab-case de uma trilha ou nó. Ex: `html`, `estrutura-basica`.
 - **Frontmatter** - o bloco de metadados no topo de um `.mdx` (entre `---`).
 - **Recurso (`resource`)** - link externo curado que aparece no fim de cada nó.
-- **MDX** - Markdown + JSX. Na prática você escreve Markdown normal; os únicos
-  componentes JSX que usamos no conteúdo são `<Figure>` e `<YouTube>` (ver
-  [Imagens e vídeos](#imagens-e-vídeos)).
+- **MDX** - Markdown + JSX. Na prática você escreve Markdown normal; os
+  componentes JSX disponíveis no conteúdo são `<Figure>` e `<YouTube>` (ver
+  [Imagens e vídeos](#imagens-e-vídeos)) e os interativos `<Quiz>`,
+  `<Checkpoint>` e `<VisualCheckpoint>` (ver
+  [Interatividade](#interatividade-quiz-e-checkpoints)).
 - **CI** - GitHub Actions. Roda automaticamente em todo PR.
 - **Tag semântica** - `v1.0.0`, `v1.1.0` etc. Marca versões do conteúdo.
 - **Submodule** - forma como o app consome este repo. Você não precisa

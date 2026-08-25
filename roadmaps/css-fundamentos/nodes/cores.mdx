@@ -90,5 +90,23 @@ transparência.
 > geram paletas harmoniosas. Não chute cor — pegue uma paleta e
 > adapte.
 
+<VisualCheckpoint
+  challenge="Deixe o título na cor tomate (#ff6347). Use o formato que preferir — nome, hex, rgb ou hsl."
+  hint="Dica: nome (tomato), hex (#ff6347), rgb(255, 99, 71) e hsl(9, 100%, 64%) são a MESMA cor."
+  starterHtml="<h1>Meu título</h1>"
+  starterCss={`h1 {\n  /* escreva a cor aqui */\n}`}
+  assert={`
+    const h1 = root.querySelector('h1');
+    if (!h1) return { pass: false, message: 'Não achei o <h1> no HTML.' };
+    const cor = getComputedStyle(h1).color;
+    return {
+      pass: cor === 'rgb(255, 99, 71)',
+      message: 'A cor computada do h1 deve ser tomate (rgb(255, 99, 71)). Qualquer formato serve, desde que resulte nessa cor.'
+    };
+  `}
+  slug="css-fundamentos"
+  nodeId="cores"
+/>
+
 No próximo, vamos **medir coisas em CSS**: as unidades de tamanho
 que vão te acompanhar pra sempre.
