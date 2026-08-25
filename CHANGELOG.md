@@ -6,6 +6,22 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.14.0] - 2026-08-25
+
+### Adicionado
+- 🤖 **Trilha Prompt Engineering** (`roadmaps/prompt-engineering`, 24 nós): do
+  zero absoluto (o que é um LLM) até a construção de produtos com IA. Três
+  fases lineares — **Básico** (8 nós, "como falar com a máquina sem ficar
+  gritando com ela"), **Intermediário** (9 nós, "técnicas que destravam 10× o
+  resultado": few-shot, chain-of-thought, decomposição, ReAct/tools, RAG,
+  function calling, system vs user prompt, prompts como código) e **Avançado**
+  (6 nós + projeto final, "quem constrói produto com IA": avaliação,
+  automação/frameworks, agentes, multimodal, segurança, custo/performance).
+  Agnóstica de stack (não exige saber programar), com 17 diagramas Mermaid +
+  23 quizzes e projeto final que cabe tanto pra dev quanto pra não-dev. Decisões
+  editoriais em `roadmaps/prompt-engineering/meta/editorial-decisions.md`.
+  Proposta detalhada em `docs/proposals/prompt-engineering.md`.
+
 ## [1.13.0] - 2026-08-25
 
 ### Adicionado

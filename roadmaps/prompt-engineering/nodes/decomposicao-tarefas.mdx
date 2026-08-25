@@ -1,0 +1,131 @@
+---
+id: decomposicao-tarefas
+title: "Decompondo tarefas: sub-prompts e pipelines mentais"
+resources:
+  - title: "Anthropic - Chain complex prompts (EN, padrões de decomposição)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-prompts
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Tactics: split complex tasks into subtasks (EN)"
+    url: https://platform.openai.com/docs/guides/prompt-engineering#strategy-split-complex-tasks-into-subtasks
+    type: doc
+    lang: en
+    free: true
+---
+
+Existe um limite pra quanto um modelo consegue fazer **bem em um único
+prompt**. Quando você joga "traduza, resuma, gere perguntas, classifique
+por dificuldade e dê feedback", o modelo vai fazer **tudo mal** - não
+porque é ruim, mas porque a instrução virou uma salada.
+
+A solução é a mesma de programação: **dividir para conquistar**.
+Decompor uma tarefa complexa em **subtarefas menores**, cada uma com
+seu prompt, e **encadear** as saídas.
+
+## Padrão 1: Pipeline sequencial
+
+Cada passo consome a saída do anterior.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Prompt 1\\n(extrair tópicos)"] --> B["Tópicos"]
+    B --> C["Prompt 2\\n(resumir cada tópico)"]
+    C --> D["Resumos"]
+    D --> E["Prompt 3\\n(gerar perguntas)"]
+    E --> F["Perguntas finais"]`}
+  caption="Pipeline sequencial: cada etapa transforma a saída da anterior."
+/>
+
+Exemplo: processar um documento.
+
+- **Prompt 1:** "Liste os 5 tópicos principais deste documento. Responda
+  em JSON: `[{ \"topico\": string, \"resumo_1_linha\": string }]`"
+- **Prompt 2** (rodado uma vez por tópico): "Dado este tópico e o trecho
+  relevante do documento, gere um resumo de 100 palavras."
+- **Prompt 3:** "Dados os 5 resumos, gere 10 perguntas de revisão com
+  nível de dificuldade indicado."
+
+Por que funciona? Cada prompt é **simples, específico e verificável**.
+Você pode inspecionar a saída de cada etapa antes de seguir - e se algo
+der errado, sabe **exatamente onde**.
+
+## Padrão 2: Árvore (paralelo com consolidação)
+
+Múltiplas chamadas em paralelo, depois consolidação.
+
+<Mermaid
+  chart={`flowchart TB
+    A["Prompt raiz\\n(artigo)"] --> B["Prompt 1\\nanálise de argumentação"]
+    A --> C["Prompt 2\\nanálise de público-alvo"]
+    A --> D["Prompt 3\\nanálise de tom"]
+    A --> E["Prompt 4\\nanálise de estrutura"]
+    B --> F["Consolidador\\n(combina 4 análises)"]
+    C --> F
+    D --> F
+    E --> F
+    F --> G["Análise final"]`}
+  caption="Árvore: chamadas paralelas, depois consolidação. Bom pra 'múltiplas perspectivas sobre o mesmo input'."
+/>
+
+Exemplo: review de artigo. Quatro prompts em paralelo (cada um analisa
+um aspecto), depois um quinto prompt consolida tudo numa review única.
+**Mais tokens, mas bem mais barato em latency** se rodar em paralelo.
+
+## Padrão 3: Verificação (gerar, depois criticar)
+
+Gera, depois pede ao modelo (ou a outro modelo) pra **criticar e
+corrigir**. É o "code review" do mundo de prompts.
+
+- **Prompt A (gerador):** "Escreva uma função Python que valida CPF."
+- **Prompt B (crítico):** "Analise esta função. Há bugs? Edge cases
+  não tratados? Problemas de segurança? Responda com lista de issues."
+- **Prompt C (refinador):** "Dado o código original e os issues,
+  reescreva corrigindo tudo."
+
+Esse padrão é surpreendentemente poderoso. **Gera + crítica** ganha de
+**gera sozinho** na maioria das tarefas de qualidade. Detalhes dele na
+Fase 3, no nó `avaliacao-de-prompts`.
+
+## Quando decompor vs. um prompt só
+
+**Decomponha quando:**
+
+- A tarefa tem **mais de 3-4 passos** distintos.
+- Você quer **verificar** uma etapa antes de seguir (filtro de qualidade).
+- O custo/latência de errar é alto.
+- Você quer **reusar** uma etapa (ex: "extrair tópicos" é útil em vários
+  pipelines).
+
+**Mantenha em um prompt quando:**
+
+- A tarefa é simples, mesmo que longa.
+- A divisão não traz ganho de qualidade claro.
+- O output precisa ser **um único objeto** coeso (não dá pra quebrar).
+
+<Quiz
+  question="Você precisa gerar: 1) um resumo executivo, 2) uma lista de 5 perguntas, 3) um email de follow-up - tudo a partir do mesmo relatório. Qual a melhor abordagem?"
+  options={[
+    { text: "Um único prompt pedindo as 3 coisas, separadas por marcadores", correct: false, explanation: "Funciona pra saídas curtas, mas em geral o modelo trata as 3 com menos profundidade. Risco de vir incompleto." },
+    { text: "Três prompts separados, rodando o mesmo relatório em cada um", correct: true },
+    { text: "Um prompt que faça o modelo escolher a ordem das 3 saídas", correct: false, explanation: "Delegar a ordem ao modelo sem critério raramente dá o melhor resultado." }
+  ]}
+/>
+
+- **Decompor = dividir pra conquistar**, mesma lógica de programação.
+- **3 padrões úteis:** pipeline sequencial, árvore (paralelo + consolidação),
+  gerar-criticar-refinar.
+- **Decomponha quando a tarefa tem 3+ passos distintos** ou quando
+  você quer **verificar** uma etapa antes da próxima.
+- **Mantenha em um prompt** quando a saída precisa ser coesa ou a
+  divisão não traz ganho de qualidade.
+- **Custa mais chamadas e mais tokens.** Vale quando a qualidade
+  compensa.
+
+> Dica: a primeira coisa a tentar quando o modelo está errando uma
+> tarefa complexa é **dividir em 2 prompts**. Em 80% dos casos, a
+> qualidade dobra sem aumentar muito o custo.
+
+No próximo nó, vamos ver o padrão mais útil de decomposição na prática:
+**ReAct** - quando o modelo precisa **agir no mundo** (buscar, calcular,
+consultar API) entre um passo e outro.

@@ -1,0 +1,149 @@
+---
+id: rag-conceito
+title: "RAG: injetando contexto externo no prompt"
+resources:
+  - title: "Lewis et al. - Retrieval-Augmented Generation (paper original, EN, 2020)"
+    url: https://arxiv.org/abs/2005.11401
+    type: artigo
+    lang: en
+    free: true
+  - title: "Anthropic - Build a RAG solution (EN, com exemplo completo)"
+    url: https://docs.anthropic.com/en/docs/agents-and-tools/knowledge-base
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Retrieval Augmented Generation (EN, visão geral)"
+    url: https://platform.openai.com/docs/guides/retrieval-augmented-generation-rag
+    type: doc
+    lang: en
+    free: true
+---
+
+RAG (Retrieval-Augmented Generation) é, sem exagero, **a técnica que
+definiu a primeira metade da década de 2020 em IA aplicada**. É o que
+transforma um chatbot genérico em "o assistente que sabe das coisas da
+**minha** empresa". A ideia nasceu num paper de 2020
+([Lewis et al.](https://arxiv.org/abs/2005.11401)) e explodiu com a
+chegada dos LLMs.
+
+## O problema que RAG resolve
+
+Você tem uma base de conhecimento: documentação interna, FAQs de
+suporte, contratos, papers, catálogo de produtos. Quer um assistente
+que responda perguntas sobre isso. **Opções:**
+
+- **Colar tudo no prompt** - inviável: gasta tokens, excede a
+  context window, deixa lento, e vira impossível atualizar.
+- **Fine-tunar o modelo** com seus dados - caro (treino, infra),
+  demorado (dias-semanas), e perde generalidade. Pior: se a doc
+  mudar, tem que treinar de novo.
+- **RAG** - mantém o modelo "como está", mas **injeta no prompt só o
+  trecho relevante** no momento da pergunta. Simples, rápido,
+  atualizável.
+
+## Como RAG funciona (o pipeline)
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph ING["1. INDEXAÇÃO (offline, 1x)"]
+      D["Documentos"] --> CHK["Chunking\\n(quebrar em pedaços)"]
+      CHK --> EMB["Embedding\\n(texto → vetor)"]
+      EMB --> VS[("Vetor Store\\n(banco de vetores)")]
+    end
+    subgraph QRY["2. QUERY (online, toda pergunta)"]
+      Q["Pergunta do usuário"] --> QEMB["Embedding da pergunta"]
+      QEMB --> SRCH["Buscar top-K\\ntrechos mais similares"]
+      VS --> SRCH
+      SRCH --> CTX["Trechos relevantes"]
+      Q --> PRM["Prompt final:\\npergunta + trechos + instrução"]
+      CTX --> PRM
+      PRM --> LLM["LLM"]
+      LLM --> ANS["Resposta\\n(ancorada nos trechos)"]`}
+  caption="RAG em duas fases: indexação (offline) e query (online, toda pergunta)."
+/>
+
+### Fase 1: Indexação (uma vez)
+
+1. **Chunking**: você quebra os documentos em pedaços (chunks) - 200 a
+   1000 tokens, com sobreposição pra não perder contexto entre
+   fronteiras.
+2. **Embedding**: cada chunk vira um vetor (uma lista de números) que
+   representa seu significado. Textos similares ficam perto no espaço
+   vetorial.
+3. **Armazenamento**: os vetores vão pra um **vector store** (Pinecone,
+   Weaviate, Qdrant, pgvector no Postgres, Chroma...). É um banco
+   de dados "por significado" em vez de "por palavra-chave".
+
+### Fase 2: Query (toda pergunta)
+
+1. A pergunta do usuário vira embedding pelo mesmo modelo.
+2. Busca no vector store os **K chunks mais similares** (top-3,
+   top-5, top-10 - depende do caso).
+3. Monta o prompt: "Com base **apenas** nos trechos abaixo, responda
+   a pergunta: [pergunta]. Trechos: [trecho 1, trecho 2, ...]."
+4. Modelo gera resposta ancorada nos trechos.
+
+## Por que RAG funciona (e por que alucina menos)
+
+O modelo recebe **o texto exato** que sustenta a resposta. Quando
+responde, ele está **resumindo/citando** aquela informação, não
+"lembrando do treino". Isso **drasticamente reduz** alucinação em
+tarefas de "responder sobre X".
+
+E - crucial - você pode **fontear** a resposta: "Resposta: X.
+Fonte: documento Y, página Z." O usuário (e você) sabe de onde veio.
+
+## Quando RAG **não** resolve
+
+- **Conhecimento procedural profundo** ("como esse código funciona
+  internamente") - RAG traz o trecho, mas o modelo pode não entender
+  bem sem mais raciocínio.
+- **Relações entre informações distantes** - se a resposta depende de
+  conectar informação de 5 documentos diferentes, o top-K pode não
+  trazer todos.
+- **Tempo real** - se a informação muda a cada minuto (preço de ação,
+  placar de jogo), RAG estático perde. Precisa de **RAG + tool use**
+  (busca online + retrieval).
+- **Substitui fine-tuning?** Não. Fine-tuning ensina o modelo um
+  **estilo** ou um **comportamento novo**. RAG dá **conhecimento**.
+  Podem coexistir.
+
+## Pegadinhas comuns
+
+- **Chunking ruim** - chunks muito pequenos perdem contexto; muito
+  grandes trazem ruído. Ajuste por caso.
+- **Só embedding não basta** - busca semântica pura pode trazer
+  trechos "parecidos" mas não "relevantes". Combine com busca
+  lexical (BM25) no melhor dos mundos (**hybrid search**).
+- **"Apenas responda com base nos trechos" não é o bastante** -
+  adicione também "se a resposta não estiver nos trechos, diga
+  que não sabe". Senão o modelo alucina com confiança.
+- **Cuidado com a janela de contexto** - top-10 de chunks de 1000
+  tokens = 10k tokens só de retrieval. Cabe, mas pesa.
+
+<Quiz
+  question="Você construiu um RAG, mas as respostas estão trazendo informação tangencial mas não a que o usuário pediu. Causa mais provável?"
+  options={[
+    { text: "O modelo é fraco", correct: false, explanation: "O modelo é o mesmo que antes. O problema está no retrieval, não na geração." },
+    { text: "O chunking é ruim ou o top-K está trazendo ruído em vez de sinal", correct: true, explanation: "Sintoma clássico: embedding encontra 'parecidos', não 'relevantes'. Soluções: revisar chunking, usar hybrid search (semântica + lexical), ajustar top-K, melhorar o reranking." },
+    { text: "O usuário perguntou mal", correct: false, explanation: "Culpar o usuário raramente resolve. O sistema precisa lidar bem com perguntas reais - inclusive as mal formuladas." }
+  ]}
+/>
+
+- **RAG = retrieval + geração.** Modelo recebe só o trecho relevante
+  no prompt, não o documento todo.
+- **Vantagem central:** atualizável, barato, transparente, com fontes.
+- **Duas fases:** indexação (offline) e query (online).
+- **Reduz alucinação drasticamente** em perguntas sobre base de
+  conhecimento.
+- **Não substitui fine-tuning** - são problemas diferentes.
+- **Pegadinha #1:** chunking ruim + só embedding semântico =
+  retrieval tangencial. **Hybrid search** (BM25 + embedding) ajuda.
+
+> Dica: o "frescor" dos dados é a principal razão pra escolher RAG
+> em vez de fine-tuning. Quando a documentação muda toda semana,
+> RAG atualiza instantaneamente; fine-tuning precisa de retreino.
+
+No próximo nó, vamos ver a versão "técnica" do tool use que viabiliza
+RAG e muito mais em produção: **function calling** com structured
+outputs.

@@ -1,0 +1,149 @@
+---
+id: automacao-e-frameworks
+title: "Automatizando prompts: LangChain, DSPy e pipelines"
+resources:
+  - title: "DSPy (EN, framework de programação de prompts, estado da arte em 2026)"
+    url: https://dspy.ai/
+    type: doc
+    lang: en
+    free: true
+  - title: "LangChain docs (EN, framework mais usado em protótipos)"
+    url: https://python.langchain.com/
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Building effective agents (EN, padrões de design)"
+    url: https://www.anthropic.com/research/building-effective-agents
+    type: artigo
+    lang: en
+    free: true
+---
+
+Você tem uma biblioteca de prompts que funciona. Sabe avaliar. Mas tem
+um problema: **toda vez que você quer testar uma variação de prompt, é
+manual**. Toda vez que o modelo base muda (Claude 4 → Claude 4.5, GPT-4
+→ GPT-4o), é manual. Toda vez que você quer rodar 50 variantes com
+few-shot diferente, é manual.
+
+**Frameworks de prompt engineering** automatizam isso. Vamos ver o que
+existe, o que cada um resolve, e quando usar.
+
+## O mapa dos frameworks em 2026
+
+<Mermaid
+  chart={`flowchart LR
+    A["Você tem prompts\\nfuncionando"] --> B{"Qual o\\nproblema?"}
+    B -- "Quero só encadear\\n+ integrar tools" --> C["LangChain\\n(prototipagem rápida)"]
+    B -- "Quero otimizar\\nprompts automaticamente" --> D["DSPy\\n(compila prompts)"]
+    B -- "Quero controle\\nfino no nível de token" --> E["Guidance / Outlines\\n(gramáticas)"]
+    B -- "Quero templates\\ncompartilhados" --> F["dotprompt\\n(simples)"]`}
+  caption="Mapa de decisão: cada framework resolve um problema diferente. Não são concorrentes, são complementares."
+/>
+
+## DSPy: o estado da arte em 2026
+
+[DSPy](https://dspy.ai/) é o framework que **compila** programas de
+prompt. Você define a tarefa em código, dá exemplos, e o DSPy
+**encontra o prompt + few-shot + modelo que maximiza** a métrica que
+você definiu.
+
+A analogia: lembra quando a gente passou de "escrever CSS na mão" pra
+"usar Tailwind e um framework de componentes"? DSPy faz a mesma coisa
+com prompts. Você não escreve "instrução + few-shot" - declara a
+**função** que quer e os **exemplos**, e o framework otimiza.
+
+**Quando usar:**
+
+- Você tem golden set decente (30+ exemplos).
+- Você quer **maximizar** uma métrica, não "ficar bom o suficiente".
+- O prompt atual já está funcionando e você quer escalar.
+
+**Quando não usar:**
+
+- Prototipagem rápida de 1 fluxo. Overhead não compensa.
+- Tarefa com 2-3 prompts simples. YAGNI.
+- Sem golden set. Você precisa de sinal de qualidade pra otimizar.
+
+## LangChain: o ecossistema mais largo
+
+[LangChain](https://python.langchain.com/) é a **plataforma** mais
+usada pra protótipos. Integra com **centenas** de providers, vector
+stores, document loaders, tools. Se você quer fazer "RAG + agent +
+memória + API + ..." rápido, é o caminho.
+
+**Pontos fortes:**
+
+- Ecossistema enorme. Quase todo tutorial/integração tem exemplo
+  LangChain.
+- LangSmith (debugging e tracing de prompts) - útil pra ver o que o
+  modelo está gerando em cada etapa.
+- LangGraph (orquestração de agentes) - vira o padrão pra multi-agent.
+
+**Pontos fracos:**
+
+- Opinativo, abstrai demais. Debugging fica difícil.
+- Performance sub-ótima pra alta escala (overhead de abstração).
+- Mudança rápida de API. Versão 0.x muda breaking changes com
+  frequência.
+
+**Regra prática:** use LangChain pra protótipo, avalie se vira
+produção. Se for, **considere reescrever** em código mais explícito
+(ou migrar pra DSPy).
+
+## Guidance / Outlines: controle fino
+
+[Guidance](https://github.com/guidance-ai/guidance) e
+[Outlines](https://github.com/outlines-dev/outlines) permitem
+controlar a geração **no nível de token** - regex, gramática, JSON
+schema, escolha múltipla. Úteis quando structured output não basta
+e você precisa garantir um formato exato.
+
+**Quando usar:**
+
+- Saída precisa seguir gramática complexa (DSL, SQL, expressão
+  regular custom).
+- Você quer **forçar** o modelo a escolher entre opções discretas
+  em vez de "tende a".
+
+## dotprompt: o simples
+
+[dotprompt](https://github.com/google/dotprompt) é o
+**template engine** da Google. Arquivo `.prompt` com frontmatter
+YAML, variáveis, e o prompt em si. Integra com Firebase/Gemini mas
+também roda standalone.
+
+**Quando usar:**
+
+- Você quer uma forma **simples** de versionar prompts sem framework
+  pesado.
+- Time pequeno, 5-20 prompts, quer compartilhar.
+
+<Quiz
+  question="Você tem um agente de produção com 8 etapas de prompt encadeadas, golden set de 100 exemplos, e quer maximizar conversão de usuário. Qual framework provavelmente?"
+  options={[
+    { text: "LangChain - ecossistema largo", correct: false, explanation: "LangChain ajuda a montar, mas não otimiza automaticamente. Você ainda estaria tunando prompt na mão." },
+    { text: "DSPy - otimiza com base no seu golden set e métrica", correct: true },
+    { text: "dotprompt - simples e direto", correct: false, explanation: "dotprompt é template, não otimização. Serve pra 5-20 prompts. Você tem 8 etapas que precisam de otimização conjunta." }
+  ]}
+/>
+
+- **Frameworks não são concorrentes, são complementares.** Cada um
+  resolve um problema diferente.
+- **DSPy** é o estado da arte pra **otimizar** prompts com golden
+  set. Curva de aprendizado maior, retorno maior.
+- **LangChain** é o melhor pra **prototipar** rápido. Em produção,
+  reescreva ou migre.
+- **Guidance/Outlines** dão controle **no nível de token** -
+  regex, gramáticas, escolha forçada.
+- **dotprompt** é o **simples** - templates versionados, sem mágica.
+- **Regra de ouro:** não pegue framework antes de ter o problema
+  que ele resolve.
+
+> Dica: o erro mais comum de quem começa com framework é usar
+> LangChain pra "1 chamada + 1 tool". Aí o overhead de abstração
+> custa mais que a chamada pura. Framework entra quando o problema
+> tem **pelo menos** 3-5 componentes encadeados, ou múltiplos
+> prompts com lógica compartilhada.
+
+No próximo nó, vamos ver o destino natural de pipelines complexos:
+**agentes** - quando o modelo decide sozinho o que fazer.

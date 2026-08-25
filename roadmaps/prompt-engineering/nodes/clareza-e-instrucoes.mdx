@@ -1,0 +1,104 @@
+---
+id: clareza-e-instrucoes
+title: "Clareza mata ambiguidade: como ser específico"
+resources:
+  - title: "Anthropic - Be clear and direct (EN, com exemplos antes/depois)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/be-clear-and-direct
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Tactics: write clear instructions (EN, com 6 estratégias)"
+    url: https://platform.openai.com/docs/guides/prompt-engineering#tactic-include-details-in-your-query-to-get-more-relevant-answers
+    type: doc
+    lang: en
+    free: true
+---
+
+Esse é o nó que mais gente que **já usa IA** precisa ler. Se você já tentou
+prompt e recebeu resposta mediana, a chance de o problema estar aqui é
+**muito alta**. A maioria dos prompts ruins não é "ruim" - é **ambíguo**. E
+o modelo, sem pista melhor, vai no default - que costuma ser genérico.
+
+A regra é simples: **se você não escreveu, o modelo inventa**. E ele inventa
+com a mesma confiança de quando acerta. É aqui que mora a frustração.
+
+## Quatro padrões que matam a clareza
+
+### 1. Adjetivo vago
+
+**❌ "Escreve um texto criativo sobre café."**
+
+O que é "criativo"? Poema? Tweet? Crônica? Roteiro de podcast? O modelo
+vai chutar.
+
+**✅ "Escreve um post de LinkedIn, em PT-BR, sobre como a terceira onda do
+café especial mudou o consumo no Brasil nos últimos 5 anos. Tom: informativo
+com leve humor. Tamanho: 800-1200 caracteres. Use 1 dado concreto (ano,
+fonte, volume) e termine com pergunta aberta."**
+
+Mesma ideia, mas agora o modelo tem um **alvo**.
+
+### 2. Verbo sem critério
+
+**❌ "Melhora esse texto."**
+
+"Melhora" é o verbo mais perigoso do prompt engineering. Melhor em quê?
+Mais formal? Mais curto? Mais persuasivo? Mais claro? Sem critério, o
+modelo vai no default dele, não no seu.
+
+**✅ "Reescreva esse texto para ser 30% mais curto, mantendo o tom
+informal, sem jargão, e trocando todas as formas passivas por ativas."**
+
+Agora "melhorar" virou **5 critérios verificáveis**.
+
+### 3. Referência implícita
+
+**❌ "Faz igual ao outro, mas pra empresa X."**
+
+O modelo não tem ideia de qual "outro". Você tá pensando num email anterior
+do histórico, mas o modelo não sabe disso se não estiver **no mesmo prompt**.
+
+**✅ "Fiz um e-mail de follow-up para o cliente Y seguindo este modelo:
+[colar e-mail modelo aqui]. Agora gere o equivalente para o cliente X,
+mantendo a estrutura mas adaptando: valor da proposta (R$ 50k → R$ 120k),
+cargo do contato (CTO → CFO), tempo desde o envio (5 dias → 14 dias). Não
+altere o tom nem o ending."**
+
+### 4. Pedido "óbvio" que você não disse
+
+**❌ "Lista os principais KPIs de marketing digital."**
+
+Pra você, "marketing digital" já exclui branding off-line. Pra o modelo,
+é "tudo que envolve marketing e tem um lado digital" - e a lista vai
+sair enorme e sem foco.
+
+**✅ "Liste os 5 KPIs de marketing digital mais usados para medir
+performance de campanhas pagas (Google Ads, Meta Ads) num e-commerce de
+moda. Para cada KPI, dê: nome, o que mede, fórmula de cálculo, e meta
+considerada boa para o setor."**
+
+<Quiz
+  question="Qual destas instruções tem menos ambiguidade?"
+  options={[
+    { text: "Escreve uma boa introdução para o relatório.", correct: false, explanation: "\"Boa\" é subjetivo. \"Introdução\" é vaga. Sem tamanho, tom, público ou estrutura, o modelo vai no default." },
+    { text: "Escreve uma introdução de 150 palavras para o relatório trimestral, em tom executivo, com 3 bullets destacando os números-chave do Q3.", correct: true },
+    { text: "Escreve uma introdução para o relatório trimestral.", correct: false, explanation: "Já tem contexto (trimestral), mas falta tamanho, tom, estrutura e o que destacar." }
+  ]}
+/>
+
+- **Adjetivo vago = modelo no default.** "Criativo", "bom", "profissional"
+  não dizem nada sem critério.
+- **Verbo sem critério = modelo decide por você.** "Melhore", "resuma",
+  "simplifique" viraram "faça do jeito que o modelo acha melhor".
+- **Referência implícita = modelo não adivinha.** "Como o anterior", "o
+  mesmo de antes" - cole o exemplo.
+- **Pedido "óbvio" pra você não é óbvio pro modelo.** Tudo que você não
+  escreveu, ele preenche do jeito dele.
+
+> Dica: a melhor heurística é a **"pergunta do colega novo"**. Se um
+> colega seu que acabou de chegar na empresa lesse seu prompt, ele saberia
+> o que fazer? Se não, o prompt não está pronto. O modelo é um colega
+> novato que nunca viu nada do seu contexto.
+
+No próximo nó, vamos olhar pra peça que define o **tom e a voz** de tudo
+o que sai do modelo: a **persona**.

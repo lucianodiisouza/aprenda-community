@@ -1,0 +1,143 @@
+---
+id: few-shot
+title: "Few-shot: exemplos como superpoder"
+resources:
+  - title: "Anthropic - Use examples (few-shot) (EN, com patterns)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/prompt-generator
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Few-shot vs Zero-shot (EN, referência clássica)"
+    url: https://platform.openai.com/docs/guides/prompt-engineering#few-shot-prompting
+    type: doc
+    lang: en
+    free: true
+  - title: "Brown et al. - Language Models are Few-Shot Learners (paper do GPT-3, EN)"
+    url: https://arxiv.org/abs/2005.14165
+    type: artigo
+    lang: en
+    free: true
+---
+
+Few-shot é a técnica que, sozinha, dá o maior salto de qualidade da Fase
+2. Em vez de **descrever** o que você quer, você **mostra**. O modelo
+generaliza a partir dos seus exemplos.
+
+A intuição: descrever é ambíguo, mostrar é cristalino. Quando você diz
+"seja conciso", o modelo interpreta de um jeito. Quando você dá 3
+exemplos de input → output, ele entende **exatamente** o que você quer.
+
+## Os 3 sabores
+
+### Zero-shot (sem exemplos)
+
+> "Classifique o sentimento deste review: 'O produto é bom, mas o
+> atendimento foi horrível.'"
+
+O modelo usa só as instruções. Bom pra tarefas comuns e bem definidas
+(tradução, resumo curto, classificação genérica).
+
+### One-shot (1 exemplo)
+
+> "Classifique o sentimento do review.
+>
+> Exemplo:
+> Review: 'Adorei! Chegou antes do prazo.'
+> Sentimento: positivo
+>
+> Agora classifique:
+> Review: 'O produto é bom, mas o atendimento foi horrível.'
+> Sentimento:"
+
+O modelo "ancora" no exemplo. Bom quando o formato ou categoria não é
+óbvio.
+
+### Few-shot (2–5 exemplos, idealmente 3-4)
+
+> "Classifique o sentimento do review em: positivo, neutro, negativo.
+>
+> Exemplos:
+> Review: 'Adorei! Chegou antes do prazo.'
+> Sentimento: positivo
+>
+> Review: 'O produto é ok. Faz o que promete.'
+> Sentimento: neutro
+>
+> Review: 'Veio com defeito e o suporte não respondeu.'
+> Sentimento: negativo
+>
+> Agora classifique:
+> Review: 'O produto é bom, mas o atendimento foi horrível.'
+> Sentimento:"
+
+<Mermaid
+  chart={`flowchart LR
+    A["Tarefa"] --> B{"Tem padrão não-óbvio?"}
+    B -- Não --> C["Zero-shot\\n(sem exemplos)"]
+    B -- Sim --> D{"Padrão cabe\\nem 1 exemplo?"}
+    D -- Sim --> E["One-shot\\n(1 exemplo)"]
+    D -- Não --> F["Few-shot\\n(3-5 exemplos)"]`}
+  caption="Heurística: zero-shot pra tarefas comuns, few-shot pra padrões não-óbvios."
+/>
+
+## Onde few-shot brilha
+
+- **Classificação customizada** - suas categorias, não as padrão do modelo
+- **Extração em formato específico** - JSON, regex, padrão proprietário
+- **Tom de voz específico** - "escreva como nos exemplos a seguir"
+- **Tradução com regras de casa** - glossário, termos obrigatórios
+- **Geração que segue um template** - "para cada item, gere no formato
+  X"
+
+## Onde few-shot **não** ajuda (ou atrapalha)
+
+- **Tarefas que o modelo já faz bem** sem exemplo (resumo, tradução
+  genérica). Adicionar exemplos aqui só desperdiça tokens.
+- **Exemplos mal escolhidos** - se os 3 exemplos não representam a
+  distribuição real do problema, o modelo vai seguir o viés deles.
+- **Muitos exemplos** - passar de 5-7 raramente ajuda; pode até
+  confundir (o modelo começa a "decorar" em vez de generalizar).
+- **Few-shot pra raciocínio** - few-shot ajuda com **formato**, mas
+  raciocínio profundo pede **chain-of-thought** (próximo nó).
+
+## Boas práticas
+
+1. **Exemplos diversos, não redundantes.** 3 exemplos cobrindo 3
+   situações diferentes > 3 variações do mesmo caso.
+2. **Exemplos corretos.** Modelo aprende o que você mostra - se tiver
+   exemplo errado, ele aprende errado.
+3. **Formato consistente.** Se o exemplo de entrada é uma frase, todos
+   os outros são frases. Misturar formato confunde.
+4. **Ordem pode importar.** Em classificação com viés, botar os
+   positivos primeiro vs. os negativos primeiro muda a distribuição.
+   Para categorias equilibradas, aleatorize a ordem dos exemplos.
+5. **Inclua edge cases.** Se o caso difícil existe, mostre um exemplo
+   dele. Modelo aprende melhor quando vê a fronteira.
+
+<Quiz
+  question="Você precisa classificar tickets de suporte em 4 categorias customizadas da sua empresa. Qual a melhor abordagem?"
+  options={[
+    { text: "Zero-shot com a descrição longa de cada categoria no prompt", correct: false, explanation: "Descrição longa é ambígua. Modelo vai tender pro default e errar casos limítrofes." },
+    { text: "Few-shot com 3-4 exemplos reais por categoria, bem diversos", correct: true },
+    { text: "Few-shot com 50 exemplos pra cobrir todos os casos", correct: false, explanation: "Passou do ponto. 3-5 bons exemplos > 50 medianos. 50 só desperdiça tokens e adiciona ruído." }
+  ]}
+/>
+
+- **Few-shot é "mostrar em vez de descrever".** Modelo generaliza a
+  partir dos seus exemplos.
+- **3-5 exemplos é o sweet spot.** Zero é zero-shot. Um é one-shot. Mais
+  que 5-7 raramente ajuda.
+- **Exemplos devem ser diversos e corretos.** Poucos casos bem
+  escolhidos vencem muitos casos medianos.
+- **Few-shot resolve formato.** Para raciocínio, é complemento do
+  **chain-of-thought** (próximo nó).
+- **Few-shot não é "few tokens":** cada exemplo pode ser longo, desde
+  que representativo.
+
+> Dica: quando o modelo erra um caso específico, **adicione esse caso
+> como exemplo** e teste de novo. É o jeito mais rápido de "ensinar"
+> sem reescrever todo o prompt.
+
+No próximo nó, vamos para a técnica que, combinada com few-shot, é a
+mais poderosa da Fase 2: **chain-of-thought** - pedir pro modelo pensar
+em voz alta.

@@ -1,0 +1,133 @@
+---
+id: limitacoes-comuns
+title: "Limitações comuns: alucinação, knowledge cutoff e contexto"
+resources:
+  - title: "Anthropic - Understanding hallucination (EN, explica o porquê)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/reduce-hallucinations
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Long context tips (EN, como gerenciar contexto longo)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/long-context-tips
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Reducing hallucinations (EN, estratégias)"
+    url: https://help.openai.com/en/articles/8313359-is-chatgpt-biased
+    type: doc
+    lang: en
+    free: true
+---
+
+Esse nó é sobre **honestidade com a ferramenta**. Quem finge que o
+modelo "sabe tudo" ou "sempre acerta" vai perder tempo, dinheiro e -
+pior - credibilidade. Quem conhece as três limitações principais
+**trabalha em torno delas** e constrói coisa que funciona.
+
+## Limitação 1: Alucinação
+
+O que é: o modelo **inventa fatos, números, citações, fontes** com a
+mesma confiança com que apresenta os reais. A frase clássica é "ele
+não sabe que não sabe".
+
+Por que acontece: lembre do `como-um-modelo-pensa` - o modelo gera
+**o próximo token mais provável**, não "o que é verdade". Se a
+distribuição de probabilidade leva a "Albert Einstein nasceu em 1879
+em Ulm", ótimo. Se leva a "Albert Einstein nasceu em 1880 em
+Estocolmo", ele responde **com a mesma confiança**, porque pra ele
+não há diferença entre fato e padrão plausível.
+
+Como **mitigar**:
+
+- **Dê contexto factual no prompt** (RAG, na Fase 2, é a versão
+  escala disso).
+- **Peça fontes e datas**, e **verifique-as**. Modelos alucinam
+  especialmente em fontes específicas: paper, página, parágrafo.
+- **Peça "se não souber, diga que não sabe"** como instrução
+  explícita. Não elimina alucinação, mas reduz a confiança de
+  respostas fabricadas.
+- **Use temperatura baixa** (0.0–0.2) em tarefas factuais.
+- **Em produção, valide a saída por código** (regex, schema, base de
+  dados) antes de usar.
+
+## Limitação 2: Knowledge cutoff
+
+O que é: o modelo tem uma **data de corte** - tudo o que aconteceu
+depois dela, ele não viu. Claude Sonnet 4 corta em janeiro de 2025;
+GPT-4o em outubro de 2023; Gemini varia por versão. **Se você precisa
+de informação atual, o modelo é a fonte errada sozinho.**
+
+Como **mitigar**:
+
+- **Diga no prompt** "use apenas informação até [data] e sinalize se
+  algo pode ter mudado depois". Modelo tende a respeitar.
+- **Injete contexto atualizado** (notícia, documento, URL) no prompt.
+- **Use search/tool use** (Fase 2) - dá ao modelo a capacidade de
+  buscar informação em tempo real.
+
+## Limitação 3: Contexto longo ≠ memória perfeita
+
+O que é: o modelo **não trata toda a context window igual**. Ele
+presta mais atenção no **início** e no **fim** do contexto do que no
+**meio**. Estudos ([Lost in the Middle, Liu et al. 2023](https://arxiv.org/abs/2307.03172))
+mostram que a performance em tarefas que dependem de informação do
+meio do contexto pode cair **significativamente**.
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph H["Atenção do modelo na context window"]
+      direction LR
+      A["INÍCIO\\n(muito foco)"] --> M["MEIO\\n(foco reduzido)"]
+      M --> F["FIM\\n(muito foco)"]
+    end
+    A -.->|"informação citada com precisão"| X["Performance alta"]
+    M -.->|"informação citada com precisão"| Y["Performance baixa"]
+    F -.->|"informação citada com precisão"| Z["Performance alta"]`}
+  caption="Lost in the middle: o modelo 'esquece' o que está no meio do contexto, mesmo 'lembrando' do início e do fim."
+/>
+
+Como **mitigar**:
+
+- **Coloque o que importa no início e no fim.** Instruções críticas,
+  papel/persona, formato de saída - no topo. Resumo do que você quer
+  - no final.
+- **Re-escreva** o que veio no meio se for importante. Ou mova pro
+  topo/fim.
+- **Use retrieval** (RAG, Fase 2) pra trazer pro contexto apenas o
+  que importa, em vez de despejar documento inteiro.
+- **Para documentos grandes**, divida em partes e processe cada uma
+  separadamente, depois consolide.
+
+## Limitação 4 (bonus): Instruções complexas têm custo
+
+Quanto mais longa e intricada a instrução, mais chance de o modelo
+**ignorar parte dela** ou **misturar com conhecimento anterior**.
+Solução é a mesma do código: quebrar em partes.
+
+<Quiz
+  question="Você precisa que o modelo responda perguntas sobre eventos que aconteceram ontem. Qual a melhor abordagem?"
+  options={[
+    { text: "Pedir diretamente - o modelo deve saber", correct: false, explanation: "Knowledge cutoff: o modelo não viu nada depois da data de treino. Pedir não muda isso." },
+    { text: "Injetar no prompt o contexto (artigo, resumo) sobre o evento e instruir o modelo a responder só com base nesse contexto", correct: true },
+    { text: "Aumentar a temperatura para 1.0 e rezar", correct: false, explanation: "Temperatura alta piora factualidade. A solução é dar a informação, não torcer." }
+  ]}
+/>
+
+- **Alucinação** é o sintoma, não a causa. A causa é o modelo gerar
+  "o mais provável", não "o que é verdade". Mitigue com contexto,
+  fontes, validação e instrução de "diga que não sabe".
+- **Knowledge cutoff** é data, não falha. Trate o modelo como alguém
+  que parou no tempo - e injete informação atualizada quando precisar.
+- **Contexto longo tem "buraco" no meio.** Instruções críticas no
+  topo, recapitulação no fim. Retrieval (RAG) é a solução escala.
+- **Instruções complexas demais são ignoradas em parte.** Quebre em
+  subtarefas (próximo bloco da Fase 2).
+
+> Dica: na dúvida se a resposta do modelo é confiável, faça a **"pergunta
+> cruzada"** - pergunte o mesmo fato de outro jeito, em outro prompt.
+> Se ele responder duas coisas diferentes, a informação não é segura.
+
+Você chegou ao final da **Fase 1 - Básico**. Sabe o que é um LLM, como ele
+gera resposta, a anatomia de um prompt, e as principais armadilhas. No
+próximo nó, um **checkpoint** pra você se auto-avaliar antes de entrar
+nas técnicas intermediárias.

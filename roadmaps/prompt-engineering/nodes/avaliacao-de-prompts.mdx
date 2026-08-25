@@ -1,0 +1,153 @@
+---
+id: avaliacao-de-prompts
+title: "Avaliação: como saber se um prompt é melhor que outro"
+resources:
+  - title: "Anthropic - Create strong empirical evaluations (EN, framework completo)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/create-evaluations
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Evals framework (EN, framework oficial de avaliação)"
+    url: https://github.com/openai/evals
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - The power of LLM-as-a-judge (EN, paper de 2023)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/test-and-evaluate/strengthen-guardrails/automated-testing
+    type: artigo
+    lang: en
+    free: true
+---
+
+Esse é o **segundo "momento uau" da trilha**. O primeiro foi clareza
+(o "espera, era isso que eu tava fazendo de errado?"). Esse aqui é
+sobre **provar** que um prompt é melhor que outro - com evidência, não
+com "achei que ficou melhor".
+
+Se você leva uma coisa desse nó, que seja isso: **prompt engineering
+sério tem avaliação séria**. Sem ela, você está no escuro, e refatorar
+vira superstição.
+
+## O que é uma "avaliação" de prompt
+
+Um **dataset dourado** (golden set) de inputs com outputs esperados
+(ou critérios), um jeito de rodar o prompt em cima, e um jeito de
+medir o quanto ele chegou perto.
+
+Três tipos de avaliação, do mais barato ao mais rigoroso:
+
+### 1. Avaliação por inspeção humana
+
+Você (e idealmente mais 1-2 pessoas) olha as saídas lado a lado e
+julga. Funciona pra poucos exemplos, é **caro** de escalar, e tem
+viés humano. Mas é o **gold standard** quando você está definindo o
+que é "bom" pela primeira vez.
+
+### 2. Avaliação por regras (regex, schema, asserts)
+
+Você codifica critérios objetivos: "a saída tem JSON válido", "a saída
+contém o nome do cliente", "a saída tem menos de 100 palavras",
+"todos os bullets começam com verbo". Barato, escala, mas só pega
+erros verificáveis. Ótimo como **filtro de qualidade mínimo** -
+tudo abaixo disso falha, tudo acima vai pra avaliação humana ou
+LLM-as-judge.
+
+### 3. LLM-as-a-judge
+
+Você usa **outro LLM** (às vezes o mesmo) pra avaliar a saída. Dá
+critérios em prosa ("avalie se a resposta é coerente, cobre os 3
+pontos pedidos, e tem tom profissional") e o modelo dá nota + justificativa.
+Funciona surpreendentemente bem em critérios subjetivos, e é a forma
+mais escalável de "avaliação humana sem humanos".
+
+<Mermaid
+  chart={`flowchart TB
+    GS["Golden Set\\n(20-50 inputs +\\noutput esperado)"] --> RUN["Rodar prompt A\\nRodar prompt B"]
+    RUN --> OUT_A["Saídas A"]
+    RUN --> OUT_B["Saídas B"]
+    GS --> JUDGE
+    OUT_A --> JUDGE["Avaliador:\\nregras + LLM-as-judge\\n+ inspeção humana"]
+    OUT_B --> JUDGE
+    JUDGE --> MET["Métricas:\\npass-rate, score médio,\\nlatência, custo"]`}
+  caption="Pipeline de avaliação: golden set + rodar candidatos + julgar + medir."
+/>
+
+## Como montar um golden set (sem morrer tentando)
+
+Não precisa começar com 500 exemplos. Comece com **20-50** que
+representem bem a distribuição real do problema.
+
+- **Inclua casos fáceis** (modelo já acerta, baseline).
+- **Inclua casos difíceis** (edge cases que motivaram a mudança).
+- **Inclua casos reais** (do seu dia-a-dia, não inventados).
+- **Documente o ground truth** - "esperado: resposta cita política X
+  e tem tom Y". Sem critério claro, a avaliação vira opinião.
+
+Formato comum: **JSONL**, um JSON por linha.
+
+```jsonl
+{"input": "...", "expected": "...", "criteria": ["...", "..."]}
+{"input": "...", "expected": "...", "criteria": ["...", "..."]}
+```
+
+## Métricas úteis (e o que evitar)
+
+**Úteis:**
+
+- **Pass-rate** - % de casos que passaram em todos os critérios.
+  Simples, comparável, mas binário.
+- **Score médio** - média de uma nota 1-5 dada por humano ou LLM-judge.
+  Mais nuance, mas precisa de critério calibrado.
+- **Latência e custo** - técnicas diferentes custam tempos diferentes.
+  CoT é mais lento. Few-shot é mais caro. Mensure.
+- **Taxa de alucinação** - em tarefas factuais, % de respostas com
+  informação não-suportada.
+
+**Evite como única métrica:**
+
+- **"Achei que ficou melhor"** - viés de confirmação.
+- **Apenas 1-2 exemplos** - anedotal, não conclusivo.
+- **Comparação só com 1 variante** - sempre compare A vs B vs baseline.
+  Mínimo 3 versões no histórico.
+
+## LLM-as-judge: como não cair em armadilha
+
+- **Use um modelo forte pro juiz** (Claude Opus, GPT-4, Gemini Pro).
+  Juiz fraco vira "julgamento fraco".
+- **Critérios explícitos** - "avalie: (1) cobre os 3 pontos pedidos,
+  (2) tem tom X, (3) tem < Y palavras". Sem critério, vira
+  "eu acho".
+- **Escala fechada quando puder** (1-5 ou pass/fail) em vez de texto
+  livre. Texto livre é difícil de agregar.
+- **Posição importa** - mesmo juiz, mesmo output, com A e B trocados
+  de ordem, pode dar notas diferentes. **Rode cada par 2x com ordem
+  invertida** e tire a média. É o que se chama "position bias
+  mitigation".
+
+<Quiz
+  question="Você refatorou um prompt e quer saber se melhorou. Qual é a abordagem mínima aceitável?"
+  options={[
+    { text: "Rodar em 5 inputs reais e 'olhar se parece melhor'", correct: false, explanation: "5 inputs não dá significância. E 'parece melhor' é viés de confirmação." },
+    { text: "Golden set de 30+ casos, rodar prompt antigo e novo, comparar pass-rate com regras + LLM-as-judge", correct: true },
+    { text: "Confiar que refatoração sempre melhora, e deploy", correct: false, explanation: "Refatoração é reescrita sem mudar comportamento. Se mudou comportamento, é 'mudança', não 'refactor'. E nenhuma das duas deveria ir pra produção sem medição." }
+  ]}
+/>
+
+- **Avaliação é o divisor** entre hobby e profissão. Sem ela, prompt
+  engineering vira superstição.
+- **3 tipos de avaliação:** humana (gold standard), regras (filtro
+  objetivo), LLM-as-judge (escala com critério).
+- **Golden set de 20-50 casos** é o mínimo viável. Representa a
+  distribuição real, não inventada.
+- **Métricas úteis:** pass-rate, score médio, latência, custo, taxa de
+  alucinação.
+- **LLM-as-judge exige critérios explícitos** e mitigação de position
+  bias.
+
+> Dica: o melhor investimento de tempo ao refatorar um prompt em
+> produção é montar o golden set. Ele serve pra essa mudança e pra
+> **todas as próximas**. É a diferença entre re-otimizar cega e
+> otimizar com bússola.
+
+No próximo nó, vamos ver como **automatizar** a otimização de prompts
+com frameworks como LangChain e DSPy.

@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-13-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-14-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
@@ -87,6 +87,12 @@ Trilhas hoje:
     Ingress, probes (startup/liveness/readiness) + HPA + resource
     limits, Helm (charts, values, Artifact Hub) e projeto final
     de stack completa no cluster.
+
+- 🤖 [**Prompt Engineering**](./roadmaps/prompt-engineering) -
+  ensinar a usar IA na era dos LLMs. **24 nós** em 3 fases lineares
+  (Básico, Intermediário, Avançado), do zero absoluto (o que é um LLM)
+  até construir produtos com IA. Agnóstica de stack: não exige saber
+  programar, com Mermaid, Quiz e projeto final de prompt design.
 
 > Mais trilhas chegando: Python, Estruturas de Dados…
 > Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
