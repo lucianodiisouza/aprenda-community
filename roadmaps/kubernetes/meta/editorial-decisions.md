@@ -48,8 +48,10 @@ Esta trilha **assume** que a pessoa já passou por:
 - [**Docker Compose e Workflows**](../../docker-compose-e-workflows)
   - a abstração de "stack" e "service" do Compose traduz direto
   pro k8s. Sem isso, o salto é grande demais.
-- **Terminal Linux/macOS básico** e **Git mínimo** - mesmas
-  premissas das trilhas anteriores.
+- [**Terminal para Devs**](../../terminal-para-devs) - os comandos
+  de shell e SSH que esta trilha assume sem reintroduzir. Pré-req
+  formal declarado.
+- **Git mínimo** - clonar manifests, versionar configs.
 
 **Não exige** experiência com cloud (EKS/GKE/AKS), Docker Swarm,
 ou qualquer provedor específico. O cluster local cobre a parte
