@@ -1,0 +1,90 @@
+---
+id: introducao-compose
+title: "Por que orquestrar containers"
+resources:
+  - title: "Visão geral do Docker Compose (docs oficial, PT-BR)"
+    url: https://docs.docker.com/compose/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Compose Specification (docs oficial, EN)"
+    url: https://docs.docker.com/reference/compose-file/
+    type: doc
+    lang: en
+    free: true
+---
+
+Na trilha de Docker Fundamentos você aprendeu a rodar containers um
+por um com `docker run`. Isso funciona pra um Nginx de teste. Quando o
+app real aparece, **vira um inferno de flags**: banco, cache, fila,
+API, frontend. Você acaba com 5 terminais abertos, cada um com um
+`docker run -e VAR=x -v pasta:/dado --network minha-rede --name xyz ...`
+enorme. Aí o banco reinicia e o IP muda. Aí você esquece uma flag.
+Aí repete tudo.
+
+**Docker Compose** resolve isso. É um arquivo YAML que descreve **toda
+a stack** - serviços, redes, volumes, variáveis - e um comando que
+sobe tudo de uma vez.
+
+## O antes e o depois
+
+Sem Compose, subir uma API com Postgres:
+
+```bash
+docker network create minha-rede
+docker volume create dados-pg
+docker run -d --name db --network minha-rede \
+  -v dados-pg:/var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=secret \
+  postgres:16
+docker run -d --name api --network minha-rede \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgres://postgres:secret@db:5432/postgres \
+  minha-api
+```
+
+Com Compose, **a mesma coisa num único arquivo** (`docker-compose.yml`):
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    volumes:
+      - dados-pg:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: secret
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:secret@db:5432/postgres
+    depends_on:
+      - db
+volumes:
+  dados-pg:
+```
+
+E pra subir tudo:
+
+```bash
+docker compose up -d
+```
+
+Três conceitos que você acabou de ver:
+
+- **`services`** - os containers da sua stack. Cada um vira um
+  container na hora de subir.
+- **`docker compose up`** - lê o `docker-compose.yml` e sobe tudo na
+  ordem certa (com `depends_on` respeitado).
+- **Volumes no nível raiz** - ficam fora de `services:` porque são
+  recursos compartilhados, não containers.
+
+> **Compose v2 vs v1.** Compose v1 era um binário separado
+> (`docker-compose` com hífen). Compose v2 é um subcomando do Docker
+> (`docker compose`, sem hífen, com espaço) escrito em Go e mantido
+> pela Docker. **Sempre use v2** - é o padrão desde 2023. Esta trilha
+> assume v2.
+
+No próximo, vamos escrever o `docker-compose.yml` à mão e entender
+cada chave.

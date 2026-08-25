@@ -1,0 +1,83 @@
+---
+id: projeto-final
+title: "Projeto Final: stack local pronta"
+resources:
+  - title: "Awesome Compose - exemplos oficiais (GitHub)"
+    url: https://github.com/docker/awesome-compose
+    type: doc
+    lang: en
+    free: true
+  - title: "Compose specification completa (docs oficial, EN)"
+    url: https://docs.docker.com/reference/compose-file/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você chegou no fim da trilha de Docker Compose. Hora de **subir uma
+stack completa do zero** - app, banco, cache, healthchecks, .env,
+profiles de dev - num projeto só.
+
+## A missão
+
+Pegue uma aplicação (sua ou de exemplo) e monte uma stack Compose
+pronta pra rodar com `docker compose up`. Sugestões:
+
+- **API Node/Express + Postgres** - a stack clássica. Pratica
+  healthcheck do Postgres, variável de ambiente do `DATABASE_URL`,
+  bind mount em dev pra hot reload.
+- **App Flask + Postgres + Redis** - mesma ideia, troca Node por
+  Python. Bom se você prefere Python.
+- **WordPress + MySQL** - já tem exemplo oficial no
+  [Awesome Compose](https://github.com/docker/awesome-compose). Serve
+  pra ver um caso "estado compartilhado" (uploads de mídia, banco,
+  cache).
+- **Qualquer side project seu** - a melhor escolha. Você **já tem**
+  o código, só falta a parte Compose.
+
+## Requisitos mínimos
+
+1. **2 ou mais services** - pelo menos app + um serviço de estado
+   (banco, cache, fila). Compose com 1 service só é só `docker run`
+   com steps extras.
+2. **`.env.example` commitado, `.env` ignorado** - `.env` no
+   `.gitignore`. Sem senhas hardcoded no `docker-compose.yml`.
+3. **Healthcheck em cada service de estado** - `pg_isready`,
+   `redis-cli ping`, `mysqladmin ping`, ou equivalente. Nada de
+   `sleep 5` no `command:`.
+4. **`depends_on` com `condition: service_healthy`** onde a ordem
+   importa.
+5. **Volumes nomeados** declarados no nível raiz pra tudo que
+   precisa persistir.
+6. **Profile `dev`** com pelo menos um extra (adminer, mailhog,
+   seed, debugger). Algo que **não** sobe em prod mas facilita
+   desenvolvimento.
+7. **README** com: o que é, como rodar, `.env` necessário, comandos
+   úteis (`up`, `down`, `logs`, `ps`, `exec`).
+
+## Critério de "pronto"
+
+- `cp .env.example .env` seguido de `docker compose up -d` sobe a
+  stack inteira em uma pessoa-computador limpa (alguém que nunca
+  viu o projeto).
+- `docker compose ps` mostra tudo com `STATUS (healthy)` em até
+  30 segundos.
+- A aplicação responde na porta exposta.
+- Derrubar (`docker compose down`) e subir de novo mantém os dados
+  (porque estão em volume nomeado, não no container).
+- `docker compose down -v && docker compose up -d` volta do zero
+  funcional (porque healthcheck garante ordem).
+- O `docker-compose.yml` não tem nenhum segredo hardcoded (tudo
+  via `${VAR}` com `.env`).
+
+## Compartilhe
+
+Poste no LinkedIn, mande pra amigos, abra uma issue no nosso GitHub
+com a tag `meu-projeto`. Mostrar a stack funcionando - mesmo
+imperfeita - é o que mais evolui.
+
+> Próximo passo: vá pra trilha de **Kubernetes** - ela pega tudo
+> que você aprendeu (containers, Compose, env, volumes, networks) e
+> mostra como **orquestrar em escala**: dezenas de containers
+> espalhados por vários servidores, com auto-recuperação, scaling
+> e rolling updates.

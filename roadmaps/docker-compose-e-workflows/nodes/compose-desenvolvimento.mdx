@@ -1,0 +1,140 @@
+---
+id: compose-desenvolvimento
+title: "Hot reload, watch e profiles"
+resources:
+  - title: "docker compose watch (docs oficial, EN)"
+    url: https://docs.docker.com/compose/file-watch/
+    type: doc
+    lang: en
+    free: true
+  - title: "Profiles no Compose (docs oficial, EN)"
+    url: https://docs.docker.com/compose/compose-file/05-services/#profiles
+    type: doc
+    lang: en
+    free: true
+---
+
+Em desenvolvimento, o ciclo "muda código, rebuild, restart" é
+chato. O Compose tem ferramentas pra encurtar isso: **bind mounts**
+(você já conhece) + o **comando `watch`**, que sincroniza mudanças
+e roda comandos quando arquivos mudam.
+
+## O comando `watch` (Compose 2.22+)
+
+```bash
+docker compose watch
+```
+
+Por padrão, o `watch` faz só o que bind mount já faz: copia os
+arquivos do host pro container. Mas dá pra fazer mais com a chave
+`develop:` no service:
+
+```yaml
+services:
+  api:
+    build: .
+    command: npm run dev
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: ./package.json
+```
+
+- **`action: sync`** - copia arquivos. Igual bind mount, mas
+  declarado no YAML e mais explícito.
+- **`action: rebuild`** - rebuilda a imagem quando o arquivo
+  muda. Bom pra `package.json`, `requirements.txt`, `Cargo.toml`.
+
+## Profiles: o mesmo compose, ambientes diferentes
+
+Imagine que em dev você quer Postgres + um adminer (UI web pro
+banco), mas em prod só o Postgres. **Profiles** resolvem:
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  adminer:
+    image: adminer
+    profiles: [dev]            # só sobe com --profile dev
+    ports:
+      - "8080:8080"
+```
+
+```bash
+docker compose up -d              # sobe só o "db"
+docker compose --profile dev up   # sobe "db" + "adminer"
+```
+
+Services sem `profiles` (ou com `profiles: [dev, prod]`) sobem
+sempre. Services com `profiles: [dev]` só sobem se você pedir
+explicitamente.
+
+Padrão útil pra "stack padrão + extras opcionais":
+
+```yaml
+services:
+  api:
+    build: .
+  db:
+    image: postgres:16
+  adminer:
+    image: adminer
+    profiles: [tools]            # adminer, mailhog, redis-commander
+    ports: ["8080:8080"]
+  mailhog:
+    image: mailhog/mailhog
+    profiles: [tools]
+    ports: ["1025:1025", "8025:8025"]
+```
+
+`docker compose --profile tools up` traz tudo. Sem o profile, sobe
+só o essencial.
+
+## Hot reload específico de stack
+
+Cada stack tem seu jeito de fazer hot reload:
+
+- **Node.js**: `nodemon` (CLI) ou `node --watch` (Node 18+).
+  Sobem com `npm run dev` em vez de `npm start`.
+- **Python**: `--reload` no uvicorn (FastAPI) ou Flask em modo
+  debug.
+- **Go**: `air` ou `cosmtrek/air`.
+- **Java**: `spring-boot-devtools`.
+
+O ponto: o `command:` do seu `docker-compose.yml` muda entre dev
+e prod:
+
+```yaml
+services:
+  api:
+    build:
+      context: .
+      target: ${BUILD_TARGET:-production}   # multi-stage
+    command: ${API_COMMAND:-node dist/server.js}
+    volumes:
+      - ./src:/app/src                       # dev: monta código
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`develop: watch:`** é o "nodemon do Compose" - roda comandos
+  ou sincroniza arquivos quando algo muda.
+- **`profiles:`** deixa o mesmo `docker-compose.yml` servir
+  múltiplos cenários (dev, prod, debug) sem manter arquivos
+  separados.
+- **Hot reload é por stack** - cada linguagem tem seu mecanismo;
+  o Compose só padroniza como ele é disparado.
+
+> Dica: o padrão comum é ter `docker-compose.yml` (base) e
+> `docker-compose.override.yml` (dev, ignorado do Git em alguns
+> projetos) que o Compose mescla automaticamente. Mas profiles
+> cobrem 90% do que override cobre, com menos confusão.
+
+No próximo nó, vamos juntar tudo numa **stack realista** que você
+vai usar de base em projetos reais.

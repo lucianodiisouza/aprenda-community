@@ -1,0 +1,71 @@
+{
+  "slug": "docker-compose-e-workflows",
+  "title": "Docker Compose e Workflows",
+  "description": "Trilha para quem quer orquestrar **vários containers** com um único arquivo declarativo: subir uma stack completa (app + banco + cache) com um comando, gerenciar variáveis de ambiente, volumes, redes internas, hot reload em desenvolvimento e workflows de produção. Pré-requisito: `docker-fundamentos`.",
+  "difficulty": "intermediario",
+  "skills": ["docker", "docker-compose", "containers", "devops", "yaml"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-compose",
+      "title": "Por que orquestrar containers",
+      "type": "topic",
+      "recommended": true,
+      "children": ["compose-primeiro-yaml"]
+    },
+    {
+      "id": "compose-primeiro-yaml",
+      "title": "Seu primeiro docker-compose.yml",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compose-variaveis-ambiente"]
+    },
+    {
+      "id": "compose-variaveis-ambiente",
+      "title": "Variáveis de ambiente e arquivos .env",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compose-volumes-persistencia"]
+    },
+    {
+      "id": "compose-volumes-persistencia",
+      "title": "Volumes e persistência no Compose",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compose-networks-comunicacao"]
+    },
+    {
+      "id": "compose-networks-comunicacao",
+      "title": "Comunicação entre services e DNS interno",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compose-desenvolvimento"]
+    },
+    {
+      "id": "compose-desenvolvimento",
+      "title": "Hot reload, watch e profiles",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compose-caso-real"]
+    },
+    {
+      "id": "compose-caso-real",
+      "title": "Stack completa: app, banco e cache",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: stack local pronta",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

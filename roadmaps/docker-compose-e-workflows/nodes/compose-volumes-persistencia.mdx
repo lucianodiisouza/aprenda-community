@@ -1,0 +1,111 @@
+---
+id: compose-volumes-persistencia
+title: "Volumes e persistência no Compose"
+resources:
+  - title: "Volumes no Compose (docs oficial, EN)"
+    url: https://docs.docker.com/compose/compose-file/05-services/#volumes
+    type: doc
+    lang: en
+    free: true
+  - title: "Short syntax vs long syntax (docs oficial, EN)"
+    url: https://docs.docker.com/compose/compose-file/05-services/#volumes-short-syntax
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já sabe que container é efêmero e que volumes existem pra
+resolver isso. No Compose, a sintaxe fica **declarativa** - você
+lista os volumes no YAML e o Compose cria/recicla automaticamente.
+
+## Volumes nomeados (a forma idiomática)
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    volumes:
+      - dados-pg:/var/lib/postgresql/data
+volumes:
+  dados-pg:
+```
+
+Repare nas duas partes:
+
+- **`volumes:` dentro de `services:`** - mapeia o volume
+  `dados-pg` no caminho `/var/lib/postgresql/data` do container.
+- **`volumes:` no nível raiz** - declara que o volume `dados-pg`
+  existe. Sem isso, o Compose cria um volume **anônimo** (com hash no
+  nome) que é difícil de referenciar depois.
+
+Listando e gerenciando:
+
+```bash
+docker volume ls                  # todos os volumes
+docker compose down               # para containers, mantém volumes
+docker compose down -v            # remove TUDO (volumes inclusos)
+docker compose run --rm db sh     # cria um container descartável
+```
+
+## Bind mounts (código local em dev)
+
+Em desenvolvimento, você quer editar o código no host e ver a
+mudança no container. Bind mount resolve:
+
+```yaml
+services:
+  api:
+    build: .
+    volumes:
+      - ./src:/app/src           # bind mount: ./src do host -> /app/src
+      - dados-pg:/var/lib/postgresql/data   # volume nomeado pro banco
+```
+
+Cuidado com **sobrescrita acidental**: se você montar `./src` num
+diretório que já tem arquivos da imagem (`/app`), os arquivos da
+imagem somem. Pra evitar, monte numa subpasta específica.
+
+## Long syntax (mais controle)
+
+A sintaxe curta (`- caminho:destino`) cobre 80% dos casos. Pra
+controle fino, use a forma longa:
+
+```yaml
+services:
+  api:
+    volumes:
+      - type: bind
+        source: ./src
+        target: /app/src
+      - type: volume
+        source: cache
+        target: /app/node_modules
+      - type: tmpfs
+        target: /tmp
+volumes:
+  cache:
+```
+
+O `type: tmpfs` é útil pra `/tmp` e diretórios que não devem
+persistir nem ir pro disco do host (mais rápido, vive na RAM).
+
+> **`docker compose down -v` apaga tudo.** Isso é o que você quer
+> pra "começar do zero" e o que NUNCA quer em produção. Pra produção,
+> prefira `docker compose stop` (para, mantém) ou `docker compose
+> restart` (reinicia sem perder nada).
+
+Três conceitos que você acabou de aprender:
+
+- **Volumes nomeados** (declarados em `volumes:` no nível raiz) são
+  gerenciados pelo Docker e fáceis de referenciar.
+- **Bind mounts** montam uma pasta do host. Ótimos pra dev, péssimos
+  pra prod (caminho do host não existe em produção).
+- **Long syntax** permite misturar tipos (`bind`, `volume`, `tmpfs`)
+  no mesmo `volumes:` de um service.
+
+> Dica: em dev, montar só `./src` (a pasta que muda) em vez do
+> projeto inteiro. Assim você não sobrescreve o que veio da imagem
+> (config, dependências, etc.).
+
+No próximo nó, vamos ver como os **services se acham** - spoiler: a
+rede padrão do Compose já dá DNS interno de graça.
