@@ -6,6 +6,20 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.10.0] - 2026-08-25
+
+### Adicionado
+- 🎓 **Bootcamps** (`bootcamps/<slug>/bootcamp.json`): novo tipo de conteúdo que
+  agrupa trilhas + projetos numa jornada com resultado. Primeiro bootcamp:
+  **Desenvolvedor Backend** (programação → SQL → backend → algoritmos → projeto).
+  Schema, validação de integridade referencial e template documentados.
+- ✅ **Interatividade nas trilhas**: checkpoints validados (`<Checkpoint>` JS e
+  `<VisualCheckpoint>` DOM/CSS) e quizzes formativos (`<Quiz>`) espalhados pelas
+  trilhas (JS, CSS, HTML, git, SQL, etc.) — 19 checkpoints + 15 quizzes.
+- 🎬 **Vídeo de introdução opcional** nas trilhas (`intro_video` no
+  `roadmap.json`), exibido no header.
+- 📄 CONTRIBUTING/templates atualizados (interatividade + bootcamp).
+
 ## [1.9.0] - 2026-08-25
 
 ### Adicionado
