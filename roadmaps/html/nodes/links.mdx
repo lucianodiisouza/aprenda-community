@@ -102,3 +102,18 @@ E para **outros protocolos** além de HTTP:
 
 No próximo nó, vamos colocar **imagens** na página - outra peça central da
 web, com várias pegadinhas para iniciantes.
+
+<VisualCheckpoint
+  challenge="Crie um link (<a>) para https://exemplo.com com o texto Clique aqui."
+  starterHtml={`<!-- seu link aqui -->`}
+  assert={`
+    const a = root.querySelector('a');
+    if (!a) return { pass:false, message:'Faltou o <a>.' };
+    return {
+      pass: a.getAttribute('href') === 'https://exemplo.com' && a.textContent.trim() === 'Clique aqui',
+      message: 'O link precisa ter href="https://exemplo.com" e o texto "Clique aqui".'
+    };
+  `}
+  slug="html"
+  nodeId="links"
+/>

@@ -53,3 +53,12 @@ git merge --abort
 
 Até aqui trabalhamos localmente. Agora vamos conectar seu repositório ao mundo:
 os **remotos**.
+
+<Quiz
+  question="Ao encontrar um conflito de merge, o que resolve?"
+  options={[
+    { text: "Editar os arquivos removendo os marcadores <<<< ==== >>>>, depois add + commit", correct: true },
+    { text: "Rodar git merge --abort e ignorar", correct: false, explanation: "Isso cancela o merge; não resolve o conflito." },
+    { text: "Apagar o repositório e clonar de novo", correct: false, explanation: "Exagero: o conflito é local e resolvível." }
+  ]}
+/>

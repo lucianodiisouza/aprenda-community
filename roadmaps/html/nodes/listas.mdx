@@ -136,3 +136,16 @@ Isso é texto solto, não uma lista. Use `<ul>`. Sempre.
 
 No próximo nó, vamos ver **tabelas** - para dados tabulares (e só pra
 esses; layout em tabela é uma má prática histórica).
+
+<VisualCheckpoint
+  challenge="Crie uma lista não-ordenada (<ul>) com exatamente 3 itens (<li>)."
+  starterHtml={`<!-- sua lista aqui -->`}
+  assert={`
+    const ul = root.querySelector('ul');
+    if (!ul) return { pass:false, message:'Faltou o <ul>.' };
+    const itens = ul.querySelectorAll(':scope > li').length;
+    return { pass: itens === 3, message: 'O <ul> precisa ter exatamente 3 <li> (tem '+itens+').' };
+  `}
+  slug="html"
+  nodeId="listas"
+/>
