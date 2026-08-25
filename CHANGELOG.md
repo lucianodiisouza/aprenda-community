@@ -4,7 +4,9 @@ Todas as mudanças notáveis deste projeto são documentadas aqui. O formato
 segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o
 projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não liberado]
+## [Não lançado]
+
+## [1.9.0] - 2026-08-25
 
 ### Adicionado
 - 🐳 **Trilha de Docker Fundamentos** (`roadmaps/docker-fundamentos`,
