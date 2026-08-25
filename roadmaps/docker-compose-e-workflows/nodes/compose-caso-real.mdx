@@ -71,12 +71,12 @@ volumes:
   cache-data:
 ```
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     Browser["Navegador / cliente"]
-    Browser -->|":3000"| API[("api\napp Node")]
-    API -->|":5432"| DB[("db\nPostgres 16")]
-    API -->|":6379"| Cache[("cache\nRedis 7")]
+    Browser -->|":3000"| API[("api\\napp Node")]
+    API -->|":5432"| DB[("db\\nPostgres 16")]
+    API -->|":6379"| Cache[("cache\\nRedis 7")]
 
     subgraph Stack["Stack minha-api (Compose)"]
         API
@@ -84,16 +84,17 @@ flowchart TB
         Cache
     end
 
-    DB -.->|"/var/lib/postgresql/data"| V1[("db-data\nvolume nomeado")]
-    Cache -.->|"/data"| V2[("cache-data\nvolume nomeado")]
+    DB -.->|"/var/lib/postgresql/data"| V1[("db-data\\nvolume nomeado")]
+    Cache -.->|"/data"| V2[("cache-data\\nvolume nomeado")]
 
     classDef svc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
     classDef vol fill:#7c2d12,stroke:#fb923c,color:#fff7ed
     classDef cli fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
     class API,DB,Cache svc
     class V1,V2 vol
-    class Browser cli
-```
+    class Browser cli`}
+  caption="Stack completa: API + Postgres + Redis com volumes nomeados."
+/>
 
 ## O que cada decisão aqui faz
 

@@ -37,11 +37,11 @@ Quando o Compose sobe essa stack, ele cria uma rede chamada
 `nome-do-projeto_default` (ex: `minha-api_default`). Os containers
 `api` e `db` são conectados nela e podem se resolver por nome:
 
-```mermaid
-flowchart LR
-    Host["Seu computador\n(host)"]
-    Host -->|"-p 3000:3000"| API[("api\nporta 3000")]
-    Host -->|"psql, navegador"| DB[("db\nporta 5432")]
+<Mermaid
+  chart={`flowchart LR
+    Host["Seu computador\\n(host)"]
+    Host -->|"-p 3000:3000"| API[("api\\nporta 3000")]
+    Host -->|"psql, navegador"| DB[("db\\nporta 5432")]
 
     subgraph Net["Rede minha-api_default (bridge)"]
         API
@@ -55,8 +55,9 @@ flowchart LR
     classDef net fill:#0f172a,stroke:#475569,color:#cbd5e1
     class Host host
     class API,DB svc
-    class Net net
-```
+    class Net net`}
+  caption="DNS interno entre services e roteamento via Service."
+/>
 
 Repare: o `db` resolve pra um IP **interno da rede Docker** (algo
 como `172.18.0.3`), não pra `localhost`. O `api` está na mesma
