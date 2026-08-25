@@ -6,6 +6,24 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.13.0] - 2026-08-25
+
+### Adicionado
+- 🧩 **Projetos backend-native** (`projects/`): três novos briefs pra dar
+  lastro prático à trilha de backend — **Modelagem de um Banco de Dados**
+  (`modelagem-de-banco`, SQL puro num mini e-commerce), **API REST com
+  Autenticação** (`api-rest-com-autenticacao`, CRUD + login + rotas
+  protegidas) e **Empacote um Serviço com Docker** (`servico-com-docker`,
+  Dockerfile + Compose subindo app + banco).
+
+### Alterado
+- 🎓 **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
+  currículo expandido de 5 pra 14 módulos. Entram as trilhas **Terminal para
+  Devs**, **Git**, **Docker Fundamentos** e **Docker Compose e Workflows**, e
+  os projetos passam a ser **intercalados** entre as trilhas (Calculadora de
+  Gorjeta, Modelagem de Banco, API REST, Serviço com Docker, Busca com
+  Filtros) pra equilibrar teoria e prática. Estimativa ajustada pra 4 meses.
+
 ## [1.12.0] - 2026-08-25
 
 ### Adicionado
