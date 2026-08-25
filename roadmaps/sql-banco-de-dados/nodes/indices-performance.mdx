@@ -1,0 +1,67 @@
+---
+id: indices-performance
+title: "Índices: Por que Query Lenta Fica Rápida"
+resources:
+  - title: "Use the Index, Luke (em inglês)"
+    url: https://use-the-index-luke.com/
+    type: doc
+    lang: en
+    free: true
+---
+
+Sem índice, o banco procura um valor lendo a tabela inteira, linha
+por linha. Com uma tabela de 100 linhas isso não importa. Com 10
+milhões, a diferença é segundos contra minutos.
+
+### Criando um índice
+
+```sql
+CREATE INDEX idx_produtos_nome ON produtos (nome);
+```
+
+Depois disso, uma busca por `nome` não precisa mais varrer a tabela
+inteira: o índice funciona como o índice remissivo de um livro,
+apontando direto para onde o dado está.
+
+```sql
+-- essa consulta agora usa o índice criado acima
+SELECT * FROM produtos WHERE nome = 'Teclado';
+```
+
+### Vendo se o banco está usando o índice
+
+```sql
+EXPLAIN SELECT * FROM produtos WHERE nome = 'Teclado';
+```
+
+`EXPLAIN` mostra o plano que o banco escolheu para executar a
+consulta. Se aparecer "Seq Scan" (varredura sequencial) numa tabela
+grande, é sinal de que falta um índice na coluna usada no `WHERE`.
+
+### Índice não é de graça
+
+```text
+leitura (SELECT)                → mais rápida com índice
+escrita (INSERT, UPDATE, DELETE) → um pouco mais lenta, precisa
+                                     atualizar o índice também
+```
+
+Cada índice acelera busca, mas deixa toda escrita um pouco mais
+lenta, porque o banco precisa manter o índice atualizado junto com a
+tabela. Por isso não se cria índice em toda coluna, só nas que
+aparecem com frequência em `WHERE`, `JOIN` ou `ORDER BY`.
+
+- **Índice** acelera busca em colunas usadas com frequência em
+  filtro, junção ou ordenação.
+- **`EXPLAIN`** mostra se a consulta está de fato usando um índice.
+- **Índice tem custo**: mais rápido para ler, mais lento para
+  escrever. Use com intenção, não em toda coluna.
+
+> Dica: chave primária já ganha índice automaticamente na maioria
+> dos bancos, incluindo PostgreSQL. Você só precisa criar índice
+> manual em colunas que não são chave primária mas aparecem com
+> frequência em filtro.
+
+No próximo nó, você vai ver o que garante que uma sequência de
+operações no banco não fique pela metade em caso de falha:
+transações.

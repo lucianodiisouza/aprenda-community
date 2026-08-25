@@ -1,0 +1,70 @@
+---
+id: subqueries-cte
+title: "Subqueries e CTE (WITH)"
+resources:
+  - title: "WITH Queries (documentação oficial do PostgreSQL, em inglês)"
+    url: https://www.postgresql.org/docs/current/queries-with.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Algumas perguntas precisam do resultado de uma consulta para
+responder outra. "Quais clientes gastaram acima da média?" exige
+calcular a média primeiro, e só depois comparar. Subquery e CTE
+resolvem isso de duas formas diferentes.
+
+### Subquery: uma consulta dentro da outra
+
+```sql
+SELECT nome, total_gasto
+FROM clientes
+WHERE total_gasto > (
+  SELECT AVG(total_gasto) FROM clientes
+);
+```
+
+A consulta entre parênteses roda primeiro, devolve um valor único
+(a média), e a consulta de fora usa esse valor no `WHERE`.
+
+### CTE: nomeando um resultado intermediário
+
+```sql
+WITH gastos_por_cliente AS (
+  SELECT cliente_id, SUM(valor) AS total
+  FROM pedidos
+  GROUP BY cliente_id
+)
+SELECT clientes.nome, gastos_por_cliente.total
+FROM gastos_por_cliente
+INNER JOIN clientes ON clientes.id = gastos_por_cliente.cliente_id
+WHERE gastos_por_cliente.total > 1000;
+```
+
+`WITH` cria uma tabela temporária, só válida dentro dessa consulta,
+com um nome (`gastos_por_cliente`). O resto da consulta usa esse
+nome como se fosse uma tabela normal.
+
+### Quando usar cada uma
+
+```text
+subquery simples, um valor único    → parênteses direto no WHERE
+lógica com vários passos, reusada   → CTE (WITH), mais fácil de ler
+```
+
+Subquery curta dentro do `WHERE` é direta e comum. Quando a consulta
+cresce e tem vários passos, CTE nomeado deixa o SQL mais fácil de
+seguir, porque cada bloco tem um nome que explica o que faz.
+
+- **Subquery**: consulta dentro de outra, sem nome, direto no lugar
+  onde é usada.
+- **CTE (`WITH nome AS (...)`)**: consulta nomeada, reusável dentro
+  da mesma query.
+- Prefira CTE quando a consulta tem mais de um passo lógico.
+
+> Dica: se você se pegar copiando a mesma subquery duas vezes numa
+> consulta, isso é sinal de trocar por um CTE. Evita repetição e
+> deixa mais fácil mudar a lógica num lugar só.
+
+No próximo nó, você vai entender por que algumas consultas ficam
+lentas com o banco grande, e como um índice resolve isso.

@@ -1,0 +1,74 @@
+---
+id: insert-update-delete
+title: "INSERT, UPDATE e DELETE"
+resources:
+  - title: "SQL INSERT INTO (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_insert.asp
+    type: doc
+    lang: en
+    free: true
+  - title: "SQL UPDATE (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_update.asp
+    type: doc
+    lang: en
+    free: true
+---
+
+Depois de consultar dado, o próximo passo é mudar dado. Três
+comandos cobrem isso, e um deles merece cuidado redobrado.
+
+### INSERT: adicionando uma linha
+
+```sql
+INSERT INTO produtos (nome, preco, em_estoque)
+VALUES ('Monitor', 899.90, true);
+```
+
+Cada valor precisa bater, em ordem, com a lista de colunas
+declarada antes do `VALUES`.
+
+### UPDATE: alterando linhas existentes
+
+```sql
+UPDATE produtos
+SET preco = 799.90
+WHERE id = 3;
+```
+
+`SET` define o novo valor. `WHERE` decide quais linhas recebem essa
+mudança.
+
+### DELETE: apagando linhas
+
+```sql
+DELETE FROM produtos
+WHERE em_estoque = false;
+```
+
+Apaga toda linha onde `em_estoque` é falso.
+
+### A pegadinha: `WHERE` esquecido
+
+```sql
+-- isso apaga TODOS os produtos da tabela, sem exceção
+DELETE FROM produtos;
+```
+
+`UPDATE` e `DELETE` sem `WHERE` afetam a tabela inteira, de uma vez,
+sem confirmação. Esse é um dos erros mais comuns e mais caros que
+existe em SQL.
+
+- **`INSERT INTO tabela (colunas) VALUES (valores)`**: adiciona uma
+  linha nova.
+- **`UPDATE tabela SET coluna = valor WHERE condicao`**: altera
+  linhas existentes.
+- **`DELETE FROM tabela WHERE condicao`**: remove linhas.
+- **Sem `WHERE`**, `UPDATE` e `DELETE` afetam a tabela inteira.
+
+> Dica: antes de rodar um `UPDATE` ou `DELETE` em produção, rode o
+> mesmo `WHERE` dentro de um `SELECT` primeiro. Se o `SELECT`
+> devolver as linhas certas, o `UPDATE`/`DELETE` também vai afetar
+> só essas.
+
+No próximo nó, você vai conectar tabelas de verdade: relacionamentos
+e `JOIN`.

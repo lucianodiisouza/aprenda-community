@@ -1,0 +1,65 @@
+---
+id: transacoes-acid
+title: "Transações e as Garantias do ACID"
+resources:
+  - title: "Transactions (documentação oficial do PostgreSQL, em inglês)"
+    url: https://www.postgresql.org/docs/current/tutorial-transactions.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma transferência bancária tem dois passos: tirar dinheiro de uma
+conta, colocar na outra. Se o sistema cair entre os dois passos, o
+dinheiro não pode sumir nem duplicar. Transação é o mecanismo que
+garante isso.
+
+### Agrupando operações numa transação
+
+```sql
+BEGIN;
+
+UPDATE contas SET saldo = saldo - 100 WHERE id = 1;
+UPDATE contas SET saldo = saldo + 100 WHERE id = 2;
+
+COMMIT;
+```
+
+`BEGIN` inicia a transação. As duas atualizações só se tornam
+permanentes quando `COMMIT` é executado. Se algo falhar no meio,
+`ROLLBACK` desfaz tudo, como se nada tivesse acontecido.
+
+```sql
+BEGIN;
+
+UPDATE contas SET saldo = saldo - 100 WHERE id = 1;
+-- erro aqui: conta 2 não existe
+UPDATE contas SET saldo = saldo + 100 WHERE id = 999;
+
+ROLLBACK; -- desfaz o débito também, ninguém fica com saldo errado
+```
+
+### O que ACID garante
+
+```text
+Atomicidade   → ou tudo acontece, ou nada acontece
+Consistência  → o banco sai de um estado válido para outro
+Isolamento    → transações simultâneas não se atrapalham
+Durabilidade  → depois do COMMIT, o dado sobrevive a uma queda
+```
+
+- **Atomicidade**: uma transação é tudo ou nada, sem meio-termo.
+- **Consistência**: as regras do banco (chave estrangeira, restrição)
+  continuam válidas depois da transação.
+- **Isolamento**: duas transações rodando ao mesmo tempo não veem os
+  resultados parciais uma da outra.
+- **Durabilidade**: depois do `COMMIT`, o dado está salvo de verdade,
+  mesmo que o servidor caia em seguida.
+
+> Dica: use transação sempre que uma operação de negócio depender de
+> mais de um `INSERT`/`UPDATE`/`DELETE` acontecendo junto. Criar um
+> pedido e descontar o estoque, por exemplo, deveriam estar na mesma
+> transação.
+
+No próximo nó, você vai ver o ataque mais comum contra banco de
+dados, e como escrever SQL que não abre essa porta.

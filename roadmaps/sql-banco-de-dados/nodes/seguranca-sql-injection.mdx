@@ -1,0 +1,66 @@
+---
+id: seguranca-sql-injection
+title: "SQL Injection e Como Evitar"
+resources:
+  - title: "SQL Injection (OWASP, em inglês)"
+    url: https://owasp.org/www-community/attacks/SQL_Injection
+    type: doc
+    lang: en
+    free: true
+---
+
+SQL injection é o ataque mais antigo e ainda mais comum contra banco
+de dados. Acontece quando o código monta uma consulta colando texto
+digitado pela pessoa direto na string SQL, sem separar comando de
+dado.
+
+### O ataque
+
+```javascript
+// NUNCA faça isso
+const query = `SELECT * FROM usuarios WHERE email = '${emailDigitado}'`;
+```
+
+Se a pessoa digitar `' OR '1'='1` no lugar do e-mail, a consulta
+final vira:
+
+```sql
+SELECT * FROM usuarios WHERE email = '' OR '1'='1'
+```
+
+`'1'='1'` é sempre verdadeiro, então essa consulta devolve todos os
+usuários da tabela, não só um. Com um pouco mais de esforço, o mesmo
+truque apaga tabela inteira ou rouba dado de outra pessoa.
+
+### A defesa: prepared statement
+
+```javascript
+// o valor digitado nunca vira parte do comando SQL
+const query = "SELECT * FROM usuarios WHERE email = $1";
+await client.query(query, [emailDigitado]);
+```
+
+O `$1` é um placeholder. O driver do banco envia o comando SQL e o
+valor digitado separadamente, então nada que a pessoa digitar pode
+virar comando. `' OR '1'='1` vira só um e-mail estranho que não bate
+com nenhum registro, exatamente o que deveria acontecer.
+
+```python
+# mesmo princípio em Python
+cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email_digitado,))
+```
+
+- **SQL injection**: acontece quando entrada da pessoa vira parte do
+  comando SQL sem separação.
+- **Prepared statement** (ou "query parametrizada"): o driver separa
+  comando de valor, fechando essa porta.
+- Praticamente todo ORM (Prisma, SQLAlchemy, ActiveRecord) já usa
+  prepared statement por padrão. O risco aparece quando alguém monta
+  SQL manual concatenando string.
+
+> Dica: se você vir código concatenando variável dentro de uma
+> string SQL (com `+`, template literal ou `f-string`), pare e troque
+> por placeholder. Não existe exceção segura para essa regra.
+
+No próximo nó, você aplica tudo o que aprendeu num projeto completo:
+modelar e popular um banco de dados pequeno do zero.

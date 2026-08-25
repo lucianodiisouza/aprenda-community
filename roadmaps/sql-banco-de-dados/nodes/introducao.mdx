@@ -1,0 +1,53 @@
+---
+id: introducao
+title: "O que é um Banco de Dados Relacional"
+resources:
+  - title: "SQL Introduction (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/sql_intro.asp
+    type: doc
+    lang: en
+    free: true
+---
+
+Um banco de dados relacional guarda informação em **tabelas**, do
+jeito que uma planilha guarda: linhas e colunas. Cada linha é um
+registro (um produto, uma pessoa, um pedido). Cada coluna é um
+atributo desse registro (nome, preço, data).
+
+```text
+tabela "produtos"
+| id | nome        | preco  |
+|----|-------------|--------|
+| 1  | Teclado     | 250.00 |
+| 2  | Mouse       | 80.00  |
+```
+
+**SQL** (Structured Query Language) é a linguagem para conversar com
+essas tabelas: criar, ler, atualizar, apagar dado, e cruzar
+informação de várias tabelas ao mesmo tempo.
+
+```sql
+SELECT nome, preco FROM produtos WHERE preco < 100;
+```
+
+Essa consulta lê a tabela `produtos` e devolve só as linhas com
+preço abaixo de 100. SQL existe desde os anos 1970 e continua sendo
+a linguagem padrão de banco de dados porque o modelo de tabelas
+relacionadas resolve bem um problema que não muda: guardar dado
+estruturado e consultar rápido.
+
+- **Tabela**: coleção de registros com a mesma estrutura.
+- **Linha (row)**: um registro individual.
+- **Coluna**: um atributo, com um tipo definido (número, texto,
+  data).
+- **SQL**: a linguagem para criar, ler, alterar e apagar dado.
+
+> Dica: "relacional" no nome vem de **relacionamento entre
+> tabelas**, não de "relação" no sentido comum. Uma tabela de
+> pedidos se relaciona com uma tabela de clientes através de uma
+> referência (chave estrangeira). Isso aparece em detalhe mais
+> adiante na trilha.
+
+No próximo nó, antes de criar qualquer tabela, você vai aprender a
+pensar em entidades e atributos: o passo que evita banco de dados
+bagunçado.

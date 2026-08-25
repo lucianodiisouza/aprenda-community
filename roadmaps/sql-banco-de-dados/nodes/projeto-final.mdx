@@ -1,0 +1,96 @@
+---
+id: projeto-final
+title: "Projeto Final: Modelar e Popular um Banco"
+resources:
+  - title: "Try-SQL Editor (W3Schools, em inglês)"
+    url: https://www.w3schools.com/sql/trysql.asp?filename=trysql_select_all
+    type: exercicio
+    lang: en
+    free: true
+---
+
+O projeto final junta modelagem, criação de tabela, relacionamento
+e consulta numa entrega só: um banco de dados pequeno, completo e
+funcional, para o tema de uma livraria.
+
+### Passo 1: modele as entidades
+
+Antes de escrever SQL, desenhe no papel: `livros`, `autores`,
+`clientes`, `pedidos`. Defina os atributos de cada um e os
+relacionamentos entre eles (lembrando do nó de modelagem).
+
+### Passo 2: crie as tabelas
+
+```sql
+CREATE TABLE autores (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE livros (
+  id SERIAL PRIMARY KEY,
+  titulo VARCHAR(200) NOT NULL,
+  preco NUMERIC(10, 2) NOT NULL,
+  autor_id INTEGER NOT NULL REFERENCES autores(id)
+);
+
+CREATE TABLE clientes (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL
+);
+
+CREATE TABLE pedidos (
+  id SERIAL PRIMARY KEY,
+  cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+  livro_id INTEGER NOT NULL REFERENCES livros(id),
+  criado_em TIMESTAMP DEFAULT now()
+);
+```
+
+### Passo 3: popule com dado de teste
+
+```sql
+INSERT INTO autores (nome) VALUES ('Machado de Assis'), ('Clarice Lispector');
+
+INSERT INTO livros (titulo, preco, autor_id) VALUES
+  ('Dom Casmurro', 39.90, 1),
+  ('A Hora da Estrela', 34.90, 2);
+
+INSERT INTO clientes (nome, email) VALUES ('Ana Silva', 'ana@email.com');
+
+INSERT INTO pedidos (cliente_id, livro_id) VALUES (1, 1), (1, 2);
+```
+
+### Passo 4: escreva 5 consultas que provam que o banco funciona
+
+Cada consulta abaixo precisa devolver resultado correto no seu
+banco:
+
+1. Todos os livros com o nome do autor (`JOIN`).
+2. Quantos pedidos cada cliente fez (`GROUP BY` + `COUNT`).
+3. Clientes que gastaram acima da média (subquery ou CTE).
+4. O livro mais caro (`ORDER BY` + `LIMIT`).
+5. Uma transação que cria um pedido e, no mesmo `BEGIN`/`COMMIT`,
+   confirma que o livro referenciado existe.
+
+### Passo 5: rode `EXPLAIN` numa das consultas
+
+Escolha a consulta do passo 4 (`ORDER BY` + `LIMIT`) e rode
+`EXPLAIN` nela. Anote se o banco usou índice ou varredura completa,
+e crie um índice se fizer sentido.
+
+- **Modelagem** vem antes do `CREATE TABLE`, não depois.
+- **Populamento** com dado realista revela problema de modelagem
+  cedo.
+- **Consultas variadas** (join, agregação, subquery) provam que o
+  banco resolve perguntas reais, não só guarda dado.
+
+> Dica: sem PostgreSQL instalado, o Try-SQL Editor do W3Schools roda
+> um banco de exemplo direto no navegador. Serve para praticar
+> `SELECT`, `JOIN` e `GROUP BY` sem instalar nada, mesmo não sendo o
+> mesmo banco usado nos comandos deste projeto.
+
+Parabéns por terminar a trilha. SQL muda pouco de um banco para
+outro (PostgreSQL, MySQL, SQLite): o que você aprendeu aqui
+atravessa qualquer stack que usar banco relacional depois.

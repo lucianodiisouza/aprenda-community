@@ -1,0 +1,113 @@
+{
+  "slug": "sql-banco-de-dados",
+  "title": "SQL e Banco de Dados",
+  "description": "Trilha de SQL puro, do zero: modelagem, consultas, joins, agregação, índices, transações e segurança. Base sólida para quem vai usar qualquer ORM depois.",
+  "difficulty": "iniciante",
+  "skills": ["sql", "banco-de-dados", "postgresql", "modelagem-de-dados"],
+  "creators": [
+    {
+      "name": "Breno Alvim",
+      "github": "obrenoalvim"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "O que é um Banco de Dados Relacional",
+      "type": "topic",
+      "recommended": true,
+      "children": ["modelagem-entidades"]
+    },
+    {
+      "id": "modelagem-entidades",
+      "title": "Modelando Entidades Antes de Criar Tabela",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["normalizacao"]
+    },
+    {
+      "id": "normalizacao",
+      "title": "Normalização: 1FN, 2FN e 3FN",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tipos-dados"]
+    },
+    {
+      "id": "tipos-dados",
+      "title": "Tipos de Dados: Escolhendo a Coluna Certa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["criando-tabelas"]
+    },
+    {
+      "id": "criando-tabelas",
+      "title": "CREATE TABLE, Chaves e Restrições",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["select-where"]
+    },
+    {
+      "id": "select-where",
+      "title": "SELECT, WHERE, ORDER BY e LIMIT",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["insert-update-delete"]
+    },
+    {
+      "id": "insert-update-delete",
+      "title": "INSERT, UPDATE e DELETE",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["relacionamentos-joins"]
+    },
+    {
+      "id": "relacionamentos-joins",
+      "title": "Relacionamentos entre Tabelas e JOIN",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["agregacao"]
+    },
+    {
+      "id": "agregacao",
+      "title": "GROUP BY, HAVING e Funções de Agregação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["subqueries-cte"]
+    },
+    {
+      "id": "subqueries-cte",
+      "title": "Subqueries e CTE (WITH)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["indices-performance"]
+    },
+    {
+      "id": "indices-performance",
+      "title": "Índices: Por que Query Lenta Fica Rápida",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["transacoes-acid"]
+    },
+    {
+      "id": "transacoes-acid",
+      "title": "Transações e as Garantias do ACID",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seguranca-sql-injection"]
+    },
+    {
+      "id": "seguranca-sql-injection",
+      "title": "SQL Injection e Como Evitar",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Modelar e Popular um Banco",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}
