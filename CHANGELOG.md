@@ -6,6 +6,30 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.8.0] - 2026-08-25
+
+### Adicionado
+- 🆕 Trilha **SQL e Banco de Dados** (14 nós, iniciante): SQL puro do zero,
+  sem depender de nenhum ORM — modelagem de entidades, normalização
+  (1FN/2FN/3FN), tipos de dados, `CREATE TABLE` e restrições,
+  `SELECT`/`WHERE`/`ORDER BY`/`LIMIT`, `INSERT`/`UPDATE`/`DELETE`,
+  relacionamentos e `JOIN`, agregação (`GROUP BY`/`HAVING`), subqueries e
+  CTE (`WITH`), índices e performance, transações e ACID, e SQL injection,
+  fechando com um projeto final de modelar e popular um banco. Fecha a
+  lacuna da trilha de Backend, que usa Prisma sobre PostgreSQL sem ensinar
+  SQL puro. Sintaxe de referência em PostgreSQL, mas majoritariamente ANSI
+  SQL. Decisões editoriais em
+  `roadmaps/sql-banco-de-dados/meta/editorial-decisions.md`. Contribuição de
+  Breno Alvim ([@obrenoalvim](https://github.com/obrenoalvim)).
+
+## [1.7.0] - 2026-08-24
+
+### Adicionado
+- 🆕 Trilha **Backend** (12 nós, intermediário): do HTTP e Node.js até uma
+  API completa em Express, com banco de dados, autenticação, ORM,
+  validação, testes e projeto final. Registro adicionado retroativamente
+  (a v1.7.0 foi lançada sem entrada no changelog).
+
 ## [1.6.0] - 2026-08-24
 
 ### Adicionado
