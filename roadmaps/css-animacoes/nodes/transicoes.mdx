@@ -143,5 +143,26 @@ entrada de modal, etc.) onde a animação atrapalha mais do que ajuda.
 > "lento" pro usuário moderno. Acima de 1s só pra transições de
 > página ou onboarding.
 
+<VisualCheckpoint
+  challenge="Adicione uma transição de 0.3s na cor de fundo do .botao (use transition)."
+  hint="transition: background-color 0.3s; (ou a shorthand transition: all 0.3s)."
+  starterHtml={`<button class="botao">Passe o mouse</button>`}
+  starterCss={`.botao {\n  background: #ff6347;\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const b = root.querySelector('.botao');
+    if (!b) return { pass: false, message: 'Não achei o .botao.' };
+    const s = getComputedStyle(b);
+    const dur = s.transitionDuration.split(',').map(x => x.trim());
+    const props = s.transitionProperty;
+    const cobreBg = props.includes('background') || props === 'all';
+    return {
+      pass: dur.includes('0.3s') && cobreBg,
+      message: 'O .botao precisa de uma transição de 0.3s cobrindo o background (ex.: transition: background-color 0.3s).'
+    };
+  `}
+  slug="css-animacoes"
+  nodeId="transicoes"
+/>
+
 No próximo, vamos **mover** elementos pela tela: `transform` em 2D
 e 3D, o coração das animações performáticas.
