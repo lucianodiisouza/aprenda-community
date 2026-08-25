@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-10-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-13-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
@@ -65,6 +65,28 @@ Trilhas hoje:
     Queries, `:has()`, Logical Properties, arquitetura (BEM, Tailwind,
     CSS-in-JS), performance, frameworks como mapa de opções, e
     projeto final de landing page.
+- 🐳 **Containers e Orquestração** (3 trilhas, **30 nós** no total)
+  - [**Docker Fundamentos**](./roadmaps/docker-fundamentos) (10 nós,
+    intermediário): o que é container vs VM, ciclo de vida
+    (`run`/`ps`/`logs`/`exec`/`stop`/`rm`), imagens e layers, Dockerfile
+    (FROM, WORKDIR, COPY, RUN, CMD), volumes, networks bridge com DNS
+    interno, imagens enxutas (alpine, `.dockerignore`, multi-stage
+    build) e projeto final de empacotar uma aplicação com `HEALTHCHECK`.
+  - [**Docker Compose e Workflows**](./roadmaps/docker-compose-e-workflows)
+    (8 nós, intermediário): orquestrar uma stack com
+    `docker-compose.yml`, `services` + `depends_on` + `healthcheck`,
+    variáveis em `.env` (com `.env.example` no Git), volumes nomeados
+    vs bind mounts, profiles (dev/prod), watch/hot reload e projeto
+    final de uma stack realista (app + banco + cache) com healthcheck
+    e `depends_on: condition: service_healthy`.
+  - [**Kubernetes**](./roadmaps/kubernetes) (12 nós, avançado):
+    arquitetura do cluster (control plane + workers), cluster local
+    com `minikube` ou `k3d`, `kubectl` no dia a dia, Pods, Deployments
+    (rolling update, rollback, scaling), Services (ClusterIP, NodePort,
+    LoadBalancer), ConfigMaps, Secrets, PV/PVC com StatefulSet,
+    Ingress, probes (startup/liveness/readiness) + HPA + resource
+    limits, Helm (charts, values, Artifact Hub) e projeto final
+    de stack completa no cluster.
 
 > Mais trilhas chegando: Python, Estruturas de Dados…
 > Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
