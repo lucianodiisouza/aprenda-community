@@ -6,6 +6,19 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.12.0] - 2026-08-25
+
+### Adicionado
+- 🔎 **Trilha SEO, AEO e GEO** (`roadmaps/seo-aeo-geo`, 13 nós): a fatia
+  técnica de SEO (on-page, técnico, robots.txt, sitemap, Core Web Vitals,
+  E-E-A-T, dados estruturados, link building) seguida dos dois módulos mais
+  recentes — **AEO** (otimização pra featured snippets e busca por voz) e
+  **GEO** (otimização pra ser citado em respostas de IA generativa como
+  ChatGPT e Perplexity, ancorado no estudo do KDD 2024). Pré-requisito:
+  trilha **HTML**. Decisões editoriais em
+  `roadmaps/seo-aeo-geo/meta/editorial-decisions.md`. Contribuição de
+  Breno Alvim (#18).
+
 ## [1.11.0] - 2026-08-25
 
 ### Adicionado
