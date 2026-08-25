@@ -1,0 +1,80 @@
+---
+id: dados-estruturados
+title: "Dados Estruturados: Ensinando o Buscador a Ler sua Página"
+resources:
+  - title: "Introduction to structured data markup (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+    type: doc
+    lang: en
+    free: true
+---
+
+Um buscador consegue ler texto solto, mas adivinhar significado é sempre
+menos preciso que receber a informação já rotulada. Dados estruturados
+(schema markup) são um jeito de anotar sua página em formato que máquina lê
+sem adivinhar.
+
+### JSON-LD: o formato mais comum hoje
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": "Bolo de Cenoura",
+  "prepTime": "PT20M",
+  "recipeYield": "8 porções"
+}
+</script>
+```
+
+Esse bloco fica escondido na página (não aparece pra quem lê visualmente),
+mas diz explicitamente ao buscador: "isto é uma receita, leva 20 minutos de
+preparo, rende 8 porções".
+
+### Tipos de schema mais usados
+
+```text
+Article     → posts de blog, notícias
+FAQPage     → seção de perguntas frequentes
+HowTo       → tutorial passo a passo
+Product     → páginas de produto (preço, avaliação)
+Organization → dados da empresa/site
+```
+
+### FAQPage: um dos schemas mais fáceis de aplicar
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [{
+    "@type": "Question",
+    "name": "A calculadora funciona sem internet?",
+    "acceptedAnswer": {
+      "@type": "Answer",
+      "text": "Sim, depois de carregada a página uma vez, funciona offline."
+    }
+  }]
+}
+</script>
+```
+
+Se a página já tem uma seção de perguntas frequentes visível, adicionar o
+schema correspondente é só reaproveitar o conteúdo que já existe, sem
+escrever nada novo.
+
+- **JSON-LD** é o formato recomendado: um bloco de `<script>` separado do
+  HTML visível.
+- **Schema.org** define o vocabulário: os tipos e propriedades que existem.
+- Dados estruturados não garantem posição melhor sozinhos, mas ajudam o
+  buscador a entender e às vezes exibir a página de um jeito mais rico
+  (estrelas de avaliação, tempo de preparo, perguntas expandíveis).
+
+> Dica: valide todo schema antes de publicar. Um JSON malformado dentro do
+> `<script type="application/ld+json">` é ignorado silenciosamente pelo
+> buscador, sem erro visível na página.
+
+No próximo nó, você vai sair de dentro da sua página e olhar pra fora dela:
+link building e autoridade de domínio.

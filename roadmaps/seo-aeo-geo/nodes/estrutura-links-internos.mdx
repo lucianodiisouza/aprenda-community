@@ -1,0 +1,69 @@
+---
+id: estrutura-links-internos
+title: "URL, Arquitetura e Links Internos"
+resources:
+  - title: "URL structure best practices (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/url-structure
+    type: doc
+    lang: en
+    free: true
+  - title: "Reasonable number of links on a page (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/links-crawlable
+    type: doc
+    lang: en
+    free: true
+---
+
+Depois do conteúdo em si, dois fatores estruturais afetam SEO: como a URL é
+montada, e como as páginas do site se conectam entre si.
+
+### URL: legível pra pessoa, previsível pro buscador
+
+```text
+ruim:  seusite.com/p?id=4829&cat=12
+bom:   seusite.com/blog/calculadora-de-gorjeta
+```
+
+Uma URL descritiva ajuda a pessoa a entender o que vai encontrar antes de
+clicar, e ajuda o buscador a entender do que a página trata sem precisar
+processar o conteúdo inteiro primeiro.
+
+- Palavras separadas por hífen, não underscore (`calculadora-de-gorjeta`,
+  não `calculadora_de_gorjeta`).
+- Minúsculas, sem acento, sem espaço.
+- Curta e direta: corta palavra que não muda o significado.
+
+### Arquitetura: quantos cliques até a página importar
+
+```text
+Home → Categoria → Subcategoria → Produto (4 níveis de profundidade)
+```
+
+Páginas importantes deveriam estar a poucos cliques da home. Quanto mais
+funda uma página fica na arquitetura, menos link interno ela recebe, e menos
+peso ela carrega pro buscador.
+
+### Links internos: a rota que conecta o site
+
+```html
+<a href="/blog/calculadora-de-gorjeta">calculadora de gorjeta</a>
+```
+
+O texto do link (anchor text) importa: "calculadora de gorjeta" diz mais pro
+buscador (e pra pessoa) do que "clique aqui". Link interno também distribui
+autoridade: uma página muito linkada por dentro do site tende a ranquear
+melhor que uma página órfã, sem nenhum link apontando pra ela.
+
+- **URL** curta, legível, em minúsculas, com hífen entre palavras.
+- **Arquitetura** rasa: páginas importantes a poucos cliques da home.
+- **Anchor text** descritivo, nunca "clique aqui" ou "saiba mais".
+- Página órfã (sem link interno nenhum) é quase invisível pro buscador,
+  mesmo estando no site.
+
+> Dica: depois de publicar uma página nova, volte em pelo menos duas ou três
+> páginas relacionadas do site e adicione um link pra ela. Isso ajuda o
+> buscador a encontrar a página nova mais rápido do que só esperar o
+> rastreamento natural.
+
+No próximo nó, você entra na parte técnica que sustenta tudo isso por baixo:
+robots.txt, sitemap e Core Web Vitals.

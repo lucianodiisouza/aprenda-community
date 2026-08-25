@@ -1,0 +1,60 @@
+---
+id: introducao-aeo
+title: "AEO: Otimizando pra Motor de Resposta"
+resources:
+  - title: "Featured snippets and your website (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/featured-snippets
+    type: doc
+    lang: en
+    free: true
+  - title: "What Is Answer Engine Optimization (AEO)? (Search Engine Land, em inglês)"
+    url: https://searchengineland.com/what-is-answer-engine-optimization-aeo-444418
+    type: artigo
+    lang: en
+    free: true
+---
+
+Boa parte das buscas hoje termina numa resposta direta na própria tela de
+resultado, sem a pessoa clicar em nenhum link. **AEO** (Answer Engine
+Optimization) é otimizar pra aparecer justamente nessa resposta direta:
+featured snippet, "People also ask" ou resultado de busca por voz.
+
+### Featured snippet: a resposta em destaque no topo
+
+```html
+<h2>Como calcular gorjeta de 10%?</h2>
+<p>
+  Pra calcular 10% de gorjeta, multiplique o valor da conta por 0,10.
+  Numa conta de R$ 100, a gorjeta de 10% é R$ 10.
+</p>
+```
+
+O Google costuma puxar featured snippets de páginas que já respondem a
+pergunta de forma direta e curta logo depois de um heading que espelha a
+pergunta. Não existe um jeito de "pedir" o featured snippet: ele é extraído
+automaticamente de conteúdo já bem estruturado.
+
+### O padrão que ajuda a ser extraído
+
+```text
+1. Heading com a pergunta, na linguagem que a pessoa buscaria
+2. Resposta direta logo abaixo, em 40 a 60 palavras
+3. Detalhe e contexto depois da resposta direta, não antes
+```
+
+Enterrar a resposta no meio de um parágrafo longo reduz a chance de ser
+extraído. A resposta direta precisa funcionar sozinha, sem depender do
+parágrafo anterior pra fazer sentido.
+
+- **AEO** foca em aparecer na resposta direta, não só no link azul.
+- **Heading = pergunta**, no jeito que a pessoa formularia a busca.
+- **Resposta em 40-60 palavras**, direto após o heading, sem enrolação.
+- Featured snippet, "People also ask" e busca por voz seguem o mesmo
+  princípio: resposta curta, extraível, sem depender de contexto externo.
+
+> Dica: pergunte "essa resposta faz sentido sozinha, fora da página?". Se a
+> resposta depende de ter lido o parágrafo anterior pra fazer sentido, ela
+> não é uma boa candidata a resposta extraída.
+
+No próximo nó, você vai ver a evolução mais recente dessa lógica: como
+otimizar pra ser citado dentro de uma resposta gerada por IA. GEO.

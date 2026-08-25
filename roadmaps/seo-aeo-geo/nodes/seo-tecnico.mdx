@@ -1,0 +1,75 @@
+---
+id: seo-tecnico
+title: "SEO Técnico: Robots.txt, Sitemap e Core Web Vitals"
+resources:
+  - title: "Introduction to robots.txt (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/robots/intro
+    type: doc
+    lang: en
+    free: true
+  - title: "Build and submit a sitemap (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+    type: doc
+    lang: en
+    free: true
+  - title: "Core Web Vitals (web.dev, em inglês)"
+    url: https://web.dev/articles/vitals
+    type: doc
+    lang: en
+    free: true
+---
+
+Três arquivos e três métricas resolvem a maior parte do SEO técnico. Nenhum
+deles exige ferramenta paga, só configuração correta.
+
+### robots.txt: o que o robô pode visitar
+
+```text
+User-agent: *
+Disallow: /admin/
+Disallow: /carrinho/
+Sitemap: https://seusite.com/sitemap.xml
+```
+
+Esse arquivo, na raiz do domínio, diz a robôs de busca quais caminhos evitar.
+Bloquear por engano uma pasta importante (como `/blog/`) é um dos erros mais
+comuns e mais caros de SEO técnico.
+
+### Sitemap: o mapa que facilita o rastreamento
+
+```xml
+<url>
+  <loc>https://seusite.com/blog/calculadora-de-gorjeta</loc>
+  <lastmod>2026-01-15</lastmod>
+</url>
+```
+
+Um sitemap XML lista as páginas que você quer que o buscador conheça. Não
+garante indexação, mas acelera a descoberta, especialmente em sites novos
+ou grandes.
+
+### Core Web Vitals: velocidade que o buscador mede
+
+```text
+LCP (Largest Contentful Paint)     → menos de 2.5s: quando o maior elemento aparece
+INP (Interaction to Next Paint)    → menos de 200ms: resposta a um clique/toque
+CLS (Cumulative Layout Shift)      → menos de 0.1: o quanto a página "pula" ao carregar
+```
+
+Essas três métricas medem experiência real de carregamento, não só
+velocidade teórica. Um site lento ou que pula durante o carregamento perde
+posição, mesmo com conteúdo excelente.
+
+- **robots.txt**: controla o que o robô pode rastrear, não o que aparece na
+  busca.
+- **Sitemap**: acelera a descoberta de páginas novas ou pouco linkadas.
+- **Core Web Vitals**: LCP, INP e CLS medem a experiência de carregamento
+  de verdade.
+
+> Dica: `noindex` numa página e `Disallow` no robots.txt não são a mesma
+> coisa. `Disallow` impede o rastreamento, então o robô nem vê o `noindex`
+> dentro da página. Pra garantir que uma página saia do índice, use
+> `noindex` e deixe o robô rastreá-la.
+
+No próximo nó, você vai ver o que faz um conteúdo parecer confiável aos
+olhos de quem busca, e do buscador: E-E-A-T.
