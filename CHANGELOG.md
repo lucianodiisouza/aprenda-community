@@ -4,7 +4,39 @@ Todas as mudanças notáveis deste projeto são documentadas aqui. O formato
 segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o
 projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [Não liberado]
+
+### Adicionado
+- 🐳 **Trilha de Docker Fundamentos** (`roadmaps/docker-fundamentos`,
+  10 nós, intermediário): containers do zero ao empacotar uma
+  aplicação. Cobre ciclo de vida (`run`/`ps`/`logs`/`exec`/`stop`/`rm`),
+  imagens e layers, Dockerfile, volumes, networks bridge com DNS
+  interno, imagens enxutas (alpine, `.dockerignore`, multi-stage
+  build) e projeto final com `HEALTHCHECK`. Inclui 4 diagramas
+  Mermaid (arquitetura VM vs container, layers, topologia de rede,
+  fluxo multi-stage).
+- 🐙 **Trilha de Docker Compose e Workflows**
+  (`roadmaps/docker-compose-e-workflows`, 8 nós, intermediário):
+  orquestrar uma stack com `docker-compose.yml`. Cobre `services`
+  com `depends_on: condition: service_healthy`, `.env` e
+  `.env.example`, volumes nomeados vs bind mounts, profiles,
+  `docker compose watch` e projeto final de stack realista
+  (app + Postgres + Redis). Inclui 2 diagramas Mermaid (DNS
+  interno e topologia da stack).
+- ☸️ **Trilha de Kubernetes** (`roadmaps/kubernetes`, 12 nós,
+  avançado): orquestração em escala. Cobre arquitetura do cluster
+  (control plane + workers), `minikube` ou `k3d` local, `kubectl`
+  no dia a dia, Pods, Deployments, Services, ConfigMaps, Secrets,
+  PV/PVC com StatefulSet, Ingress, probes (startup/liveness/
+  readiness) + HPA + resource limits, Helm (charts, values,
+  Artifact Hub) e projeto final de stack completa no cluster.
+  Inclui 4 diagramas Mermaid (arquitetura do cluster, anatomia
+  do Pod, tipos de Service, fluxo de request com Ingress).
+- 📐 **Diagramas no conteúdo via `<Mermaid>`**: nova convenção
+  documentada em `docs/style-guide.md` (seção 8), `CONTRIBUTING.md`
+  e `templates/node.mdx`. O componente `<Mermaid>` é renderizado
+  pelo app (`primo-academy`) e suporta toda a sintaxe Mermaid
+  (flowchart, sequence, class, state, ER).
 
 ## [1.8.0] - 2026-08-25
 
@@ -258,5 +290,5 @@ check-links    → 80 ok, 0 com problema
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
   Open Graph Protocol.
 
-[Não lançado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.0.0...HEAD
+[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.0.0

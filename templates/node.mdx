@@ -18,6 +18,7 @@ resources:
   3. Lista curta (2-4) dos conceitos pra fixar, com **negrito** no termo-chave
   4. "Dica:" opcional (callout >) com armadilha comum ou atalho
   5. <PyPlayground /> ou <JsPlayground /> se o nó pede prática
+  6. <Mermaid /> opcional quando a figura agrega (ver docs/style-guide.md §8)
 -->
 
 <!--
@@ -28,4 +29,12 @@ print("oi")`} />
   Exemplo de Playground JavaScript/React:
   <JsPlayground initialCode={`// Seu código aqui
 console.log("oi")`} />
+
+  Exemplo de diagrama Mermaid (uma linha própria, com caption):
+  <Mermaid
+    chart={`flowchart LR
+      A[Cliente] --> B[API]
+      B --> C[(Banco)]`}
+    caption="Fluxo básico de uma request."
+  />
 -->
