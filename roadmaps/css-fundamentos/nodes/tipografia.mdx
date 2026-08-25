@@ -104,5 +104,23 @@ enquanto a do Google carrega (evita o "flash" de texto invisível).
 > Em telas largas, isso significa `max-width: 65ch` no container
 > (`ch` = largura do "0" da fonte).
 
+<VisualCheckpoint
+  challenge="Deixe o parágrafo com 18px de tamanho e em negrito (bold)."
+  hint="font-size controla o tamanho; font-weight: bold (ou 700) deixa em negrito."
+  starterHtml={`<p>Texto de exemplo</p>`}
+  starterCss={`p {\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const p = root.querySelector('p');
+    if (!p) return { pass: false, message: 'Não achei o <p>.' };
+    const s = getComputedStyle(p);
+    return {
+      pass: s.fontSize === '18px' && (s.fontWeight === '700' || s.fontWeight === 'bold'),
+      message: 'O parágrafo precisa de font-size: 18px e font-weight: bold (700).'
+    };
+  `}
+  slug="css-fundamentos"
+  nodeId="tipografia"
+/>
+
 No próximo, vamos entender a **caixa** que envolve todo elemento:
 margin, border, padding e content.

@@ -102,5 +102,25 @@ reset de qualquer projeto CSS profissional.
 > margin padrão do `body`. Dois linhas e você já evita 90% das
 > surpresas de layout.
 
+<VisualCheckpoint
+  challenge="Faça a .caixa usar box-sizing: border-box e ter 20px de padding em todos os lados."
+  hint="border-box faz o padding contar pra dentro da largura declarada."
+  starterHtml={`<div class="caixa">conteúdo</div>`}
+  starterCss={`.caixa {\n  width: 200px;\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const c = root.querySelector('.caixa');
+    if (!c) return { pass: false, message: 'Não achei a .caixa.' };
+    const s = getComputedStyle(c);
+    const pad = s.paddingTop === '20px' && s.paddingRight === '20px'
+      && s.paddingBottom === '20px' && s.paddingLeft === '20px';
+    return {
+      pass: s.boxSizing === 'border-box' && pad,
+      message: 'A .caixa precisa de box-sizing: border-box e padding: 20px nos quatro lados.'
+    };
+  `}
+  slug="css-fundamentos"
+  nodeId="box-model"
+/>
+
 No próximo, vamos controlar **como** essas caixas se comportam: o
 `display` que define se algo é bloco, linha, ou some.
