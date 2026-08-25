@@ -1,0 +1,98 @@
+---
+id: comandos-essenciais
+title: "Os comandos do dia a dia"
+resources:
+  - title: "Docker CLI reference (docs oficial, EN)"
+    url: https://docs.docker.com/reference/cli/docker/
+    type: doc
+    lang: en
+    free: true
+  - title: "Folha de cola (cheat sheet) da CLI Docker"
+    url: https://docs.docker.com/get-started/docker_cheatsheet.pdf
+    type: doc
+    lang: en
+    free: true
+---
+
+Docker tem dezenas de subcomandos. Você não precisa decorar todos -
+na prática, **uns 15 cobrem 90% do uso diário**. Esse nó é uma cola
+que vale deixar salva nos favoritos.
+
+## Inspecionando
+
+```bash
+docker ps                  # containers rodando
+docker ps -a               # todos (incluindo parados)
+docker ps -a --format      # tabela customizável
+docker images              # imagens locais
+docker volume ls           # volumes
+docker network ls          # redes
+docker stats               # uso de CPU/memória em tempo real
+```
+
+## Ciclo de vida de container
+
+```bash
+docker run -d -p 8080:80 nginx           # criar + iniciar
+docker start <nome|id>                    # iniciar um já criado
+docker stop <nome|id>                     # para (SIGTERM, depois SIGKILL)
+docker restart <nome|id>                  # para + inicia
+docker rm <nome|id>                       # remove (precisa estar parado)
+docker rm -f <nome|id>                    # força (para + remove)
+```
+
+## Logs e debug
+
+```bash
+docker logs <nome|id>                     # stdout+stderr
+docker logs -f <nome|id>                  # segue em tempo real (tail -f)
+docker logs --tail 100 <nome|id>          # últimas 100 linhas
+docker logs --since 10m <nome|id>         # últimos 10 minutos
+docker exec -it <nome|id> bash            # "entra" no container
+docker exec -it <nome|id> sh              # idem, com shell mais leve
+```
+
+`docker exec` é a versão Docker do `ssh`. **Use o tempo todo** pra
+investigar. Exemplo: `docker exec -it meu-app ls /app` lista arquivos
+sem entrar no shell.
+
+## Limpeza
+
+Containers parados, imagens sem uso e volumes órfãos ocupam disco.
+Periodicamente:
+
+```bash
+docker container prune        # remove containers parados
+docker image prune            # remove imagens sem uso
+docker volume prune           # remove volumes não usados
+docker system prune -a        # tudo (pergunta confirmação)
+docker system df              # mostra quanto disco Docker usa
+```
+
+## Dicas de flags que salvam tempo
+
+- **`--rm`** em `docker run` - remove o container automaticamente
+  quando ele para. Ótimo pra rodar one-offs (ex: `docker run --rm
+  alpine echo "oi"`).
+- **`-e VAR=valor`** - define variável de ambiente no container.
+  Ex: `docker run -e NODE_ENV=production minha-app`.
+- **`--restart unless-stopped`** - reinicia o container se ele
+  cair (mas não se você o parou manualmente). Ótimo pra dev.
+- **`-u $(id -u):$(id -g)`** - roda o container com seu usuário.
+  Evita criar arquivos no host como root.
+
+Três conceitos que você acabou de aprender:
+
+- **`docker ps` + `docker logs` + `docker exec`** são o trio de
+  inspeção - **80% do debugging de container**.
+- **`--rm`**, **`-e`**, **`--restart`** - flags que você usa em
+  quase todo `docker run` real.
+- **Prune com cuidado** - `docker system prune -a` apaga até
+  imagens. Leia o output antes de confirmar.
+
+> Dica: o alias `dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'`
+> deixa o `docker ps` mais legível. Vale criar no seu `.bashrc` ou
+> `.zshrc`.
+
+No próximo nó, vamos resolver um problema que aparece rápido: como
+**persistir dados** quando o container morre.

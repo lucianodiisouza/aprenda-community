@@ -1,0 +1,89 @@
+---
+id: primeiro-container
+title: "Rodando seu primeiro container"
+resources:
+  - title: "docker run reference (docs oficial, EN)"
+    url: https://docs.docker.com/engine/reference/run/
+    type: doc
+    lang: en
+    free: true
+  - title: "Docker CLI - comandos básicos (docs oficial, PT-BR)"
+    url: https://docs.docker.com/engine/reference/commandline/cli/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Hora de subir algo de verdade. Vamos rodar um servidor Nginx (um
+servidor web leve) e ver ele responder no navegador.
+
+## Subindo o Nginx
+
+```bash
+docker run -d -p 8080:80 --name meu-nginx nginx
+```
+
+Esse comando tem três flags importantes:
+
+- **`-d`** (detached) - roda em segundo plano, libera o terminal.
+- **`-p 8080:80`** - mapeia a porta `80` do container pra `8080` do
+  seu computador. Acessa `http://localhost:8080` no navegador.
+- **`--name meu-nginx`** - dá um nome legível ao container. Sem isso,
+  o Docker gera um nome aleatório tipo `relaxed_williamson`.
+
+Abra `http://localhost:8080` - você verá a página padrão do Nginx. Você
+acabou de rodar um servidor web **sem instalar nada** no seu sistema.
+
+## Vendo o que está rodando
+
+```bash
+docker ps          # containers rodando
+docker ps -a       # todos (rodando, parados, com erro)
+docker logs meu-nginx
+docker stop meu-nginx
+docker start meu-nginx
+docker rm meu-nginx   # remove (precisa estar parado)
+```
+
+O `docker ps` é o seu "dashboard". Sem argumentos, mostra só os ativos;
+com `-a`, mostra todo o histórico. Repare nos campos:
+
+- **CONTAINER ID** - identificador único (hash curto).
+- **IMAGE** - de qual imagem esse container veio.
+- **STATUS** - "Up 5 seconds", "Exited (0) 10 minutes ago", etc.
+- **PORTS** - mapeamento de portas (ex: `0.0.0.0:8080->80/tcp`).
+
+## Rodando interativamente
+
+O Nginx roda em segundo plano. Mas dá pra rodar containers **no
+terminal**, "entrando" neles:
+
+```bash
+docker run -it --name meu-ubuntu ubuntu:24.04 bash
+```
+
+Aqui:
+- **`-i`** (interactive) - mantém o STDIN aberto.
+- **`-t`** (tty) - aloca um terminal.
+- **`ubuntu:24.04`** - imagem do Ubuntu 24.04 (sem tag, pega a `latest`).
+- **`bash`** - comando a rodar dentro do container.
+
+Você cai num shell **dentro** de um Ubuntu - mesmo que seu host seja
+macOS ou Windows. Digite `ls /` pra ver as pastas, `cat /etc/os-release`
+pra confirmar a distro. Pra sair, `exit`.
+
+Três conceitos que você acabou de aprender:
+
+- **`docker run`** baixa (se preciso) e sobe um container. Sem `-d`,
+  o terminal fica "preso" ao processo do container.
+- **`-p host:container`** expõe uma porta do container pro seu
+  computador. Sem isso, o container está isolado da rede.
+- **`docker ps` / `docker logs` / `docker stop`** são o trio
+  "verificar, depurar, parar" - você vai usar todos os dias.
+
+> Dica: rodar `docker rm` em um container parado libera espaço. Pra
+> limpar tudo que sobrou, o canivete suíço é `docker system prune`
+> (pergunta confirmação antes de apagar).
+
+No próximo, vamos entender de onde vêm as imagens e o que é o Docker
+Hub.

@@ -1,0 +1,113 @@
+---
+id: introducao-containers
+title: "Containers e Docker: o que são e por que existem"
+resources:
+  - title: "O que é Docker? (docs oficial, PT-BR)"
+    url: https://docs.docker.com/get-started/overview/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Containers vs. máquinas virtuais (Red Hat, PT-BR)"
+    url: https://www.redhat.com/pt-br/topics/containers
+    type: artigo
+    lang: pt
+    free: true
+---
+
+Todo mundo que já trabalhou com software passou por isso: "na minha máquina
+funciona". Um colega roda Windows, outro macOS, o servidor de produção é
+Linux, e a tal aplicação que funcionava ontem agora quebra. **Container** é a
+resposta moderna pra esse problema - um jeito de empacotar uma aplicação
+junto com **tudo** que ela precisa pra rodar, e rodar igual em qualquer lugar.
+
+## Container não é máquina virtual
+
+Muita gente confunde. Uma VM emula um hardware inteiro e sobe um sistema
+operacional completo por cima do seu. Um **container** é só um processo
+da sua máquina, isolado do resto por mecanismos do próprio Linux (namespaces
+e cgroups). Ele é leve, sobe em segundos e compartilha o kernel com o host.
+
+<Mermaid
+  chart={`flowchart TB
+    subgraph VM["Máquina Virtual (3 VMs no mesmo host)"]
+        direction TB
+        H1["Hypervisor"]
+        G1["Guest OS\\n(completo)"]
+        B1["Bins/Libs"]
+        A1["App A"]
+        H1 --> G1 --> B1 --> A1
+
+        H2["Hypervisor"]
+        G2["Guest OS\\n(completo)"]
+        B2["Bins/Libs"]
+        A2["App B"]
+        H2 --> G2 --> B2 --> A2
+
+        H3["Hypervisor"]
+        G3["Guest OS\\n(completo)"]
+        B3["Bins/Libs"]
+        A3["App C"]
+        H3 --> G3 --> B3 --> A3
+    end
+
+    subgraph CONT["Container (3 containers no mesmo host)"]
+        direction TB
+        K["Kernel do host (compartilhado)"]
+        R1["Container runtime\\n(containerd)"]
+        F1["App A\\n(imagem)"]
+        F2["App B\\n(imagem)"]
+        F3["App C\\n(imagem)"]
+        K --> R1 --> F1
+        R1 --> F2
+        R1 --> F3
+    end
+
+    classDef vm fill:#7c2d12,stroke:#fb923c,color:#fff7ed
+    classDef cont fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef kern fill:#1e3a8a,stroke:#60a5fa,color:#eff6ff
+    classDef app fill:#581c87,stroke:#c084fc,color:#faf5ff
+    class H1,G1,B1,A1,H2,G2,B2,A2,H3,G3,B3,A3 vm
+    class F1,F2,F3 app
+    class R1 cont
+    class K kern`}
+  caption="VM vs Container: arquitetura lado a lado."
+/>
+
+Repare: três VMs precisam de **três kernels separados** rodando
+em paralelo. Três containers compartilham **um único kernel** (o do
+host) - o que sobra é só o sistema de arquivos da imagem e o processo
+da app. Daí a diferença brutal de tamanho e tempo de boot.
+
+|                | Máquina Virtual           | Container                        |
+| -------------- | ------------------------- | -------------------------------- |
+| Inicialização  | Minutos                   | Segundos (ou milissegundos)      |
+| Tamanho        | Gigabytes (SO completo)   | Megabytes (só a app + deps)      |
+| Desempenho     | Quase nativo              | Nativo (é um processo do host)   |
+| Isolamento     | Total (kernel próprio)    | Parcial (compartilha o kernel)   |
+
+A imagem mental que ajuda: **container é um processo "embrulhado"** com
+tudo que ele precisa. Sobe rápido, morre rápido, e vários podem rodar
+lado a lado sem se pisar.
+
+## Docker é a ferramenta, container é o conceito
+
+**Docker** é o programa que cria, roda e distribui containers. Foi
+lançado em 2013 e virou praticamente sinônimo de "container" - mas é
+importante saber que existem outros (containerd, Podman, CRI-O). O
+ecossistema Docker, porém, é o mais didático e o mais usado.
+
+Três peças que vão aparecer o tempo todo:
+
+- **Imagem** - o "molde" do container. Um arquivo que descreve o sistema
+  de arquivos, dependências e comando de inicialização. É **imutável**.
+- **Container** - a instância rodando de uma imagem. Você pode ter
+  dez containers da mesma imagem.
+- **Registry** - o repositório onde você guarda imagens (Docker Hub é o
+  maior; empresas usam GitHub Container Registry, AWS ECR, etc.).
+
+No próximo nó, vamos instalar o Docker e rodar o primeiro container
+- a "hello world" do mundo container.
+
+> Dica: o símbolo da baleia com containers em cima é a marca do Docker.
+> Quando alguém fala "dockerizar uma aplicação", significa **empacotá-la
+> numa imagem Docker**.

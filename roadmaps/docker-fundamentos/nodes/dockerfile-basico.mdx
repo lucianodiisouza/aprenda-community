@@ -1,0 +1,105 @@
+---
+id: dockerfile-basico
+title: "Escrevendo seu primeiro Dockerfile"
+resources:
+  - title: "Referência do Dockerfile (docs oficial, EN)"
+    url: https://docs.docker.com/engine/reference/builder/
+    type: doc
+    lang: en
+    free: true
+  - title: "Best practices para Dockerfile (docs oficial, EN)"
+    url: https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+    type: doc
+    lang: en
+    free: true
+---
+
+Até agora, você rodou imagens que outras pessoas publicaram. Agora
+vamos **criar a sua própria**. Um `Dockerfile` é a "receita" da imagem
+- um arquivo de texto com instruções que o Docker executa em ordem
+pra montar o pacote.
+
+## Exemplo mínimo: app Node
+
+Imagine uma aplicação Node minúscula em `app.js`:
+
+```javascript
+// app.js
+const http = require("http");
+const porta = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.end("Olá do container!");
+}).listen(porta, () => console.log(`Rodando na porta ${porta}`));
+```
+
+E o `package.json`:
+
+```json
+{
+  "name": "ola-container",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": { "start": "node app.js" }
+}
+```
+
+Agora o `Dockerfile` (sem extensão, fica na raiz do projeto):
+
+```dockerfile
+# 1. Imagem base
+FROM node:20-alpine
+
+# 2. Diretório de trabalho dentro do container
+WORKDIR /app
+
+# 3. Copia as dependências e instala
+COPY package*.json ./
+RUN npm install --omit=dev
+
+# 4. Copia o resto do código
+COPY . .
+
+# 5. Expõe a porta e define o comando padrão
+EXPOSE 3000
+CMD ["node", "app.js"]
+```
+
+## As instruções que você usou
+
+- **`FROM`** - imagem base. Tudo começa aqui. Use sempre com tag fixa
+  (`node:20-alpine`, nunca `node` solto).
+- **`WORKDIR`** - muda o diretório de trabalho (cria se não existir).
+  Evita `cd ...` em cada instrução.
+- **`COPY`** - copia arquivos do host pra dentro da imagem.
+- **`RUN`** - executa um comando **durante o build**. Resultado vira
+  uma layer.
+- **`EXPOSE`** - **documenta** a porta que o container escuta. Não
+  publica de verdade - isso é o `-p` no `docker run`.
+- **`CMD`** - comando padrão quando o container sobe. Pode ser
+  sobrescrito pelo `docker run ... <cmd>`.
+
+## Construindo e rodando
+
+```bash
+docker build -t ola-container:1.0 .    # -t = tag (nome:versão)
+docker run -d -p 3000:3000 ola-container:1.0
+```
+
+Abra `http://localhost:3000` e veja a mensagem. Sua primeira imagem
+customizada rodando.
+
+> **Por que copiar `package*.json` antes do resto do código?**
+> Ordem das instruções importa. O Docker cacheia cada layer. Se você
+> só mudou `app.js` mas as dependências continuam as mesmas, o `npm
+> install` não roda de novo - o build fica **10x mais rápido**. Esse
+> truque de ordem é a otimização mais importante em Dockerfiles.
+
+Três conceitos que você acabou de aprender:
+
+- **Dockerfile** = receita da imagem. Cada instrução vira uma layer.
+- **Build (`docker build`)** = executa a receita e gera uma imagem.
+- **Ordem das instruções** = chave pra build rápido (mude o que muda
+  pouco no topo).
+
+No próximo, vamos conhecer os comandos do dia a dia - os que você
+vai digitar 50 vezes por dia trabalhando com Docker.

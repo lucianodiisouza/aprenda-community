@@ -1,0 +1,88 @@
+---
+id: projeto-final
+title: "Projeto Final: empacotando uma aplicação"
+resources:
+  - title: "Aplicação de exemplo (Node + Express) usada na trilha"
+    url: https://github.com/docker/getting-started/tree/master/app
+    type: doc
+    lang: en
+    free: true
+  - title: "Publicando imagens no Docker Hub (docs oficial, PT-BR)"
+    url: https://docs.docker.com/docker-hub/repos/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Você chegou no fim da trilha de Docker Fundamentos. Hora de **juntar
+tudo** - Dockerfile, .dockerignore, build enxuto, multi-stage, volumes
+e networks - num projeto só.
+
+## A missão
+
+Pegue uma aplicação real (qualquer uma - sua ou de exemplo) e
+empacote-a numa imagem Docker pronta pra produção. Sugestões:
+
+- **API Node/Express** simples (rotas CRUD em memória) - cobre
+  Dockerfile básico, build, run com `-p`.
+- **App Flask/FastAPI** com `requirements.txt` - parecido, mas
+  outra stack.
+- **Site estático** (Hugo, Next exportado, Astro) - usa Nginx como
+  servidor, multi-stage build com Node pra buildar e Alpine pra servir.
+- **Script CLI** - Dockerfile mínimo, foco em imagem final pequena.
+
+## Requisitos mínimos
+
+1. **Dockerfile multi-stage** quando aplicável (build separado do
+   runtime).
+2. **`.dockerignore`** presente e razoável (sem `node_modules`, `.git`,
+   `.env`, etc.).
+3. **Imagem final < 200 MB** (use `docker images` pra confirmar).
+4. **Tag fixa** (não use `latest` em produção).
+5. **Variáveis de ambiente** pra tudo que muda entre dev/prod
+   (porta, URL de banco, etc.).
+6. **`HEALTHCHECK`** no Dockerfile - instrução que diz ao Docker
+   "esse container está saudável". Exemplo:
+
+   ```dockerfile
+   HEALTHCHECK --interval=30s --timeout=3s \
+     CMD curl -f http://localhost:3000/ || exit 1
+   ```
+
+7. **README** com: o que é, como buildar, como rodar, decisões de
+   arquitetura (por que escolheu essa base, esse usuário, etc.).
+
+## Critério de "pronto"
+
+- `docker build` roda sem warnings absurdos.
+- `docker run` sobe e responde na porta configurada.
+- A imagem passa de `docker run` (sem flags esquisitas) a "rodando em
+  outro host" - é portável.
+- O `docker history <imagem>` mostra layers coerentes (sem 200 MB
+  jogados numa layer única).
+- O `HEALTHCHECK` reporta "healthy" depois de uns 10 segundos
+  (`docker ps` mostra a coluna STATUS).
+
+## Publicando (opcional, mas vale muito)
+
+Faça login e publique no Docker Hub pra mostrar que sua imagem
+funciona **de verdade**:
+
+```bash
+docker login
+docker tag minha-app:1.0.0 seu-usuario/minha-app:1.0.0
+docker push seu-usuario/minha-app:1.0.0
+```
+
+Qualquer pessoa no mundo pode agora rodar `docker run seu-usuario/minha-app:1.0.0`.
+
+## Compartilhe
+
+Poste no LinkedIn, mande pra amigos, abra uma issue no nosso GitHub
+com a tag `meu-projeto`. Mostrar o que você fez - mesmo imperfeito -
+é o que mais evolui.
+
+> Próximo passo: vá pra trilha de **Docker Compose e Workflows** -
+> ela pega o que você aprendeu aqui e mostra como orquestrar vários
+> containers juntos (app + banco + cache) com um único arquivo
+> declarativo. Depois disso, **Kubernetes** te espera.
