@@ -22,6 +22,7 @@ import { parseFrontmatter } from "./_frontmatter.mjs";
 const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const ROADMAPS_DIR = join(ROOT, "roadmaps");
 const PROJECTS_DIR = join(ROOT, "projects");
+const BOOTCAMPS_DIR = join(ROOT, "bootcamps");
 
 let errors = 0;
 const warn = (msg) => console.warn(`⚠️  ${msg}`);
@@ -262,6 +263,65 @@ async function validateProject(slug, knownRoadmapSlugs) {
   ok(`  Projeto "${fm.title || slug}" validou estrutura.`);
 }
 
+async function listBootcamps() {
+  let entries;
+  try {
+    entries = await readdir(BOOTCAMPS_DIR, { withFileTypes: true });
+  } catch (e) {
+    if (e.code === "ENOENT") return [];
+    throw e;
+  }
+  return entries.filter((e) => e.isDirectory()).map((e) => e.name);
+}
+
+async function validateBootcamp(slug, knownRoadmapSlugs, knownProjectSlugs) {
+  const jsonPath = join(BOOTCAMPS_DIR, slug, "bootcamp.json");
+  let content;
+  try {
+    content = await readFile(jsonPath, "utf8");
+  } catch {
+    err(`  bootcamp.json não encontrado em bootcamps/${slug}/`);
+    return;
+  }
+  let bc;
+  try {
+    bc = JSON.parse(content);
+  } catch (e) {
+    err(`  JSON inválido em ${relative(ROOT, jsonPath)}: ${e.message}`);
+    return;
+  }
+
+  if (!bc.slug) err(`  bootcamp.json: campo "slug" ausente`);
+  else if (bc.slug !== slug) err(`  bootcamp.json: slug "${bc.slug}" não bate com a pasta "${slug}"`);
+  if (!bc.title) err(`  bootcamp.json: campo "title" ausente`);
+  if (!bc.description) err(`  bootcamp.json: campo "description" ausente`);
+  if (!bc.outcome) err(`  bootcamp.json: campo "outcome" ausente (o que a pessoa sabe fazer ao concluir)`);
+  if (!["iniciante", "intermediario", "avancado"].includes(bc.difficulty)) {
+    err(`  bootcamp.json: difficulty deve ser iniciante|intermediario|avancado (recebido: ${bc.difficulty})`);
+  }
+  if (!Array.isArray(bc.modules) || bc.modules.length === 0) {
+    err(`  bootcamp.json: "modules" deve ser um array não-vazio`);
+    return;
+  }
+
+  bc.modules.forEach((mod, i) => {
+    const temTrilha = typeof mod.trilha === "string";
+    const temProjeto = typeof mod.projeto === "string";
+    if (temTrilha === temProjeto) {
+      err(`  módulo #${i + 1}: use exatamente UMA chave, "trilha" OU "projeto"`);
+      return;
+    }
+    if (temTrilha && !knownRoadmapSlugs.has(mod.trilha)) {
+      err(`  módulo #${i + 1} referencia trilha inexistente: "${mod.trilha}"`);
+    }
+    if (temProjeto && !knownProjectSlugs.has(mod.projeto)) {
+      err(`  módulo #${i + 1} referencia projeto inexistente: "${mod.projeto}"`);
+    }
+  });
+
+  ok(`  Bootcamp "${bc.title || slug}" validou estrutura (${bc.modules.length} módulos).`);
+}
+
 const slugs = await listRoadmaps();
 if (slugs.length === 0) {
   console.log("Nenhuma trilha encontrada em roadmaps/.");
@@ -284,6 +344,17 @@ if (projectSlugs.length === 0) {
   console.log(`📂 Projetos (${projectSlugs.length}):`);
   for (const slug of projectSlugs) {
     await validateProject(slug, knownRoadmapSlugs);
+  }
+}
+
+// Bootcamps: curadoria de trilhas + projetos existentes (sem conteúdo próprio).
+const knownProjectSlugs = new Set(projectSlugs);
+const bootcampSlugs = await listBootcamps();
+if (bootcampSlugs.length > 0) {
+  console.log("");
+  console.log(`📂 Bootcamps (${bootcampSlugs.length}):`);
+  for (const slug of bootcampSlugs) {
+    await validateBootcamp(slug, knownRoadmapSlugs, knownProjectSlugs);
   }
 }
 

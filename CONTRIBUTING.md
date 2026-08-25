@@ -336,6 +336,41 @@ Cada trilha tem um `roadmap.json` no nível da pasta da trilha:
 
 ---
 
+## Anatomia de um `bootcamp.json`
+
+Um **bootcamp** agrupa trilhas (e projetos) numa jornada com começo, meio e fim.
+Vive em `bootcamps/<slug>/bootcamp.json` e é **curadoria**: ele **não tem
+conteúdo próprio** — só aponta, em ordem, pra trilhas e projetos que já existem.
+
+```jsonc
+{
+  "slug": "desenvolvedor-backend",
+  "title": "Desenvolvedor Backend",
+  "description": "Do zero a uma API completa, com prática.",
+  "difficulty": "intermediario",           // iniciante | intermediario | avancado
+  "outcome": "Ao terminar, você constrói e publica uma API REST.",  // o resultado
+  "estimate": "3 meses",                    // opcional
+  "modules": [
+    { "trilha": "programacao-do-zero", "description": "Base de lógica e JS." },
+    { "trilha": "backend" },
+    { "projeto": "encurtador-de-url", "title": "Projeto final" }
+  ]
+}
+```
+
+### Regras
+
+- Cada **módulo** aponta pra **uma** `trilha` **ou** **um** `projeto` — nunca os
+  dois (o CI recusa). A `trilha`/`projeto` precisa existir em `roadmaps/`/`projects/`.
+- A ordem do array `modules` é a **ordem sugerida** de estudo.
+- `title`/`description` no módulo são opcionais (contexto de por que entra ali).
+- **Não crie nós/MDX pro bootcamp** — se você sentir falta de conteúdo, ele vira
+  uma trilha (ou entra numa trilha existente), não conteúdo do bootcamp.
+- O progresso do bootcamp é calculado a partir do progresso das trilhas; não há
+  nada a preencher pra isso.
+
+---
+
 ## Critérios de aceite do CI
 
 Todo PR passa por uma checagem automática. **Se o CI fica vermelho, o PR não

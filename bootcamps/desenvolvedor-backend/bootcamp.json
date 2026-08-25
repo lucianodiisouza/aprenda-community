@@ -1,0 +1,16 @@
+{
+  "slug": "desenvolvedor-backend",
+  "title": "Desenvolvedor Backend",
+  "description": "Do zero ao backend: lógica e JavaScript, o SQL que roda por baixo, a construção de uma API completa em Node/Express e a noção de complexidade pra escrever código que escala. Fecha com um projeto de verdade.",
+  "difficulty": "intermediario",
+  "outcome": "Ao terminar, você modela dados em SQL, constrói uma API REST em Node/Express com banco e autenticação, entende o que o ORM esconde e sabe avaliar o custo dos seus algoritmos.",
+  "estimate": "3 meses",
+  "creators": [{ "name": "Luciano dii Souza", "github": "lucianodiisouza" }],
+  "modules": [
+    { "trilha": "programacao-do-zero", "description": "Base de lógica e JavaScript pra quem começa do zero." },
+    { "trilha": "sql-banco-de-dados", "description": "Modelagem e SQL puro — a fundação de dados antes de qualquer ORM." },
+    { "trilha": "backend", "description": "HTTP, Node, Express, banco, ORM, autenticação, validação e testes." },
+    { "trilha": "complexidade-de-algoritmos", "description": "Pra escrever backend que aguenta escala." },
+    { "projeto": "encurtador-de-url", "title": "Projeto final: um encurtador de URLs" }
+  ]
+}
