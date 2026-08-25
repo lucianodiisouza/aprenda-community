@@ -1,0 +1,164 @@
+---
+id: probes-scaling
+title: "Probes, HPA e resource limits"
+resources:
+  - title: "Liveness e readiness probes (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Horizontal Pod Autoscaler (docs oficial, EN)"
+    url: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você quer que o cluster **saiba quando um Pod está saudável**,
+**reinicie automaticamente** quando não está, e **escale** quando
+a carga sobe. Probes, HPA e resource limits são o que entrega
+isso.
+
+## Probes: o "o Pod está saudável?"
+
+Três tipos:
+
+- **`startupProbe`** - roda na inicialização. Enquanto não passar,
+  as outras probes não rodam. Útil pra apps que demoram pra subir
+  (Java, por exemplo).
+- **`livenessProbe`** - se falhar, o k8s **reinicia o container**.
+  Use pra detectar deadlock/travamento.
+- **`readinessProbe`** - se falhar, o Pod é **removido do Service**
+  (para de receber tráfego). Use pra detectar "app travado, mas
+  processo vivo".
+
+A diferença é crucial: liveness reinicia o processo, readiness
+remove do load balancer. Use os dois com objetivos diferentes.
+
+```yaml
+spec:
+  containers:
+    - name: api
+      image: luciano/api:1.0
+      startupProbe:
+        httpGet:
+          path: /healthz
+          port: 3000
+        failureThreshold: 30       # 30 * 10s = 5 min pra subir
+        periodSeconds: 10
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 3000
+        periodSeconds: 10
+        failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 3000
+        periodSeconds: 5
+        failureThreshold: 2
+```
+
+O endpoint `/healthz` (liveness) deve ser "estou vivo". O `/ready`
+(readiness) deve ser "estou pronto pra receber tráfego" - pode
+checar conexão com banco, cache carregado, etc.
+
+> **Erro clássico:** o livenessProbe falha por uma transiente (DB
+> caiu, GC pause), o k8s reinicia o container, que cai de novo
+> porque o problema não era o app. Resultado: **crashloop**. Faça
+> o livenessProbe checar só "o processo está vivo", e deixe a
+> lógica de "dependências estão ok" no readinessProbe.
+
+## Resource limits: CPU e memória
+
+```yaml
+spec:
+  containers:
+    - name: api
+      resources:
+        requests:
+          cpu: 100m             # 0.1 CPU (100 milicores)
+          memory: 128Mi         # 128 MB
+        limits:
+          cpu: 500m             # máximo 0.5 CPU
+          memory: 256Mi         # máximo 256 MB
+```
+
+- **`requests`** - quanto o Pod **precisa**. Usado pelo scheduler
+  pra decidir em qual node rodar. Se o node não tem 100m de CPU
+  livre, o Pod fica `Pending`.
+- **`limits`** - quanto o Pod **pode usar no máximo**. CPU é
+  comprimido (throttle); memória é **OOMKilled** (processo
+  morto) se ultrapassar.
+
+**Sem `limits` definidos**, o Pod pode consumir todo o node. Isso
+causa "noisy neighbor" - um app devora CPU e os outros ficam
+lentos. **Sempre defina limits em produção.**
+
+## HorizontalPodAutoscaler (HPA)
+
+Escala réplicas automaticamente baseado em métrica (CPU, memória,
+ou custom):
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+```
+
+Esse HPA: "mantenha o Deployment `api` entre 2 e 10 réplicas.
+Se a CPU média passar de 70%, escala pra cima. Se ficar abaixo,
+escala pra baixo."
+
+```bash
+kubectl get hpa
+kubectl describe hpa api
+```
+
+HPA precisa do **metrics-server** rodando no cluster:
+
+```bash
+minikube addons enable metrics-server
+# ou em produção: segue doc do seu provedor (EKS, GKE, AKS já tem)
+```
+
+## Tipos de autoscaling
+
+- **HPA (Horizontal)** - mais réplicas. Stateless, web/API.
+- **VPA (Vertical)** - mais CPU/memória por réplica. Stateful,
+  banco.
+- **Cluster Autoscaler** - mais nodes no cluster. Quando HPA não
+  tem mais pra onde ir (todos os nodes cheios), Cluster Autoscaler
+  adiciona um node.
+
+Três conceitos que você acabou de aprender:
+
+- **Probes** dizem ao k8s quando reiniciar (liveness) ou tirar do
+  load balancer (readiness) um Pod.
+- **Resource limits** evitam "noisy neighbor". CPU é throttled,
+  memória é OOMKilled.
+- **HPA** escala réplicas automaticamente. Combina com
+  **Cluster Autoscaler** pra escalar o cluster junto.
+
+> Dica: HPA tem um delay natural (ele mede, decide, escala -
+  pode levar 30-60s). Pra picos de tráfego muito rápidos, prefira
+  `minReplicas` mais alto (pré-aquecer) ou use um buffer manual.
+
+No próximo nó, **Helm** - a forma idiomática de empacotar e
+versionar manifests k8s.

@@ -1,0 +1,142 @@
+---
+id: volumes-pv-pvc
+title: "Volumes, PV e PVC: persistência em k8s"
+resources:
+  - title: "Persistent Volumes (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/concepts/storage/persistent-volumes/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Storage Classes (docs oficial, EN)"
+    url: https://kubernetes.io/docs/concepts/storage/storage-classes/
+    type: doc
+    lang: en
+    free: true
+---
+
+Pod é efêmero. Pra ter disco que **sobrevive ao Pod morrer**, k8s
+oferece 3 camadas: `Volume` (declaração no Pod), `PersistentVolume`
+(o disco em si) e `PersistentVolumeClaim` (o pedido do app).
+
+## A diferença entre os três
+
+- **`Volume`** - mount dentro do Pod. `emptyDir` (some com o Pod),
+  `hostPath` (pasta do node), `configMap`, `secret`. Tudo que já
+  vimos em Docker.
+- **`PersistentVolume` (PV)** - um recurso de storage **provisionado**
+  no cluster. Pode ser um disco EBS na AWS, um NFS, um Ceph, um
+  disco local. O cluster admin cria; o dev só **pede**.
+- **`PersistentVolumeClaim` (PVC)** - o "pedido" do dev. "Preciso
+  de 10 GB read-write-once." O k8s casa o pedido com um PV
+  disponível e vincula.
+
+```mermaid
+flowchart LR
+    App["Pod (Deployment)"]
+    PVC[("PVC\n'quero 10GB RWO'")]
+    PV[("PV\ndisco EBS 50GB")]
+    SC["StorageClass\n(gp3 on AWS)"]
+    SC -.->|"provisiona"| PV
+    PVC -.->|"bind"| PV
+    App -->|"usa"| PVC
+
+    classDef app fill:#1e3a8a,stroke:#60a5fa,color:#eff6ff
+    classDef pvc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef pv fill:#7c2d12,stroke:#fb923c,color:#fff7ed
+    classDef sc fill:#374151,stroke:#9ca3af,color:#f3f4f6
+    class App app
+    class PVC pvc
+    class PV pv
+    class SC sc
+```
+
+## Exemplo: Postgres com PVC dinâmico
+
+```yaml
+# 1. StorageClass (geralmente já existe no cluster gerenciado)
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+```
+
+```yaml
+# 2. O dev pede o disco
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce            # RWO = montado em 1 node
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 20Gi
+```
+
+```yaml
+# 3. O Pod usa o PVC
+apiVersion: apps/v1
+kind: StatefulSet                # StatefulSet, não Deployment
+metadata:
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:           # cria 1 PVC por réplica automaticamente
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 20Gi
+```
+
+Repare: **`StatefulSet`** em vez de Deployment. StatefulSet garante
+identidade estável por réplica (`postgres-0`, `postgres-1`, ...) e
+cria um PVC por réplica via `volumeClaimTemplates`. Pra banco, é
+o controller certo.
+
+## Access Modes
+
+- **`ReadWriteOnce` (RWO)** - 1 node monta, vários Pods **desse node**
+  leem/escrevem. Bom pra disco de block (EBS, GCP PD).
+- **`ReadOnlyMany` (ROX)** - vários nodes montam read-only. Bom
+  pra conteúdo estático distribuído.
+- **`ReadWriteMany` (RWX)** - vários nodes montam read-write.
+  Precisa de filesystem distribuído (NFS, CephFS, EFS). Caro.
+- **`ReadWriteOncePod` (RWOP)** - 1 Pod específico monta. K8s 1.22+.
+
+Bancos quase sempre usam RWO. Compartilhamento de arquivos entre
+vários Pods exige RWX.
+
+Três conceitos que você acabou de aprender:
+
+- **PV = disco**, **PVC = pedido**. O dev pede via PVC; o cluster
+  provisiona (estático ou dinâmico) via PV.
+- **StorageClass** permite provisionar PVs dinamicamente (sem o
+  admin criar manualmente). Cluster gerenciado (EKS/GKE/AKS) já
+  traz uma padrão.
+- **StatefulSet** é o controller pra apps com estado. Garante
+  identidade fixa por réplica e volume por réplica.
+
+> Dica: `kubectl get pvc` mostra todos os PVCs e o status (`Bound`,
+> `Pending`, `Lost`). Se ficar `Pending` muito tempo, o cluster
+> não tem PV disponível que case - cheque `kubectl describe pvc`.
+
+No próximo nó, vamos expor o cluster pro mundo com **Ingress** - o
+"reverse proxy" do k8s.

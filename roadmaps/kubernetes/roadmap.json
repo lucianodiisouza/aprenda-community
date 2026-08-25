@@ -1,0 +1,99 @@
+{
+  "slug": "kubernetes",
+  "title": "Kubernetes",
+  "description": "Trilha para quem quer **orquestrar containers em escala**: entender a arquitetura de um cluster, rodar um cluster local com minikube/k3d, dominar kubectl, criar Pods/Deployments/Services/ConfigMaps/Volumes/Ingress, escalar e observar a aplicação. Pré-requisito: `docker-fundamentos` e `docker-compose-e-workflows`.",
+  "difficulty": "avancado",
+  "skills": ["kubernetes", "k8s", "containers", "devops", "orquestracao", "helm"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-k8s",
+      "title": "O que é Kubernetes e por que existe",
+      "type": "topic",
+      "recommended": true,
+      "children": ["cluster-local"]
+    },
+    {
+      "id": "cluster-local",
+      "title": "Subindo um cluster local com minikube ou k3d",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["kubectl-essencial"]
+    },
+    {
+      "id": "kubectl-essencial",
+      "title": "kubectl: os comandos do dia a dia",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pods"]
+    },
+    {
+      "id": "pods",
+      "title": "Pods: a menor unidade do cluster",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["deployments"]
+    },
+    {
+      "id": "deployments",
+      "title": "Deployments: rollouts, scaling e rollbacks",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["services"]
+    },
+    {
+      "id": "services",
+      "title": "Services: DNS interno e exposição",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["configmaps-secrets"]
+    },
+    {
+      "id": "configmaps-secrets",
+      "title": "ConfigMaps e Secrets: configuração externa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["volumes-pv-pvc"]
+    },
+    {
+      "id": "volumes-pv-pvc",
+      "title": "Volumes, PV e PVC: persistência em k8s",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ingress"]
+    },
+    {
+      "id": "ingress",
+      "title": "Ingress: expondo o cluster pro mundo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["probes-scaling"]
+    },
+    {
+      "id": "probes-scaling",
+      "title": "Probes, HPA e resource limits",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["helm"]
+    },
+    {
+      "id": "helm",
+      "title": "Helm: charts e templates",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: app completa no cluster",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

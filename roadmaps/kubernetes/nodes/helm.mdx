@@ -1,0 +1,169 @@
+---
+id: helm
+title: "Helm: charts e templates"
+resources:
+  - title: "Helm docs (oficial, EN)"
+    url: https://helm.sh/docs/
+    type: doc
+    lang: en
+    free: true
+  - title: "Helm charts no Artifact Hub (catálogo público)"
+    url: https://artifacthub.io/
+    type: doc
+    lang: en
+    free: true
+---
+
+Sem Helm, cada app k8s é uma pasta cheia de YAML que você copia,
+cola e edita toda vez. **Helm** é o gerenciador de pacotes do k8s:
+empacota os YAMLs num **chart**, permite variáveis via `values.yaml`,
+e suporta install/upgrade/rollback.
+
+## Conceito: chart = pacote
+
+Um chart é uma pasta:
+
+```text
+meu-app/
+  Chart.yaml           # metadados (nome, versão, descrição)
+  values.yaml          # valores padrão (config)
+  templates/           # YAMLs com placeholders
+    deployment.yaml
+    service.yaml
+    ingress.yaml
+    _helpers.tpl       # funções de template
+```
+
+## O values.yaml
+
+```yaml
+replicaCount: 3
+image:
+  repository: luciano/api
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: app.exemplo.com
+      paths:
+        - path: /
+          pathType: Prefix
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+```
+
+## O template (deployment.yaml)
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meu-app.fullname" . }}
+  labels:
+    {{- include "meu-app.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "meu-app.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "meu-app.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 3000
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+```
+
+`{{ .Values.replicaCount }}` é o template do Helm - substitui pelo
+valor do `values.yaml` (ou override via CLI/arquivo).
+
+## Comandos do dia a dia
+
+```bash
+# Criar chart novo
+helm create meu-app
+
+# Validar
+helm lint ./meu-app
+
+# Renderizar sem aplicar (debug)
+helm template minha-instancia ./meu-app
+
+# Aplicar (install ou upgrade)
+helm install minha-instancia ./meu-app
+helm upgrade minha-instancia ./meu-app --set image.tag=1.1.0
+helm upgrade --install minha-instancia ./meu-app -f values-prod.yaml
+
+# Listar releases
+helm list
+helm list -A             # todos os namespaces
+
+# Status e histórico
+helm status minha-instancia
+helm history minha-instancia
+
+# Rollback
+helm rollback minha-instancia 2
+
+# Desinstalar
+helm uninstall minha-instancia
+```
+
+## Helmfile / Argo CD (próximo nível)
+
+Pra múltiplos charts juntos (vários apps do mesmo monorepo), use:
+
+- **Helmfile** - declara todos os releases num YAML, aplica de
+  uma vez. Ótimo pra dev.
+- **Argo CD** / **Flux** - GitOps. O cluster **puxa** o chart do
+  Git e aplica automaticamente. O caminho "production-grade".
+
+## Charts prontos (Artifact Hub)
+
+Não reinvente a roda. Pra coisas comuns (Postgres, Redis, Nginx,
+Prometheus, etc), procure no [Artifact Hub](https://artifacthub.io/).
+A maioria tem instalação em 1 comando:
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm install meu-postgres bitnami/postgresql
+```
+
+Três conceitos que você acabou de aprender:
+
+- **Chart = pacote de manifests k8s** com `values.yaml` pra
+  configuração e `templates/` pros YAMLs com placeholders.
+- **`helm install` / `helm upgrade`** aplicam o chart. **`helm
+  rollback`** volta pra revisão anterior. **`helm template`** mostra
+  o YAML final sem aplicar.
+- **Artifact Hub** tem charts prontos pra 90% do que você precisa
+  (Postgres, Redis, Nginx, Prometheus, Grafana, cert-manager,
+  Argo CD...).
+
+> Dica: comece usando charts prontos (Bitnami, comunidade
+> oficial). Crie seu próprio chart só quando precisar de algo
+> específico do seu app. Custo de manter chart próprio é alto.
+
+No próximo, o **projeto final** - colocar uma stack completa
+(API + banco + cache) num cluster local com tudo que você
+aprendeu.

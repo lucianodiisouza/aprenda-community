@@ -1,0 +1,79 @@
+---
+id: projeto-final
+title: "Projeto Final: app completa no cluster"
+resources:
+  - title: "Kubernetes the Hard Way (cluster do zero, EN)"
+    url: https://github.com/kelseyhightower/kubernetes-the-hard-way
+    type: doc
+    lang: en
+    free: true
+  - title: "kind - Kubernetes in Docker (alternativa local)"
+    url: https://kind.sigs.k8s.io/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você chegou no fim da trilha de Kubernetes. Hora de **subir uma
+stack completa num cluster local** - API + banco + cache + Ingress
++ Helm + probes + autoscaling - juntando tudo que você aprendeu.
+
+## A missão
+
+Suba uma stack realista (sugestões):
+
+- **API Node/Express + Postgres + Redis** - a stack mais comum.
+  Cobre Deployment, Service, ConfigMap, Secret, PVC, Ingress,
+  HPA, Helm.
+- **App Flask + Postgres + worker de fila** - adiciona StatefulSet
+  pro worker, coverando headless services.
+- **WordPress + MySQL** - exemplo de app "não-cloud-native" no k8s.
+  Mostra que dá, mas com trade-offs (PVC, Session Affinity).
+- **Sua app** - o melhor cenário. Você tem o código; só falta a
+  parte k8s.
+
+## Requisitos mínimos
+
+1. **Cluster local** rodando (minikube ou k3d, com `metrics-server`
+   e `ingress` habilitados).
+2. **2+ Deployments** - pelo menos a app + algum estado (banco,
+   cache, fila).
+3. **StatefulSet** pro banco de dados (Postgres) com `volumeClaimTemplates`.
+4. **ConfigMap** com a config não-sensível e **Secret** com a
+   senha do banco. Nada de hardcode.
+5. **Service ClusterIP** pra cada app + **Ingress** expondo a UI
+   principal (com TLS se animar).
+6. **Probes** (startup + liveness + readiness) na app.
+7. **HPA** com pelo menos 1 métrica (CPU) e range razoável
+   (min: 2, max: 5).
+8. **Helm chart** empacotando a app - `helm install` sobe tudo
+   de uma vez.
+9. **README** com: como subir o cluster, como instalar o chart,
+   como ver os Pods, como testar HPA, como ver logs.
+
+## Critério de "pronto"
+
+- `minikube start` (ou `k3d cluster create`) + `helm install
+  minha-app ./chart` sobe a stack inteira em uma pessoa-cluster
+  limpa.
+- `kubectl get all` mostra todos os recursos rodando com
+  `STATUS: Running` (Pods) e `CLUSTER-IP` válido (Services).
+- `kubectl get hpa` mostra o HPA ativo e a métrica de CPU.
+- `curl http://$(minikube ip)/api/items` retorna a lista de itens
+  (ou a chamada equivalente da sua app).
+- O banco sobrevive a um `kubectl delete pod postgres-0` (StatefulSet
+  recria, dados persistidos via PVC).
+- O HPA escala quando você gera carga (`hey -z 30s -c 50 ...` ou
+  ferramenta similar).
+- `helm uninstall` remove tudo sem deixar recurso órfão.
+
+## Compartilhe
+
+Poste no LinkedIn, mande pra amigos, abra uma issue no nosso GitHub
+com a tag `meu-projeto`. Mostrar a stack funcionando - mesmo
+imperfeita - é o que mais evolui.
+
+> Próximo passo: **GitOps** (Argo CD ou Flux), **observabilidade**
+> (Prometheus + Grafana + Loki), **service mesh** (Istio ou Linkerd)
+> e **multi-cluster** (cluster federation, KubeFed, submariner).
+> Você tem a base. O resto são especializações.

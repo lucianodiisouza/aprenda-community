@@ -1,0 +1,174 @@
+---
+id: services
+title: "Services: DNS interno e exposição"
+resources:
+  - title: "Services (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/concepts/services-networking/service/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Service types (docs oficial, EN)"
+    url: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+    type: doc
+    lang: en
+    free: true
+---
+
+O Pod é mortal: nasce, morre, ganha IP novo. Se sua API precisa
+chamar o banco "pelo nome", você não pode confiar no IP do Pod.
+**Service** é o que dá identidade estável a um conjunto de Pods.
+
+## O que um Service faz
+
+Um Service é um **balanceador de carga + DNS** interno do cluster.
+Você diz "esses Pods com label `app=db` formam um grupo lógico", e
+o k8s cria:
+
+- Um **IP virtual estável** (chamado de `ClusterIP`) que não muda
+  enquanto o Service existir.
+- Um **nome DNS** (ex: `db.default.svc.cluster.local`) que resolve
+  pro IP virtual.
+- **Regras de roteamento** que mandam tráfego pros Pods certos
+  (via labels).
+
+## Os 4 tipos principais
+
+```mermaid
+flowchart TB
+    Client["Cliente (Pod, browser, etc.)"]
+
+    subgraph Cluster["Cluster k8s"]
+        subgraph Internal["ClusterIP (default)"]
+            SVC1[("Service\nClusterIP: 10.96.0.10")]
+            P1[("Pod 1\n10.244.1.5")]
+            P2[("Pod 2\n10.244.2.7")]
+            SVC1 --> P1
+            SVC1 --> P2
+        end
+
+        subgraph NodePort["NodePort (expõe 30000-32767)"]
+            SVC2[("Service\nNodePort: 30080")]
+            P3[("Pod")]
+            SVC2 --> P3
+        end
+
+        subgraph LB["LoadBalancer (cloud)"]
+            SVC3[("Service\nLB externo")]
+            P4[("Pod")]
+            SVC3 --> P4
+        end
+
+        subgraph Ext["ExternalName (CNAME)"]
+            SVC4[("Service\nCNAME: db.rds.amazonaws.com")]
+        end
+    end
+
+    Client -->|"DNS: db"| SVC1
+    Client -->|"host:30080"| SVC2
+    Client -->|"cloud LB"| SVC3
+    Client -->|"DNS: rds-db"| SVC4
+
+    classDef svc fill:#1e3a8a,stroke:#60a5fa,color:#eff6ff
+    classDef pod fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef ext fill:#7c2d12,stroke:#fb923c,color:#fff7ed
+    class SVC1,SVC2,SVC3,SVC4 svc
+    class P1,P2,P3,P4 pod
+    class Client ext
+```
+
+- **`ClusterIP`** (padrão) - só acessível **dentro do cluster**.
+  É o que você usa pra service-to-service (api -> db).
+- **`NodePort`** - expõe o service em uma porta alta (30000-32767)
+  em **todos os nodes**. Acessível de fora via `<node-ip>:30080`.
+  Útil pra dev ou em bare-metal, mas não recomendado em cloud.
+- **`LoadBalancer`** - provisiona um load balancer do provedor
+  (AWS ELB, GCP LB, Azure LB) e aponta pros nodes. O jeito padrão
+  de expor serviço em cloud.
+- **`ExternalName`** - retorna um CNAME (`db.rds.amazonaws.com`).
+  Não faz proxy, só redireciona DNS. Útil pra apontar pra serviço
+  gerenciado fora do cluster (RDS, Cloud SQL, etc.).
+
+## Manifesto
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: ClusterIP            # default
+  selector:
+    app: api                  # manda tráfego pros Pods com essa label
+  ports:
+    - port: 80                # porta do Service
+      targetPort: 3000        # porta do container (no Pod)
+      protocol: TCP
+```
+
+Aplique:
+
+```bash
+kubectl apply -f service.yaml
+kubectl get service api
+kubectl get endpoints api    # quais Pods estão atrás do service
+```
+
+Agora qualquer Pod no cluster pode chamar `http://api:80` e o DNS
+interno resolve. Sem IP, sem Kubernetes API - o `Service` virou o
+"nome" do seu app.
+
+## DNS interno - a mágica que ninguém te conta
+
+Quando você cria um Service, o k8s registra automaticamente um nome
+DNS no formato:
+
+```text
+<service-name>.<namespace>.svc.cluster.local
+```
+
+Defaults: namespace `default`, cluster domain `cluster.local`. Então
+o nome curto `api` funciona dentro do mesmo namespace. Pra cruzar
+namespaces, use `api.outro-ns` ou o FQDN.
+
+Por isso `DATABASE_URL=postgres://user:pass@db:5432/app` funciona -
+o `db` é o nome do Service do Postgres, e o DNS interno resolve.
+
+## Headless Service (quando você quer todos os Pods, não load balance)
+
+Pra StatefulSets (banco, etc) você não quer load balancer - quer
+falar com cada Pod individualmente. Crie um Service **sem
+`ClusterIP`**:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  clusterIP: None           # headless
+  selector:
+    app: db
+  ports:
+    - port: 5432
+```
+
+Agora `dig db.default.svc.cluster.local` retorna o IP de **cada
+Pod**, não um virtual IP. StatefulSets usam isso pra cada réplica
+ter DNS próprio (`db-0.db`, `db-1.db`, ...).
+
+Três conceitos que você acabou de aprender:
+
+- **Service = IP estável + DNS + load balancer** sobre um conjunto
+  de Pods (selecionados por label).
+- **`ClusterIP` é o padrão** e o que você usa 95% das vezes -
+  comunicação interna entre services.
+- **DNS interno** (`api`, `db`) é o jeito idiomático de referenciar
+  services. Nada de IP, nada de env var.
+
+> Dica: pra debugar, `kubectl get endpoints <service>` mostra
+> exatamente quais Pods estão sendo roteados. Se a lista está
+> vazia, o `selector` do Service não bate com nenhuma `label` de
+> Pod - o erro mais comum.
+
+No próximo nó, vamos separar configuração do código com
+**ConfigMaps** (config normal) e **Secrets** (config sensível).

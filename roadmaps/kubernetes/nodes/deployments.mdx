@@ -1,0 +1,160 @@
+---
+id: deployments
+title: "Deployments: rollouts, scaling e rollbacks"
+resources:
+  - title: "Deployments (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/concepts/workloads/controllers/deployment/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Rolling update strategy (docs oficial, EN)"
+    url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+    type: doc
+    lang: en
+    free: true
+---
+
+Deployment é o controller que você usa 95% do tempo. Ele gerencia
+**ReplicaSets**, que gerenciam **Pods**. Você nunca fala com
+ReplicaSet diretamente - só com Deployment, e ele cuida do resto.
+
+## Manifesto mínimo
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: luciano/api:1.0
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+```
+
+A estrutura é quase a mesma do Pod, embrulhada em mais metadata:
+
+- **`spec.replicas: 3`** - o estado desejado. "Quero 3 réplicas
+  iguais." Se uma cair, o Deployment recria.
+- **`spec.selector.matchLabels`** - o Deployment procura Pods com
+  essas labels pra saber o que ele gerencia. **Toda vez que muda,
+  o `matchLabels` tem que bater com as `labels` do `template`**.
+- **`spec.template`** - o "molde" do Pod. Idêntico a um Pod YAML.
+
+```bash
+kubectl apply -f deployment.yaml
+kubectl get deployment api
+kubectl get pods -l app=api       # os 3 pods criados
+kubectl describe deployment api
+```
+
+## Scaling - mudar réplicas sem downtime
+
+```bash
+kubectl scale deployment api --replicas=5     # imperativo
+```
+
+Ou mude o YAML (`replicas: 5`) e rode `kubectl apply -f ...`. O k8s
+vai criar mais Pods até bater com o novo número, ou matar se você
+diminuiu.
+
+> **Scale to zero é válido.** `replicas: 0` é uma forma de "pausar"
+> um deployment sem perder o manifesto. Útil pra desligar staging
+> à noite e religar de manhã.
+
+## Rolling update - atualizar a versão sem downtime
+
+Quando você muda a `image` no Deployment, o k8s faz **rolling
+update** por padrão: mata Pods antigos e sobe novos em batches,
+mantendo o serviço disponível durante a troca.
+
+```bash
+kubectl set image deployment/api api=luciano/api:1.1
+# ou: edite o YAML e rode kubectl apply
+```
+
+Acompanhe:
+
+```bash
+kubectl rollout status deployment api
+kubectl get pods -l app=api -w   # -w = watch
+```
+
+## Rollback - voltar atrás se a nova versão quebrou
+
+```bash
+kubectl rollout history deployment api
+# REVISION  CHANGE-CAUSE
+# 1         <none>
+# 2         <none>
+
+kubectl rollout undo deployment api           # volta pra revisão anterior
+kubectl rollout undo deployment api --to-revision=1   # volta pra revisão específica
+```
+
+O k8s guarda as últimas revisões no `ReplicaSet` (sem mudar nada
+no YAML). Se a nova versão crashar, `undo` é instantâneo.
+
+## Update strategy
+
+Por padrão, `RollingUpdate` com `maxSurge: 25%` e `maxUnavailable:
+25%`. Ou seja, durante o update:
+
+- Pode subir até 25% a mais do réplicas (ex: 3 -> 4) pra manter
+  capacidade.
+- Pode matar até 25% (ex: 3 -> 2) temporariamente.
+
+Você pode ajustar:
+
+```yaml
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # sobe no máximo 1 pod extra
+      maxUnavailable: 0     # zero pods offline durante update
+```
+
+`maxUnavailable: 0` + `maxSurge: 1` é a config mais conservadora -
+zero downtime garantido, mas precisa de recurso sobrando no cluster.
+
+A outra opção é `Recreate` (mata todos e sobe novos) - causa
+downtime, mas é útil pra apps que não convivem com duas versões
+rodando ao mesmo tempo (ex: banco com migration incompatível).
+
+Três conceitos que você acabou de aprender:
+
+- **Deployment** é o controller padrão pra apps stateless. Ele
+  gerencia ReplicaSets, que gerenciam Pods.
+- **`replicas`** é o estado desejado. Mude com `kubectl scale` ou
+  editando o YAML.
+- **Rolling update** + **rollback** (`rollout undo`) são o que
+  separa "subi uma versão" de "subi uma versão sem me
+  arrepender depois".
+
+> Dica: use `kubectl rollout pause deployment api` antes de uma
+> série de mudanças, e `kubectl rollout resume` pra aplicar tudo
+> de uma vez. Útil quando você precisa mudar env, secrets e imagem
+> junto sem um update intermediário quebrado.
+
+No próximo, vamos expor esses 3 Pods com um **Service** - o
+"load balancer" interno do cluster.

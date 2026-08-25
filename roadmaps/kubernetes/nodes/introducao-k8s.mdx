@@ -1,0 +1,128 @@
+---
+id: introducao-k8s
+title: "O que é Kubernetes e por que existe"
+resources:
+  - title: "O que é Kubernetes? (docs oficial, PT-BR)"
+    url: https://kubernetes.io/pt-br/docs/concepts/overview/what-is-kubernetes/
+    type: doc
+    lang: pt
+    free: true
+  - title: "Componentes do Kubernetes (docs oficial, EN)"
+    url: https://kubernetes.io/docs/concepts/overview/components/
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando você tem 5 containers, `docker compose up` resolve. Quando
+você tem 50 containers espalhados por 10 servidores, com requisitos
+de alta disponibilidade, rolling updates, scaling automático e
+auto-recuperação, **você precisa de um orquestrador**. Kubernetes
+(o "k8s", pelas 8 letras entre o K e o s) é o padrão da indústria.
+
+## O problema que o k8s resolve
+
+Imagine sua stack em produção:
+
+- 3 réplicas da API (pra aguentar carga).
+- 2 réplicas do worker.
+- 1 banco Postgres (com replicação em outro lugar).
+- Redis como cache.
+- Um load balancer na frente da API.
+
+Sem orquestrador, **você** cuida de: subir containers, decidir em
+qual máquina cada um roda, monitorar se caiu, recriar se caiu,
+distribuir updates sem downtime, escalar quando a carga sobe. Em
+dezenas de instâncias, isso vira um emprego de tempo integral.
+
+Kubernetes faz isso pra você. Você **declara o estado desejado**
+("quero 3 réplicas da API") e o k8s **trabalha pra manter esse
+estado**: se uma réplica cai, ele recria. Se a CPU sobe, ele escala.
+Você diz **o quê**, o k8s decide **como**.
+
+## Arquitetura: control plane + workers
+
+Um cluster k8s tem dois tipos de máquina:
+
+- **Control plane** - o "cérebro". Roda o `kube-apiserver` (a API
+  que você fala via `kubectl`), o `etcd` (banco de dados do cluster),
+  o `scheduler` (decide em qual node cada pod roda) e o
+  `controller manager` (vigia e corrige desvios).
+- **Worker nodes** - onde os containers efetivamente rodam. Cada
+  node tem um `kubelet` (agente que fala com o control plane) e um
+  `container runtime` (normalmente `containerd` ou `CRI-O`).
+
+```mermaid
+flowchart TB
+    User["Você (kubectl)"]
+
+    subgraph CP["Control Plane"]
+        API["kube-apiserver\n(a API)"]
+        ETCD[("etcd\nestado do cluster")]
+        SCHED["kube-scheduler"]
+        CM["kube-controller-manager"]
+        API <--> ETCD
+        API --> SCHED
+        API --> CM
+    end
+
+    subgraph N1["Worker Node 1"]
+        K1["kubelet"]
+        R1["containerd"]
+        P1["Pods"]
+        P2["Pods"]
+        K1 --> R1 --> P1
+        K1 --> R1 --> P2
+    end
+
+    subgraph N2["Worker Node 2"]
+        K2["kubelet"]
+        R2["containerd"]
+        P3["Pods"]
+        K2 --> R2 --> P3
+    end
+
+    User -->|"kubectl apply / get"| API
+    API -->|"instruções"| K1
+    API -->|"instruções"| K2
+
+    classDef cp fill:#581c87,stroke:#c084fc,color:#faf5ff
+    classDef node fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef user fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
+    class API,ETCD,SCHED,CM cp
+    class K1,R1,P1,P2,K2,R2,P3 node
+    class User user
+```
+
+Você nunca fala direto com um node. Fala com o `kube-apiserver` via
+`kubectl`, e o control plane distribui as instruções pros nodes
+certos.
+
+## O que o k8s **não** é
+
+Pra calibrar expectativas:
+
+- **Não é um PaaS** (tipo Heroku). Você ainda opera o cluster, escala
+  nodes, atualiza versão do control plane.
+- **Não é um substituto do Docker** - o k8s **orquestra containers**,
+  mas não constrói imagens. Você continua usando `docker build` (ou
+  `nerdctl build`/`buildah`/`ko`) e mandando pro registry.
+- **Não resolve tudo sozinho** - monitoramento, logging, rede
+  avançada, secrets management e CI/CD continuam sendo responsabilidade
+  sua (com ajuda do ecossistema: Prometheus, Grafana, Argo, Flux,
+  etc.).
+
+Três conceitos que você acabou de aprender:
+
+- **Kubernetes é um orquestrador de containers** que mantém o
+  **estado desejado** da sua stack, declarado via YAML.
+- **Control plane + workers** é a divisão fundamental: o cérebro
+  decide, os workers executam.
+- **`kubectl`** é a sua janela pro cluster - tudo passa pela API do
+  control plane.
+
+> Dica: a pronúncia é "cóbernétis" - "koo-burr-NEH-teez" - em PT-BR.
+> No dia a dia, quase todo mundo fala "k8s" mesmo.
+
+No próximo, vamos subir um cluster local com **minikube** ou **k3d**,
+pra você poder praticar tudo isso sem precisar de cloud.
