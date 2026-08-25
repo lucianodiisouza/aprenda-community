@@ -27,24 +27,24 @@ operacional completo por cima do seu. Um **container** é só um processo
 da sua máquina, isolado do resto por mecanismos do próprio Linux (namespaces
 e cgroups). Ele é leve, sobe em segundos e compartilha o kernel com o host.
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     subgraph VM["Máquina Virtual (3 VMs no mesmo host)"]
         direction TB
         H1["Hypervisor"]
-        G1["Guest OS\n(completo)"]
+        G1["Guest OS\\n(completo)"]
         B1["Bins/Libs"]
         A1["App A"]
         H1 --> G1 --> B1 --> A1
 
         H2["Hypervisor"]
-        G2["Guest OS\n(completo)"]
+        G2["Guest OS\\n(completo)"]
         B2["Bins/Libs"]
         A2["App B"]
         H2 --> G2 --> B2 --> A2
 
         H3["Hypervisor"]
-        G3["Guest OS\n(completo)"]
+        G3["Guest OS\\n(completo)"]
         B3["Bins/Libs"]
         A3["App C"]
         H3 --> G3 --> B3 --> A3
@@ -53,10 +53,10 @@ flowchart TB
     subgraph CONT["Container (3 containers no mesmo host)"]
         direction TB
         K["Kernel do host (compartilhado)"]
-        R1["Container runtime\n(containerd)"]
-        F1["App A\n(imagem)"]
-        F2["App B\n(imagem)"]
-        F3["App C\n(imagem)"]
+        R1["Container runtime\\n(containerd)"]
+        F1["App A\\n(imagem)"]
+        F2["App B\\n(imagem)"]
+        F3["App C\\n(imagem)"]
         K --> R1 --> F1
         R1 --> F2
         R1 --> F3
@@ -69,8 +69,9 @@ flowchart TB
     class H1,G1,B1,A1,H2,G2,B2,A2,H3,G3,B3,A3 vm
     class F1,F2,F3 app
     class R1 cont
-    class K kern
-```
+    class K kern`}
+  caption="VM vs Container: arquitetura lado a lado."
+/>
 
 Repare: três VMs precisam de **três kernels separados** rodando
 em paralelo. Três containers compartilham **um único kernel** (o do

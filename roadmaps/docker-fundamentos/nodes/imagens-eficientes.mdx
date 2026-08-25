@@ -99,23 +99,23 @@ A imagem final tem ~15 MB em vez de ~800 MB. Tudo que precisava do
 Go (compilador, source, cache) ficou no primeiro estágio e foi
 descartado. Só o **binário** vai pra imagem final.
 
-```mermaid
-flowchart LR
+<Mermaid
+  chart={`flowchart LR
     subgraph BUILD["Estágio 1: build (descartado)"]
         direction TB
-        FB["FROM golang:1.22\n~800MB"]
-        FB --> WB["WORKDIR /app\nCOPY go.mod go.sum"]
+        FB["FROM golang:1.22\\n~800MB"]
+        FB --> WB["WORKDIR /app\\nCOPY go.mod go.sum"]
         WB --> MB["RUN go mod download"]
-        MB --> CB["COPY . .\ngo build"]
+        MB --> CB["COPY . .\\ngo build"]
         CB --> BIN["binário: /app/meu-app"]
     end
 
     subgraph FINAL["Estágio 2: runtime (vai pra produção)"]
         direction TB
-        FA["FROM alpine:3.20\n~5MB"]
+        FA["FROM alpine:3.20\\n~5MB"]
         FA --> CA["RUN apk add ca-certificates"]
         CA --> CP["COPY --from=build /app/meu-app /meu-app"]
-        CP --> CM["CMD /meu-app\nimagem final: ~15MB"]
+        CP --> CM["CMD /meu-app\\nimagem final: ~15MB"]
     end
 
     BIN -.->|"só o binário"| CP
@@ -124,8 +124,9 @@ flowchart LR
     classDef final fill:#0e7490,stroke:#22d3ee,color:#ecfeff
     classDef arte fill:#581c87,stroke:#c084fc,color:#faf5ff
     class FB,WB,MB,CB,BIN build
-    class FA,CA,CP,CM final
-```
+    class FA,CA,CP,CM final`}
+  caption="Multi-stage build: estagio de build descartado, estagio de runtime enxuto."
+/>
 
 A imagem final tem ~15 MB em vez de ~800 MB. Tudo que precisava do
 Go (compilador, source, cache) ficou no primeiro estágio e foi

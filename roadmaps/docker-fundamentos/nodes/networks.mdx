@@ -35,15 +35,15 @@ aplicação pra apontar pro IP do banco - quebra em qualquer restart.
 Quando você cria uma rede bridge customizada, o Docker sobe um **DNS
 interno** que resolve o nome do container pra IP atual. É mágica.
 
-```mermaid
-flowchart TB
-    Host["Host (seu PC)\nlocalhost:8080"]
-    Host -->|"-p 8080:80"| C1[("api\n172.18.0.2:80")]
+<Mermaid
+  chart={`flowchart TB
+    Host["Host (seu PC)\\nlocalhost:8080"]
+    Host -->|"-p 8080:80"| C1[("api\\n172.18.0.2:80")]
 
     subgraph Net["Rede bridge 'minha-rede' (DNS interno)"]
         C1
-        C2[("db\n172.18.0.3:5432")]
-        C3[("cache\n172.18.0.4:6379")]
+        C2[("db\\n172.18.0.3:5432")]
+        C3[("cache\\n172.18.0.4:6379")]
         C1 <-->|"hostname: db"| C2
         C1 <-->|"hostname: cache"| C3
     end
@@ -53,8 +53,9 @@ flowchart TB
     classDef net fill:#0f172a,stroke:#475569,color:#cbd5e1
     class Host host
     class C1,C2,C3 ctn
-    class Net net
-```
+    class Net net`}
+  caption="Bridge network com DNS interno."
+/>
 
 ```bash
 docker network create minha-rede

@@ -29,19 +29,19 @@ Uma imagem é um **pacote imutável** que contém:
 - O código da sua aplicação.
 - A configuração padrão (variáveis de ambiente, porta, comando).
 
-```mermaid
-flowchart TB
+<Mermaid
+  chart={`flowchart TB
     subgraph IMG["Imagem Docker (camadas imutáveis, de baixo pra cima)"]
         direction TB
-        L1["Layer 1\nubuntu:24.04 base (~78MB)"]
-        L2["Layer 2\napt install -y python3.11 (~120MB)"]
-        L3["Layer 3\npip install -r requirements.txt (~45MB)"]
-        L4["Layer 4\nCOPY . /app (~2MB)"]
-        L5["Layer 5\nENV, EXPOSE, CMD (~1KB)"]
+        L1["Layer 1\\nubuntu:24.04 base (~78MB)"]
+        L2["Layer 2\\napt install -y python3.11 (~120MB)"]
+        L3["Layer 3\\npip install -r requirements.txt (~45MB)"]
+        L4["Layer 4\\nCOPY . /app (~2MB)"]
+        L5["Layer 5\\nENV, EXPOSE, CMD (~1KB)"]
         L1 --> L2 --> L3 --> L4 --> L5
     end
 
-    C["Container rodando\n= imagem + camada de escrita (writable)"]
+    C["Container rodando\\n= imagem + camada de escrita (writable)"]
     IMG --> C
 
     classDef layer fill:#0e7490,stroke:#22d3ee,color:#ecfeff
@@ -49,8 +49,9 @@ flowchart TB
     classDef run fill:#7c2d12,stroke:#fb923c,color:#fff7ed
     class L1 base
     class L2,L3,L4,L5 layer
-    class C run
-```
+    class C run`}
+  caption="Layers de uma imagem Docker."
+/>
 
 Tecnicamente, uma imagem é uma pilha de **layers** (camadas). Cada
 instrução do Dockerfile gera uma layer. Como o Docker usa um sistema
