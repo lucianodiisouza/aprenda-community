@@ -1,0 +1,58 @@
+---
+slug: servico-com-docker
+title: "Empacote um Serviço com Docker"
+description: "Pegue sua API, coloque num container e suba app + banco com um comando só usando Docker Compose — do Dockerfile ao ambiente que roda igual em qualquer máquina."
+difficulty: intermediario
+skills:
+  - docker
+  - containers
+  - devops
+  - backend
+trilhas:
+  - docker-fundamentos
+  - docker-compose-e-workflows
+estimate: "3-5 dias"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+O projeto que fecha o ciclo do backend: sua API para de depender do "na minha
+máquina funciona". Você a empacota num **container** e sobe a stack inteira —
+app + banco — com um único comando, do jeito que roda em produção.
+
+## Objetivo
+
+Praticar o empacotamento de uma aplicação real com **Docker** e a orquestração
+com **Compose**: escrever um Dockerfile enxuto, subir um banco ao lado do app,
+conectar os dois por rede interna e gerenciar dados e configuração de forma que o
+ambiente seja reproduzível em qualquer máquina.
+
+## Requisitos
+
+- [ ] Um `Dockerfile` que builda e roda a sua aplicação (reaproveite a API do projeto anterior, ou qualquer serviço seu)
+- [ ] Um `docker-compose.yml` que sobe o app **e** um banco de dados juntos
+- [ ] O app conversa com o banco pela rede interna do Compose (não por `localhost`)
+- [ ] Variáveis de ambiente (credenciais, porta) via `.env` — nada hard-coded na imagem
+- [ ] Um volume persistindo os dados do banco entre `docker compose down` e `up`
+- [ ] `docker compose up` sobe tudo do zero e o serviço responde
+
+## Desafios extras
+
+- [ ] Build multi-stage pra deixar a imagem final pequena (sem devDependencies)
+- [ ] Hot reload em desenvolvimento montando o código como volume
+- [ ] Um `healthcheck` no banco pra o app só subir quando ele estiver pronto
+- [ ] Adicione um terceiro serviço (ex.: cache/Redis) e conecte na stack
+- [ ] Escreva um `.dockerignore` e explique no README o que ele evita mandar pra imagem
+
+## Dicas
+
+- Uma imagem boa é pequena e determinística: comece de uma base slim, copie só o
+  necessário e ordene os passos pra aproveitar o cache de camadas (dependências
+  antes do código).
+- Dentro do Compose, um serviço acha o outro pelo **nome do serviço** como host —
+  `db`, não `localhost`. Isso é rede de container, não sua máquina.
+- Dados de banco morrem com o container se não houver volume. Teste de propósito:
+  suba, insira algo, `down`, `up` — o dado tem que continuar lá.
+- Segredo não entra na imagem. Passe por variável de ambiente; a imagem deve poder
+  ser publicada sem vazar credencial nenhuma.

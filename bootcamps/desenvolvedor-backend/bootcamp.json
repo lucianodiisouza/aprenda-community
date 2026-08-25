@@ -4,13 +4,22 @@
   "description": "Do zero ao backend: lógica e JavaScript, o SQL que roda por baixo, a construção de uma API completa em Node/Express e a noção de complexidade pra escrever código que escala. Fecha com um projeto de verdade.",
   "difficulty": "intermediario",
   "outcome": "Ao terminar, você modela dados em SQL, constrói uma API REST em Node/Express com banco e autenticação, entende o que o ORM esconde e sabe avaliar o custo dos seus algoritmos.",
-  "estimate": "3 meses",
+  "estimate": "4 meses",
   "creators": [{ "name": "Luciano dii Souza", "github": "lucianodiisouza" }],
   "modules": [
     { "trilha": "programacao-do-zero", "description": "Base de lógica e JavaScript pra quem começa do zero." },
+    { "projeto": "calculadora-de-gorjeta", "title": "Primeiro projeto: coloque a lógica em prática", "description": "Um build pequeno pra fixar variáveis, condicionais e funções logo depois do primeiro contato com código." },
+    { "trilha": "terminal-para-devs", "description": "O terminal é onde o backend vive: comandos essenciais em qualquer ambiente unix (local, VPS, container)." },
+    { "trilha": "git", "description": "Controle de versão do zero ao avançado — obrigatório em qualquer time e pré-requisito pra deploy e colaboração." },
     { "trilha": "sql-banco-de-dados", "description": "Modelagem e SQL puro — a fundação de dados antes de qualquer ORM." },
+    { "projeto": "modelagem-de-banco", "description": "Modele o banco de um mini e-commerce e escreva as consultas do negócio em SQL puro." },
     { "trilha": "backend", "description": "HTTP, Node, Express, banco, ORM, autenticação, validação e testes." },
+    { "projeto": "api-rest-com-autenticacao", "description": "Construa a API completa: CRUD, banco, validação, login e rotas protegidas." },
+    { "trilha": "docker-fundamentos", "description": "Empacote a API em containers: imagens, Dockerfile, volumes e rede — o jeito moderno de rodar backend." },
+    { "trilha": "docker-compose-e-workflows", "description": "Suba app + banco + cache com um comando e monte o ambiente de dev e produção da sua API." },
+    { "projeto": "servico-com-docker", "description": "Coloque a sua API num container e suba app + banco com um comando só." },
     { "trilha": "complexidade-de-algoritmos", "description": "Pra escrever backend que aguenta escala." },
+    { "projeto": "busca-com-filtros", "description": "Sinta o custo das operações crescerem com os dados — a teoria de complexidade na prática." },
     { "projeto": "encurtador-de-url", "title": "Projeto final: um encurtador de URLs" }
   ]
 }
