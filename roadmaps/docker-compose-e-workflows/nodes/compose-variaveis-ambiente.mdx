@@ -1,0 +1,117 @@
+---
+id: compose-variaveis-ambiente
+title: "Variáveis de ambiente e arquivos .env"
+resources:
+  - title: "Variáveis de ambiente no Compose (docs oficial, EN)"
+    url: https://docs.docker.com/compose/environment-variables/
+    type: doc
+    lang: en
+    free: true
+  - title: "Arquivo .env no Compose (docs oficial, EN)"
+    url: https://docs.docker.com/compose/env-file/
+    type: doc
+    lang: en
+    free: true
+---
+
+Colocar `POSTGRES_PASSWORD: secret` direto no `docker-compose.yml`
+funciona, mas tem dois problemas: a senha vai pro Git (mesmo em
+repositório privado, é má prática), e **não dá pra mudar entre dev
+e produção** sem editar o YAML. A solução é separar **configuração**
+de **código**: a config vai num arquivo `.env`, o YAML só referencia.
+
+## O arquivo `.env`
+
+Crie um `.env` na mesma pasta do `docker-compose.yml`:
+
+```env
+# .env (no Git? NÃO, veja abaixo)
+POSTGRES_PASSWORD=senha-muito-forte
+POSTGRES_USER=app
+POSTGRES_DB=app
+DATABASE_URL=postgres://app:senha-muito-forte@db:5432/app
+API_PORT=3000
+```
+
+E no `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    build: .
+    ports:
+      - "${API_PORT}:3000"   # interpolação do .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+```
+
+O Compose lê o `.env` automaticamente e faz a interpolação. O YAML
+fica **sem nenhum segredo** - o que é commitado no Git é só estrutura
+e referências.
+
+> **`.env` no Git ou não?** Não. Adicione `.env` no `.gitignore` e
+> crie um `.env.example` (com valores placeholder) que **vai** pro
+> Git. Quem clona o projeto copia o exemplo: `cp .env.example .env`
+> e preenche com os valores reais.
+
+```env
+# .env.example (este vai pro Git)
+POSTGRES_PASSWORD=change-me
+POSTGRES_USER=app
+POSTGRES_DB=app
+DATABASE_URL=postgres://app:change-me@db:5432/app
+API_PORT=3000
+```
+
+## Outras formas de passar variáveis
+
+O Compose lê de três lugares, nessa ordem de precedência
+(maior vence):
+
+1. **Linha de comando** - `DATABASE_URL=... docker compose up`.
+2. **Shell do sistema** - variáveis que já estão exportadas no
+   seu terminal.
+3. **Arquivo `.env`** - o padrão que vimos.
+
+Você também pode usar **múltiplos arquivos** de env:
+
+```bash
+docker compose --env-file .env.production up
+```
+
+Útil pra ter `.env.dev` e `.env.production` lado a lado.
+
+## Interpolação dentro do YAML
+
+A sintaxe `${VAR}` funciona em quase todo lugar - strings, portas,
+volumes. E tem variantes úteis:
+
+- **`${VAR}`** - valor de `VAR` do `.env` ou do shell. Falha se
+  `VAR` não existir.
+- **`${VAR:-default}`** - usa `default` se `VAR` não estiver
+  definida. Bom pra opcionais: `${LOG_LEVEL:-info}`.
+- **`${VAR:?erro}`** - falha com a mensagem se `VAR` não estiver
+  definida. Bom pra obrigatórias: `${DATABASE_URL:?DATABASE_URL é obrigatória}`.
+
+Três conceitos que você acabou de aprender:
+
+- **`.env` (com ponto)** é o nome **convenção** que o Compose procura
+  por padrão. Você pode passar outro com `--env-file`.
+- **Interpolação `${VAR}`** funciona em strings, portas, environment,
+  volumes. É o lugar onde "config" vira "valor".
+- **Precedência**: shell > CLI > `.env`. Pra sobrescrever pontual
+  (debug, por exemplo), `POSTGRES_PASSWORD=outro docker compose up`.
+
+> Dica: Compose tem um recurso nativo de **secret** (não confundir
+> com Docker Swarm secrets) que monta um arquivo dentro do
+> container em vez de variável de ambiente. Útil pra certificados e
+> chaves grandes. Pra senhas simples, `.env` resolve.
+
+No próximo, vamos falar de **volumes** - a parte que faz seus dados
+sobreviverem a um `docker compose down`.

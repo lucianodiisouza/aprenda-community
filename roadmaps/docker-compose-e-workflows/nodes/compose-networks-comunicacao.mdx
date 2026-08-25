@@ -1,0 +1,142 @@
+---
+id: compose-networks-comunicacao
+title: "Comunicação entre services e DNS interno"
+resources:
+  - title: "Networks no Compose (docs oficial, EN)"
+    url: https://docs.docker.com/compose/compose-file/06-networks/
+    type: doc
+    lang: en
+    free: true
+  - title: "depends_on (docs oficial, EN)"
+    url: https://docs.docker.com/compose/compose-file/05-services/#depends_on
+    type: doc
+    lang: en
+    free: true
+---
+
+Na trilha de Docker Fundamentos, você aprendeu que uma rede bridge
+customizada dá DNS interno: containers na mesma rede se acham por
+nome. **O Compose faz isso por padrão, sem você declarar nada.** Toda
+stack do Compose ganha uma rede com o nome do projeto (o nome da
+pasta onde está o `docker-compose.yml`, kebab-case), e cada service
+participa dela automaticamente.
+
+## Como o DNS resolve
+
+```yaml
+services:
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgres://user:pass@db:5432/app   # "db" é o nome do service
+  db:
+    image: postgres:16
+```
+
+Quando o Compose sobe essa stack, ele cria uma rede chamada
+`nome-do-projeto_default` (ex: `minha-api_default`). Os containers
+`api` e `db` são conectados nela e podem se resolver por nome:
+
+```mermaid
+flowchart LR
+    Host["Seu computador\n(host)"]
+    Host -->|"-p 3000:3000"| API[("api\nporta 3000")]
+    Host -->|"psql, navegador"| DB[("db\nporta 5432")]
+
+    subgraph Net["Rede minha-api_default (bridge)"]
+        API
+        DB
+    end
+
+    API -->|"postgres://...@db:5432/app"| DB
+
+    classDef host fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
+    classDef svc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef net fill:#0f172a,stroke:#475569,color:#cbd5e1
+    class Host host
+    class API,DB svc
+    class Net net
+```
+
+Repare: o `db` resolve pra um IP **interno da rede Docker** (algo
+como `172.18.0.3`), não pra `localhost`. O `api` está na mesma
+rede, então o DNS interno resolve o nome. De fora (do seu navegador),
+você acessa `localhost:3000` por causa do `ports: "3000:3000"`.
+
+## depends_on - ordem de inicialização
+
+```yaml
+services:
+  api:
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+```
+
+`depends_on` garante que `db` é **criado e iniciado antes** de `api`.
+Útil, mas tem um problema sutil: o Postgres pode demorar 5-10s pra
+ficar pronto pra aceitar conexões, e a `api` pode subir antes disso.
+No primeiro request, dá erro de conexão.
+
+A solução robusta é um **healthcheck** (que detalhamos mais pra
+frente, mas já fica o spoiler):
+
+```yaml
+services:
+  db:
+    image: postgres:16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+  api:
+    depends_on:
+      db:
+        condition: service_healthy    # espera o healthcheck passar
+```
+
+Agora `api` só sobe depois que `db` reporta `healthy`. Bem mais
+confiável.
+
+## Networks customizadas
+
+A rede padrão cobre 90% dos casos. Pra casos mais complexos - isolar
+o banco da API, separar frontend de backend - você cria redes
+explícitas:
+
+```yaml
+services:
+  nginx:
+    networks: [frontend]
+  api:
+    networks: [frontend, backend]
+  db:
+    networks: [backend]
+networks:
+  frontend:
+  backend:
+```
+
+Aqui `nginx` e `api` se conversam; `api` e `db` se conversam; mas
+`nginx` **não alcança** `db` (não estão na mesma rede). Bom pra
+reduzir superfície de ataque.
+
+Três conceitos que você acabou de aprender:
+
+- **DNS interno é padrão** - services na mesma stack se resolvem
+  por nome sem você declarar rede nenhuma.
+- **`depends_on`** controla ordem de subida, mas pra esperar o
+  serviço ficar **saudável**, combine com `healthcheck` e
+  `condition: service_healthy`.
+- **Networks customizadas** isolam grupos de services. Útil pra
+  segurança (banco não exposto) e organização.
+
+> Dica: o nome da rede padrão é `<projeto>_default` onde `<projeto>`
+> é o nome da pasta atual. Se quiser mudar, declare a rede
+> explicitamente e use `name: minha-rede` no nível raiz.
+
+No próximo nó, vamos turbinar o desenvolvimento com **hot reload**,
+**watch** e **profiles** - porque ninguém quer rebuildar imagem a
+cada save.

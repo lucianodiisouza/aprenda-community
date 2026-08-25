@@ -1,0 +1,90 @@
+---
+id: compose-primeiro-yaml
+title: "Seu primeiro docker-compose.yml"
+resources:
+  - title: "Compose file reference (docs oficial, EN)"
+    url: https://docs.docker.com/reference/compose-file/
+    type: doc
+    lang: en
+    free: true
+  - title: "Quickstart do Compose (docs oficial, PT-BR)"
+    url: https://docs.docker.com/compose/gettingstarted/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um `docker-compose.yml` é só um arquivo YAML que descreve a stack.
+Quase tudo dentro dele é `chave: valor` ou listas. O nome do arquivo
+**precisa ser** `docker-compose.yml` (ou `.yaml`) e ficar na raiz do
+projeto - o `docker compose` procura por ele no diretório atual.
+
+## Exemplo mínimo: API + banco
+
+```yaml
+# Sintaxe mínima: services é o único bloco obrigatório.
+services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:secret@db:5432/app
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret
+```
+
+Suba com `docker compose up -d` (de dentro da pasta do projeto). Pra
+derrubar e remover tudo: `docker compose down`.
+
+## O que cada chave faz
+
+- **`build: .`** - diz "construa a imagem deste service a partir de um
+  `Dockerfile` na pasta atual". O `image: ...` na frente é alternativa
+  (puxa imagem pronta do registry).
+- **`ports: ["3000:3000"]`** - mesmo `-p 3000:3000` do `docker run`.
+  Lista de strings `"host:container"`. Pode ser um único número
+  (`"3000"`, que é `3000:3000` implícito).
+- **`environment:`** - variáveis de ambiente. Pode ser mapa
+  (`CHAVE: valor`) ou lista (`- CHAVE=valor`).
+- **`depends_on: [db]`** - garante que `db` sobe **antes** de `api`.
+  Mas atenção: `depends_on` espera o container iniciar, **não** o
+  serviço ficar pronto. Se o Postgres demora 5s pra aceitar conexão,
+  sua API pode subir antes e falhar no primeiro request. Soluções
+  (healthchecks) ficam pra outro nó.
+
+## Comandos do dia a dia
+
+```bash
+docker compose up -d          # sobe tudo em background
+docker compose down           # para e remove containers, redes
+docker compose down -v        # também remove volumes (cuidado: apaga dados)
+docker compose ps             # lista os services da stack
+docker compose logs           # logs de todos os services (com -f pra seguir)
+docker compose logs api       # logs de um service só
+docker compose exec api sh    # entra no container (tipo docker exec)
+docker compose restart api    # reinicia um service
+docker compose build          # reconstrói imagens (sem subir)
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`docker-compose.yml`** é a "fonte da verdade" da sua stack - o
+  arquivo vai pro Git, e qualquer pessoa sobe o ambiente com um
+  comando.
+- **`depends_on`** controla a **ordem de inicialização**, não a ordem
+  de prontidão. Pra esperar o serviço ficar saudável de verdade,
+  use `healthcheck` (próximo nó).
+- **`docker compose down`** é destrutivo: sem `-v` ele mantém volumes
+  nomeados, mas com `-v` apaga. Use `-v` só quando quiser resetar.
+
+> Dica: o `docker compose` tem auto-complete bom. `docker compose `
+> (com espaço) e `Tab` mostra tudo. Adicione em desenvolvimento pra
+> evitar digitar errado.
+
+No próximo nó, vamos lidar com **variáveis de ambiente** sem hardcode
+no YAML - porque senha fixa no Git é problema sério.
