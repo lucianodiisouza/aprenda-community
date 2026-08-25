@@ -1,0 +1,140 @@
+---
+id: navegacao
+title: "Navegação: pwd, ls, cd e atalhos"
+resources:
+  - title: "Comandos básicos de navegação (linuxcommand.org, EN)"
+    url: https://linuxcommand.org/lc3_lts0020.php
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de manipular arquivos, você precisa saber **onde está** e
+**como ir pra outro lugar**. Três comandos resolvem 90% do caso:
+`pwd`, `ls`, `cd`.
+
+## Onde estou? `pwd`
+
+```bash
+pwd
+# /Users/luciano/Projetos/minha-api
+```
+
+Significa "print working directory" - mostra o caminho absoluto
+do diretório atual. O shell sempre tem um "diretório atual" em
+mente, e todos os comandos que rodam com caminhos relativos
+partem dele.
+
+> **Diferença entre absoluto e relativo**: `/Users/luciano/projeto`
+> é absoluto (começa com `/`). `./src/index.js` é relativo (parte
+> do diretório atual, o `.`).
+
+## O que tem aqui? `ls`
+
+```bash
+ls                      # lista simples
+ls -l                   # lista longa: permissões, dono, tamanho, data
+ls -la                  # longa + inclui arquivos ocultos (que começam com .)
+ls -lh                  # longa com tamanhos humanos (KB, MB, GB)
+ls -lha                 # tudo
+ls -lt                  # ordena por data de modificação
+ls /etc                 # lista outro diretório sem sair do atual
+ls *.md                 # filtra por glob (todos os .md no diretório atual)
+```
+
+A flag `-l` muda tudo - é o `ls` que você vai usar 90% das vezes.
+As colunas dela são:
+
+```text
+drwxr-xr-x  5 luciano  staff   160B  Aug 25 10:30  Documents
+-rw-r--r--  1 luciano  staff   2.3K  Aug 25 09:15  README.md
+lrwxr-xr-x  1 luciano  staff    12B  Aug 24 17:22  link -> /destino
+```
+
+- `d` = diretório, `-` = arquivo, `l` = symlink
+- Permissões em 3 grupos (dono, grupo, outros) de 3 bits cada
+  (`rwx`)
+- Tamanho e data de modificação
+- Nome (em symlinks, `link -> /destino` mostra pra onde aponta)
+
+## Indo pra outro lugar: `cd`
+
+```bash
+cd /usr/local           # absoluto - vai pra /usr/local de qualquer lugar
+cd ..                   # sobe um diretório
+cd ../..                # sobe dois
+cd ~                    # vai pra home do usuário
+cd -                    # volta pro diretório anterior (alternância)
+cd                      # sem argumento, vai pra home também
+cd ~/Projetos/api      # absoluto a partir da home
+```
+
+O `cd -` é um dos truques mais úteis que pouca gente conhece:
+ele **alterna entre dois diretórios**. Útil quando você fica
+pulando entre dois lugares o tempo todo (ex: `~/projeto` e
+`/var/log`).
+
+## Atalhos que salvam tempo
+
+O shell tem atalhos de teclado que funcionam **em qualquer lugar**:
+
+- `Ctrl + A` - vai pro início da linha
+- `Ctrl + E` - vai pro fim da linha
+- `Ctrl + U` - apaga do cursor até o início
+- `Ctrl + K` - apaga do cursor até o fim
+- `Ctrl + W` - apaga a palavra anterior
+- `Ctrl + R` - busca no histórico (digite parte do comando,
+  aparece match anterior). Aperte `Ctrl + R` de novo pra achar
+  matches mais antigos.
+- `Tab` - completa caminhos, comandos, variáveis. **O mais
+  importante.** Digite `cd ~/Proj` e aperte Tab - completa
+  automaticamente se houver um match único.
+- `↑` / `↓` - navega no histórico de comandos
+
+> **Histórico do shell**: cada comando que você roda fica salvo
+> em `~/.bash_history` (bash) ou `~/.zsh_history` (zsh). O
+> `Ctrl + R` busca nesse histórico. Útil pra rodar de novo aquele
+> comando enorme que você digitou ontem.
+
+## Atalhos de caminho
+
+- `.` - diretório atual
+- `..` - diretório pai
+- `~` - home do usuário
+- `-` - diretório anterior (só no `cd`)
+
+## Listando árvore (opcional)
+
+O `ls` sozinho não mostra a estrutura. Pra ver uma árvore de
+diretórios:
+
+```bash
+# Linux: vem com tree instalado
+tree                       # mostra tudo a partir do atual
+tree -L 2                  # limita a 2 níveis de profundidade
+tree -d                    # só diretórios, ignora arquivos
+
+# macOS: precisa instalar
+brew install tree
+
+# Sem instalar nada
+find . -type d | sort     # só diretórios, recursivo
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`pwd` mostra onde você está**, `ls` mostra o que tem, `cd` te
+  leva pra outro lugar - os três são o mínimo viável pra
+  navegar.
+- **`Ctrl + R` e `Tab`** valem mais que decorar 50 comandos. O
+  primeiro acha comandos antigos, o segundo completa o que você
+  tá digitando.
+- **`-` é alternância** - `cd -` volta pro último diretório.
+  Subestimado.
+
+> Dica: depois de rodar o `tree`, instale o [fzf](https://github.com/junegunn/fzf)
+> e use `Ctrl + R` que vira busca fuzzy no histórico. É o maior
+> upgrade de produtividade no terminal que existe.
+
+No próximo, vamos manipular arquivos e pastas: criar, copiar,
+mover, apagar, e os atalhos de symlink.

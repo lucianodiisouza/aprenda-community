@@ -1,0 +1,120 @@
+{
+  "slug": "terminal-para-devs",
+  "title": "Terminal para Devs",
+  "description": "Trilha para quem precisa lidar com **ambientes unix** (VPS, máquina local, container): os comandos e ferramentas essenciais que funcionam em qualquer terminal moderno. Bash como linha de base, com notas onde macOS (BSD) ou Zsh divergem. Pré-requisito declarado das trilhas de containers.",
+  "difficulty": "iniciante",
+  "skills": ["terminal", "bash", "shell", "linux", "unix", "ssh"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-terminal",
+      "title": "O que é terminal, shell e prompt",
+      "type": "topic",
+      "recommended": true,
+      "children": ["navegacao"]
+    },
+    {
+      "id": "navegacao",
+      "title": "Navegação: pwd, ls, cd e atalhos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["arquivos"]
+    },
+    {
+      "id": "arquivos",
+      "title": "Manipulação de arquivos e diretórios",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["visualizacao"]
+    },
+    {
+      "id": "visualizacao",
+      "title": "Lendo arquivos: cat, less, head, tail, wc",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["busca"]
+    },
+    {
+      "id": "busca",
+      "title": "Busca: find, grep e afins",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["permissoes"]
+    },
+    {
+      "id": "permissoes",
+      "title": "Permissões: chmod, chown e sudo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["processos"]
+    },
+    {
+      "id": "processos",
+      "title": "Processos: ps, top, kill, jobs e sinais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pipes-redirect"]
+    },
+    {
+      "id": "pipes-redirect",
+      "title": "Pipes e redirecionamento: a cola do shell",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["processamento-texto"]
+    },
+    {
+      "id": "processamento-texto",
+      "title": "Processamento de texto: sed, awk, cut, sort",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["variaveis-ambiente"]
+    },
+    {
+      "id": "variaveis-ambiente",
+      "title": "Variáveis de ambiente e configuração do shell",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ssh"]
+    },
+    {
+      "id": "ssh",
+      "title": "SSH: chaves, config e túneis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["compressao-arquivos"]
+    },
+    {
+      "id": "compressao-arquivos",
+      "title": "Compactação: tar, gzip e zip",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rede"]
+    },
+    {
+      "id": "rede",
+      "title": "Rede no terminal: curl, ping, dig e ss",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["edicao-minima"]
+    },
+    {
+      "id": "edicao-minima",
+      "title": "Edição mínima: nano e vim",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: diagnosticar e arrumar um servidor",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+---
+id: variaveis-ambiente
+title: "Variáveis de ambiente e configuração do shell"
+resources:
+  - title: "Variáveis de ambiente (Bash manual, EN)"
+    url: https://www.gnu.org/software/bash/manual/html_node/Environment.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Arquivos de inicialização do Bash"
+    url: https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Variáveis de ambiente são o "estado" que processos filhos herdam
+do shell. Quando você roda `NODE_ENV=production node app.js`, a
+variável `NODE_ENV` é setada **só pra aquele processo** e
+automaticamente exportada pros filhos.
+
+## O básico
+
+```bash
+# definir (só no shell atual)
+minha_var="hello"
+minha_var=hello                       # sem espaço!
+
+# usar (sempre com $)
+echo $minha_var                       # hello
+echo "$minha_var"                     # "hello" (aspas protegem o conteúdo)
+
+# exportar (visível pros processos filhos)
+export MINHA_VAR=hello
+export DATABASE_URL="postgres://localhost/mydb"
+
+# listar todas
+env                                   # mostra todas as variáveis exportadas
+printenv PATH                         # valor de uma específica
+
+# deletar
+unset MINHA_VAR
+```
+
+> **Com aspas vs sem aspas**: `echo $var` quebra em palavras se
+> `var` tiver espaço. `echo "$var"` preserva o conteúdo. Quase
+> sempre use aspas duplas. Exceção: dentro de aspas duplas,
+> `$var` ainda expande, então `"$var"` expande **com proteção**;
+> `'$var'` é literal (sem expansão).
+
+## O `PATH` - a variável mais importante
+
+`PATH` é a lista de diretórios onde o shell procura por comandos
+quando você digita só o nome (sem caminho):
+
+```bash
+echo $PATH
+# /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/luciano/.local/bin
+
+# separador é ':' (dois pontos)
+```
+
+Quando você digita `git`, o shell procura `git` em cada diretório
+do `PATH` (em ordem) e roda o primeiro que achar.
+
+```bash
+# adiciona ~/.local/bin ao PATH
+export PATH="$HOME/.local/bin:$PATH"
+
+# adiciona Go ao PATH (se instalou)
+export PATH="/usr/local/go/bin:$PATH"
+```
+
+> **Erro "command not found"**: o comando existe (você digitou
+> certo) mas não tá em nenhum diretório do `PATH`. Soluções:
+> 1. Adicione o diretório ao `PATH` (vê acima).
+> 2. Use caminho absoluto: `/opt/minha-ferramenta/bin/cmd`.
+> 3. Crie um symlink em diretório que JÁ tá no PATH:
+>    `ln -s /opt/cmd/bin/cmd /usr/local/bin/cmd`.
+
+## Arquivos de inicialização
+
+O shell carrega configs diferentes em momentos diferentes. Os
+principais:
+
+### Login shell (quando você loga via SSH ou TTY)
+
+- **bash**: `/etc/profile` -> `~/.bash_profile` (ou `~/.bash_login`,
+  ou `~/.profile`)
+- **zsh**: `/etc/zshenv` -> `~/.zshenv` -> `~/.zprofile`
+
+### Interactive shell (cada janela de terminal)
+
+- **bash**: `/etc/bashrc` -> `~/.bashrc`
+- **zsh**: `~/.zshrc`
+
+### Não-interactive (scripts)
+
+Não carrega nenhum desses. Pra rodar config em script, declare
+no próprio script.
+
+```bash
+# ~/.bashrc (bash) ou ~/.zshrc (zsh) - carregado em cada terminal novo
+
+# PATH customizado
+export PATH="$HOME/.local/bin:$PATH"
+
+# editor padrão (git, less, etc usam isso)
+export EDITOR=vim
+export VISUAL=code
+
+# locale
+export LANG=pt_BR.UTF-8
+export LC_ALL=pt_BR.UTF-8
+
+# aliases
+alias ll='ls -la'
+alias gs='git status'
+alias k='kubectl'
+
+# funções
+mkcd() { mkdir -p "$1" && cd "$1"; }
+```
+
+> **Onde colocar o quê?** Aliases, funções, `PATH` customizado,
+> `EDITOR` -> `~/.bashrc` (bash) ou `~/.zshrc` (zsh) - carregado em
+> **toda nova janela**. Variáveis que precisam estar em **scripts
+> não-interativos** (tipo `PATH` pra `cron`) -> `~/.profile` (bash)
+> ou `~/.zprofile` (zsh).
+
+## Aliases e funções
+
+```bash
+# alias simples
+alias ll='ls -lh'
+alias la='ls -A'
+alias l='ls -CF'
+alias gs='git status'
+alias gco='git checkout'
+
+# alias com argumento (precisa de função)
+alias grep='grep --color=auto'       # sempre colorido
+alias mkdir='mkdir -pv'              # sempre com pais e verbose
+
+# funções (mais poderosas que alias)
+git-graph() { git log --oneline --graph --decorate --all "$@"; }
+extract() {
+  if [ -f "$1" ]; then
+    case "$1" in
+      *.tar.gz) tar -xzf "$1" ;;
+      *.zip) unzip "$1" ;;
+      *.tar.bz2) tar -xjf "$1" ;;
+      *) echo "Formato não reconhecido" ;;
+    esac
+  fi
+}
+```
+
+Aliases e funções são definidos no `~/.bashrc` (bash) ou `~/.zshrc`
+(zsh). Mudanças só valem em **novas** janelas - pra carregar
+em janela atual, faça `source ~/.bashrc` (ou `~/.zshrc`).
+
+## Sourcing - executando arquivo no shell atual
+
+```bash
+source ~/.bashrc                    # ou: . ~/.bashrc (mesma coisa)
+```
+
+A diferença entre `source` e executar normalmente: `source` roda
+o script **no shell atual** (variáveis ficam disponíveis). Sem
+`source`, o script roda em subshell (variáveis somem).
+
+Três conceitos que você acabou de aprender:
+
+- **`PATH`** é a lista de diretórios onde o shell procura
+  comandos. Adicione diretórios customizados no `~/.bashrc` ou
+  `~/.zshrc`.
+- **`~/.bashrc` é carregado em cada nova janela**. Mudanças
+  precisam de nova janela OU `source ~/.bashrc`.
+- **`export`** torna a variável visível pros processos filhos.
+  Sem `export`, a variável é só do shell atual.
+
+> Dica: use o `direnv` (https://direnv.net/) pra ter variáveis
+> de ambiente **por diretório** automaticamente. Entra numa pasta
+> do projeto, as variáveis de `.envrc` são carregadas; sai, são
+> descarregadas. Combina com `.env` files pra configuração
+> específica de cada projeto.
+
+No próximo, **SSH** - o que te permite logar em servidores
+remotos, copiar arquivos, e criar túneis de rede. Provavelmente
+a habilidade mais valiosa que você vai aprender nessa trilha.
