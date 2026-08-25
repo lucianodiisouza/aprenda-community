@@ -6,6 +6,14 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.11.0] - 2026-08-25
+
+### Adicionado
+- 💻 **Trilha Terminal para Devs** (`roadmaps/terminal-para-devs`, 15 nós):
+  do básico do shell (navegação, arquivos, permissões) a pipes/redirecionamento,
+  processamento de texto, processos, variáveis de ambiente, rede, SSH e um
+  projeto final. Contribuição de Luciano dii Souza.
+
 ## [1.10.0] - 2026-08-25
 
 ### Adicionado
