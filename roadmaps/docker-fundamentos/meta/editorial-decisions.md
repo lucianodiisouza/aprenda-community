@@ -34,14 +34,16 @@ conceitual.
 
 ### Pré-requisito declarado
 
-Esta trilha **assume** que a pessoa já sabe:
+Esta trilha **assume** que a pessoa já passou por:
 
-- **Terminal Linux/macOS básico** - `cd`, `ls`, `cat`, `grep`, editar
-  arquivos, variáveis de ambiente, pipes. Se isso não está firme, vale
-  uma trilha de "Terminal" antes (não existe ainda, está no backlog).
+- [**Terminal para Devs**](../../terminal-para-devs) - `cd`, `ls`,
+  `cat`, `grep`, editar arquivos, variáveis de ambiente, pipes.
+  A trilha cobre todos os fundamentos de shell que esta trilha usa
+  sem reintroduzir.
 - **Git mínimo** - clonar, commitar, branch. Suficiente pra clonar
   exemplos das docs e versionar o Dockerfile.
-- **Conceito de "processo" e "sistema de arquivos"** - mesmo que vago.
+- **Conceito de "processo" e "sistema de arquivos"** - mesmo que vago,
+  vem da trilha de Terminal.
 
 **Não exige** Docker prévio (essa é a primeira trilha dele) nem
 qualquer linguagem de backend específica - os exemplos mostram
