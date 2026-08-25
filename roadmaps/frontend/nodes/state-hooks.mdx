@@ -80,3 +80,12 @@ console.log("após 3 incrementos:", c.get());
 c.reset();
 console.log("após reset:", c.get());
 ```
+
+<Quiz
+  question="O que o hook useState retorna?"
+  options={[
+    { text: "Um par: o valor atual e uma função para atualizá-lo", correct: true },
+    { text: "Apenas o valor atual", correct: false, explanation: "Falta o setter — useState retorna [valor, setValor]." },
+    { text: "Uma Promise com o valor", correct: false, explanation: "useState é síncrono; não retorna Promise." }
+  ]}
+/>

@@ -32,3 +32,12 @@ function App() {
   );
 }
 ```
+
+<Quiz
+  question="No React, o que dispara uma nova renderização de um componente?"
+  options={[
+    { text: "Uma mudança no seu state ou nas suas props", correct: true },
+    { text: "Editar o arquivo CSS", correct: false, explanation: "CSS muda a aparência, não re-renderiza o componente." },
+    { text: "Recarregar a página manualmente", correct: false, explanation: "Isso remonta tudo; não é o mecanismo de re-render do React." }
+  ]}
+/>

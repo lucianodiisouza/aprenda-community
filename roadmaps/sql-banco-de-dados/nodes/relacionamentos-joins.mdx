@@ -76,3 +76,12 @@ INNER JOIN autores ON livros_autores.autor_id = autores.id;
 
 No próximo nó, você vai resumir dado de várias linhas em um único
 número: `GROUP BY` e funções de agregação.
+
+<Quiz
+  question="O que um INNER JOIN retorna?"
+  options={[
+    { text: "Só as linhas com correspondência nas duas tabelas", correct: true },
+    { text: "Todas as linhas da tabela da esquerda", correct: false, explanation: "Isso é o LEFT JOIN." },
+    { text: "O produto cartesiano completo", correct: false, explanation: "Isso seria um CROSS JOIN (ou JOIN sem ON)." }
+  ]}
+/>

@@ -64,3 +64,12 @@ cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email_digitado,))
 
 No próximo nó, você aplica tudo o que aprendeu num projeto completo:
 modelar e popular um banco de dados pequeno do zero.
+
+<Quiz
+  question="Qual a defesa correta contra SQL injection?"
+  options={[
+    { text: "Prepared statements (queries parametrizadas)", correct: true },
+    { text: "Escapar as aspas do input na mão", correct: false, explanation: "Frágil e fácil de furar; use queries parametrizadas." },
+    { text: "Confiar que o front valida o input", correct: false, explanation: "Validação no cliente é burlável; a defesa é no acesso ao banco." }
+  ]}
+/>

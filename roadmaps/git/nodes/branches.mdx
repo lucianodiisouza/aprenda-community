@@ -51,3 +51,12 @@ branch - por isso é bom comitar (ou dar um stash) antes de trocar.
 
 Ter branches só é útil se você conseguir **juntá-las** de volta. Esse é o próximo
 nó: o **merge**.
+
+<Quiz
+  question="O que `git branch nova` faz?"
+  options={[
+    { text: "Cria a branch 'nova' sem trocar pra ela", correct: true },
+    { text: "Cria e já muda pra 'nova'", correct: false, explanation: "Isso é git checkout -b nova (ou git switch -c nova)." },
+    { text: "Apaga a branch 'nova'", correct: false, explanation: "Apagar é git branch -d nova." }
+  ]}
+/>

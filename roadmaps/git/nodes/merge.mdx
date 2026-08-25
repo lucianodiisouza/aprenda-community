@@ -50,3 +50,12 @@ git branch -d minha-feature       # -d só apaga se já foi mergeada
 
 Nem todo merge é tranquilo. Quando as duas branches mexem na **mesma linha** do
 mesmo arquivo, dá **conflito** - e é isso que resolvemos a seguir.
+
+<Quiz
+  question="O que caracteriza um merge fast-forward?"
+  options={[
+    { text: "A branch de destino não divergiu, então o ponteiro só avança", correct: true },
+    { text: "Sempre cria um commit de merge", correct: false, explanation: "Fast-forward NÃO cria commit de merge; isso é o merge com --no-ff." },
+    { text: "Descarta os commits da branch mesclada", correct: false, explanation: "Merge preserva os commits." }
+  ]}
+/>
