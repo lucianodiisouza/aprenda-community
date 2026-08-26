@@ -6,6 +6,15 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.16.1] - 2026-08-25
+
+### Alterado
+- ✏️ **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
+  descrição reescrita pra refletir as 5 mudanças da v1.16.0 (TS, NoSQL, 3
+  novos nós no backend). Versão mais narrativa, menciona os 5 projetos
+  do caminho e o encurtador de URLs como projeto final. Sem mudança em
+  `modules[]` ou `outcome`.
+
 ## [1.16.0] - 2026-08-25
 
 ### Adicionado
