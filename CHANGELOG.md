@@ -6,6 +6,26 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+### Adicionado
+
+- 👥 **Índice de contribuidores** (`contributors.json` + `scripts/build-contributors.mjs`):
+  agrega os `creators` espalhados por trilhas, projetos e bootcamps num
+  único índice chaveado pelo handle do GitHub - a chave que também liga o
+  criador ao perfil público. É o contrato estável que a app consome pra
+  exaltar quem contribui (fileira de avatares na home, section de
+  contribuições no perfil público, badge de contribuidor). Um bootcamp
+  também credita quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`).
+  Cada entrada já traz `avatar`, `profile`, `counts` e as listas de
+  trilhas/projetos/bootcamps, ordenadas por total de contribuições.
+
+### Alterado
+
+- ✅ **`validate.mjs` agora exige `github` (e `name`) em todo `creators`**,
+  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa some
+  do índice de contribuidores. O CI de validação também roda
+  `build-contributors.mjs --check` - se o `contributors.json` commitado
+  estiver desatualizado, o job falha.
+
 ## [1.19.0] - 2026-08-26
 
 ### Adicionado
