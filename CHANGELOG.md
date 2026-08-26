@@ -6,6 +6,13 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.15.0] - 2026-08-25
+
+### Adicionado
+- 🆕 **Campo `published`** (data ISO) no front-matter — quando recente, o site
+  mostra um selo "novo" no card/header. Aplicado aos três projetos backend-native
+  (`modelagem-de-banco`, `api-rest-com-autenticacao`, `servico-com-docker`).
+
 ## [1.14.0] - 2026-08-25
 
 ### Adicionado
