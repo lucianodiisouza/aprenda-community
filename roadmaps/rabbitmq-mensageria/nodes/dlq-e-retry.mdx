@@ -122,3 +122,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente junta tudo nos três padrões que cobrem quase todo
 caso real.
+
+<Quiz
+  question="Como se faz um retry que espera 30s antes de tentar de novo no RabbitMQ?"
+  options={[
+    {
+      text: "Uma fila de espera com messageTtl: 30000 e uma DLX que devolve pra fila principal quando o TTL estoura",
+      correct: true,
+    },
+    {
+      text: "Um setTimeout de 30s dentro do consumidor antes do ack",
+      correct: false,
+      explanation:
+        "Prende o worker e não sobrevive a restart. No RabbitMQ o jeito é TTL mais DLX.",
+    },
+    {
+      text: "nack com requeue: true",
+      correct: false,
+      explanation:
+        "Devolve na hora, sem espera - e vira loop se o erro for permanente.",
+    },
+  ]}
+/>

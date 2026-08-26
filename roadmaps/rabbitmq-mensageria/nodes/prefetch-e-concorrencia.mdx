@@ -89,3 +89,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente resolve o destino das mensagens que falham sempre -
 com dead letter queue e retry.
+
+<Quiz
+  question="Por que, sem prefetch, três workers podem render menos que o esperado?"
+  options={[
+    {
+      text: "O round-robin distribui sem olhar se o worker está ocupado, então um pode ficar com uma tarefa lenta enquanto os outros terminam e ficam parados",
+      correct: true,
+    },
+    {
+      text: "O RabbitMQ copia cada mensagem pros três, triplicando o trabalho",
+      correct: false,
+      explanation:
+        "Round-robin divide, não copia - cada mensagem vai pra um worker só.",
+    },
+    {
+      text: "Três conexões sobrecarregam o broker",
+      correct: false,
+      explanation:
+        "O problema não é conexão; é a distribuição cega do round-robin sem prefetch.",
+    },
+  ]}
+/>

@@ -79,3 +79,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente vê a fanout, que ignora a routing key
 completamente, e a topic, que aceita curingas.
+
+<Quiz
+  question="A exchange pedidos, do tipo direct, tem as binding keys order.created, order.cancelled e order.error. Você publica com a routing key Order.Created. Qual fila recebe?"
+  options={[
+    {
+      text: "Nenhuma - a mensagem é descartada",
+      correct: true,
+    },
+    {
+      text: "A fila.pagamento, ligada por order.created",
+      correct: false,
+      explanation:
+        "Direct compara texto exato e diferencia maiúscula: Order.Created não é igual a order.created.",
+    },
+    {
+      text: "Todas, porque direct faz broadcast",
+      correct: false,
+      explanation:
+        "Quem faz broadcast é a fanout. Direct exige igualdade exata da chave.",
+    },
+  ]}
+/>

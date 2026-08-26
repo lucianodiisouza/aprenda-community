@@ -104,3 +104,25 @@ Três coisas pra fixar:
 
 Agora que o modelo mental tá montado, chegou a hora de sair da teoria:
 no próximo nó a gente sobe um RabbitMQ de verdade com Docker.
+
+<Quiz
+  question="Com a routing key pedido.br.criado, qual binding key NÃO casa?"
+  options={[
+    {
+      text: "pedido.*",
+      correct: true,
+    },
+    {
+      text: "pedido.#",
+      correct: false,
+      explanation:
+        "O # cobre zero ou mais palavras, então cobre br.criado. Casa.",
+    },
+    {
+      text: "pedido.*.criado",
+      correct: false,
+      explanation:
+        "O * cobre exatamente uma palavra (br) e o resto bate. Casa.",
+    },
+  ]}
+/>

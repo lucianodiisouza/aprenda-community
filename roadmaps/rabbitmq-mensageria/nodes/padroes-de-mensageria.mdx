@@ -107,3 +107,25 @@ Três coisas pra fixar:
   duas vezes.
 
 No próximo nó, os erros que só aparecem quando isso vai pra produção.
+
+<Quiz
+  question="Você ligou o serviço de e-mail e o de estoque na mesma fila, esperando que os dois recebessem cada evento. O que acontece de verdade?"
+  options={[
+    {
+      text: "Cada evento chega em só um dos dois, em rodízio",
+      correct: true,
+    },
+    {
+      text: "Os dois recebem uma cópia de cada evento, como no pub/sub",
+      correct: false,
+      explanation:
+        "Pub/sub exige uma fila por consumidor. Dois serviços na mesma fila viram work queue.",
+    },
+    {
+      text: "O RabbitMQ recusa dois consumidores na mesma fila",
+      correct: false,
+      explanation:
+        "É permitido e comum - é justamente o padrão work queue.",
+    },
+  ]}
+/>

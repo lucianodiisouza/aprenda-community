@@ -110,3 +110,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente fala do que acontece quando o consumidor falha no
 meio do processamento - e por que `ack` é mais importante do que parece.
+
+<Quiz
+  question="O que channel.assertQueue(...) faz se a fila já existir?"
+  options={[
+    {
+      text: "Nada - cria se não existir, ignora se já existir",
+      correct: true,
+    },
+    {
+      text: "Lança erro porque a fila está duplicada",
+      correct: false,
+      explanation:
+        "assert é idempotente - não quebra se a fila já existe.",
+    },
+    {
+      text: "Apaga a fila antiga e cria uma nova vazia",
+      correct: false,
+      explanation:
+        "Não recria nem apaga nada; só garante que existe. Rodar duas vezes é seguro.",
+    },
+  ]}
+/>

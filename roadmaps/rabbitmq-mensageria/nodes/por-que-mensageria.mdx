@@ -110,3 +110,25 @@ Três ideias pra levar deste nó:
 No próximo nó a gente coloca nome nas peças: produtor, exchange, fila e
 consumidor - e você vai ver uma mensagem andando entre elas antes de
 instalar qualquer coisa.
+
+<Quiz
+  question="Em qual destes casos a resposta síncrona, sem fila, é a escolha certa?"
+  options={[
+    {
+      text: "Validar o cupom de desconto antes de fechar a compra",
+      correct: true,
+    },
+    {
+      text: "Enviar o e-mail de confirmação depois do pedido",
+      correct: false,
+      explanation:
+        "E-mail é trabalho que pode terminar depois, sem ninguém olhando - caso clássico de fila.",
+    },
+    {
+      text: "Emitir a nota fiscal via Receita",
+      correct: false,
+      explanation:
+        "Depende de um sistema externo e pode esperar na fila; não deve segurar a resposta ao usuário.",
+    },
+  ]}
+/>

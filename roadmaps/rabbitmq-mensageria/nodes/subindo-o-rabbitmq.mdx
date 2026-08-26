@@ -87,3 +87,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente conecta uma aplicação Node nesse broker e publica
 a primeira mensagem de verdade.
+
+<Quiz
+  question="Sua aplicação Node vai publicar e consumir mensagens. Em qual porta ela conecta?"
+  options={[
+    {
+      text: "5672",
+      correct: true,
+    },
+    {
+      text: "15672",
+      correct: false,
+      explanation:
+        "15672 é o painel web, pra você olhar. Nenhuma aplicação usa essa porta pra mensagens.",
+    },
+    {
+      text: "Nas duas ao mesmo tempo",
+      correct: false,
+      explanation:
+        "Cada porta tem um propósito: 5672 é o protocolo AMQP da aplicação, 15672 é só o painel.",
+    },
+  ]}
+/>

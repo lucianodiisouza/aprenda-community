@@ -101,3 +101,25 @@ Três coisas que você acabou de aprender:
 
 No próximo nó a gente entra no primeiro tipo de exchange - a direct - e
 vê como essa comparação de chaves funciona na prática.
+
+<Quiz
+  question="Você publicou uma mensagem e o consumidor não recebeu nada, sem erro e sem log. Qual a causa mais provável?"
+  options={[
+    {
+      text: "A routing key não casa com nenhuma binding key, e o RabbitMQ descartou a mensagem em silêncio",
+      correct: true,
+    },
+    {
+      text: "O consumidor esqueceu de dar ack",
+      correct: false,
+      explanation:
+        "O ack decide a remoção depois de processar. Se nada chegou, o problema é antes, no roteamento.",
+    },
+    {
+      text: "A fila estava cheia e recusou a conexão",
+      correct: false,
+      explanation:
+        "A causa número um do 'publiquei e não recebeu nada' é binding incompatível, não fila cheia.",
+    },
+  ]}
+/>

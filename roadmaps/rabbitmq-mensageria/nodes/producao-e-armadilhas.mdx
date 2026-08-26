@@ -125,3 +125,25 @@ Três coisas pra fixar:
   e monitore a profundidade.
 
 No próximo nó você junta tudo isso num projeto de verdade.
+
+<Quiz
+  question="Por que o consumidor precisa ser idempotente?"
+  options={[
+    {
+      text: "A entrega é pelo menos uma vez: se o consumidor cair depois de processar mas antes do ack, a mensagem volta e é processada de novo",
+      correct: true,
+    },
+    {
+      text: "O RabbitMQ entrega a mesma mensagem pra vários consumidores de propósito",
+      correct: false,
+      explanation:
+        "Numa work queue cada mensagem vai pra um worker só.",
+    },
+    {
+      text: "O produtor sempre publica cada evento duas vezes por segurança",
+      correct: false,
+      explanation:
+        "Não é o produtor; é a garantia de entrega pelo menos uma vez no ack.",
+    },
+  ]}
+/>

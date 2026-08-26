@@ -104,3 +104,25 @@ Três coisas pra fixar:
 
 No próximo nó a gente vê por que um consumidor sozinho pode entupir
 enquanto os outros ficam parados - e como o prefetch resolve isso.
+
+<Quiz
+  question="Sua fila é durável, com durable: true, mas depois de reiniciar o broker ela volta vazia. O que faltou?"
+  options={[
+    {
+      text: "Publicar as mensagens com persistent: true",
+      correct: true,
+    },
+    {
+      text: "Marcar a exchange como durável",
+      correct: false,
+      explanation:
+        "Mesmo com a exchange durável, mensagem sem persistent: true não vai pro disco. As três camadas precisam estar ligadas.",
+    },
+    {
+      text: "Usar noAck: true no consumidor",
+      correct: false,
+      explanation:
+        "noAck só piora: dá a mensagem como entregue antes de processar. Não tem a ver com sobreviver ao restart.",
+    },
+  ]}
+/>
