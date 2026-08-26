@@ -1,0 +1,144 @@
+---
+id: typescript-com-orm
+title: "TypeScript com ORM: Prisma Client e Zod"
+resources:
+  - title: "Prisma - Type safety (em inglês)"
+    url: https://www.prisma.io/docs/orm/prisma-client/type-safety
+    type: doc
+    lang: en
+    free: true
+  - title: "Zod - TypeScript-first schema validation (em inglês)"
+    url: https://zod.dev/
+    type: doc
+    lang: en
+    free: true
+---
+
+O **Prisma Client** gera tipos TypeScript a partir do `schema.prisma`
+- você não anota nada, o editor já sabe o formato de cada `model`.
+Combinado com **Zod** pra validação de input, o resultado é um
+backend onde a tipagem "viaja" do banco até o cliente sem você
+escrever tipo nenhum.
+
+### Prisma gera os tipos pra você
+
+```prisma
+// schema.prisma
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  criadoEm  DateTime @default(now())
+}
+```
+
+A partir desse schema, o Prisma gera (em `node_modules/@prisma/client`):
+
+```typescript
+// tipo gerado - você não escreve isso, mas pode usar
+type Usuario = {
+  id: number;
+  nome: string;
+  email: string;
+  criadoEm: Date;
+};
+```
+
+E o `prisma.usuario.findMany()` devolve `Promise<Usuario[]>` -
+tudo tipado, autocomplete completo.
+
+### Usando na rota Express
+
+```typescript
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+app.get("/usuarios", async (req, res) => {
+  // resultado é Usuario[] - autocomplete e checagem funcionam
+  const usuarios = await prisma.usuario.findMany({
+    select: { id: true, nome: true }, // tipo: { id: number; nome: string }[]
+  });
+  res.json(usuarios);
+});
+
+app.get("/usuarios/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const usuario = await prisma.usuario.findUnique({ where: { id } });
+  // tipo: Usuario | null
+  if (!usuario) return res.status(404).json({ erro: "não encontrado" });
+  res.json(usuario);
+});
+```
+
+### Zod pra validação + tipos de input
+
+A parte fraca do Prisma é **input do usuário**: ele não valida
+formato. Aí entra o **Zod**, que valida e **infere o tipo** ao
+mesmo tempo:
+
+```typescript
+import { z } from "zod";
+
+const criarUsuarioSchema = z.object({
+  nome: z.string().min(2).max(100),
+  email: z.string().email(),
+});
+
+// tipo inferido: { nome: string; email: string }
+type CriarUsuarioInput = z.infer<typeof criarUsuarioSchema>;
+```
+
+Aí na rota:
+
+```typescript
+app.post("/usuarios", async (req, res) => {
+  const dados = criarUsuarioSchema.safeParse(req.body);
+
+  if (!dados.success) {
+    return res.status(400).json({ erro: dados.error.flatten() });
+  }
+
+  // dados.data é tipado como { nome: string; email: string }
+  const novo = await prisma.usuario.create({ data: dados.data });
+  res.status(201).json(novo);
+});
+```
+
+O fluxo fica:
+
+```text
+HTTP body (any) → Zod valida e tipa → Prisma persiste → resposta tipada
+```
+
+### A combinação: tipos do Prisma + Zod pra DTOs
+
+```typescript
+import { z } from "zod";
+
+// "DTO de criação" - tudo opcional exceto o que o usuário PRECISA enviar
+const atualizarUsuarioSchema = z.object({
+  nome: z.string().min(2).optional(),
+  email: z.string().email().optional(),
+});
+
+type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
+```
+
+Três conceitos pra fixar:
+
+- **Prisma gera tipos a partir do `schema.prisma`** - você não
+  anota, o editor já sabe o formato de cada model.
+- **Zod valida E infere tipo** - `safeParse` devolve resultado
+  tipado ou erro de validação.
+- **DTOs com `Partial` ou `z.optional()`** - "alguns campos podem
+  vir" usa `Partial<TipoDoPrisma>` ou `.optional()` no Zod.
+
+> Dica: o Prisma tem `Prisma.UsuarioCreateInput`, `Prisma.UsuarioUpdateInput`,
+> etc. - tipos gerados pra payloads. Combinam com Zod via
+> `z.object({ ... }) as unknown as z.ZodType<Prisma.UsuarioCreateInput>`,
+> mas isso é avançado; o caminho mais limpo é manter o schema
+> Zod como fonte de verdade do input e derivar o tipo.
+
+No próximo nó, o **projeto final**: juntar tudo numa API completa
+em TypeScript, com Express, Prisma, Zod e testes.

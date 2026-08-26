@@ -1,0 +1,99 @@
+{
+  "slug": "typescript",
+  "title": "TypeScript",
+  "description": "Da tipagem estática ao uso profissional em Node: tipos primitivos, generics, utilitários, configuração e integração com Express e ORM. Pré-requisito da trilha Backend (recomendado, não bloqueante).",
+  "difficulty": "intermediario",
+  "skills": ["typescript", "javascript", "tipos", "node"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "O que é TypeScript e Por Que Ele Existe",
+      "type": "topic",
+      "recommended": true,
+      "children": ["tipos-primitivos"]
+    },
+    {
+      "id": "tipos-primitivos",
+      "title": "Tipos Primitivos: string, number, boolean e Cia",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["objetos-e-arrays"]
+    },
+    {
+      "id": "objetos-e-arrays",
+      "title": "Objetos e Arrays Tipados: type vs interface",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["funcoes-tipadas"]
+    },
+    {
+      "id": "funcoes-tipadas",
+      "title": "Funções Tipadas: Parâmetros, Retorno e Overloads",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["unions-e-narrowing"]
+    },
+    {
+      "id": "unions-e-narrowing",
+      "title": "Unions e Narrowing: Quando o Tipo Pode Ser Mais de Um",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["generics"]
+    },
+    {
+      "id": "generics",
+      "title": "Generics: Funções e Tipos Reutilizáveis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tipos-utilitarios"]
+    },
+    {
+      "id": "tipos-utilitarios",
+      "title": "Tipos Utilitários: Partial, Pick, Omit e Outros",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["configurando-typescript"]
+    },
+    {
+      "id": "configurando-typescript",
+      "title": "Configurando o TypeScript: tsconfig.json",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["typescript-em-node"]
+    },
+    {
+      "id": "typescript-em-node",
+      "title": "TypeScript em Node: tsx, Build e ESM",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["typescript-com-express"]
+    },
+    {
+      "id": "typescript-com-express",
+      "title": "TypeScript com Express: Tipando req, res e Middlewares",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["typescript-com-orm"]
+    },
+    {
+      "id": "typescript-com-orm",
+      "title": "TypeScript com ORM: Prisma Client e Zod",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: API Completa em TypeScript",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

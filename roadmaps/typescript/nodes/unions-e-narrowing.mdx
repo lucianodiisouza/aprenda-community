@@ -1,0 +1,120 @@
+---
+id: unions-e-narrowing
+title: "Unions e Narrowing: Quando o Tipo Pode Ser Mais de Um"
+resources:
+  - title: "TypeScript Handbook: Narrowing (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript Handbook: Discriminated Unions (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
+    type: doc
+    lang: en
+    free: true
+---
+
+No mundo real, uma variável **não tem sempre o mesmo tipo**: a
+resposta de uma API pode ser sucesso ou erro, um input pode ser
+string ou número, o resultado de um parse pode ser o objeto ou
+`null`. **Unions** modelam isso; **narrowing** te obriga a tratar
+cada caso antes de usar.
+
+### Union: "pode ser um desses tipos"
+
+```typescript
+type Resposta = string | number;
+
+function formatar(r: Resposta): string {
+  return `Valor: ${r}`;
+}
+
+formatar("texto"); // ✅
+formatar(42);      // ✅
+```
+
+Sem narrowing, o TS não te deixa fazer coisas específicas de cada
+tipo:
+
+```typescript
+function dobrar(r: Resposta): number {
+  return r * 2; // ❌ 'r' pode ser string
+}
+```
+
+### Narrowing: o TS afunila o tipo baseado em checagens
+
+```typescript
+function dobrar(r: Resposta): number {
+  if (typeof r === "number") {
+    // aqui o TS sabe que r é number
+    return r * 2;
+  }
+  // aqui o TS sabe que r é string
+  return Number(r) * 2;
+}
+```
+
+O `typeof` é o **type guard** mais comum. Outros:
+
+```typescript
+// "in" - checa se existe uma propriedade
+interface Ave { voar: () => void; }
+interface Peixe { nadar: () => void; }
+type Animal = Ave | Peixe;
+
+function mover(a: Animal): void {
+  if ("voar" in a) {
+    a.voar();
+  } else {
+    a.nadar();
+  }
+}
+
+// instanceof - pra classes
+function processarErro(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  return "erro desconhecido";
+}
+```
+
+### Discriminated unions: o padrão elegante
+
+Quando cada opção da union tem um **campo discriminante** (mesmo
+nome, valores diferentes), o narrowing fica natural:
+
+```typescript
+type Resultado =
+  | { status: "sucesso"; dados: Usuario }
+  | { status: "erro"; mensagem: string };
+
+function mostrar(r: Resultado): string {
+  if (r.status === "sucesso") {
+    return r.dados.nome; // ✅ TS sabe que dados existe
+  }
+  return r.mensagem;     // ✅ TS sabe que mensagem existe
+}
+```
+
+O campo `status` é a **discriminante** - o TS usa ele pra afunilar
+o tipo inteiro. É o padrão recomendado pra modelar estados,
+resultados de operação, eventos, e qualquer "pode ser A ou B".
+
+Três conceitos pra fixar:
+
+- **Union** (`A | B`) - a variável pode ser qualquer um dos tipos
+  listados.
+- **Type guard** - expressão que **narrowa** o tipo dentro de um
+  bloco (`typeof`, `in`, `instanceof`, igualdade com discriminante).
+- **Discriminated union** - union onde cada opção tem um campo
+  com o mesmo nome e valores diferentes; o padrão pra modelar
+  estados.
+
+> Dica: se você se pegar fazendo `as Tipo` (type assertion) pra
+> "convencer" o TS, quase sempre tem um narrowing melhor. `as`
+> é o escape hatch - use só quando você **realmente** sabe mais
+> que o TS (ex: depois de validar input com Zod).
+
+No próximo nó, vamos ver **generics** - o recurso que permite
+criar funções e tipos reutilizáveis que funcionam com qualquer
+tipo, sem perder a checagem.

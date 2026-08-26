@@ -1,0 +1,116 @@
+---
+id: configurando-typescript
+title: "Configurando o TypeScript: tsconfig.json"
+resources:
+  - title: "TypeScript Handbook: tsconfig (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/tsconfig-reference.html
+    type: doc
+    lang: en
+    free: true
+  - title: "tsconfig.json - Schema completo (em inglês)"
+    url: https://json.schemastore.org/tsconfig
+    type: doc
+    lang: en
+    free: true
+---
+
+O TypeScript precisa de um arquivo de configuração na raiz do
+projeto: o `tsconfig.json`. Ele diz ao compilador **o que
+transformar, pra qual versão do JS emitir, e quão rigoroso ser
+na checagem**. Sem ele, o `tsc` usa defaults frouxos e você perde
+metade do valor do TS.
+
+### O mínimo que funciona
+
+```jsonc
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"]
+}
+```
+
+Vamos abrir cada opção:
+
+- **`target: "ES2022"`** - versão do JavaScript que o `tsc` vai
+  emitir. `ES2022` cobre `top-level await`, classes privadas,
+  `at()` em arrays. Pra projetos novos, use essa.
+- **`module: "NodeNext"`** - sistema de módulos. `NodeNext`
+  delega ao Node decidir entre ESM e CJS com base no `package.json`.
+  Pra projeto Node moderno, é a escolha certa.
+- **`outDir: "./dist"`** - pasta onde o JS compilado vai sair.
+- **`rootDir: "./src"`** - pasta onde está seu código TS.
+- **`strict: true`** - **ativa todas as checagens estritas** de
+  uma vez (noImplicitAny, strictNullChecks, etc.). **Não desligue.**
+- **`esModuleInterop: true`** - permite `import express from "express"`
+  em vez de `import * as express from "express"`. Quase sempre
+  precisa estar ligado.
+- **`skipLibCheck: true`** - não checa os tipos dentro de
+  `node_modules`. Sem isso, build fica lento e você pega erro
+  de tipos de bibliotecas de terceiros.
+
+### As três flags `strict` que mais pegam gente
+
+Com `strict: true`, essas três vêm ligadas:
+
+```typescript
+// strictNullChecks: null e undefined não são "any"
+function buscar(id: number): Usuario {
+  // ❌ Object is possibly 'null'
+  return usuarios.find((u) => u.id === id);
+}
+
+function buscar(id: number): Usuario | null {
+  return usuarios.find((u) => u.id === id) ?? null; // ✅ explícito
+}
+
+// noImplicitAny: parâmetro sem tipo é erro
+function log(msg) {  // ❌ Parameter 'msg' implicitly has an 'any' type
+  console.log(msg);
+}
+
+// noUnusedLocals: variável não usada é erro
+const naoUsado = 42; // ❌ 'naoUsado' is declared but never used
+```
+
+Essas três flags **incomodam no começo** e **salvam sua vida
+depois**. Vale a pena.
+
+### `include` e `exclude`
+
+```jsonc
+{
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}
+```
+
+Sem `include` explícito, o TS pega tudo na raiz (incluindo
+`node_modules`, com a lentidão que isso causa). Sempre liste o
+que importa.
+
+Três conceitos pra fixar:
+
+- **`tsconfig.json`** é obrigatório em qualquer projeto TS -
+  sem ele, defaults frouxos.
+- **`strict: true`** ativa o conjunto rigoroso de checagens; é
+  o que faz o TS valer a pena.
+- **`include` e `exclude`** controlam **o que o `tsc` lê**;
+  sempre liste explicitamente pra evitar lentidão.
+
+> Dica: a opção `strict` tem 8 sub-opções individuais
+  (`strictNullChecks`, `noImplicitAny`, `strictFunctionTypes`,
+  etc.). Você **pode** ligar uma a uma, mas na prática é mais
+  simples (e seguro) ligar `strict: true` e seguir.
+
+No próximo nó, vamos usar TS de verdade num projeto Node:
+`tsx` pra desenvolvimento, `tsc` pra build, e ESM vs CJS.

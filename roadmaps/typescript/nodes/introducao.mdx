@@ -1,0 +1,76 @@
+---
+id: introducao
+title: "O que é TypeScript e Por Que Ele Existe"
+resources:
+  - title: "TypeScript - Documentação oficial (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript em 5 minutos (oficial, em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já escreve JavaScript e provavelmente já levou um `undefined is
+not a function` em produção. O **TypeScript** é a resposta da Microsoft
+pra esse problema: é um **superconjunto de JavaScript** que adiciona
+**tipos estáticos opcionais** ao código, sem mudar a sintaxe básica.
+
+Um arquivo TypeScript se parece muito com JavaScript, só que com
+anotações de tipo:
+
+```typescript
+// saudacao.ts
+function saudacao(nome: string, hora: number): string {
+  return `Olá, ${nome}! São ${hora}h.`;
+}
+
+saudacao("Ana", 14); // ✅ ok
+saudacao("Ana", "14h"); // ❌ erro: string não é number
+```
+
+Em JavaScript puro, esse erro só apareceria **quando a função
+rodasse** - em produção, com usuário esperando. Em TypeScript, o
+editor pinta de vermelho **enquanto você digita**.
+
+### Como o TypeScript funciona na prática
+
+O navegador (e o Node) **não entendem** TypeScript. O fluxo é:
+
+```text
+seu código (.ts)  →  tsc (compilador)  →  JavaScript puro (.js)  →  roda
+```
+
+O `tsc` lê seus arquivos, valida os tipos, e gera JavaScript
+equivalente que pode ser executado em qualquer runtime. É o mesmo
+modelo do Babel com o JSX do React, se você já viu.
+
+### O que o TypeScript **não é**
+
+- **Não é uma linguagem nova.** Todo JS válido é TS válido. Você
+  pode renomear `.js` pra `.ts` e o código continua rodando.
+- **Não roda no navegador.** O resultado final é sempre JS.
+- **Não substitui testes.** Tipos pegam **algumas** categorias de
+  erro, não todas. Lógica de negócio, integração e edge cases
+  continuam precisando de teste.
+
+Três conceitos pra fixar:
+
+- **TypeScript** - superconjunto de JS que adiciona tipagem
+  estática opcional.
+- **Compilador (`tsc`)** - lê seus `.ts`, valida tipos e gera
+  `.js` equivalente.
+- **Erro de tipo em tempo de compilação** - o `tsc` recusa
+  rodar build se algum tipo bater errado; o erro aparece
+  no editor antes de você rodar o código.
+
+> Dica: comece **sem renomear tudo pra `.ts`** de uma vez. Em
+> projeto novo, TS desde o início é trivial. Em projeto legado,
+> migre arquivo por arquivo - o `tsc` aceita `.js` e `.ts`
+> no mesmo projeto (com `allowJs: true` no `tsconfig.json`).
+
+No próximo nó, vamos ver os **tipos primitivos**: `string`, `number`,
+`boolean` e os especiais `any`, `unknown`, `never`, `void`.

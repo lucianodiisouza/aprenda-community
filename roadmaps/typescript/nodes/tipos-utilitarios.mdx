@@ -1,0 +1,118 @@
+---
+id: tipos-utilitarios
+title: "Tipos Utilitários: Partial, Pick, Omit e Outros"
+resources:
+  - title: "TypeScript Handbook: Utility Types (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/utility-types.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já tem um tipo bem definido (`Usuario`, `Produto`, `Pedido`).
+Aí aparece a necessidade de "um `Usuario` mas sem o `id`" ou
+"todos os campos opcionais pra um update parcial". Você **poderia**
+reescrever o tipo, mas é trabalho duplicado e propenso a drift. Os
+**tipos utilitários** do TS transformam um tipo existente em outro,
+sem reescrever.
+
+### `Partial<T>` - todos os campos opcionais
+
+Útil pra "atualizar só alguns campos":
+
+```typescript
+type Usuario = { id: number; nome: string; email: string };
+
+type AtualizacaoUsuario = Partial<Usuario>;
+// { id?: number; nome?: string; email?: string }
+
+function atualizar(id: number, dados: AtualizacaoUsuario): void {
+  // só atualiza o que veio
+}
+```
+
+### `Pick<T, K>` - só alguns campos
+
+Útil pra "DTO de listagem que não expõe a senha":
+
+```typescript
+type UsuarioPublico = Pick<Usuario, "id" | "nome">;
+// { id: number; nome: string }
+```
+
+### `Omit<T, K>` - todos os campos menos alguns
+
+O oposto de `Pick`:
+
+```typescript
+type UsuarioSemId = Omit<Usuario, "id">;
+// { nome: string; email: string }
+
+type CriarUsuario = Omit<Usuario, "id">; // payload de criação
+```
+
+### `Required<T>` - todos obrigatórios
+
+O oposto de `Partial`. Força campos opcionais a serem obrigatórios:
+
+```typescript
+type Config = { porta?: number; host?: string };
+type ConfigCompleta = Required<Config>;
+// { porta: number; host: string }
+```
+
+### `Readonly<T>` - imutável
+
+Impede reatribuição de campos (erro de compilação):
+
+```typescript
+type ConfigApp = Readonly<{ porta: number; host: string }>;
+
+const cfg: ConfigApp = { porta: 3000, host: "localhost" };
+// cfg.porta = 4000; // ❌ Cannot assign to 'porta' because it is a read-only property
+```
+
+### `Record<K, V>` - dicionário tipado
+
+Um objeto cujas chaves são de um tipo e os valores de outro:
+
+```typescript
+type CacheUsuarios = Record<string, Usuario>;
+// { [chave: string]: Usuario }
+
+const cache: CacheUsuarios = {};
+cache["user-1"] = ana;
+```
+
+### `ReturnType<T>` e `Parameters<T>` - extrair de uma função
+
+```typescript
+function buscar(id: number): Promise<Usuario> { /* ... */ }
+
+type Busca = ReturnType<typeof buscar>;
+// Promise<Usuario>
+
+type ParamsBusca = Parameters<typeof buscar>;
+// [id: number]
+```
+
+Útil quando a função existe e você quer derivar tipos dela em vez
+de duplicar.
+
+Três conceitos pra fixar:
+
+- **`Partial`**, **`Pick`**, **`Omit`** - os três mais usados
+  no dia a dia: vira tudo opcional, escolhe alguns campos,
+  remove alguns campos.
+- **`Record<K, V>`** - dicionário tipado; substitui o `{ [k: string]: T }`.
+- **`ReturnType` / `Parameters`** - derivam tipo de função existente
+  sem reescrever.
+
+> Dica: biblioteca como Zod e Prisma **geram tipos a partir de
+> outra fonte** (schema, banco). Aí você usa utilitários pra
+> derivar DTOs a partir do tipo gerado. É o caminho mais robusto
+> e menos redundante.
+
+No próximo nó, vamos configurar o TypeScript de verdade: o
+`tsconfig.json` e as opções que mais importam (`strict`, `target`,
+`module`).

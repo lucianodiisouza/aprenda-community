@@ -1,0 +1,109 @@
+---
+id: objetos-e-arrays
+title: "Objetos e Arrays Tipados: type vs interface"
+resources:
+  - title: "TypeScript Handbook: Object Types (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/objects.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Programar backend é modelar dados: usuário, produto, pedido, sessão.
+Em TypeScript, você **descreve o formato desses dados** com `type`
+ou `interface`, e o editor te avisa se você tentar acessar um campo
+que não existe ou passar o tipo errado num lugar.
+
+### Duas formas de descrever um objeto
+
+```typescript
+// Usando `type`
+type Usuario = {
+  id: number;
+  nome: string;
+  email: string;
+  ativo: boolean;
+};
+
+// Usando `interface`
+interface Produto {
+  id: number;
+  nome: string;
+  preco: number;
+  emEstoque: boolean;
+}
+```
+
+Em uso, as duas funcionam igual:
+
+```typescript
+function enviarBoasVindas(u: Usuario): void {
+  console.log(`Olá, ${u.nome}!`);
+}
+
+const ana: Usuario = { id: 1, nome: "Ana", email: "ana@ex.com", ativo: true };
+enviarBoasVindas(ana); // ✅
+// enviarBoasVindas({ id: 1 }); // ❌ faltam nome, email, ativo
+```
+
+### `type` vs `interface` - quando usar cada
+
+A diferença prática é pequena, mas existe:
+
+```typescript
+// `interface` é "aberta" - você pode estender depois
+interface Usuario {
+  criadoEm?: Date; // opcional, pode ou não estar presente
+}
+
+interface Usuario {
+  // ✅ pode reabrir e adicionar mais campos
+  atualizadoEm?: Date;
+}
+
+// `type` não é reabrível
+type Produto = {
+  sku: string;
+};
+
+// type Produto = { ... } // ❌ erro: duplicata
+```
+
+Regra prática: **`interface` pra objetos e classes**, **`type` pra
+tudo o mais** (unions, interseções, primitivos, tuplas). Em
+código de aplicação, a diferença raramente importa - use o que
+preferir e seja consistente.
+
+### Arrays e tuplas
+
+```typescript
+// Array de um tipo
+type ListaDeUsuarios = Usuario[];
+const usuarios: Usuario[] = [ana];
+
+// Tupla - array com tamanho e tipos fixos por posição
+type Coordenada = [number, number]; // [latitude, longitude]
+const sp: Coordenada = [-23.55, -46.63];
+
+// Readonly - imutável em tempo de compilação
+type Config = Readonly<{
+  porta: number;
+  host: string;
+}>;
+```
+
+Três conceitos pra fixar:
+
+- **`type`** e **`interface`** descrevem o formato de um objeto;
+  `interface` é reabrível, `type` não.
+- **Campo opcional** com `?` (ex: `criadoEm?: Date`) - pode ou
+  não estar presente no objeto.
+- **Tupla** é um array com tamanho e tipos fixos por posição;
+  útil pra coordenadas, retornos múltiplos, etc.
+
+> Dica: o símbolo `?` no campo (ex: `email?: string`) significa
+> "pode ser string ou `undefined`". Acessar `u.email.toUpperCase()`
+> sem checar dá erro - o TS te obriga a tratar.
+
+No próximo nó, vamos tipar **funções** - parâmetros, retorno e
+os casos especiais (opcional, rest, overloads).

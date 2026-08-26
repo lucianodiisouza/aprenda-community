@@ -1,0 +1,151 @@
+---
+id: typescript-com-express
+title: "TypeScript com Express: Tipando req, res e Middlewares"
+resources:
+  - title: "Express + TypeScript - Guia oficial (em inglês)"
+    url: https://expressjs.com/en/resources/typescript.html
+    type: doc
+    lang: en
+    free: true
+  - title: "DefinitelyTyped: @types/express (em inglês)"
+    url: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/express
+    type: doc
+    lang: en
+    free: true
+---
+
+Express foi escrito em JavaScript, então não traz tipos próprios.
+A comunidade mantém os tipos em [`@types/express`](https://www.npmjs.com/package/@types/express)
+(DefinitelyTyped). Instale junto:
+
+```bash
+npm install express
+npm install -D @types/express @types/node typescript tsx
+```
+
+O `@types/express` adiciona as assinaturas que o editor usa pra
+te ajudar a chamar `req`, `res` e middlewares.
+
+### Tipar `req` e `res` (o básico)
+
+Por padrão, o TS infere `req` e `res` do Express - você não
+precisa anotar. Só recebe o autocomplete e a checagem:
+
+```typescript
+import express, { Request, Response } from "express";
+
+const app = express();
+
+app.get("/saudacao", (req: Request, res: Response) => {
+  // req.query, req.params, req.body, req.headers - tudo tipado
+  res.json({ ok: true });
+});
+```
+
+Você **pode** omitir a anotação porque o Express já infere:
+
+```typescript
+app.get("/saudacao", (req, res) => {
+  // mesmo assim, o TS sabe o que é req e res
+  res.json({ ok: true });
+});
+```
+
+### Estender `Request` com dados customizados
+
+O caso onde TS **não infere sozinho**: quando você coloca dados no
+`req` via middleware (ex: usuário autenticado, request id).
+Aí você **estende** o tipo `Request`:
+
+```typescript
+// types.ts
+declare global {
+  namespace Express {
+    interface Request {
+      usuarioId?: number;
+      requestId: string;
+    }
+  }
+}
+
+export {};
+```
+
+Agora, em qualquer rota:
+
+```typescript
+app.get("/perfil", (req, res) => {
+  // req.usuarioId é number | undefined
+  // req.requestId é string
+  if (req.usuarioId) {
+    res.json({ id: req.usuarioId });
+  } else {
+    res.status(401).json({ erro: "não autenticado" });
+  }
+});
+```
+
+### Tipar middlewares
+
+```typescript
+import { RequestHandler } from "express";
+
+const authMiddleware: RequestHandler = (req, res, next) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) {
+    return res.status(401).json({ erro: "token ausente" });
+  }
+  // valida token, seta req.usuarioId
+  req.usuarioId = 42;
+  next();
+};
+
+app.get("/perfil", authMiddleware, (req, res) => {
+  // aqui req.usuarioId é number (não undefined) por causa do middleware
+  res.json({ id: req.usuarioId! });
+});
+```
+
+O `!` (non-null assertion) é o "eu sei mais que o TS" - útil aqui
+porque o middleware garante que `usuarioId` foi setado. Use com
+cautela.
+
+### Tipar erros no middleware de erro
+
+```typescript
+import { ErrorRequestHandler } from "express";
+
+const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
+  // err é unknown por padrão - faça narrowing
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ erro: err.message });
+  } else {
+    console.error(err);
+    res.status(500).json({ erro: "erro interno" });
+  }
+};
+
+app.use(errorMiddleware);
+```
+
+O `ErrorRequestHandler` é o tipo de middleware com 4 parâmetros
+(reconhecido pelo Express como tratador de erro).
+
+Três conceitos pra fixar:
+
+- **`@types/express`** adiciona as tipagens do Express - é
+  instalação obrigatória em projeto TS.
+- **`declare global` + `Express.Request`** estende o tipo de
+  `req` pra incluir dados que seu middleware adicionou.
+- **`RequestHandler`** e **`ErrorRequestHandler`** tipam
+  middlewares - o segundo é especificamente pra tratadores de
+  erro (4 parâmetros).
+
+> Dica: use `Request<Params, ResBody, ReqBody, Query>` quando
+> precisar tipar params, body ou query de uma rota específica.
+> É mais explícito que estender o tipo global, e dá pra reusar
+> o tipo no client.
+
+No próximo nó, vamos usar TypeScript **com o ORM** (Prisma) e
+**com o validador** (Zod) - o ponto onde a tipagem vira automática
+e o editor começa a te salvar de verdade.

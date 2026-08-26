@@ -1,0 +1,98 @@
+---
+id: tipos-primitivos
+title: "Tipos Primitivos: string, number, boolean e Cia"
+resources:
+  - title: "TypeScript Handbook: Everyday Types (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/everyday-types.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Os tipos primitivos do TypeScript são a base de tudo. Se você vem do
+JavaScript, conhece a maioria pelo valor: `string`, `number`, `boolean`.
+O TS adiciona anotações opcionais pra você dizer "essa variável é
+sempre `string`, em tempo de compilação".
+
+```typescript
+let nome: string = "Ana";
+let idade: number = 28;
+let ativo: boolean = true;
+
+// TypeScript pega o erro aqui:
+nome = 42;
+//  ~~~~ Type 'number' is not assignable to type 'string'
+```
+
+### Os quatro tipos "especiais"
+
+São os que mais confundem no começo - cada um tem um papel
+específico:
+
+```typescript
+// any: desliga o type checking. Evite.
+let qualquerCoisa: any = "texto";
+qualquerCoisa.fazAlgo(); // TS não reclama, mesmo se fazAlgo não existe
+
+// unknown: a "caixa-preta segura" - você precisa checar antes de usar.
+let entrada: unknown = JSON.parse(texto);
+if (typeof entrada === "string") {
+  console.log(entrada.toUpperCase()); // aqui TS sabe que é string
+}
+
+// never: o tipo de funções que nunca retornam (sempre lançam erro ou loopam).
+function erroFatal(mensagem: string): never {
+  throw new Error(mensagem);
+}
+
+// void: o tipo de funções que não devolvem nada.
+function log(msg: string): void {
+  console.log(msg);
+}
+```
+
+A diferença entre `any` e `unknown`: com `any`, o TS desiste de
+checar; com `unknown`, o TS **te obriga** a verificar o tipo antes
+de usar. Use `unknown` quando você recebe algo de fora (input do
+usuário, JSON parseado) e não tem certeza do formato.
+
+### Inferência: o TS adivinha o tipo pra você
+
+Você não precisa anotar **toda** variável. O TS infere o tipo do
+valor inicial:
+
+```typescript
+let cidade = "São Paulo"; // tipo inferido: string
+// cidade = 42;             // ❌ erro, mesmo sem anotação explícita
+
+const PI = 3.14;           // tipo inferido: 3.14 (literal type), não number
+```
+
+A regra é simples: **anote quando o tipo não é óbvio pelo valor
+inicial** (parâmetros de função, variáveis sem valor inicial,
+retornos complexos). Deixe o TS inferir o resto.
+
+Três conceitos pra fixar:
+
+- **`any` desliga a checagem**; **`unknown` exige verificação**
+  antes do uso. Use `unknown` por padrão.
+- **`never`** marca funções que nunca retornam normalmente
+  (sempre lançam ou sempre loopam).
+- **Inferência** funciona na maioria dos casos - anote só
+  onde o tipo não está claro pelo valor.
+
+> Dica: se você sentir vontade de escrever `: any`, escreva
+> `: unknown` em vez disso. O TS vai te obrigar a tratar o
+> valor de forma segura.
+
+<Quiz
+  question="Qual a diferença prática entre `any` e `unknown`?"
+  options={[
+    { text: "`any` desliga a checagem de tipos; `unknown` exige verificação antes do uso", correct: true },
+    { text: "São a mesma coisa, dois nomes", correct: false, explanation: "`unknown` é o `any` seguro - permite qualquer valor mas força checagem." },
+    { text: "`unknown` é só pra Promise, `any` pra resto", correct: false, explanation: "Não tem nada a ver com Promise. `unknown` vale pra qualquer valor de entrada." }
+  ]}
+/>
+
+No próximo nó, vamos tipar **objetos e arrays** - onde os tipos
+começam a modelar coisas do mundo real.
