@@ -4,12 +4,54 @@ Todas as mudanças notáveis deste projeto são documentadas aqui. O formato
 segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o
 projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-
 ## [Não liberado]
+
+## [1.18.0] - 2026-08-25
+
+### Adicionado
+
+- 🧮 **Trilha Estruturas de Dados** (`roadmaps/estruturas-de-dados`, 14 nós):
+  aprofundamento em estruturas de dados, complemento a
+  `fundamentos-de-cs` (que cobre ED em 1 nó panorâmico) e a
+  `complexidade-de-algoritmos` (que cobre Big O). Público: dev
+  júnior/pleno querendo nivelar pra entrevistas técnicas, dev
+  backend/sistemas curioso pra entender o que está por baixo das
+  estruturas da sua linguagem, e universitário complementando a
+  matéria de ED em PT-BR. Estruturada com **três camadas por nó**
+  (🟢 Essencial / 🟡 Aprofundamento / 🔴 Pra quem quer ir além) e
+  um **nó 0 de auto-diagnóstico** (10 perguntas) que devolve perfil
+  e marca quais camadas focar. Os 14 nós: `auto-diagnostico` (quiz
+  de 10 perguntas pra perfilar o aluno), `arrays-listas` (sequências
+  e memória - array contíguo, linked list, cache locality, 2
+  diagramas Mermaid), `pilhas-filas` (LIFO/FIFO, call stack, ring
+  buffer, ✅ checkpoint de parênteses balanceados), `hash-tables`
+  (hash, colisão por chaining vs open addressing, load factor,
+  redimensionamento, Bloom filter, ✅ checkpoint de detecção de
+  duplicatas com `Set`), `recursao-pratica` (recursão com árvores e
+  grafos, divide-and-conquer, memoization, Master theorem como
+  leitura), `arvores-anatomia` (terminologia - raiz/folha/altura/
+  profundidade/subárvore - e 3 travessias: pré/em/pós-ordem + BFS),
+  `bst` (inserção, busca, remoção, por que BST pura vira `O(n)`,
+  ✅ checkpoint de busca em BST), `arvores-balanceadas` (AVL vs
+  Red-Black, rotações, B-tree de banco como menção), `heaps` (min/
+  max heap, `heapq` em Python, `heapify` em `O(n)`, heapsort,
+  Fibonacci heap como leitura), `grafos-representacao` (lista de
+  adjacência vs matriz, direcionado/ponderado, DAG, grafos
+  implícitos), `grafos-traversia` (BFS com reconstrução de
+  caminho, DFS recursivo e iterativo, ordenação topológica,
+  Kosaraju/Tarjan como leitura), `grafos-algoritmos` (Dijkstra,
+  Bellman-Ford, Floyd-Warshall, Prim/Kruskal MST), `tries`
+  (autocomplete, Aho-Corasick, radix tree, suffix tree) e
+  `projeto-final` (medir de verdade, ✅ checkpoint de anagramas).
+  **Interatividade: 13 quizzes formativos, 11 diagramas Mermaid,
+  4 checkpoints validados** em JS (1 a cada ~3-4 nós - bate a meta
+  E16-2 pra trilhas JS-executáveis). Decisões editoriais em
+  `roadmaps/estruturas-de-dados/meta/editorial-decisions.md`.
 
 ## [1.17.0] - 2026-08-25
 
 ### Adicionado
+
 - 🎓 **Trilha Fundamentos de Ciência da Computação** (`roadmaps/fundamentos-de-cs`, 10
   nós): o "mínimo viável de CS" que serve como base comum pra qualquer trilha
   específica. Estruturada pra servir quatro públicos simultaneamente
@@ -40,6 +82,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.16.1] - 2026-08-25
 
 ### Alterado
+
 - ✏️ **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
   descrição reescrita pra refletir as 5 mudanças da v1.16.0 (TS, NoSQL, 3
   novos nós no backend). Versão mais narrativa, menciona os 5 projetos
@@ -49,6 +92,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.16.0] - 2026-08-25
 
 ### Adicionado
+
 - 🔷 **Trilha TypeScript** (`roadmaps/typescript`, 12 nós): do "o que é TypeScript
   e por que ele existe" até a integração completa com Express e ORM. Cobre
   tipos primitivos, objetos e arrays, funções tipadas, unions e narrowing,
@@ -75,6 +119,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `roadmaps/backend/meta/editorial-decisions.md` (seção v1.1.0).
 
 ### Alterado
+
 - 🎓 **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
   currículo expandido de 14 pra 16 módulos. Entram as trilhas **TypeScript**
   (logo depois de `programacao-do-zero`, quando a mente sobre JS ainda está
@@ -86,6 +131,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.15.0] - 2026-08-25
 
 ### Adicionado
+
 - 🆕 **Campo `published`** (data ISO) no front-matter — quando recente, o site
   mostra um selo "novo" no card/header. Aplicado aos três projetos backend-native
   (`modelagem-de-banco`, `api-rest-com-autenticacao`, `servico-com-docker`).
@@ -93,6 +139,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.14.0] - 2026-08-25
 
 ### Adicionado
+
 - 🤖 **Trilha Prompt Engineering** (`roadmaps/prompt-engineering`, 24 nós): do
   zero absoluto (o que é um LLM) até a construção de produtos com IA. Três
   fases lineares — **Básico** (8 nós, "como falar com a máquina sem ficar
@@ -109,6 +156,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.13.0] - 2026-08-25
 
 ### Adicionado
+
 - 🧩 **Projetos backend-native** (`projects/`): três novos briefs pra dar
   lastro prático à trilha de backend — **Modelagem de um Banco de Dados**
   (`modelagem-de-banco`, SQL puro num mini e-commerce), **API REST com
@@ -117,6 +165,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   Dockerfile + Compose subindo app + banco).
 
 ### Alterado
+
 - 🎓 **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
   currículo expandido de 5 pra 14 módulos. Entram as trilhas **Terminal para
   Devs**, **Git**, **Docker Fundamentos** e **Docker Compose e Workflows**, e
@@ -127,6 +176,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.12.0] - 2026-08-25
 
 ### Adicionado
+
 - 🔎 **Trilha SEO, AEO e GEO** (`roadmaps/seo-aeo-geo`, 13 nós): a fatia
   técnica de SEO (on-page, técnico, robots.txt, sitemap, Core Web Vitals,
   E-E-A-T, dados estruturados, link building) seguida dos dois módulos mais
@@ -140,6 +190,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.11.0] - 2026-08-25
 
 ### Adicionado
+
 - 💻 **Trilha Terminal para Devs** (`roadmaps/terminal-para-devs`, 15 nós):
   do básico do shell (navegação, arquivos, permissões) a pipes/redirecionamento,
   processamento de texto, processos, variáveis de ambiente, rede, SSH e um
@@ -148,6 +199,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.10.0] - 2026-08-25
 
 ### Adicionado
+
 - 🎓 **Bootcamps** (`bootcamps/<slug>/bootcamp.json`): novo tipo de conteúdo que
   agrupa trilhas + projetos numa jornada com resultado. Primeiro bootcamp:
   **Desenvolvedor Backend** (programação → SQL → backend → algoritmos → projeto).
@@ -162,6 +214,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.9.0] - 2026-08-25
 
 ### Adicionado
+
 - 🐳 **Trilha de Docker Fundamentos** (`roadmaps/docker-fundamentos`,
   10 nós, intermediário): containers do zero ao empacotar uma
   aplicação. Cobre ciclo de vida (`run`/`ps`/`logs`/`exec`/`stop`/`rm`),
@@ -196,6 +249,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.8.0] - 2026-08-25
 
 ### Adicionado
+
 - 🆕 Trilha **SQL e Banco de Dados** (14 nós, iniciante): SQL puro do zero,
   sem depender de nenhum ORM — modelagem de entidades, normalização
   (1FN/2FN/3FN), tipos de dados, `CREATE TABLE` e restrições,
@@ -212,6 +266,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.7.0] - 2026-08-24
 
 ### Adicionado
+
 - 🆕 Trilha **Backend** (12 nós, intermediário): do HTTP e Node.js até uma
   API completa em Express, com banco de dados, autenticação, ORM,
   validação, testes e projeto final. Registro adicionado retroativamente
@@ -220,6 +275,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.6.0] - 2026-08-24
 
 ### Adicionado
+
 - 🏷️ **Campo `skills` nas trilhas** (`roadmaps/*/roadmap.json`): array de
   tópicos/techs que cada trilha cobre. Alimenta a busca e os filtros por
   tópico no índice do site. Campo opcional e aditivo — não altera nós nem
@@ -228,6 +284,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.5.0] - 2026-08-24
 
 ### Mudado
+
 - 🔀 **Split da trilha CSS** (v1.4.0, 36 nós) em **4 trilhas menores**:
   - **`css-fundamentos`** (15 nós): introdução, incluindo CSS, seletores
     básicos, combinadores, cores, unidades, tipografia, box model,
@@ -255,6 +312,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `roadmaps/{css-fundamentos,css-layout,css-animacoes,css-moderno}/meta/editorial-decisions.md`.
 
 ### Removido
+
 - 🗑️ Trilha única `css/` (v1.4.0, 36 nós) — todo o conteúdo foi
   migrado para as 4 trilhas acima com preservação, consolidação
   (cascata+especificidade+herança viraram 1 nó) e aprofundamento
@@ -263,6 +321,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.4.0] - 2026-08-24
 
 ### Adicionado
+
 - 🆕 Trilha **CSS** completa (36 nós, do zero absoluto até o avançado),
   estruturada em 3 tópicos macro + 1 milestone de projeto final:
   - **CSS do Zero** (10 subtopics): introdução, inclusão, seletores,
@@ -295,6 +354,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   badge de projetos.
 
 ### Mudado
+
 - 🔄 Trilha **Complexidade de Algoritmos** - substituição completa da
   estrutura de nós. A versão anterior (`introducao` → `quadratico` →
   `notacao-big-o` → ... → `analise-amortizada`, 13 nós) foi
@@ -312,6 +372,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 ## [1.3.0] - 2026-08-24
 
 ### Adicionado
+
 - 🆕 Trilha **Git** completa (23 nós, do controle de versão do zero ao
   avançado), cobrindo básico, intermediário e avançado com prática em cada
   nível e um projeto final de contribuição open source:
@@ -334,12 +395,14 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   página inicial da trilha no app).
 
 ### Mudado
+
 - 📘 `README.md` - lista a nova trilha Git e atualiza o badge de contagem
   de trilhas (3 → 4).
 
 ## [1.2.0] - 2026-08-23
 
 ### Adicionado
+
 - 🆕 Trilha **Programação do Zero** migrada do monorepo `primo-academy`
   (13 nós, do pensamento computacional ao primeiro projeto).
 - 🆕 Trilha **Frontend** migrada do monorepo (12 nós, da web até React).
@@ -353,11 +416,13 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   - Exit 0 em ~1s se nada mudou
 
 ### Mudado
+
 - 🔧 `scripts/lint.mjs` - agora entende que **fechadores** de bloco
   (` ``` ` puro) são OK em markdown; só avisa sobre **aberturas**
   sem linguagem.
 
 ### Compatibilidade
+
 - ⚠️ **Breaking conceitual** (não técnico): conteúdo não usa mais
   `<PyPlayground>` / `<Playground>`. Substituído por blocos de código
   puros. O app, se quiser playgrounds interativos, deve detectá-los
@@ -365,6 +430,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   no build. Documentado no `scripts/sync-consumer.example.sh`.
 
 ### Validação
+
 ```
 validate.mjs   → 3 trilhas, 43 nós, 0 erros
 lint.mjs       → 0 erros, 0 avisos
@@ -374,6 +440,7 @@ check-links    → 80 ok, 0 com problema
 ## [1.1.0] - 2026-08-23
 
 ### Adicionado
+
 - ➕ 4 nós novos na trilha HTML (14 → 18 nós):
   - `i18n-basico` (após `textos`) - `lang` em elementos, `<bdi>`, `<bdo>`,
     `<ruby>` para conteúdo multilíngue.
@@ -388,6 +455,7 @@ check-links    → 80 ok, 0 com problema
     modernas.
 
 ### Mudanças editoriais
+
 - Trilha permanece no escopo **iniciante**, mas cobre agora
   aproximadamente **90%+ do HTML que devs usam no dia-a-dia**.
 - `template-clone` é introdutório (conceito simples, fica na trilha),
@@ -397,6 +465,7 @@ check-links    → 80 ok, 0 com problema
 ## [1.0.0] - 2026-08-23
 
 ### Adicionado
+
 - 🆕 Trilha **HTML** completa (14 nós, do zero absoluto até projeto final).
   - `introducao` - O que é HTML, como a web funciona.
   - `estrutura-basica` - DOCTYPE, html, head, body, viewport, title.
@@ -440,6 +509,7 @@ check-links    → 80 ok, 0 com problema
     (sem dependências externas).
 
 ### Créditos
+
 - Trilha escrita por **Luciano de Souza**
   ([@lucianodiisouza](https://github.com/lucianodiisouza)).
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
