@@ -1,0 +1,117 @@
+---
+id: memoria-stack-heap
+title: "Memória: Stack, Heap e Ciclo de Vida"
+resources:
+  - title: "Stack vs Heap (Wikipedia EN)"
+    url: https://en.wikipedia.org/wiki/Memory_management
+    type: doc
+    lang: en
+    free: true
+---
+
+Toda vez que seu programa roda, a memória é dividida em regiões.
+As duas mais importantes são **stack** e **heap** - e entender a
+diferença explica bugs de "variável que sumiu", "objeto mutado por
+engano", e "por que meu programa está usando 2GB de RAM".
+
+## O essencial 🟢
+
+**Stack** é a região de memória que segue o princípio LIFO
+(Last In, First Out) - o último a entrar é o primeiro a sair.
+Pense numa pilha de pratos: você põe um em cima, tira o de cima.
+
+O stack é usado pra:
+
+- **Variáveis locais** de funções (em C, Rust, e similares).
+- **Endereço de retorno** - pra CPU saber pra onde voltar depois
+  de uma chamada de função.
+- **Argumentos** passados pra função.
+
+A alocação é automática: quando uma função é chamada, o stack
+"cresce" pra acomodar as variáveis dela. Quando a função retorna,
+o stack "encolhe". Tudo na velocidade de mover um ponteiro - é
+muito rápido. O lado ruim é que a vida dos dados é **a duração da
+função**: quando ela retorna, o espaço é liberado.
+
+**Heap** é a região de memória mais flexível (e mais perigosa).
+É onde vivem objetos cujo tempo de vida **não está atrelado a uma
+função** - eles sobrevivem enquanto alguém tiver uma referência.
+Alocar no heap é mais caro (o sistema precisa achar espaço livre),
+e **liberar** depende do modelo de gerenciamento:
+
+- **Manual** (C, C++): você chama `malloc`/`free` (ou `new`/`delete`).
+  Esquecer o `free` = **memory leak**. Chamar `free` duas vezes =
+  bug. Chamar `free` cedo demais = ponteiro pendente, o bug mais
+  traiçoeiro que existe.
+- **Garbage Collector** (Java, JavaScript, Python, Go, C#): o
+  runtime rastreia referências e libera objetos que ninguém mais
+  usa. Mais seguro, mas tem custo (pausas, uso extra de memória,
+  comportamento não-determinístico).
+
+```javascript
+// Exemplo: stack vs heap
+function saudacao(nome) {
+  // `nome` (a referência) está no stack.
+  // A string "Maria" está no heap.
+  // Quando a função retorna, `nome` some do stack,
+  // mas a string no heap só será liberada quando
+  // ninguém mais referenciar.
+  return `Olá, ${nome}!`
+}
+```
+
+> Dica: bug clássico - "minha função retornou um objeto, mas
+> quando uso depois, ele está vazio". Em linguagens com GC, quase
+> sempre é alguém mantendo uma referência que não devia. Em C/C++,
+> é alguém liberando cedo demais ou retornando ponteiro pra stack
+> local.
+
+## Aprofundamento 🟡
+
+**Stack overflow** é o erro que aparece quando o stack estoura -
+tipicamente por recursão infinita ou muito profunda. Como o stack
+tem tamanho fixo (geralmente alguns MB), uma função que se chama
+milhares de vezes sem retornar estoura. É por isso que iteração é
+preferível a recursão profunda em código de produção.
+
+**Escape analysis** é uma otimização que alguns runtimes (Go, Java
+moderno) fazem: se o compilador/JIT consegue provar que um objeto
+alocado no heap **não escapa** da função (nenhuma referência vaza
+pra fora), ele realoca pro stack. É por isso que código idiomático
+em Go tende a alocar no stack e é mais rápido que o equivalente
+em Java.
+
+**Gerenciamento de memória moderno** tem mais truques:
+
+- **Reference counting** (Python): cada objeto conta quantas
+  referências tem. Quando chega a zero, libera imediatamente.
+  Rápido, mas não lida com **referências circulares** (A aponta
+  pra B, B aponta pra A) sozinho.
+- **Mark-and-sweep** (muitos GCs): periodicamente, percorre todos
+  os objetos a partir das "raízes" (variáveis no stack, globals)
+  e marca o que é alcançável. O que sobrou está órfão e é
+  coletado. Lida com ciclos, mas tem pausas.
+- **Generational GC**: objetos novos morrem rápido (hipótese
+  geracional). Divide o heap em "jovem" e "velho", coleta o
+  jovem com mais frequência. É a base dos GCs de Java, V8 (JS), e
+  Python moderno.
+
+## Pra quem quer ir além 🔴
+
+**Arenas e pool de memória** são técnicas onde você aloca um grande
+bloco de uma vez e subdivide manualmente. É comum em game engines,
+bancos de dados, e qualquer sistema que precise de **alocação
+determinística e sem pausas de GC**. Em Rust, o crate `bumpalo`
+implementa uma arena trivial. O preço é flexibilidade: você precisa
+saber de antemão quanto vai precisar, ou aceitar que tudo na arena
+morre junto quando ela é liberada.
+
+**Manual memory management sem dor** - o modelo de **ownership** do
+Rust resolve o problema de C/C++ (use-after-free, double-free, data
+races) sem garbage collector, através de regras estáticas
+verificadas em tempo de compilação. Vale conhecer mesmo se você
+não usa Rust.
+
+No próximo nó, vamos acompanhar o caminho que o código faz do seu
+editor até virar execução: **compilação, interpretação, bytecode,
+JIT, AOT**.

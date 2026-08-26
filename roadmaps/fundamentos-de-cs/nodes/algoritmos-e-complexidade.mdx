@@ -1,0 +1,109 @@
+---
+id: algoritmos-e-complexidade
+title: "Algoritmos e Complexidade"
+resources:
+  - title: "Complexidade de Algoritmos (trilha específica do community)"
+    url: https://github.com/lucianodiisouza/aprenda-community/tree/main/roadmaps/complexidade-de-algoritmos
+    type: doc
+    lang: pt
+    free: true
+  - title: "Big-O Cheat Sheet"
+    url: https://www.bigocheatsheet.com/
+    type: artigo
+    lang: en
+    free: true
+---
+
+"Funciona" é o mínimo. A pergunta que separa um dev medíocre de um
+dev que entende é: **"funciona em quanto tempo, com quanta memória?"**.
+Dois algoritmos podem dar o mesmo resultado, mas um deles trava com
+10 mil itens e o outro lida com 10 milhões. **Complexidade** é a
+forma de medir isso sem depender do hardware.
+
+## O essencial 🟢
+
+**Algoritmo** é uma sequência finita de passos pra resolver um
+problema. "Somar todos os números de 1 a N" pode ser feito de dois
+jeitos:
+
+```python
+# Jeito 1: somar um por um
+soma = 0
+for i in range(1, n + 1):
+    soma = soma + i
+# Faz N somas. Se N = 1 milhão, faz 1 milhão de somas.
+
+# Jeito 2: usar a fórmula de Gauss
+soma = n * (n + 1) // 2
+# Faz 3 operações. Sempre. Pra qualquer N.
+```
+
+Os dois estão **certos**. Mas o segundo escala. A diferença não
+importa pra N=10. Importa pra N=10.000.000. A essa altura, o
+primeiro demora segundos. O segundo, nanossegundos.
+
+**Big-O** é a notação que descreve como o tempo (ou memória) de um
+algoritmo **cresce** conforme a entrada cresce. Você descarta
+constantes e termos de menor ordem, e fica com o termo dominante:
+
+- `O(1)` - constante. Não cresce. `array[5]` é `O(1)`.
+- `O(log n)` - logarítmico. Dobrou a entrada? Mais um passo.
+  Busca binária.
+- `O(n)` - linear. Dobrou a entrada? Dobrou o tempo. Percorrer
+  uma lista.
+- `O(n log n)` - linear-logarítmico. A maioria dos algoritmos
+  eficientes de ordenação (mergesort, heapsort).
+- `O(n²)` - quadrático. Dobrou a entrada? 4x o tempo. Loops
+  aninhados sobre a mesma coleção.
+- `O(2ⁿ)` - exponencial. Cada item a mais **dobra** o tempo.
+  Viável só pra N bem pequeno.
+
+> Dica: na prática, mais importante que saber todas as notações é
+> **reconhecer loops aninhados como `O(n²)`** e **busca linear
+> versus busca binária como `O(n)` vs `O(log n)`**. Só isso já
+> resolve 80% das situações do dia a dia.
+
+## Aprofundamento 🟡
+
+**Por que medir importa na prática?** Porque é o que separa código
+que aguenta carga de código que parece ok em teste e cai em produção.
+Um `O(n²)` num script que processa 1.000 itens é instantâneo. Em
+1.000.000, é 1 milhão de vezes mais lento - pode levar horas onde
+o `O(n log n)` levaria segundos.
+
+A regra de bolso: **sempre que vir dois loops aninhados sobre a
+mesma estrutura, pergunte se dá pra fazer com hash table** (`O(n)`
+em vez de `O(n²)`). É uma das otimizações mais lucrativas que
+existem.
+
+**Complexidade de espaço** segue a mesma ideia, mas mede memória.
+Um algoritmo que constrói uma lista auxiliar do tamanho da entrada
+é `O(n)` em espaço, mesmo sendo `O(n log n)` em tempo. Trade-offs
+tempo-espaço são everywhere - cache é um (mais memória, menos
+rebusca), compressão é outro (mais CPU, menos banda).
+
+## Pra quem quer ir além 🔴
+
+**Análise amortizada** é a técnica pra casos em que a operação
+"cara" é rara. Exemplo clássico: `array.push_back` em C++ tem
+`O(1)` amortizado - a maioria das vezes é `O(1)`, mas de vez em
+quando o array precisa dobrar de tamanho (`O(n)`). O custo desse
+`O(n)` eventual, diluído em todas as operações, dá `O(1)` na média.
+
+**Notações little-o, theta, omega** refinam o Big-O:
+
+- `O(f)` - limite superior: "no máximo cresce como `f`".
+- `Ω(f)` - limite inferior: "no mínimo cresce como `f`".
+- `Θ(f)` - limite justo: "cresce exatamente como `f`".
+
+São úteis em provas e discussões teóricas. No dia a dia, Big-O
+sendo usado como sinônimo de "ordem de grandeza" já resolve.
+
+**Aprofundamento real:** a trilha
+[Complexidade de Algoritmos](../../complexidade-de-algoritmos) deste
+community aprofunda contagem de operações, casos (pior/médio/melhor),
+recursão, padrões clássicos (two pointers, sliding window, divide
+and conquer). Vá pra lá depois deste nó.
+
+No próximo nó, vamos ver **estruturas de dados fundamentais** -
+array, lista, hash, árvore, grafo, e quando usar cada uma.

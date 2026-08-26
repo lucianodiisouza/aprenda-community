@@ -1,0 +1,100 @@
+---
+id: representacao-de-dados
+title: "Representação de Dados"
+resources:
+  - title: "Sistemas de numeração (Khan Academy PT-BR)"
+    url: https://pt.khanacademy.org/math/algebra-home/alg-intro-to-algebra/algebra-alternate-number-bases
+    type: curso
+    lang: pt
+    free: true
+  - title: "Encoding de caracteres (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/Character_encoding
+    type: doc
+    lang: pt
+    free: true
+---
+
+Tudo que está no computador - texto, imagem, vídeo, código - vira
+**bits** no final. "Bit" é a menor unidade de informação: 0 ou 1.
+Oito bits formam um **byte**. E com combinações de bytes, a gente
+constrói qualquer coisa. Entender essa camada é o que explica
+bugs famosos, problemas de encoding e a diferença entre tipos em
+linguagens.
+
+## O essencial 🟢
+
+**Bases numéricas** - a gente usa base 10 no dia a dia (por causa
+dos 10 dedos, convenientemente). O computador usa base 2 (**binário**)
+porque tudo vira 0/1 - ligado/desligado, true/false, carga/sem carga.
+
+| Decimal | Binário | Hexadecimal |
+| ------- | ------- | ----------- |
+| 0       | 0000    | 0           |
+| 10      | 1010    | A           |
+| 255     | 11111111| FF          |
+
+**Hexadecimal** (base 16) é uma abreviação do binário muito usada
+em programação: cada dígito hex representa 4 bits. Quando você vê
+`0xFF`, é o mesmo que `255` em decimal ou `11111111` em binário. Cores
+em CSS (`#FF5733`), endereços de memória, e bytes "crus" quase sempre
+aparecem em hex.
+
+**Texto e encoding** - texto é só uma convenção de mapear números
+em glifos. O mapa mais famoso é o **ASCII**, que cabia em 7 bits
+(128 caracteres: letras inglesas, dígitos, pontuação básica). Pra
+representar todas as línguas do mundo, criaram o **Unicode** - um
+catálogo gigante de "pontos de código" pra cada caractere. **UTF-8**
+é a forma mais comum de **codificar** Unicode em bytes: é retrocompatível
+com ASCII (texto ASCII puro é UTF-8 válido) e eficiente pra textos
+em geral.
+
+> Dica: o bug clássico de encoding é misturar UTF-8 com Latin-1 (ou
+> o oposto). Você vê "São Paulo" virar "SÃ£o Paulo". Sempre saiba
+> em qual encoding seu arquivo está e force isso no código.
+
+**Endianness** é a ordem dos bytes. "Big-endian" guarda o byte mais
+significativo primeiro, "little-endian" guarda o menos significativo
+primeiro. A maioria dos processadores modernos (x86, ARM em modo
+padrão) é **little-endian**. Isso importa quando você lê bytes crus
+de uma fonte que veio de outro sistema, ou quando está debugando
+protocolos de rede (que padronizam em big-endian, chamado "network
+byte order").
+
+## Aprofundamento 🟡
+
+**Números com sinal** introduzem uma complicação: como representar
+negativo em bits? O padrão é o **complemento de dois** - o bit mais
+significativo indica o sinal, e o resto segue a regra de inverter
+todos os bits e somar 1. A beleza do complemento de dois é que a
+soma/subtração funciona igual pra números positivos e negativos,
+sem hardware especial.
+
+Em um `int8` (8 bits com sinal), o range é de **-128 a 127**, não
+-127 a 128. Isso explica um bug clássico: se você tem um contador
+que vai de 0 a 255, e seu tipo é `int8`, em 128 ele vira -128
+(**integer overflow**). A CPU não reclama - ela segue a regra e
+devolve o resultado. É por isso que tratar overflow em código de
+sistemas é uma dor real.
+
+**Ponto flutuante** (IEEE 754) é como a maioria das linguagens
+representa números "reais" (`float`, `double`). Não é exato: ele
+guarda **mantissa × 2^expoente**, o que dá um range enorme mas
+arredondamentos sutis. `0.1 + 0.2` em JavaScript dá `0.30000000000000004`
+- não é bug, é a natureza do IEEE 754. Pra dinheiro, **nunca use
+float**: use inteiro (em centavos) ou um tipo decimal专门
+dedicado.
+
+## Pra quem quer ir além 🔴
+
+A prova formal de que complemento de dois funciona (soma de
+positivos e negativos produz o resultado esperado, com uma única
+circuitaria) está no Capítulo 2 do CS:APP. Vale a leitura.
+
+**Two's complement na unha** é um exercício clássico: pegue 8 bits,
+escolha um número negativo, faça a conversão bit a bit, depois some
+com o positivo correspondente e veja o overflow esperado gerar zero.
+Esse exercício ensina mais que qualquer definição.
+
+No próximo nó, vamos pra **lógica e pensamento computacional** - as
+ferramentas mentais que você usa **antes** de escrever qualquer
+linha de código.

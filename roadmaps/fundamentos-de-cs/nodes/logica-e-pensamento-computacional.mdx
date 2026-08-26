@@ -1,0 +1,95 @@
+---
+id: logica-e-pensamento-computacional
+title: "Lógica e Pensamento Computacional"
+resources:
+  - title: "Pensamento Computacional (Wikipedia PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Pensamento_computacional
+    type: doc
+    lang: pt
+    free: true
+---
+
+Programar não é decorar sintaxe - é **resolver problemas de forma
+estruturada**. Antes de qualquer linha de código, existe um trabalho
+mental: decompor, reconhecer padrões, abstrair, criar algoritmos.
+Esse conjunto de hábitos é o que se chama de **pensamento
+computacional**, e ele serve pra tudo - até pra resolver problemas
+fora da tela.
+
+## O essencial 🟢
+
+Quatro habilidades formam o cerne:
+
+- **Decomposição** - quebrar um problema grande em problemas
+  menores. "Fazer um e-commerce" vira "cadastrar produto", "carrinho",
+  "checkout", "envio". Cada pedaço vira um módulo testável
+  separadamente.
+- **Reconhecimento de padrões** - perceber que o problema de hoje
+  se parece com um que você já resolveu. Botão de "favoritar" no
+  Twitter é o mesmo conceito do botão "curtir" no Instagram - é
+  um **toggle** com **estado persistido**.
+- **Abstração** - esconder os detalhes que não importam naquele
+  momento. Quando você chama `array.sort()`, não está pensando em
+  quicksort vs mergesort - só quer a lista ordenada. **Escolher o
+  nível certo de abstração** é uma das habilidades mais valiosas
+  que um dev tem.
+- **Algoritmo** - a sequência de passos pra resolver o problema.
+  "Receita de bolo" é o exemplo clássico: passos claros, ordem
+  definida, fim previsível.
+
+A **lógica booleana** é o que conecta essas habilidades à máquina.
+Tudo se resume a `AND` (`&&`), `OR` (`||`), `NOT` (`!`). Tabela
+verdade na mão:
+
+| A | B | A AND B | A OR B | NOT A |
+|---|---|---------|--------|-------|
+| V | V | V       | V      | F     |
+| V | F | F       | V      | F     |
+| F | V | F       | V      | V     |
+| F | F | F       | F      | V     |
+
+É a base de qualquer `if`, `while`, `switch`. Se a tabela verdade
+não é automática pra você, vale decorar: ela aparece em todo
+código que você escreve.
+
+> Dica: se você travar num bug, volte pra decomposição. "Onde
+> exatamente isso falha?" - isole o pedaço menor possível. 90% das
+> vezes o bug está num detalhe que sumiu na abstração.
+
+## Aprofundamento 🟡
+
+**Lógica de predicados** (ou lógica de primeira ordem) é a base da
+especificação formal de software. Em vez de só manipular valores
+verdadeiros, você fala sobre **propriedades** e **relações**: "todo
+usuário cadastrado tem email" (∀x: User(x) → HasEmail(x)). É a
+linguagem por trás de ferramentas como Alloy, TLA+, e dos
+"contratos" que você escreve em linguagens com tipos dependentes.
+
+Na prática, **mesmo sem usar lógica formal**, internalizar o hábito
+de "especificar antes de implementar" economiza horas. Antes de
+escrever uma função, escreva em uma frase: "essa função recebe X,
+garante Y, retorna Z". Se você não consegue, a função ainda não
+está clara o suficiente.
+
+**Decomposição funcional** é a técnica de quebrar uma função em
+funções menores até cada uma fazer **uma coisa bem feita**. O
+oposto - a função de 200 linhas que faz tudo - é sintoma clássico
+de quem não decompôs o suficiente.
+
+## Pra quem quer ir além 🔴
+
+**Máquinas de estado finitas** (FSMs) são um modelo que captura
+sistemas com número limitado de **estados** e **transições** entre
+eles. Um elevador é uma FSM: estados "parado", "subindo",
+"descendo", "manutenção"; transições baseadas em botões e
+sensores. Protocolos de rede, parsers, e fluxos de UI complexos
+são frequentemente FSMs disfarçadas. Aprender a reconhecer e
+modelar uma FSM é um superpoder.
+
+**Referência:** *Structure and Interpretation of Computer Programs*
+(SICP), Capítulo 1 - embora use Scheme (Lisp), os exercícios de
+pensamento computacional são atemporais. Tem tradução parcial em
+PT-BR circulando.
+
+No próximo nó, vamos falar de **algoritmos e complexidade** - como
+medir se uma solução é "boa" além de "funciona".

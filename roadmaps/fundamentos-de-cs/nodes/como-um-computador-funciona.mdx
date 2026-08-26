@@ -1,0 +1,106 @@
+---
+id: como-um-computador-funciona
+title: "Como um Computador Funciona"
+resources:
+  - title: "Arquitetura de Von Neumann (Wikipedia PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Arquitetura_de_von_Neumann
+    type: doc
+    lang: pt
+    free: true
+  - title: "How a CPU Works (Khan Academy, com legendas em PT-BR)"
+    url: https://www.khanacademy.org/computing/computers-and-internet/xcae6f4a7ff015e7d:how-computers-work
+    type: curso
+    lang: en
+    free: true
+---
+
+Antes de falar de código, vale entender o que está do outro lado. O
+computador não é mágico - é uma máquina que segue instruções, uma
+de cada vez, absurdamente rápido. Quando você entende isso, várias
+coisas que parecem "esquisitas" em linguagens de programação passam
+a fazer sentido.
+
+## O essencial 🟢
+
+Quase todo computador que você já usou segue a **arquitetura de Von
+Neumann** (1945). A ideia é simples: existe um lugar que guarda
+instruções e dados (a **memória**), e um lugar que as executa (a
+**CPU**). A CPU busca uma instrução da memória, executa, busca a
+próxima, executa, e assim por diante.
+
+Três peças fundamentais:
+
+- **CPU** (unidade central de processamento) - o "cérebro". Busca
+  instruções da memória, decodifica, executa. Faz isso bilhões de
+  vezes por segundo.
+- **Memória** (RAM) - onde instruções e dados ficam **enquanto o
+  programa roda**. É volátil: desligou, perdeu tudo.
+- **Dispositivos de I/O** - teclado, mouse, tela, disco, rede. A
+  forma do computador conversar com o mundo externo.
+
+A CPU repete o mesmo ciclo sem parar, conhecido como
+**fetch-decode-execute**:
+
+<Mermaid
+  chart={`flowchart LR
+    A[Fetch: busca instrução da memória] --> B[Decode: decodifica o que fazer]
+    B --> C[Execute: executa a operação]
+    C --> A`}
+  caption="Ciclo de instrução da CPU - repetido bilhões de vezes por segundo."
+/>
+
+Esse ciclo é tão fundamental que tudo que você programa - do "Hello,
+World" a um sistema de recomendação - acaba virando uma sequência
+gigantesca dessas operações simples.
+
+- **Instrução** é uma operação básica: somar dois números, comparar
+  dois valores, copiar um pedaço de memória para outro, pular pra
+  outro ponto do programa.
+- **Registradores** são "variáveis" que vivem dentro da CPU -
+  memória minúscula e absurdamente rápida. Operações sempre passam
+  por eles.
+- **Disco** (HD/SSD) é onde os dados ficam quando o computador
+  desliga. Pra rodar um programa, ele precisa primeiro ser copiado
+  do disco pra RAM.
+
+> Dica: por isso abrir um programa grande é "mais lento" - copiar do
+> disco pra RAM demora. Uma vez em RAM, a CPU trabalha na velocidade
+> dos registradores.
+
+## Aprofundamento 🟡
+
+**Cache** é um truque que apareceu porque a CPU é muito mais rápida
+que a RAM. Cache é uma memória pequena, muito rápida, entre a CPU e
+a RAM, que guarda os dados mais usados. Se o dado está no cache
+(**cache hit**), a CPU nem precisa esperar a RAM.
+
+Os caches são organizados em **níveis** (L1, L2, L3), do mais
+rápido/pequeno (L1, dentro do chip da CPU) ao mais lento/grande (L3,
+compartilhado entre cores). Programar com consciência de cache
+significa **usar dados próximos na memória** (locality) e evitar
+saltos aleatórios - é por isso que percorrer um array em ordem é
+mais rápido que em ordem aleatória.
+
+**Pipeline** é outro truque: a CPU não espera uma instrução terminar
+inteira antes de começar a próxima. Enquanto executa a instrução
+N, já vai buscando a N+1. Isso multiplica o throughput sem mudar o
+tempo de cada instrução individual.
+
+## Pra quem quer ir além 🔴
+
+A **arquitetura RISC vs CISC** é uma divisão histórica importante.
+RISC (Reduced Instruction Set Computer) - ARM, RISC-V - prefere
+instruções simples e muitas. CISC (Complex Instruction Set Computer) -
+x86, x86-64 - prefere instruções poderosas que fazem muita coisa
+de uma vez. A fronteira borrou nas últimas décadas (CPUs x86 modernas
+traduzem CISC pra micro-ops tipo RISC internamente), mas o legado
+continua: smartphones e servidores modernos são predominantemente
+ARM (RISC), PCs ainda são majoritariamente x86 (CISC).
+
+**Referência canônica:** o livro *Computer Systems: A Programmer's
+Perspective* (Bryant & O'Hallaron, CS:APP) é o livro-texto padrão
+de cursos de arquitetura nos EUA. Os primeiros capítulos cobrem tudo
+que está neste nó com profundidade muito maior.
+
+No próximo nó, vamos ver **como a CPU representa informação** - de
+números a texto a imagens, tudo vira bits no final.
