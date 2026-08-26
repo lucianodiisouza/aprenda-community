@@ -1,0 +1,180 @@
+---
+id: arvores-anatomia
+title: "Árvores: Anatomia, Terminologia e Travessia"
+resources:
+  - title: "Árvores (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "VisuAlgo - Binary Tree visualizada"
+    url: https://visualgo.net/en/bst
+    type: artigo
+    lang: en
+    free: true
+---
+
+Árvore é a estrutura que mais aparece em código "por baixo dos panos":
+o DOM do navegador é uma árvore, o JSON é uma árvore, o sistema de
+arquivos é uma árvore, o AST (código parseado) é uma árvore. Quando
+você entende árvore, várias coisas que pareciam "mágicas" ficam
+óbvias.
+
+## O essencial 🟢
+
+**Definição:** uma árvore é um conjunto de **nós** conectados por
+**arestas** de forma **hierárquica** (sem ciclos). Cada nó tem um
+**pai** (exceto a **raiz**) e zero ou mais **filhos**. Uma árvore
+com `n` nós tem exatamente `n-1` arestas.
+
+**Árvore binária** é a mais comum: cada nó tem **no máximo 2 filhos**
+
+- **esquerdo** e **direito**. Pode ter zero (folha) ou um ou dois.
+
+<Mermaid
+  chart={`graph TB
+    A["raiz<br/>10"] --> B["esquerda<br/>5"]
+    A --> C["direita<br/>15"]
+    B --> D["filho esq<br/>2"]
+    B --> E["filho dir<br/>7"]
+    C --> F["folha<br/>12"]
+    C --> G["folha<br/>20"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff
+    style E fill:#1f6feb,stroke:#fff,color:#fff
+    style F fill:#1f6feb,stroke:#fff,color:#fff
+    style G fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="Árvore binária. Raiz (10) tem dois filhos. Folha (12, 20, 2, 7) não tem filhos."
+/>
+
+**Terminologia essencial:**
+
+- **Raiz:** o nó do topo, sem pai.
+- **Folha:** nó sem filhos.
+- **Altura:** quantas arestas tem no caminho mais longo da raiz até
+  uma folha. Árvore de 1 nó tem altura 0.
+- **Profundidade (nível):** quantas arestas tem do nó até a raiz.
+  Raiz tem profundidade 0.
+- **Subárvore:** qualquer nó + todos os seus descendentes formam
+  uma subárvore.
+- **Nó interno:** nó com pelo menos um filho (não é folha).
+
+**Travessia (percurso):** visitar cada nó exatamente uma vez. Três
+ordens principais pra árvore binária:
+
+- **Pré-ordem (pre-order):** raiz, esquerda, direita. Útil pra
+  copiar/serializar árvore (a raiz vem primeiro, dá pra reconstruir).
+- **Em-ordem (in-order):** esquerda, raiz, direita. Em BST, devolve
+  os valores em **ordem crescente**.
+- **Pós-ordem (post-order):** esquerda, direita, raiz. Útil pra
+  deletar a árvore (deleta filhos antes do pai) ou avaliar
+  expressões (operandos antes do operador).
+
+```python
+def em_ordem(no):
+    if no is None: return
+    em_ordem(no.esquerda)
+    print(no.valor)         # visita raiz entre as duas recursões
+    em_ordem(no.direita)
+```
+
+**Busca em largura (BFS):** visita nível por nível - raiz, depois
+todos os filhos, depois todos os netos. Usa **fila**, não recursão.
+
+```python
+from collections import deque
+
+def bfs(raiz):
+    fila = deque([raiz])
+    while fila:
+        no = fila.popleft()
+        print(no.valor)
+        if no.esquerda: fila.append(no.esquerda)
+        if no.direita: fila.append(no.direita)
+```
+
+## Aprofundamento 🟡
+
+**A regra "altura vs. número de nós":** pra uma árvore binária de
+altura `h`, o número de nós varia de `h+1` (totalmente
+desbalanceada, vira lista) até `2^(h+1) - 1` (perfeitamente
+balanceada, **cheia**). A maioria das árvores reais está em algum
+lugar no meio.
+
+**Por que a maioria dos problemas em árvore é `O(n)`:** você
+**precisa** visitar cada nó pelo menos uma vez pra processar.
+Logo, o trabalho é proporcional ao número de nós. A diferença
+entre "percorre tudo" e "busca específica" está em **quando você
+pode parar** - busca em BST pára quando acha (média `O(log n)`).
+
+**Árvore n-ária:** cada nó tem até `n` filhos (não só 2). O DOM
+do navegador é uma árvore n-ária: cada nó pode ter qualquer número
+de filhos. Trie (próximo nó) também é n-ária - cada caractere é uma
+aresta.
+
+**Aplicações de árvore fora de CS:**
+
+- **Sistema de arquivos** (`/` → `home` → `user` → `docs` → `file.txt`)
+  é uma árvore. Comandos como `find` e `tree` usam essa estrutura.
+- **JSON/XML/YAML** são árvores. Parsear é converter texto em árvore.
+- **Organograma de empresa** é uma árvore. CEO → diretores → gerentes
+  → ICs.
+- **Árvore genealógica** é uma árvore (com cuidado, pois tem casamentos
+  entre famílias - vira DAG, mas isso é outro nó).
+- **HTML/DOM** é uma árvore. Inspecionar elemento no DevTools é ver
+  um nó da árvore.
+
+**Em código de aplicação real:** você raramente implementa árvore
+binária na mão. Mas usa **o tempo todo** por baixo de `SortedSet`,
+`TreeMap`, `priority queue`, parsers, frameworks de UI, etc. Entender
+a estrutura ajuda a depurar e a escolher a ferramenta certa.
+
+## Pra quem quer ir além 🔴
+
+**Árvore AVL, Red-Black, B-tree** são variações auto-balanceadas.
+BST "pura" pode virar lista (se inserir em ordem: 1, 2, 3, 4, 5),
+perdendo a propriedade de busca `O(log n)`. Árvores balanceadas
+garantem altura `O(log n)` via **rotações** após cada inserção/remoção.
+Próximo nó (`bst`) cobre BST simples, depois (`arvores-balanceadas`)
+cobre as auto-balanceadas.
+
+**Árvore de sufixo, árvore de Merkle, árvore de busca binária
+ortogonal (KD-tree)** são variantes especializadas pra problemas
+específicos (busca em string, hashing de dados, busca em
+multi-dimensão).
+
+**Leitura recomendada:**
+
+- Capítulo 12 do _Algorithms_ (Dasgupta et al., online) - árvores
+  binárias com prova de altura `O(log n)` em árvores balanceadas.
+- Capítulo 10 do _Introduction to Algorithms_ (CLRS) - versão
+  mais completa, com análise de BST.
+
+> Dica: quando o problema tem "hierarquia", "pai/filho", "categoria
+> dentro de categoria", "caminho até a raiz" - pense em árvore. E
+> quando você já tem uma árvore, recursão é a primeira coisa a
+> tentar (vimos no nó anterior).
+
+No próximo nó, vamos ver a BST - a árvore binária **de busca**, que
+adiciona a propriedade de manter os valores ordenados.
+
+<Quiz
+  question="Em qual travessia de árvore binária de busca (BST) os valores são visitados em ordem crescente?"
+  options={[
+    {
+      text: "Pré-ordem (raiz, esquerda, direita)",
+      correct: false,
+      explanation:
+        "Pré-ordem visita a raiz antes das subárvores. Em BST, a raiz é o valor intermediário, então não sai em ordem.",
+    },
+    { text: "Em-ordem (esquerda, raiz, direita)", correct: true },
+    {
+      text: "Pós-ordem (esquerda, direita, raiz)",
+      correct: false,
+      explanation:
+        "Pós-ordem visita a raiz por último, depois das subárvores. Em BST, a raiz é o valor intermediário, então fica fora de ordem.",
+    },
+  ]}
+/>

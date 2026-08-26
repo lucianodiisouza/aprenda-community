@@ -1,0 +1,179 @@
+---
+id: pilhas-filas
+title: "Pilhas e Filas: LIFO, FIFO e Onde o Computador Usa"
+resources:
+  - title: "Stack e Queue (VisuAlgo, visualização interativa)"
+    url: https://visualgo.net/en/list
+    type: artigo
+    lang: en
+    free: true
+  - title: "Call stack (MDN, em PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/Call_stack
+    type: doc
+    lang: pt
+    free: true
+---
+
+Pilhas e filas são **restrições sobre listas**. Em vez de deixar você
+inserir e remover em qualquer posição, cada uma só permite um padrão
+de acesso. Essa restrição é o que as torna **previsíveis** - e é
+exatamente isso que o computador adora.
+
+## O essencial 🟢
+
+**Pilha (stack)** é LIFO: **L**ast **I**n, **F**irst **O**ut. O
+último a entrar é o primeiro a sair. Pense numa pilha de pratos: você
+coloca no topo, retira do topo.
+
+```javascript
+// Duas operações: push (empilha) e pop (desempilha).
+const pilha = [];
+pilha.push(1); // [1]
+pilha.push(2); // [1, 2]
+pilha.push(3); // [1, 2, 3]
+pilha.pop(); // retorna 3, pilha: [1, 2]
+pilha.pop(); // retorna 2, pilha: [1]
+pilha.pop(); // retorna 1, pilha: []
+```
+
+**Fila (queue)** é FIFO: **F**irst **I**n, **F**irst **O**ut. O
+primeiro a entrar é o primeiro a sair. Pense numa fila de banco: você
+entra no fim, sai do começo.
+
+```javascript
+// Duas operações: enqueue (enfileira) e dequeue (desenfileira).
+// Em JS, simulamos com push + shift (shift é O(n), mas didático).
+const fila = [];
+fila.push(1); // [1]
+fila.push(2); // [1, 2]
+fila.push(3); // [1, 2, 3]
+fila.shift(); // retorna 1, fila: [2, 3]
+fila.shift(); // retorna 2, fila: [3]
+fila.shift(); // retorna 3, fila: []
+```
+
+<Mermaid
+  chart={`graph LR
+    subgraph "Pilha (LIFO)"
+      direction BT
+      S3["3 (topo)"] --- S2["2"] --- S1["1 (base)"]
+    end
+    subgraph "Fila (FIFO)"
+      direction LR
+      Q1["1 (frente)"] --- Q2["2"] --- Q3["3 (fim)"]
+    end`}
+  caption="Pilha retira do topo (último a entrar). Fila retira da frente (primeiro a entrar)."
+/>
+
+**Onde o computador usa cada uma:**
+
+- **Pilha:** pilha de chamadas (call stack). Quando você chama uma
+  função, ela é empilhada. Quando ela retorna, é desempilhada.
+  Editor de texto usa pilha pra **undo/redo**. Navegador usa pilha
+  pra **voltar** no histórico. Compilador usa pilha pra avaliar
+  expressões (`2 + 3 * 4` - empilha operandos, aplica operadores).
+- **Fila:** fila de impressão, fila de tarefas (task queue do
+  event loop), fila de mensagens (RabbitMQ, SQS), BFS (busca em
+  largura em grafos). Qualquer coisa "primeiro a chegar, primeiro
+  a ser atendido" usa fila.
+
+**Variação importante: deque (double-ended queue).** Aceita inserção
+e remoção nas **duas pontas**. Em Python, é `collections.deque`. Em
+JS, não tem nativa - você implementa com buffer circular ou usa
+biblioteca. Útil pra **sliding window** (manter uma janela dos últimos
+N elementos).
+
+## Aprofundamento 🟡
+
+**A pilha de chamadas é onde mora o bug de "stack overflow".**
+Quando uma função recursiva chama ela mesma sem caso base (ou com
+muitos níveis de recursão), a pilha cresce até estourar. É o famoso
+`RangeError: Maximum call stack size exceeded` em JS, ou
+`RecursionError` em Python.
+
+```javascript
+// Função recursiva sem caso base - estoura a pilha.
+function contarParaSempre(n) {
+  console.log(n);
+  return contarParaSempre(n + 1); // nunca para
+}
+contarParaSempre(0); // crash depois de milhares de chamadas
+```
+
+Por isso, recursão profunda vira loop iterativo em código de produção.
+Exemplo clássico: travessia de árvore muito desbalanceada (BST
+viciada). Solução: pilha explícita (em vez da call stack) ou
+algoritmo morris traversal.
+
+**Por que `Array.shift()` em JS é lento:** internamente, depois de
+remover o primeiro elemento, todos os outros elementos precisam
+"andar" uma posição pra preencher o buraco. `O(n)`. Se você precisa
+de fila de verdade em JS, use uma biblioteca (ou implemente com
+dois ponteiros: `head` e `tail` num array, com `head` e `tail`
+avançando independentemente - quando o array enche, realoca).
+
+**Buffer circular (ring buffer):** é como você implementa fila
+eficiente. Mantém um array de tamanho fixo, dois ponteiros
+(`head` e `tail`) que dão a volta quando chegam no fim. Inserção
+e remoção são `O(1)`. Usado em sistemas embarcados, audio buffers,
+e o próprio event loop do Node.
+
+## Pra quem quer ir além 🔴
+
+**Algoritmo de Shunting-yard** (Dijkstra, 1961) usa pilha pra
+converter expressão infixa (`2 + 3 * 4`) em pós-fixa (`2 3 4 * +`).
+A pós-fixa é trivial de avaliar com uma pilha. Compiladores reais
+usam variantes dessa ideia. Vale implementar uma vez na vida.
+
+**Leitura recomendada:**
+
+- Capítulo 10.1 do _Algorithms_ (Dasgupta et al., online) - pilhas
+  e filas com prova de correção.
+- A página de [VisuAlgo list](https://visualgo.net/en/list) mostra
+  pilha, fila, deque lado a lado - clicar pra ver cada operação.
+
+> Dica: pilha e fila são tão simples que viram "bloco de Lego" pra
+> algoritmos mais complexos. BFS usa fila. DFS (iterativo) usa
+> pilha. Parser de expressão usa pilha. Quando travar num algoritmo,
+> pergunte: "que estrutura de acesso restrito resolve?"
+
+No próximo nó, vamos ver a estrutura que talvez seja a **mais usada
+em código de produção**: hash table - e por que `Map`/`dict`/`object`
+são rápidos.
+
+<Checkpoint
+  challenge="Implemente uma pilha com push/pop/peek, valide parênteses balanceados. Implemente a função `balanceado(s)` que retorna `true` se a string tiver parênteses, colchetes e chaves balanceados."
+  starterCode={`function balanceado(s) {
+  // Implemente usando uma pilha manual.
+  // Retorna true se (), [], {} estão balanceados.
+  return false;
+}
+
+console.log(balanceado("({[]})")); // esperado: true
+console.log(balanceado("([)]")); // esperado: false
+console.log(balanceado("{[()]}")); // esperado: true`}
+expected="true
+false
+true"
+slug="estruturas-de-dados"
+nodeId="pilhas-filas"
+/>
+
+<Quiz
+  question="Qual a ordem de retirada de uma pilha que recebe push(1), push(2), push(3), pop(), pop(), push(4), pop()?"
+  options={[
+    {
+      text: "1, 2, 4",
+      correct: false,
+      explanation:
+        "LIFO: o último a entrar é o primeiro a sair. push(1), push(2), push(3) deixa 3 no topo. Primeiro pop() tira 3, segundo pop() tira 2. push(4) põe 4 no topo. Terceiro pop() tira 4. Ordem: 3, 2, 4.",
+    },
+    { text: "3, 2, 4", correct: true },
+    {
+      text: "1, 4, 2",
+      correct: false,
+      explanation:
+        "Você está descrevendo uma fila (FIFO), não uma pilha (LIFO).",
+    },
+  ]}
+/>
