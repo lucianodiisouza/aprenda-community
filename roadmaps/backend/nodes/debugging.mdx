@@ -1,0 +1,125 @@
+---
+id: debugging
+title: "Debug de uma API Node: do console.log ao debugger"
+resources:
+  - title: "Guia de Debug do Node.js (docs oficial, em inglês)"
+    url: https://nodejs.org/en/learn/getting-started/debugging
+    type: doc
+    lang: en
+    free: true
+  - title: "VS Code: Debug de Node.js (em inglês)"
+    url: https://code.visualstudio.com/docs/nodejs/nodejs-debugging
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando a API devolve 500 e o log só tem `Error: ...`, **inspecionar
+o código em execução** é o que separa "chutar" de "resolver". O Node
+expõe o protocolo de Debug do Chrome/VS Code - você coloca um
+**breakpoint**, roda a request, e o código para na linha pra você
+ver o estado das variáveis.
+
+### O jeito rápido: `node --inspect`
+
+Rode seu servidor com a flag `--inspect`:
+
+```bash
+node --inspect server.js
+# ou, pra pausar já na primeira linha:
+node --inspect-brk server.js
+```
+
+Abra `chrome://inspect` no Chrome, clique em "inspect" no processo
+listado - o DevTools abre conectado ao seu Node. A partir daí é igual
+a debugar uma página: **Sources** pra ver o código, clique na linha
+pra criar um breakpoint, e a próxima request vai pausar ali.
+
+### O jeito integrado: VS Code
+
+Crie um `.vscode/launch.json`:
+
+```jsonc
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Iniciar API",
+      "program": "${workspaceFolder}/server.js",
+      "restart": true
+    }
+  ]
+}
+```
+
+Aperte F5, ponha um breakpoint na rota, mande a request - o VS Code
+pausa, mostra o painel de variáveis e permite **step over** (F10),
+**step into** (F11) e **continue** (F5).
+
+### Lendo uma stack trace
+
+```text
+Error: Usuário não encontrado
+    at file:///app/routes/usuarios.js:12:9
+    at Layer.handle [as handle_request] (/app/node_modules/express/...:line)
+    at next (/app/node_modules/express/...:line)
+```
+
+Lê **de baixo pra cima**: o `next` do Express chamou o handler que
+chamou o seu código. A linha **12** do `usuarios.js` é onde o erro
+foi **lançado** - a partir daí, a stack sobe mostrando quem chamou
+quem até o event loop. A primeira linha útil pra debug geralmente é
+a que tem um **arquivo do seu projeto** (`/app/routes/...`), não
+arquivo do `node_modules`.
+
+### Logs estruturados em vez de `console.log`
+
+`console.log(req.body, res.status)` polui o terminal e não dá pra
+filtrar. **Logs estruturados** (em JSON) são a base de qualquer
+observabilidade mínima:
+
+```javascript
+function log(etapa, dados) {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    etapa,
+    ...dados,
+  }));
+}
+
+// uso
+log("request_recebida", { method: req.method, url: req.url });
+log("consulta_banco", { query: "findUser", duracao_ms: 12 });
+log("response_enviada", { status: 200, duracao_ms: 45 });
+```
+
+Aí ferramentas como `jq` ou um agregador de logs conseguem filtrar
+por `etapa`, somar `duracao_ms`, achar a request lenta.
+
+Três conceitos pra fixar:
+
+- **Breakpoint** - marca no código onde a execução pausa pra você
+  inspecionar variáveis; substitui 90% dos `console.log` espalhados.
+- **Stack trace** - caminho de quem chamou quem até o erro; leia
+  de baixo pra cima, procure a primeira linha do seu código.
+- **Log estruturado** - linha em JSON com `timestamp`, `etapa` e
+  contexto; query-able em vez de texto solto.
+
+> Dica: num bug intermitente ("às vezes dá 500"), o breakpoint não
+> ajuda porque você não sabe quando vai acontecer. Aí entra o
+> log estruturado - ou um APM como o `clinic.js` que grava a
+> execução pra você analisar depois.
+
+No próximo nó, o **projeto final**: juntar tudo numa API completa
+e publicar.
+
+<Quiz
+  question="Num bug intermitente ('às vezes dá 500'), qual ferramenta é mais útil pra investigar?"
+  options={[
+    { text: "Log estruturado com timestamp e etapa", correct: true },
+    { text: "Breakpoint estático numa linha", correct: false, explanation: "Breakpoint pausa a thread - se o erro é raro, ele nunca dispara. Log é o que sobra." },
+    { text: "console.log espalhado no código", correct: false, explanation: "Funciona, mas é poluído e não-queryable. Log estruturado é o upgrade direto." }
+  ]}
+/>
