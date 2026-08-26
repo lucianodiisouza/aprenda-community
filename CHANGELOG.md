@@ -6,6 +6,42 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+### Adicionado
+
+- 👥 **Índice de contribuidores** (`contributors.json` + `scripts/build-contributors.mjs`):
+  agrega os `creators` espalhados por trilhas, projetos e bootcamps num
+  único índice chaveado pelo handle do GitHub - a chave que também liga o
+  criador ao perfil público. É o contrato estável que a app consome pra
+  exaltar quem contribui (fileira de avatares na home, section de
+  contribuições no perfil público, badge de contribuidor). Um bootcamp
+  também credita quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`).
+  Cada entrada já traz `avatar`, `profile`, `counts` e as listas de
+  trilhas/projetos/bootcamps, ordenadas por total de contribuições.
+
+### Alterado
+
+- ✅ **`validate.mjs` agora exige `github` (e `name`) em todo `creators`**,
+  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa some
+  do índice de contribuidores. O CI de validação também roda
+  `build-contributors.mjs --check` - se o `contributors.json` commitado
+  estiver desatualizado, o job falha.
+
+## [1.20.0] - 2026-08-26
+
+### Adicionado
+
+- 🐰 **Três projetos de mensageria** (`projects/`), praticando a trilha
+  RabbitMQ e Mensageria: `central-de-notificacoes` (roteamento por
+  `topic` decidindo quem avisa por e-mail, push ou SMS),
+  `fila-de-atendimento` (senha de atendimento com prioridade, uma fila
+  de verdade em vez de tabela no banco) e `processador-de-planilhas`
+  (upload de CSV grande que responde na hora e processa por trás, com
+  retry, dead letter queue e relatório de erros linha a linha). Todos
+  `intermediario`.
+- 🆕 **Selo "novo"** nos três projetos acima: campo
+  `published: "2026-08-26"` no frontmatter ativa o `<NewBadge>`
+  (janela de 30 dias, avaliada no client).
+
 ## [1.19.0] - 2026-08-26
 
 ### Adicionado
