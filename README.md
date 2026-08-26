@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-14-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-16-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
@@ -32,9 +32,22 @@ Trilhas hoje:
   **12 nós**. Assume o básico de JS.
 - 🟠 [**Backend**](./roadmaps/backend) - para quem quer construir a
   parte que roda no servidor: HTTP, Node.js, Express, REST, banco de
-  dados, ORM, autenticação JWT, validação, testes e deploy.
-  **12 nós**. Stack curado: Node.js + Express + Prisma + PostgreSQL +
-  JWT + Zod + Vitest.
+  dados, ORM, autenticação JWT, validação, testes, async profundo,
+  error handling e debugging. **15 nós**. Stack curado: Node.js +
+  Express + Prisma + PostgreSQL + JWT + Zod + Vitest.
+- 🔷 [**TypeScript**](./roadmaps/typescript) - o superconjunto tipado
+  do JavaScript, hoje default do mercado backend. Do "o que é TS" até
+  a integração completa com Express e ORM, passando por tipos
+  primitivos, unions, generics, utilitários (`Partial`, `Pick`,
+  `Omit`, `Record`), `tsconfig.json`, `tsx` + `tsc` em Node, e
+  tipagem de `req`/`res`/middlewares. **12 nós**. Pré-requisito
+  recomendado (não bloqueante) da trilha Backend.
+- 🗃️ [**NoSQL**](./roadmaps/nosql) - complemento à trilha de SQL:
+  o que é NoSQL, **modelo de documento** (MongoDB: setup, CRUD,
+  consultas, agregação, embed vs reference) e **chave-valor**
+  (Redis: tipos de dados, cache, sessão, rate limit), fechando
+  com um guia prático de decisão SQL vs NoSQL e um projeto final
+  de API com **Postgres + Redis**. **10 nós**.
 - 🔀 [**Git**](./roadmaps/git) - controle de versão do zero ao avançado:
   commits, branches, merge, remotos, rebase, reflog, workflows e uma
   primeira contribuição open source. **23 nós**, cobrindo básico,

@@ -6,6 +6,43 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não lançado]
 
+## [1.16.0] - 2026-08-25
+
+### Adicionado
+- 🔷 **Trilha TypeScript** (`roadmaps/typescript`, 12 nós): do "o que é TypeScript
+  e por que ele existe" até a integração completa com Express e ORM. Cobre
+  tipos primitivos, objetos e arrays, funções tipadas, unions e narrowing,
+  generics, tipos utilitários (`Partial`, `Pick`, `Omit`, `Record`,
+  `keyof`, `typeof`), configuração do `tsconfig.json`, uso em Node com
+  `tsx` + `tsc`, integração com Express (`RequestHandler`, `ErrorRequestHandler`,
+  `declare global` em `Express.Request`) e integração com Prisma + Zod.
+  Pré-requisito recomendado (não bloqueante) da trilha Backend. Decisões
+  editoriais em `roadmaps/typescript/meta/editorial-decisions.md`.
+- 🗃️ **Trilha NoSQL** (`roadmaps/nosql`, 10 nós): complemento à trilha de SQL
+  cobrindo os dois modelos mais usados em backend — **documento** (MongoDB:
+  setup, CRUD, consultas, agregação, embed vs reference) e **chave-valor**
+  (Redis: tipos de dados, cache, sessão, rate limit) — fechando com um nó
+  de **decisão SQL vs NoSQL** na prática e um projeto final de API com
+  Postgres + Redis. Decisões editoriais em
+  `roadmaps/nosql/meta/editorial-decisions.md`.
+- 🆕 **Três nós novos na trilha Backend** (`roadmaps/backend`, agora 15 nós,
+  v1.1.0): `async-aprofundado` (Promises, async/await e o Event Loop,
+  inserido entre `javascript-backend` e `express`), `error-handling`
+  (Tratamento de Erros em uma API com classes `HttpError` e middleware
+  central, inserido entre `express` e `rest-api`) e `debugging` (do
+  `console.log` ao `node --inspect` e log estruturado, inserido entre
+  `testes` e `projeto-final`). Decisões em
+  `roadmaps/backend/meta/editorial-decisions.md` (seção v1.1.0).
+
+### Alterado
+- 🎓 **Bootcamp Desenvolvedor Backend** (`bootcamps/desenvolvedor-backend`):
+  currículo expandido de 14 pra 16 módulos. Entram as trilhas **TypeScript**
+  (logo depois de `programacao-do-zero`, quando a mente sobre JS ainda está
+  fresca) e **NoSQL** (logo depois de `modelagem-de-banco`, perto do SQL).
+  A descrição e o `outcome` do bootcamp foram atualizados pra refletir
+  TypeScript + NoSQL como peças formais do currículo. Estimativa ajustada
+  pra 5 meses.
+
 ## [1.15.0] - 2026-08-25
 
 ### Adicionado
