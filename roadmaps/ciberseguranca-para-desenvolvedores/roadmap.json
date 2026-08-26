@@ -1,14 +1,14 @@
 {
   "slug": "ciberseguranca-para-desenvolvedores",
-  "title": "Fundamentos de Cibersegurança para Desenvolvedores",
-  "description": "Trilha introdutória de Segurança da Informação para desenvolvedores: dos fundamentos de dados, redes e protocolos até vulnerabilidades, OWASP Top 10 e conceitos iniciais de pentest.",
+  "title": "Cibersegurança para Desenvolvedores",
+  "description": "Trilha introdutória de Segurança da Informação para desenvolvedores: dos fundamentos de dados, redes e protocolos até vulnerabilidades, OWASP Top 10 e segurança defensiva.",
   "difficulty": "iniciante",
   "skills": [
     "seguranca-da-informacao",
     "ciberseguranca",
     "redes",
     "owasp",
-    "pentest"
+    "seguranca-defensiva"
   ],
   "nodes": [
     {
@@ -27,14 +27,14 @@
     },
     {
       "id": "principios-seguranca-informacao",
-      "title": "Confidencialidade, Integridade e Disponibilidade",
+      "title": "Princípios da Segurança da Informação",
       "type": "subtopic",
       "recommended": true,
       "children": ["riscos-ameacas-vulnerabilidades"]
     },
     {
       "id": "riscos-ameacas-vulnerabilidades",
-      "title": "Ativos, Ameaças, Vulnerabilidades e Riscos",
+      "title": "Riscos, Ameaças e Vulnerabilidades",
       "type": "subtopic",
       "recommended": true,
       "children": ["redes-computadores"]
@@ -83,22 +83,22 @@
     },
     {
       "id": "owasp-top-10",
-      "title": "Introdução ao OWASP Top 10",
+      "title": "OWASP Top 10",
       "type": "subtopic",
       "recommended": true,
-      "children": ["etica-autorizacao-escopo"]
+      "children": ["seguranca-defensiva"]
     },
     {
-      "id": "etica-autorizacao-escopo",
-      "title": "Ética, Autorização e Escopo em Testes de Segurança",
+      "id": "seguranca-defensiva",
+      "title": "Introdução à Segurança Defensiva",
       "type": "subtopic",
       "recommended": true,
-      "children": ["introducao-pentest"]
+      "children": ["encerramento"]
     },
     {
-      "id": "introducao-pentest",
-      "title": "Introdução ao Pentest",
-      "type": "subtopic",
+      "id": "encerramento",
+      "title": "Encerramento",
+      "type": "milestone",
       "recommended": true,
       "children": []
     }
