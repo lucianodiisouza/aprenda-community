@@ -1,0 +1,98 @@
+---
+id: generics
+title: "Generics: Funções e Tipos Reutilizáveis"
+resources:
+  - title: "TypeScript Handbook: Generics (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/generics.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já precisou escrever uma função que funciona com "qualquer
+tipo, mas mantém o tipo de entrada como tipo de saída"? Por exemplo,
+uma função que devolve o primeiro elemento de um array - se o array
+é de `Usuario`, devolve `Usuario`; se é de `Produto`, devolve
+`Produto`. **Generics** resolvem isso sem perder checagem de tipo.
+
+### O problema sem generics
+
+```typescript
+// "any" desliga a checagem
+function primeiro(arr: any[]): any {
+  return arr[0];
+}
+
+const u = primeiro(usuarios); // tipo: any - perdi a informação
+u.nome; // ❌ não tem checagem
+```
+
+O `any` aqui é um vazamento: o TS não sabe o que `primeiro` devolve,
+e você perde autocomplete e checagem no resultado.
+
+### A solução com generics
+
+```typescript
+function primeiro<T>(arr: T[]): T | undefined {
+  return arr[0];
+}
+
+const u = primeiro(usuarios); // tipo: Usuario | undefined
+u?.nome; // ✅ checagem funciona
+```
+
+O `<T>` é o **parâmetro de tipo** - funciona como uma variável,
+mas em vez de guardar um valor, guarda um tipo. O TS infere `T` a
+partir do argumento: array de `Usuario` → `T = Usuario`.
+
+### Generics com restrições
+
+Às vezes você quer que `T` seja "qualquer tipo, mas com essa
+propriedade". Usa `extends`:
+
+```typescript
+// T precisa ter um campo `id`
+function encontrarPorId<T extends { id: number }>(items: T[], id: number): T | undefined {
+  return items.find((item) => item.id === id);
+}
+
+encontrarPorId(usuarios, 1);  // ✅ T = Usuario
+encontrarPorId(produtos, 42); // ✅ T = Produto
+// encontrarPorId(["a", "b"], 1); // ❌ string não tem id: number
+```
+
+### Generics em tipos
+
+```typescript
+type Resposta<T> =
+  | { status: "sucesso"; dados: T }
+  | { status: "erro"; mensagem: string };
+
+function buscarUsuario(id: number): Resposta<Usuario> {
+  // ...
+}
+
+function buscarProduto(id: number): Resposta<Produto> {
+  // ...
+}
+```
+
+O mesmo formato genérico, especializado pra cada caso. É o padrão
+que bibliotecas como React Query e SWR usam por baixo.
+
+Três conceitos pra fixar:
+
+- **Generic** (`<T>`) - "variável de tipo" que a função/classe
+  recebe; TS infere a partir do uso.
+- **Restrição com `extends`** - força `T` a ter uma forma mínima
+  (ex: `{ id: number }`).
+- **Generics em tipos** - tipo parametrizado (`Resposta<T>`) que
+  especializa no uso, sem duplicar código.
+
+> Dica: comece a função sem generic. Se você ver `any` aparecendo
+> e sentindo que perdeu informação, é hora de generic. Não use
+> generic "preventivamente" - complica a leitura sem motivo.
+
+No próximo nó, vamos ver os **tipos utilitários** (`Partial`,
+`Pick`, `Omit`, etc.) - ferramentas prontas que o TS oferece pra
+transformar tipos sem reescrevê-los.
