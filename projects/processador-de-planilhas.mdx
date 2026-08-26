@@ -1,0 +1,60 @@
+---
+slug: processador-de-planilhas
+title: "Processador de Planilhas"
+description: "Upload de CSV grande que responde na hora e processa por trás — com retry, dead letter queue e relatório de erros linha a linha."
+difficulty: intermediario
+skills:
+  - rabbitmq
+  - mensageria
+  - workers
+  - api
+  - backend
+trilhas:
+  - rabbitmq-mensageria
+  - backend
+estimate: "1 semana"
+creators:
+  - name: "Rafael Coelho"
+    github: "rafa-coelho"
+---
+
+O cliente sobe uma planilha com 50 mil linhas de produtos. Se você processar
+tudo dentro da request, ele vai olhar pro spinner por três minutos — e o
+timeout do navegador chega antes do fim.
+
+## Objetivo
+
+Praticar o padrão mais comum de mensageria em backend: **aceitar trabalho,
+responder rápido e processar depois**. E, principalmente, lidar com o que
+falha no meio — porque numa planilha de 50 mil linhas, sempre tem linha ruim.
+
+## Requisitos
+
+- [ ] `POST /importacoes` recebe o arquivo, responde **202** com um id de importação
+- [ ] Um worker separado da API consome e processa as linhas
+- [ ] `GET /importacoes/:id` mostra o progresso (total, processadas, com erro)
+- [ ] Linha inválida não derruba a importação inteira — é registrada e o resto segue
+- [ ] Dead letter queue pra mensagem que falha depois das tentativas
+- [ ] Relatório final com as linhas que falharam e o motivo de cada uma
+
+## Desafios extras
+
+- [ ] Retry com espera crescente (TTL + DLX) pra falha temporária, tipo banco fora do ar
+- [ ] Vários workers em paralelo com `prefetch` ajustado — meça a diferença
+- [ ] Importação cancelável no meio
+- [ ] Idempotência: subir a mesma planilha duas vezes não pode duplicar produto
+- [ ] Notificar por e-mail quando terminar, publicando um segundo evento
+
+## Dicas
+
+- Decida cedo: uma mensagem por **arquivo** ou uma por **linha**? Por arquivo é
+  simples mas o retry reprocessa tudo; por linha dá controle fino mas gera 50 mil
+  mensagens. Não existe resposta certa — existe trade-off, e você precisa saber
+  qual escolheu.
+- Não mande o arquivo dentro da mensagem. Salve no disco ou num storage e mande
+  só a referência — mensagem grande entope o broker.
+- Separe erro **permanente** (CPF inválido, coluna faltando) de erro
+  **temporário** (banco indisponível). O primeiro vai direto pra DLQ; o segundo
+  merece retry. Misturar os dois é o que cria loop infinito.
+- Teste matando o worker no meio do processamento. Se as linhas já processadas
+  forem reprocessadas ao subir de novo, sua idempotência não está funcionando.

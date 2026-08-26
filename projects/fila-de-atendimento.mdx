@@ -1,0 +1,61 @@
+---
+slug: fila-de-atendimento
+title: "Fila de Atendimento"
+description: "Um sistema de senha de atendimento com prioridade — onde a fila não é uma tabela no banco, é uma fila de verdade."
+difficulty: intermediario
+skills:
+  - rabbitmq
+  - mensageria
+  - filas
+  - api
+  - backend
+trilhas:
+  - rabbitmq-mensageria
+  - backend
+estimate: "1 semana"
+creators:
+  - name: "Rafael Coelho"
+    github: "rafa-coelho"
+---
+
+Todo mundo já pegou senha em banco ou posto de saúde. Aqui você constrói o
+sistema por trás disso — com atendimento preferencial, painel de chamada e
+histórico.
+
+## Objetivo
+
+Praticar o momento em que **fila deixa de ser estrutura de dados e vira
+infraestrutura**. Você vai sentir na prática a diferença entre "guardar quem
+está esperando numa tabela" e "ter uma fila de verdade", e descobrir que
+prioridade muda tudo.
+
+## Requisitos
+
+- [ ] Endpoint que registra alguém na fila e devolve a senha e a posição
+- [ ] Categorias de atendimento (ex.: geral, preferencial) em filas separadas
+- [ ] Endpoint que chama o próximo, respeitando a prioridade entre categorias
+- [ ] Consulta de posição na fila por senha
+- [ ] Cancelar/desistir da senha antes de ser chamado
+- [ ] Histórico de chamadas: quem foi chamado, quando e por qual guichê
+
+## Desafios extras
+
+- [ ] Painel em tempo real com a senha atual (WebSocket ou polling)
+- [ ] Tempo médio de espera por categoria, calculado do histórico
+- [ ] Rechamada: senha não atendida volta pra fila, mas com limite de tentativas
+- [ ] Vários guichês consumindo ao mesmo tempo sem chamar a mesma senha duas vezes
+- [ ] Fila com prioridade nativa do RabbitMQ (`x-max-priority`) em vez de filas separadas
+
+## Dicas
+
+- Comece decidindo **o que é mensagem**. A senha em si? O evento "senha emitida"?
+  Essa escolha define o resto do desenho — pense antes de codar.
+- Consultar posição numa fila AMQP não é trivial: fila não foi feita pra ser
+  lida no meio. Provavelmente você vai precisar de um estado paralelo (banco ou
+  cache) espelhando a fila. Isso é normal — e é a lição.
+- Preferencial na frente do geral não é "outra fila só": é decisão de quem
+  consome. Duas filas e um consumidor que escolhe? Prioridade nativa? Anote o
+  trade-off da sua escolha.
+- Guichê que chama e não atende (o cliente sumiu) é o caso que quebra
+  implementação ingênua. Resolva com ack manual — se o guichê não confirma, a
+  senha não pode se perder.
