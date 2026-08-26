@@ -4,7 +4,10 @@ Todas as mudanças notáveis deste projeto são documentadas aqui. O formato
 segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o
 projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+
 ## [Não liberado]
+
+## [1.17.0] - 2026-08-25
 
 ### Adicionado
 - 🎓 **Trilha Fundamentos de Ciência da Computação** (`roadmaps/fundamentos-de-cs`, 10
