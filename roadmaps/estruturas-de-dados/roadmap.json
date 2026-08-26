@@ -3,6 +3,7 @@
   "title": "Estruturas de Dados",
   "description": "Aprofundamento em estruturas de dados: sequências, pilhas, filas, hash tables, recursão na prática, árvores (BST, balanceadas), heaps, grafos (representação, BFS/DFS, algoritmos clássicos) e tries. Cobre o que devs e candidatos a entrevistas técnicas precisam dominar - com diagramas Mermaid, quizzes formativos e checkpoints validados em JS.",
   "difficulty": "intermediario",
+  "published": "2026-08-26",
   "skills": [
     "estruturas-de-dados",
     "algoritmos",
