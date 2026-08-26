@@ -6,6 +6,34 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.19.0] - 2026-08-26
+
+### Adicionado
+
+- 🐰 **Trilha RabbitMQ e Mensageria** (`roadmaps/rabbitmq-mensageria`,
+  12 nós): para quem já constrói APIs e precisa desacoplar sistemas com
+  filas. Público: dev backend intermediário (pré-requisito: uma
+  linguagem de backend e noções de Docker). Começa pelo problema que a
+  mensageria resolve, monta o modelo mental de exchanges e roteamento,
+  e só então parte pro código: publicar, consumir, garantir entrega e
+  tratar o que falha. Os 12 nós: `por-que-mensageria` (por que filas
+  existem), `conceitos-amqp` (producer, exchange, queue, consumer),
+  `exchange-direct` (direct exchange e routing keys),
+  `exchange-fanout-topic` (fanout e topic: broadcast e padrões),
+  `subindo-o-rabbitmq` (subindo o RabbitMQ com Docker), `primeira-fila`
+  (publicando e consumindo), `ack-e-durabilidade` (ack, nack e não
+  perder mensagem), `prefetch-e-concorrencia` (prefetch e vários
+  consumidores), `dlq-e-retry` (dead letter queue e retry),
+  `padroes-de-mensageria` (work queue, pub/sub e RPC),
+  `producao-e-armadilhas` (erros comuns em produção) e `projeto-final`
+  (processamento assíncrono). **Interatividade: 11 quizzes formativos,
+  8 diagramas Mermaid**. Trilha escrita por **Rafael Coelho**
+  ([@rafa-coelho](https://github.com/rafa-coelho)).
+- 🆕 **Selo "novo"** na trilha RabbitMQ e Mensageria: campo
+  `published: "2026-08-26"` no `roadmaps/rabbitmq-mensageria/roadmap.json`
+  ativa o `<NewBadge>` no `TrilhaCard` (janela de 30 dias, avaliada no
+  client).
+
 ## [1.18.1] - 2026-08-26
 
 ### Adicionado

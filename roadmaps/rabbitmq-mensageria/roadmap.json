@@ -3,6 +3,7 @@
   "title": "RabbitMQ e Mensageria",
   "description": "Trilha para quem já constrói APIs e precisa desacoplar sistemas com filas. Começa pelo problema que a mensageria resolve, monta o modelo mental de exchanges e roteamento, e só então parte pro código: publicar, consumir, garantir entrega e tratar o que falha. Pré-requisito: uma linguagem de backend e noções de Docker.",
   "difficulty": "intermediario",
+  "published": "2026-08-26",
   "skills": ["rabbitmq", "mensageria", "filas", "amqp", "arquitetura", "backend"],
   "creators": [
     {
