@@ -26,6 +26,22 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `build-contributors.mjs --check` - se o `contributors.json` commitado
   estiver desatualizado, o job falha.
 
+## [1.20.0] - 2026-08-26
+
+### Adicionado
+
+- 🐰 **Três projetos de mensageria** (`projects/`), praticando a trilha
+  RabbitMQ e Mensageria: `central-de-notificacoes` (roteamento por
+  `topic` decidindo quem avisa por e-mail, push ou SMS),
+  `fila-de-atendimento` (senha de atendimento com prioridade, uma fila
+  de verdade em vez de tabela no banco) e `processador-de-planilhas`
+  (upload de CSV grande que responde na hora e processa por trás, com
+  retry, dead letter queue e relatório de erros linha a linha). Todos
+  `intermediario`.
+- 🆕 **Selo "novo"** nos três projetos acima: campo
+  `published: "2026-08-26"` no frontmatter ativa o `<NewBadge>`
+  (janela de 30 dias, avaliada no client).
+
 ## [1.19.0] - 2026-08-26
 
 ### Adicionado
