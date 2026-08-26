@@ -6,6 +6,11 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.18.1] - 2026-08-26
+
+### Adicionado
+- 🆕 **Selo "novo"** na trilha Estruturas de Dados: campo `published: "2026-08-26"` no `roadmaps/estruturas-de-dados/roadmap.json` ativa o `<NewBadge>` no `TrilhaCard` (janela de 30 dias, avaliada no client). Sem mudança de conteúdo, só metadata.
+
 ## [1.18.0] - 2026-08-25
 
 ### Adicionado
