@@ -1,0 +1,211 @@
+---
+id: grafos-representacao
+title: "Grafos: Como Representar uma Rede"
+resources:
+  - title: "Grafos (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "VisuAlgo - Graph visualizado"
+    url: https://visualgo.net/en/graphds
+    type: artigo
+    lang: en
+    free: true
+---
+
+Grafo é a estrutura que modela **relações many-to-many**: rede
+social (pessoas e amizades), mapa (cidades e estradas), internet
+(páginas e links), dependências de tarefas (jobs e suas
+prerequisites), compilação (arquivos e imports). Praticamente
+qualquer sistema "real" tem grafo escondido.
+
+## O essencial 🟢
+
+**Definição:** grafo é um conjunto de **vértices** (nós) conectados
+por **arestas** (edges). Cada aresta liga dois vértices.
+
+**Tipos principais:**
+
+- **Não direcionado:** aresta é uma relação simétrica. "A é amigo
+  de B" → A↔B. Ex: rede de amigos, malha rodoviária.
+- **Direcionado (digrafo):** aresta tem sentido. "A segue B" não
+  implica "B segue A". Ex: Twitter, links da web, dependências.
+- **Ponderado:** cada aresta tem um **custo/peso**. "Distância
+  entre cidades", "latência entre servidores". Ex: GPS, redes.
+- **Não ponderado:** arestas são todas iguais (ou só existem ou
+  não existem). Caso padrão.
+
+<Mermaid
+  chart={`graph LR
+    A["São Paulo"] ---|"400km"| B["Rio de Janeiro"]
+    A ---|"100km"| C["Campinas"]
+    B ---|"200km"| D["Belo Horizonte"]
+    C ---|"600km"| D
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#1f6feb,stroke:#fff,color:#fff
+    style C fill:#1f6feb,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="Grafo ponderado não direcionado: 4 cidades, 4 conexões com distâncias em km."
+/>
+
+**Como representar em código:** duas formas principais.
+
+**Lista de adjacência:** pra cada vértice, uma lista dos
+vizinhos. **Eficiente em espaço** (`O(V + E)`) e na maioria das
+operações. A representação padrão.
+
+```python
+# Lista de adjacência (mais comum).
+grafo = {
+    "São Paulo": ["Rio de Janeiro", "Campinas"],
+    "Rio de Janeiro": ["São Paulo", "Belo Horizonte"],
+    "Campinas": ["São Paulo", "Belo Horizonte"],
+    "Belo Horizonte": ["Rio de Janeiro", "Campinas"],
+}
+# Ponderado: lista de tuplas (vizinho, peso).
+```
+
+**Matriz de adjacência:** matriz `V × V` onde `M[i][j] = 1` (ou
+peso) se há aresta de `i` pra `j`. **Eficiente em checagem "existe
+aresta?"** (`O(1)`), mas **gasta `O(V²)` de espaço** mesmo
+quando o grafo é esparso.
+
+```python
+# Matriz de adjacência (esparsa = muito espaço desperdiçado).
+#           SP  RJ  CP  BH
+matriz = [
+  # SP     [0,  1,  1,  0],  # São Paulo
+  # RJ     [1,  0,  0,  1],  # Rio de Janeiro
+  # CP     [1,  0,  0,  1],  # Campinas
+  # BH     [0,  1,  1,  0],  # Belo Horizonte
+]
+# Ponderado: M[i][j] = peso, ou 0/inf se não há aresta.
+```
+
+**Regra prática:** lista de adjacência pra **maioria dos casos**
+(grafos esparsos, busca, pathfinding). Matriz só vale a pena se o
+grafo é **denso** (muitas arestas) ou se você precisa de checagem
+"existe aresta?" `O(1)` em loop apertado.
+
+**Grafo bipartido:** vértices divididos em dois conjuntos, e
+arestas só conectam vértices de conjuntos diferentes. Exemplos:
+trabalho e candidato, aluno e curso, usuário e filme. Detectar se
+um grafo é bipartido é um problema clássico (BFS com coloração).
+
+## Aprofundamento 🟡
+
+**Grafo implícito:** às vezes, o grafo é tão grande que não dá
+pra guardar. Você **gera os vizinhos** de um nó sob demanda.
+
+Exemplo: **problema do labirinto**. Cada posição é um nó, cada
+movimento válido é uma aresta. O grafo inteiro pode ter trilhões
+de nós - você não guarda. BFS/DFS gera vizinhos expandindo a
+posição atual.
+
+```python
+# Vizinhos no labirinto: cada posição tem 4 vizinhos (cima/baixo/esq/dir).
+def vizinhos(pos):
+    x, y = pos
+    return [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+    # (verificar limites e paredes antes de retornar)
+```
+
+Outro exemplo: **quebra-cabeça de 8 peças** (3x3 com 8 peças
+numeradas e 1 vazio). Cada estado é um nó, cada movimento válido
+é uma aresta. O grafo tem 9!/2 = 181.440 nós - cabe em memória,
+mas é "gerado" a cada expansão do BFS.
+
+**Grafo com arestas paralelas (multigrafo):** entre o mesmo par
+de vértices, pode haver múltiplas arestas. Ex: rotas de voo entre
+duas cidades (várias companhias). Representação: lista de listas
+de pares (mais que matriz).
+
+**Grafo auto-loop:** aresta de um vértice pra ele mesmo. Em geral
+ignorado ou usado pra modelar "estado inalterado".
+
+**DAG (Directed Acyclic Graph):** grafo direcionado **sem ciclos**.
+Fundamental pra modelar:
+
+- **Dependências de tarefas** (build: A depende de B, C depende
+  de A, etc).
+- **Ordenação topológica** (ordem de execução).
+- **Git history** (cada commit aponta pro pai; merges viram
+  múltiplos pais).
+- **Versionamento de pacotes** (dependências circulares são
+  erro de empacotamento).
+
+**Representação em código (resumo):**
+
+```python
+# Lista de adjacência - implementação manual.
+class Grafo:
+    def __init__(self):
+        self.adj = {}  # vértice -> lista de vizinhos
+
+    def adiciona_vertice(self, v):
+        if v not in self.adj:
+            self.adj[v] = []
+
+    def adiciona_aresta(self, u, v):
+        self.adiciona_vertice(u)
+        self.adiciona_vertice(v)
+        self.adj[u].append(v)
+        if não direcionado:
+            self.adj[v].append(u)
+```
+
+## Pra quem quer ir além 🔴
+
+**Hipergrafo:** arestas podem conectar mais de 2 vértices
+(hiperaresta). Útil pra modelar "este conjunto de pessoas
+trabalhou neste projeto" (relação ternária).
+
+**Grafo de cena (scene graph):** estrutura usada em computação
+gráfica pra organizar objetos 3D em hierarquia. Cada nó é um
+objeto (cubo, luz, câmera), arestas são "é filho de" ou
+"transformação aplicada a".
+
+**Grafo bipartido de Petersen, grafo de Kneser, grafo de
+Cayley:** estruturas da teoria dos grafos com propriedades
+matemáticas fascinantes. Referência: _Graph Theory_ (Bondy e
+Murty).
+
+**Leitura recomendada:**
+
+- Capítulo 22 do _Introduction to Algorithms_ (CLRS) -
+  representação e travessia básica.
+- Capítulo 3 do _Algorithms_ (Dasgupta et al., online) - mais
+  didático, com exemplos de grafos implícitos.
+
+> Dica: a primeira pergunta ao ver um problema é "isso é um
+> grafo disfarçado?". Redes, dependências, mapas, jogos, fluxo
+> de tarefas, conexões entre pessoas - tudo isso é grafo.
+> Modelar como grafo libera algoritmos clássicos pra resolver
+> (próximos 2 nós).
+
+No próximo nó, vamos percorrer grafos: **BFS** (busca em largura)
+e **DFS** (busca em profundidade) - os dois algoritmos que você
+mais usa em grafo.
+
+<Quiz
+  question="Você tem uma rede social com 1 milhão de usuários e 50 milhões de amizades. Qual representação é mais eficiente em espaço?"
+  options={[
+    {
+      text: "Matriz de adjacência (1M × 1M = 1 trilhão de células)",
+      correct: false,
+      explanation:
+        "Matriz de 1M×1M = 10^12 células. Mesmo bool de 1 byte, são 1TB. Não cabe em memória.",
+    },
+    {
+      text: "Lista de adjacência (1M usuários, cada um com ~50 amigos)",
+      correct: true,
+    },
+    {
+      text: "Tanto faz, ambas gastam o mesmo espaço",
+      correct: false,
+      explanation:
+        "Lista de adjacência: O(V + E) = O(1M + 50M) = O(51M) entradas. Matriz: O(V²) = O(10^12) entradas. Diferença de 5 ordens de grandeza.",
+    },
+  ]}
+/>

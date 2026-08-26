@@ -1,0 +1,192 @@
+---
+id: heaps
+title: "Heaps e Filas de Prioridade"
+resources:
+  - title: "Heap (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "Priority Queue (Python docs, heapq)"
+    url: https://docs.python.org/3/library/heapq.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Heap é uma árvore com uma propriedade simples e um truque esperto:
+ela **não precisa de ponteiros** - é representada num **array**. Por
+baixo de toda fila de prioridade, há um heap.
+
+## O essencial 🟢
+
+**Definição:** heap é uma **árvore binária quase-completa** (todos
+os níveis estão cheios, exceto talvez o último, que é preenchido da
+esquerda pra direita) com a **propriedade de heap**: o pai é sempre
+**maior** (max-heap) ou **menor** (min-heap) que os filhos. O
+resultado prático: o **maior (ou menor) elemento está sempre na
+raiz**.
+
+<Mermaid
+  chart={`graph TB
+    A["1 (raiz)"] --> B["3"]
+    A --> C["2"]
+    B --> D["7"]
+    B --> E["5"]
+    C --> F["8"]
+    C --> G["9"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff
+    style E fill:#1f6feb,stroke:#fff,color:#fff
+    style F fill:#1f6feb,stroke:#fff,color:#fff
+    style G fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="Min-heap: cada pai é menor que os filhos. Raiz é o menor de todos. Representação em array: [1, 3, 2, 7, 5, 8, 9]."
+/>
+
+**O truque:** como a árvore é quase-completa, dá pra representar
+num array sem ponteiros. Pra um nó no índice `i`:
+
+- **Filho esquerdo:** índice `2i + 1`
+- **Filho direito:** índice `2i + 2`
+- **Pai:** índice `(i - 1) // 2`
+
+A representação em array é mais **cache-friendly** (memória
+contígua) e economiza o overhead de ponteiros.
+
+**Operações principais (min-heap):**
+
+- **`insert(valor)`:** adiciona no fim do array, depois **sobe**
+  (`sift-up` / `bubble-up`) trocando com o pai enquanto for menor.
+  `O(log n)`.
+- **`extract-min`:** remove a raiz (o mínimo), coloca o **último
+  elemento** na raiz, depois **desce** (`sift-down` / `bubble-down`)
+  trocando com o **menor filho** enquanto for maior. `O(log n)`.
+- **`peek-min`:** retorna a raiz sem remover. `O(1)`.
+
+**Aplicação direta: fila de prioridade.** Você tem tarefas com
+prioridade (urgência). Quer processar sempre a mais urgente
+primeiro. Heap dá exatamente isso - `extract-min` retorna a de
+maior prioridade.
+
+```python
+import heapq
+
+# Min-heap em Python (heapq).
+fila = []
+heapq.heappush(fila, (3, "responder email"))
+heapq.heappush(fila, (1, "bug crítico em produção"))
+heapq.heappush(fila, (2, "code review"))
+
+while fila:
+    prioridade, tarefa = heapq.heappop(fila)
+    print(f"[prio {prioridade}] {tarefa}")
+# Saída:
+# [prio 1] bug crítico em produção
+# [prio 2] code review
+# [prio 3] responder email
+```
+
+A tupla `(prioridade, valor)` é comparada pelo primeiro elemento;
+se empate, pelo segundo.
+
+**Aplicação clássica: heapsort.** Construa um max-heap em `O(n)`,
+depois extraia o máximo `n` vezes (`O(log n)` cada). Total: `O(n
+log n)`. In-place (sem memória extra além do array). Na prática,
+quicksort costuma ser mais rápido por causa de constantes, mas
+heapsort garante `O(n log n)` no pior caso.
+
+## Aprofundamento 🟡
+
+**`heapify` constrói o heap em `O(n)`, não `O(n log n)`.** Parece
+contra-intuitivo - "inserir `n` elementos num heap é `O(n log n)`,
+mas construir de uma vez é `O(n)`?". A análise: a maioria dos
+nós está no **fundo da árvore** (perto das folhas), onde o
+`sift-down` faz pouco trabalho. Os nós perto da raiz são poucos,
+mas o trabalho lá é maior. A soma é `O(n)`.
+
+```python
+# Heapify em Python: transforma array em heap in-place.
+import heapq
+arr = [3, 1, 4, 1, 5, 9, 2, 6]
+heapq.heapify(arr)  # O(n)
+# arr agora é um min-heap válido
+```
+
+**Quando heap não é a estrutura certa:**
+
+- Você precisa de **busca por valor** (não só `extract-min`).
+  Heap não tem busca eficiente - é `O(n)`. Use **BST balanceada**
+  (acesso `O(log n)` por valor) ou **hash table** (acesso `O(1)`).
+- Você precisa de **ordem total** (acessar o k-ésimo menor).
+  Heap dá o menor, mas não o segundo ou terceiro sem extrair o
+  primeiro. Use **BST** ou **árvore de estatísticas** (mais rara).
+
+**`PriorityQueue` em Java:** é um wrapper em volta de `PriorityQueue`
+interno (que é um min-heap por padrão). `offer()` insere, `poll()`
+extrai, `peek()` olha o topo. `Comparator` permite customizar
+prioridade (max-heap, ou regra específica).
+
+**`std::priority_queue` em C++:** max-heap por padrão. `push`,
+`top`, `pop`. Use `std::greater<T>` pra virar min-heap.
+
+**`heapq` em Python:** só tem **min-heap**. Pra max-heap, **negue
+os valores** na inserção e na extração.
+
+## Pra quem quer ir além 🔴
+
+**Fibonacci heap** (Fredman e Tarjan, 1984) é uma variação
+sofisticada com operações ainda mais rápidas: `insert` em `O(1)`
+amortizado, `extract-min` em `O(log n)` amortizado, **`decrease-key`
+em `O(1)` amortizado**. Usado em algoritmos teóricos de grafo
+(Dijkstra, Prim) onde `decrease-key` aparece muito. Raro em
+código de aplicação - complexo de implementar, constantes altas
+na prática.
+
+**Pairing heap, binomial heap, leftist heap** são outras
+variações com trade-offs diferentes. Vale conhecer para
+entrevistas avançadas, mas a imensa maioria do código usa heap
+binário simples.
+
+**Por que `heapq` em Python é min-heap, não max-heap:** o módulo
+usa o mesmo array, sem wrapper. A escolha é minimizar a
+complexidade da API - "menor primeiro" é a convenção mais comum
+(scheduler, urgent first). Pra inverter, negue os valores.
+
+**Leitura recomendada:**
+
+- Capítulo 6 do _Introduction to Algorithms_ (CLRS) - heap binário,
+  heapsort, fila de prioridade.
+- Capítulo 4 do _Algorithms_ (Dasgupta et al., online) - versão
+  mais didática, com a análise de `heapify` em `O(n)`.
+
+> Dica: fila de prioridade é o uso nº 1 de heap em código real.
+> Quando você tem "processar o mais urgente primeiro" e a coleção
+> muda dinamicamente (não é "ordenar uma vez e processar em
+> ordem"), heap é a resposta.
+
+No próximo nó, vamos entrar em **grafos** - a estrutura que modela
+relações "many-to-many": redes sociais, mapas, dependências, internet.
+
+<Quiz
+  question="Você tem 1 milhão de tarefas com prioridade. Qual estrutura permite processar sempre a de maior prioridade em O(log n)?"
+  options={[
+    {
+      text: "Array ordenado - O(1) para o primeiro, mas O(n) para inserir",
+      correct: false,
+      explanation:
+        "Inserir 1 milhão de elementos em array ordenado é O(n²) total - muito lento.",
+    },
+    {
+      text: "Heap (fila de prioridade) - O(log n) para inserir e extrair o mínimo",
+      correct: true,
+    },
+    {
+      text: "Hash table - O(1) para qualquer acesso",
+      correct: false,
+      explanation:
+        "Hash table não dá ordem. Você acessa por chave, não por prioridade.",
+    },
+  ]}
+/>

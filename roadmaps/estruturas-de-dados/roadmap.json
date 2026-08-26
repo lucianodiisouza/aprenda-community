@@ -1,0 +1,121 @@
+{
+  "slug": "estruturas-de-dados",
+  "title": "Estruturas de Dados",
+  "description": "Aprofundamento em estruturas de dados: sequências, pilhas, filas, hash tables, recursão na prática, árvores (BST, balanceadas), heaps, grafos (representação, BFS/DFS, algoritmos clássicos) e tries. Cobre o que devs e candidatos a entrevistas técnicas precisam dominar - com diagramas Mermaid, quizzes formativos e checkpoints validados em JS.",
+  "difficulty": "intermediario",
+  "skills": [
+    "estruturas-de-dados",
+    "algoritmos",
+    "arvores",
+    "grafos",
+    "hash",
+    "recursao",
+    "cs"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "auto-diagnostico",
+      "title": "Auto-diagnóstico: Onde Você Está com Estruturas de Dados?",
+      "type": "milestone",
+      "recommended": true,
+      "children": ["arrays-listas"]
+    },
+    {
+      "id": "arrays-listas",
+      "title": "Sequências: Arrays, Listas Ligadas e a Memória por Trás",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pilhas-filas"]
+    },
+    {
+      "id": "pilhas-filas",
+      "title": "Pilhas e Filas: LIFO, FIFO e Onde o Computador Usa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["hash-tables"]
+    },
+    {
+      "id": "hash-tables",
+      "title": "Hash Tables: A Estrutura que Salva Vidas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["recursao-pratica"]
+    },
+    {
+      "id": "recursao-pratica",
+      "title": "Recursão na Prática: Dividir pra Conquistar com Estruturas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["arvores-anatomia"]
+    },
+    {
+      "id": "arvores-anatomia",
+      "title": "Árvores: Anatomia, Terminologia e Travessia",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["bst"]
+    },
+    {
+      "id": "bst",
+      "title": "BST: Árvore Binária de Busca",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["arvores-balanceadas"]
+    },
+    {
+      "id": "arvores-balanceadas",
+      "title": "Árvores Balanceadas: AVL e Red-Black",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["heaps"]
+    },
+    {
+      "id": "heaps",
+      "title": "Heaps e Filas de Prioridade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["grafos-representacao"]
+    },
+    {
+      "id": "grafos-representacao",
+      "title": "Grafos: Como Representar uma Rede",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["grafos-traversia"]
+    },
+    {
+      "id": "grafos-traversia",
+      "title": "Travessia de Grafos: BFS e DFS na Prática",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["grafos-algoritmos"]
+    },
+    {
+      "id": "grafos-algoritmos",
+      "title": "Algoritmos Clássicos de Grafos: Dijkstra, MST e Ordenação Topológica",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tries"]
+    },
+    {
+      "id": "tries",
+      "title": "Tries e Estruturas para Texto: Autocomplete e Índices",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Comparando Implementações de Verdade",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,237 @@
+---
+id: grafos-traversia
+title: "Travessia de Grafos: BFS e DFS na Prática"
+resources:
+  - title: "BFS e DFS (VisuAlgo, visualização interativa)"
+    url: https://visualgo.net/en/dfsbfs
+    type: artigo
+    lang: en
+    free: true
+  - title: "BFS (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+---
+
+BFS e DFS são os dois algoritmos fundamentais pra **percorrer
+todos os vértices** de um grafo. A diferença é a **ordem**: BFS
+visita por "camada" (todos os vizinhos antes dos vizinhos dos
+vizinhos), DFS visita "mergulhando" (vai fundo, volta, vai pra
+outro lado). Cada um destrava problemas diferentes.
+
+## O essencial 🟢
+
+**BFS (Breadth-First Search / Busca em Largura):** usa **fila**.
+Visita o vértice inicial, depois todos os vizinhos dele, depois
+todos os vizinhos dos vizinhos, e assim por diante. **Garante o
+caminho mais curto em grafo não ponderado.**
+
+```python
+from collections import deque
+
+def bfs(grafo, inicio):
+    visitados = {inicio}
+    fila = deque([inicio])
+    ordem = []  # ordem de visita
+
+    while fila:
+        v = fila.popleft()
+        ordem.append(v)
+        for vizinho in grafo[v]:
+            if vizinho not in visitados:
+                visitados.add(vizinho)
+                fila.append(vizinho)
+    return ordem
+```
+
+**DFS (Depth-First Search / Busca em Profundidade):** usa **pilha**
+(ou recursão - a pilha de chamadas). Vai fundo em um caminho até
+não dar mais, volta e tenta outro.
+
+```python
+def dfs(grafo, v, visitados=None):
+    if visitados is None:
+        visitados = set()
+    visitados.add(v)
+    print(v)  # visita
+    for vizinho in grafo[v]:
+        if vizinho not in visitados:
+            dfs(grafo, vizinho, visitados)
+```
+
+<Mermaid
+  chart={`graph TB
+    A["A (nível 0)"] --> B["B (nível 1)"]
+    A --> C["C (nível 1)"]
+    B --> D["D (nível 2)"]
+    B --> E["E (nível 2)"]
+    C --> F["F (nível 2)"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff
+    style E fill:#1f6feb,stroke:#fff,color:#fff
+    style F fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="BFS a partir de A visita: A, B, C, D, E, F (nível por nível). DFS visita: A, B, D, E, C, F (vai fundo, volta, vai pro próximo caminho)."
+/>
+
+**Complexidade de ambos:** `O(V + E)` - você visita cada vértice
+e cada aresta uma vez. O que muda é só a **ordem** e a estrutura
+auxiliar usada (fila vs pilha).
+
+**Aplicações clássicas de BFS:**
+
+- **Caminho mais curto** em grafo não ponderado.
+- **Nível de cada nó** (distância em saltos do inicial).
+- **Detectar bipartição** (coloração em 2 cores).
+- **Componentes conectados** (cada BFS é uma componente).
+- **Spreading em redes** (epidemias, viralização, network broadcast).
+- **Menor número de movimentos** (quebra-cabeças, labirintos).
+
+**Aplicações clássicas de DFS:**
+
+- **Detectar ciclos** (aresta "back" = ciclo).
+- **Ordenação topológica** (em DAG).
+- **Componentes fortemente conectados** (Kosaraju, Tarjan).
+- **Pontes e articulações** (arestas/nós que desconectam o grafo).
+- **Sudoku, N-rainhas, geração de labirintos** (backtracking).
+- **Tree traversal** (que é um caso especial de DFS em árvore).
+
+## Aprofundamento 🟡
+
+**BFS com reconstrução de caminho:** guarde o **pai** de cada nó
+(quem colocou ele na fila) e reconstrua o caminho voltando do fim
+ao início.
+
+```python
+def bfs_com_caminho(grafo, inicio, fim):
+    if inicio == fim: return [inicio]
+    pais = {inicio: None}
+    fila = deque([inicio])
+    while fila:
+        v = fila.popleft()
+        if v == fim:
+            # Reconstrói caminho
+            caminho = []
+            while v is not None:
+                caminho.append(v)
+                v = pais[v]
+            return caminho[::-1]
+        for vizinho in grafo[v]:
+            if vizinho not in pais:
+                pais[vizinho] = v
+                fila.append(vizinho)
+    return None  # não há caminho
+```
+
+**DFS com detecção de ciclo** (grafos não direcionados):
+
+```python
+def tem_ciclo(grafo):
+    visitados = set()
+    def dfs(v, pai):
+        visitados.add(v)
+        for vizinho in grafo[v]:
+            if vizinho not in visitados:
+                if dfs(vizinho, v): return True
+            elif vizinho != pai:  # back edge = ciclo
+                return True
+        return False
+    for v in grafo:  # cobre grafo desconexo
+        if v not in visitados:
+            if dfs(v, None): return True
+    return False
+```
+
+**Ordenação topológica** (DAG): use DFS, adicione o nó à lista
+**quando terminar de processar** (pós-ordem), depois **inverta**.
+Funciona porque em DAG, todo nó depende apenas dos processados
+depois dele.
+
+```python
+def ordenacao_topologica(grafo):
+    visitados = set()
+    ordem = []
+    def dfs(v):
+        visitados.add(v)
+        for vizinho in grafo[v]:
+            if vizinho not in visitados:
+                dfs(vizinho)
+        ordem.append(v)  # pós-ordem
+    for v in grafo:
+        if v not in visitados:
+            dfs(v)
+    return ordem[::-1]
+```
+
+**Complexidade espacial:** BFS guarda a fila (pode ser até `O(V)`).
+DFS recursivo usa a pilha de chamadas (pode ser até `O(V)` em
+lista ligada). Em grafos muito profundos, prefira DFS iterativo
+(com pilha explícita) pra não estourar a call stack.
+
+**Iterativo vs recursivo:** BFS é iterativo por natureza (fila).
+DFS pode ser recursivo (elegante) ou iterativo (com pilha
+explícita). Pra grafos muito grandes, iterativo é mais seguro.
+
+## Pra quem quer ir além 🔴
+
+**Busca bidirecional:** pra "caminho de A até B" em grafo
+grande, faça BFS de A **e** de B simultaneamente, e pare quando
+as duas buscas se encontram. Na prática, é 2× mais rápido que
+BFS só de A (em grafos com fator de ramificação alto).
+
+**Algoritmo de Kosaraju:** encontra **componentes fortemente
+conectados** (SCC) em `O(V + E)`. Idéia: roda DFS, guarda ordem
+de finalização, transpõe o grafo, roda DFS de novo na ordem
+inversa. Cada árvore do segundo DFS é uma SCC.
+
+**Algoritmo de Tarjan:** mesma coisa, em **uma única passada**
+de DFS, usando uma pilha. Mais elegante e eficiente em
+constantes, mas mais difícil de implementar corretamente.
+
+**Busca A\* (A-star):** generalização de BFS pra grafos
+ponderados, com **heurística** que guia a busca. Usado em GPS
+(menor rota entre duas cidades), pathfinding em jogos
+(menor caminho entre dois pontos em grid), e navegação em
+robótica. Heurística boa = busca muito mais rápida. Heurística
+ruim = degenera em Dijkstra.
+
+**Leitura recomendada:**
+
+- Capítulo 22 do _Introduction to Algorithms_ (CLRS) - BFS e
+  DFS com provas de correção.
+- Capítulo 4 do _Algorithms_ (Dasgupta et al., online) - versão
+  mais didática, com exemplos visuais.
+
+> Dica: BFS pra "menor caminho em grafo não ponderado" e "ordem
+> por nível". DFS pra "detectar ciclo", "ordem topológica",
+> "backtracking" e "explorar tudo". Quando o grafo é ponderado,
+> vai pra Dijkstra (próximo nó).
+
+No próximo nó, vamos ver os algoritmos clássicos de grafos
+ponderados: **Dijkstra** (caminho mínimo), **MST** (árvore
+geradora mínima) e ordenação topológica (já vimos DFS, agora
+com pesos).
+
+<Quiz
+  question="Você precisa achar o menor caminho (em número de saltos) entre dois usuários de uma rede social. Qual algoritmo?"
+  options={[
+    {
+      text: "DFS - ele explora todos os caminhos possíveis",
+      correct: false,
+      explanation:
+        "DFS encontra UM caminho (não o menor), e pode explorar caminhos longos antes do curto.",
+    },
+    {
+      text: "BFS - ele expande por nível, então o primeiro caminho encontrado é o menor",
+      correct: true,
+    },
+    {
+      text: "BFS com pesos - usa a distância acumulada pra priorizar",
+      correct: false,
+      explanation:
+        'Não existe "BFS com pesos" - em grafo ponderado, BFS não garante caminho mínimo (a aresta mais curta pode ter mais saltos).',
+    },
+  ]}
+/>

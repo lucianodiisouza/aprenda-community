@@ -1,0 +1,159 @@
+---
+id: auto-diagnostico
+title: "Auto-diagnóstico: Onde Você Está com Estruturas de Dados?"
+resources:
+  - title: "Glossary of computer terms (Wikipedia EN)"
+    url: https://en.wikipedia.org/wiki/Glossary_of_computer_terms
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de mergulhar nas estruturas, vale 5 minutos pra você saber **onde
+está** nesta trilha. Os próximos nós têm três camadas, como em
+[Fundamentos de CS](../../fundamentos-de-cs):
+
+- 🟢 **Essencial** - o que todo mundo precisa saber.
+- 🟡 **Aprofundamento** - onde a coisa morde no dia a dia de dev.
+- 🔴 **Pra quem quer ir além** - formalização, papers, estruturas
+  alternativas.
+
+Você não precisa fazer todas as camadas em todos os nós. Este quiz
+devolve um perfil e te ajuda a decidir.
+
+## O quiz (10 perguntas, sem nota)
+
+Responde honestamente - não tem gabarito, e o objetivo é te guiar, não
+te avaliar. Pra cada pergunta, marca o nível que mais combina com você
+hoje.
+
+**1. Qual a diferença prática entre array e lista ligada?**
+
+- (A) Não sei.
+- (B) Sei que "lista ligada tem ponteiros" mas não saberia dizer
+  quando uma é melhor que a outra.
+- (C) Sei que array tem acesso `O(1)` por índice e lista ligada tem
+  inserção `O(1)` no meio (com referência), e consigo explicar a
+  diferença de **localidade de memória** entre as duas.
+- (D) Já implementei as duas do zero, ou sei explicar por que a
+  maioria das linguagens modernas prefere array dinâmico por baixo.
+
+**2. O que acontece quando você faz `mapa[chave] = valor` num `Map` em
+JavaScript (ou `dict` em Python)?**
+
+- (A) Não sei / nunca pensei.
+- (B) Sei que "guarda o valor associado à chave" mas não sei o que
+  acontece por baixo.
+- (C) Sei que usa uma **tabela hash** por baixo, e que o lookup médio
+  é `O(1)`.
+- (D) Sei o que é **colisão por encadeamento** vs **endereçamento
+  aberto**, e por que o redimensionamento acontece em potência de 2.
+
+**3. O que é uma pilha (stack)? Onde ela é usada no computador?**
+
+- (A) Não sei o que é.
+- (B) Sei que é "LIFO" mas não consigo dar exemplo real.
+- (C) Sei que a **pilha de chamadas** usa uma pilha, e que undo/redo
+  também.
+- (D) Sei implementar uma pilha em código, e entendo por que o
+  processador tem uma stack separada de heap.
+
+**4. O que é recursão? Quando ela é útil?**
+
+- (A) Não sei.
+- (B) Sei que é "função que chama ela mesma" mas travo em exemplos
+  não-clássicos.
+- (C) Consigo escrever e analisar recursão simples (fatorial, fib),
+  e sei que divide-and-conquer usa recursão (mergesort, quicksort).
+- (D) Consigo escolher entre recursão e iteração com critério
+  (profundidade da pilha, custo de espaço, legibilidade).
+
+**5. O que é uma árvore binária? E uma BST?**
+
+- (A) Não sei o que é árvore em programação.
+- (B) Já ouvi falar, sei que tem "nó" e "filhos", mas não saberia
+  implementar.
+- (C) Sei que BST mantém os menores à esquerda e maiores à direita,
+  e que busca é `O(log n)` na média.
+- (D) Sei o que acontece quando uma BST **desbalanceia** e vira `O(n)`,
+  e consigo citar pelo menos uma estrutura auto-balanceada (AVL ou
+  Red-Black).
+
+**6. O que é um grafo? Dê um exemplo de problema que vira grafo.**
+
+- (A) Não sei.
+- (B) "É um conjunto de nós conectados" - mas não saberia dar
+  exemplo concreto.
+- (C) Sei modelar rede social, mapa, dependências de tarefas como
+  grafo, e sei a diferença entre **direcionado** e **não direcionado**.
+- (D) Sei representar grafo em **lista de adjacência** vs **matriz
+  de adjacência**, e consigo rodar BFS/DFS na mão em grafo pequeno.
+
+**7. Qual a diferença entre `O(1)`, `O(log n)`, `O(n)` e `O(n log n)`?**
+
+- (A) Não sei o que isso significa.
+- (B) Sei que `O(1)` é "rápido" e `O(n²)` é "lento" mas confundo
+  com o resto.
+- (C) Consigo classificar busca linear vs binária, e percorro
+  mentalmente um loop aninhado como `O(n²)`.
+- (D) Consigo analisar recursão via **relação de recorrência** e
+  custo de espaço.
+
+**8. O que é um heap? Pra que serve?**
+
+- (A) Não sei o que é heap (em estrutura de dados).
+- (B) Já ouvi falar, sei que "tem a ver com prioridade", mas não
+  saberia usar.
+- (C) Sei que é uma **árvore quase-completa** que garante o maior
+  (ou menor) elemento na raiz, e que inserção/remoção são `O(log n)`.
+- (D) Sei que fila de prioridade em Java/C++/Python usa heap por
+  baixo, e consigo implementar `insert` e `extract-min` em array.
+
+**9. O que é uma trie? Onde você já usou sem saber?**
+
+- (A) Nunca ouvi falar.
+- (B) "É uma árvore de letras" - mas não saberia explicar o uso.
+- (C) Sei que está por trás de **autocomplete** e busca por prefixo,
+  e que inserção/busca são `O(k)` onde `k` é o tamanho da chave.
+- (D) Já implementei uma trie, ou estendi o conceito pra caminhares
+  em grafo (Aho-Corasick, suffix trie).
+
+**10. Por que dev se importa com estrutura de dados e não só com
+linguagem/framework?**
+
+- (A) Não sei por que importa.
+- (B) "É importante pra entrevistas" - mas não consigo ligar com
+  código real.
+- (C) Sei que **trocar a estrutura muda a complexidade** (ex: array
+  pra hash map muda `O(n²)` pra `O(n)`).
+- (D) Já otimizei sistema em produção trocando a estrutura de dados,
+  ou ajudei time a escolher entre SQL/NoSQL/coluna com base em
+  modelagem.
+
+## Seu perfil
+
+Some quantos (A), (B), (C) e (D) você marcou.
+
+- **0-2 (D), muitos (A)/(B) - Perfil iniciante.** Vai com calma na
+  camada 🟢. Quando travar num conceito, lê o 🟡 pra ver a aplicação
+  prática. Pula o 🔴 sem peso na consciência. Se quiser, faz primeiro
+  a trilha [`programacao-do-zero`](../../programacao-do-zero) e/ou
+  [`complexidade-de-algoritmos`](../../complexidade-de-algoritmos) -
+  elas constroem a base que esta trilha assume.
+- **Distribuição entre (B) e (C), pouco (D) - Perfil prático.** É o
+  perfil mais comum: dev júnior/pleno querendo nivelar. 🟢 é revisão
+  rápida, 🟡 é onde você vai gastar energia, 🔴 é bônus se o tema te
+  interessar.
+- **Muitos (C) e alguns (D) - Perfil teórico.** Universitário ou
+  dev buscando fundão. 🟢 é base, 🟡 ancora no real, 🔴 é o que você
+  vai curtir.
+- **Maioria (D) - Perfil especialista.** Você provavelmente já sabe
+  quase tudo aqui. Pula o 🟢, foca no 🔴 pra pegar referências e
+  conexões que talvez não viu. Se encontrar algo novo, conta pra gente.
+
+> O perfil é um ponto de partida, não uma camisa-de-força. Se um nó
+> 🟢 te ensinou algo, leu com atenção. Se um nó 🔴 te entediou, pula
+> sem culpa. O objetivo é aprender, não completar checklist.
+
+No próximo nó, vamos começar pelo **começo de tudo**: arrays e listas
+ligadas - como sequências viram a estrutura mais usada em código real.

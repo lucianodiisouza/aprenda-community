@@ -1,0 +1,179 @@
+---
+id: recursao-pratica
+title: "Recursão na Prática: Dividir pra Conquistar com Estruturas"
+resources:
+  - title: "Thinking Recursively (Python docs)"
+    url: https://docs.python.org/3/tutorial/controlflow.html#defining-functions
+    type: doc
+    lang: en
+    free: true
+  - title: "Recursion (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+---
+
+A trilha [`complexidade-de-algoritmos`](../../complexidade-de-algoritmos)
+já mostrou como analisar recursão. Aqui, o foco é o **lado
+estrutural**: como a recursão **se apoia em EDs** (pilha de chamadas,
+árvores, grafos) pra resolver problemas que loop sozinho complica.
+
+## O essencial 🟢
+
+Recursão é uma função que **chama ela mesma** com entrada menor. Tem
+três peças obrigatórias:
+
+1. **Caso base:** quando a entrada é simples o suficiente pra resolver
+   direto, sem mais chamadas.
+2. **Caso recursivo:** quando divide o problema em um subproblema menor
+   - trabalho extra.
+3. **Progresso em direção ao caso base:** cada chamada recursiva tem
+   que estar mais perto do caso base.
+
+```python
+# Soma de lista - linear, simples.
+def soma(lista):
+    if not lista:                # caso base: lista vazia
+        return 0
+    return lista[0] + soma(lista[1:])  # divide: primeiro + resto
+```
+
+**Por que recursão brilha com estruturas de dados:**
+
+- **Árvores** são definidas recursivamente: uma árvore é um nó com
+  zero ou mais **subárvores**. Pra processar uma árvore, processa
+  a raiz e recursa nas subárvores. É a definição mais natural.
+- **Grafos** têm **busca em profundidade** (DFS) que é recursão com
+  marcação de visitados - cada chamada recursiva visita um vizinho
+  novo.
+- **Dividir pra conquistar** (merge sort, quick sort, busca binária):
+  divide a entrada em metades, resolve cada metade recursivamente,
+  combina os resultados.
+
+**O "truque" pra entender recursão:** acredite que a chamada recursiva
+funciona. Não tente simular tudo na cabeça. Pra `soma([1, 2, 3])`:
+"a chamada `soma([2, 3])` retorna 5, então meu retorno é `1 + 5 = 6`".
+Só isso.
+
+## Aprofundamento 🟡
+
+**Traversia de árvore em pré-ordem** (visita raiz, depois filhos):
+
+```python
+def pre_ordem(no):
+    if no is None:
+        return
+    print(no.valor)         # visita raiz
+    pre_ordem(no.esquerda)  # recursa na subárvore esquerda
+    pre_ordem(no.direita)   # recursa na subárvore direita
+```
+
+**Em-ordem** (esquerda, raiz, direita) e **pós-ordem** (esquerda,
+direita, raiz) seguem a mesma estrutura, mudando só quando a "visita"
+acontece.
+
+**Busca em profundidade (DFS) em grafo:**
+
+```python
+def dfs(grafo, no, visitados=None):
+    if visitados is None:
+        visitados = set()
+    visitados.add(no)
+    print(no)
+    for vizinho in grafo.vizinhos(no):
+        if vizinho not in visitados:
+            dfs(grafo, vizinho, visitados)
+```
+
+Sem o `visitados`, DFS em grafo com ciclo **nunca para** - fica
+girando entre os mesmos nós. O conjunto `visitados` quebra o ciclo.
+
+**Memoização (DP top-down):** quando a recursão refaz o mesmo
+trabalho, guardar o resultado num hash table (`dict`/`Map`) destrava:
+
+```python
+from functools import lru_cache
+
+@lru_cache
+def fib(n):
+    if n < 2:
+        return n
+    return fib(n-1) + fib(n-2)
+# fib(100) retorna em microssegundos, sem memo estoura a pilha
+```
+
+**Recursão de cauda (tail recursion):** quando a chamada recursiva é a
+**última** coisa que a função faz, o compilador pode **otimizar** -
+transforma a chamada recursiva em loop, sem crescer a pilha. Nem toda
+linguagem faz isso (JS **não faz**, Python **não faz**, Scheme/Haskell
+fazem). Em código de produção, é mais seguro converter manualmente:
+
+```python
+# Recursiva (pode estourar pilha pra N grande)
+def soma_n(n):
+    if n == 0: return 0
+    return n + soma_n(n - 1)
+
+# Iterativa (equivalente, sem risco de pilha)
+def soma_n_iter(n):
+    total = 0
+    for i in range(1, n + 1):
+        total += i
+    return total
+```
+
+## Pra quem quer ir além 🔴
+
+**Teorema mestre (Master theorem)** resolve relações de recorrência
+do tipo `T(n) = a · T(n/b) + f(n)` direto, sem desdobrar. Útil pra
+analisar merge sort, binary search, e algoritmos divide-and-conquer.
+As três regras cobrem 90% dos casos:
+
+- Se `f(n) = O(n^(log_b(a) - ε))`, então `T(n) = Θ(n^log_b(a))`.
+  Mais trabalho nas folhas.
+- Se `f(n) = Θ(n^log_b(a))`, então `T(n) = Θ(n^log_b(a) · log n)`.
+  Trabalho balanceado em cada nível.
+- Se `f(n) = Ω(n^(log_b(a) + ε))`, então `T(n) = Θ(f(n))`.
+  Mais trabalho na raiz.
+
+**Recursão mutual** (função A chama B, B chama A) é uma forma de
+implementar **máquinas de estado**. Parsers, evaluators, e o
+próprio `useState` do React (em parte) usam essa ideia.
+
+**Leitura recomendada:**
+
+- Capítulo 4 do _Introduction to Algorithms_ (CLRS) - divide and
+  conquer com análise completa.
+- Capítulo 5 do mesmo livro - análise amortizada e métodos
+  avançados.
+
+> Dica: ao ver um problema com estrutura **recursiva** (árvore, grafo,
+> "dividir em N partes menores"), recursão é a primeira coisa a
+> tentar. Ao ver um problema **linear** (lista, array, string),
+> loop iterativo é mais simples e mais rápido.
+
+No próximo nó, vamos ver a estrutura que mais usa recursão:
+**árvores** - começando pela anatomia e como pensar nelas.
+
+<Quiz
+  question="Você precisa percorrer uma árvore binária e processar cada nó. Qual abordagem é mais natural?"
+  options={[
+    {
+      text: "Loop iterativo com pilha explícita",
+      correct: false,
+      explanation:
+        "Funciona (DFS iterativo), mas árvores são definidas recursivamente - a versão recursiva é mais curta e legível.",
+    },
+    {
+      text: "Recursão, porque árvore é naturalmente recursiva (nó + subárvores)",
+      correct: true,
+    },
+    {
+      text: "Recursão com memoização, porque a árvore tem subproblemas repetidos",
+      correct: false,
+      explanation:
+        "Memoização ajuda quando há subproblemas repetidos (ex: fibonacci). Percorrer árvore não repete subproblemas - cada nó aparece uma vez.",
+    },
+  ]}
+/>

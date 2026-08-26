@@ -1,0 +1,171 @@
+---
+id: arvores-balanceadas
+title: "Árvores Balanceadas: AVL e Red-Black"
+resources:
+  - title: "AVL Tree (VisuAlgo, visualização interativa)"
+    url: https://visualgo.net/en/avl
+    type: artigo
+    lang: en
+    free: true
+  - title: "Red-Black Tree (Wikipedia, em PT-BR)"
+    url: https://pt.wikipedia.org/wiki/%C3%81rvore_rubro-negra
+    type: doc
+    lang: pt
+    free: true
+---
+
+BST pura tem um defeito grave: pode virar lista. Árvores
+auto-balanceadas resolvem isso garantindo altura `O(log n)` após
+cada inserção/remoção, mesmo com dados em ordem. As duas mais
+usadas são **AVL** e **Red-Black**.
+
+## O essencial 🟢
+
+**AVL** (Adelson-Velsky e Landis, 1962) é a primeira árvore
+auto-balanceada da história. A regra é simples: pra cada nó, a
+altura das duas subárvores (esquerda e direita) difere em **no
+máximo 1**. Essa diferença é o **fator de balanceamento** do nó.
+
+<Mermaid
+  chart={`graph TB
+    A["raiz<br/>FB=+1"] --> B["esq<br/>FB=0"]
+    A --> C["dir<br/>FB=0"]
+    B --> D["esq<br/>FB=0"]
+    B --> E["dir<br/>FB=0"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff
+    style E fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="AVL balanceada: cada nó tem fator de balanceamento entre -1 e +1."
+/>
+
+Quando uma inserção/remoção desbalanceia (fator passa de +1 ou
+-1), **rotações** reequilibram. Existem 4 casos de desbalanceamento,
+cada um com rotação específica (simples ou dupla):
+
+- **LL:** inserção na subárvore esquerda da esquerda. Rotação
+  simples à direita.
+- **RR:** inserção na subárvore direita da direita. Rotação
+  simples à esquerda.
+- **LR:** inserção na subárvore direita da esquerda. Rotação dupla
+  (esquerda + direita).
+- **RL:** inserção na subárvore esquerda da direita. Rotação dupla
+  (direita + esquerda).
+
+Cada rotação é `O(1)`. Como cada inserção/remoção dispara no máximo
+`O(log n)` rotações (uma por nível de volta até a raiz), o custo
+amortizado continua `O(log n)`.
+
+**Red-Black** (Bayer, 1972, refinado por Guibas e Sedgewick, 1978)
+é a árvore usada por **baixo de `SortedSet`, `TreeMap`, `std::map`,
+`TreeSet` da maioria das linguagens**. Em vez de uma regra de altura,
+ela tem **5 propriedades** que juntas garantem `O(log n)`:
+
+1. Cada nó é **vermelho** ou **preto**.
+2. A **raiz é preta**.
+3. Toda **folha (NIL)** é preta.
+4. Se um nó é vermelho, **ambos os filhos são pretos** (sem dois
+   vermelhos em sequência).
+5. Todo caminho da raiz a uma folha NIL tem o **mesmo número de
+   nós pretos** (regra do "preto igual").
+
+A ideia é parecida com AVL, mas o reequilíbrio é diferente - **não
+rotação pura**, e sim uma combinação de **recolorir** e **rotacionar**.
+A vantagem é que Red-Black é **mais rápida na inserção** (faz
+menos rotações em sequência), enquanto AVL é **mais rápida na
+busca** (mais rígida, mais balanceada).
+
+## Aprofundamento 🟡
+
+**Por que a maioria das linguagens escolhe Red-Black:**
+
+- **Menos rotações por inserção.** AVL garante altura `~1.44 · log n`,
+  Red-Black garante altura `~2 · log n`. AVL é mais rasa (busca
+  mais rápida), mas rebalanceia com mais frequência (inserção
+  mais lenta). Pra uso geral (inserção tão frequente quanto busca),
+  Red-Black é o sweet spot.
+- **Implementação mais simples de invariantes** - basta checar 5
+  regras de cor, em vez de calcular fator de balanceamento de cada
+  ancestral.
+
+**`std::map` em C++:** árvore red-black.
+**`TreeMap` e `TreeSet` em Java:** árvore red-black.
+**`SortedDict` em Python** (via `sortedcontainers`): lista de
+listas, mas a ideia de manter ordenado é a mesma.
+**`Map` em Go (`sync.Map` para concorrência):** usa uma variação
+chamada **B-tree de duas dimensões** (lock-free).
+
+**B-tree** é generalização importante: em vez de 2 filhos por nó,
+cada nó pode ter **muitos filhos** (até centenas). É a estrutura
+que SQLite, PostgreSQL, MySQL usam por baixo dos **índices**:
+cada nó é uma **página de disco** (4KB a 16KB), e minimizar o
+número de páginas lidas é o objetivo. Busca em B-tree é
+`O(log n)` também, mas com base muito maior - `log_100(n)` em vez
+de `log_2(n)`. Pra 1 milhão de registros, são **3 leituras de
+disco** em vez de 20.
+
+**Quando o balanceamento "não compensa":** se os dados já vêm
+**uniformemente distribuídos** (ex: hash de IDs), BST pura tem
+altura esperada `Θ(log n)`. Em sistemas embarcados sem recursos
+pra árvore complexa, às vezes vale aceitar o pior caso `O(n)`.
+
+## Pra quem quer ir além 🔴
+
+**Splay tree** (Sleator e Tarjan, 1985) é BST que move o nó
+acessado pra raiz após cada operação. **Auto-otimiza** pra
+acessos repetidos - se você acessa o mesmo nó várias vezes, as
+próximas buscas são `O(1)`. Usado em caches de sistemas de
+arquivos e em alguns bancos de dados. Não garante `O(log n)` no
+pior caso (pode degenerar), mas tem **análise amortizada** `O(log n)`.
+
+**Treap** (Seidel e Aragon, 1996) combina BST + heap: cada nó
+tem uma chave (ordenada pela BST) e uma **prioridade aleatória**
+(ordenada pela heap). A aleatoriedade garante altura esperada
+`O(log n)` sem rebalanceamento explícito. Implementação curta e
+elegante.
+
+**Análise amortizada de AVL/Red-Black:** o número total de
+rotações em `n` inserções é `O(n)` (cada rotação custa `O(1)`,
+total `O(n)` para `n` inserções). Logo, custo amortizado por
+inserção é `O(1)` para rotações + `O(log n)` para a busca
+inicial da posição. **Total: `O(log n)` amortizado**.
+
+**Leitura recomendada:**
+
+- Capítulo 13 do _Introduction to Algorithms_ (CLRS) - Red-Black
+  com prova completa de todas as 5 propriedades.
+- Capítulo 4 do _Algorithms_ (Dasgupta et al., online) - AVL e
+  B-tree, com análise de altura e operações.
+
+> Dica: nunca implemente AVL ou Red-Black do zero em produção.
+> Use a estrutura da sua linguagem. Saiba **existe** e **quando
+> é usada por baixo**. Quando sua busca está lenta num set
+> ordenado, a culpa é provavelmente que você está usando uma
+> BST não-balanceada por baixo (ou um array ordenado + busca
+> binária mal usada).
+
+No próximo nó, vamos ver **heap** - outra árvore com propriedade
+diferente, focada em "mínimo (ou máximo) sempre na raiz".
+
+<Quiz
+  question="Qual a principal diferença prática entre AVL e Red-Black?"
+  options={[
+    {
+      text: "AVL é melhor pra inserção, Red-Black é melhor pra busca",
+      correct: false,
+      explanation:
+        "É o oposto. AVL rebalanceia mais (mais rotações por inserção), mas é mais rasa (busca mais rápida).",
+    },
+    {
+      text: "Red-Black é melhor pra inserção (menos rotações), AVL é melhor pra busca (mais rasa)",
+      correct: true,
+    },
+    {
+      text: "São a mesma estrutura com nomes diferentes",
+      correct: false,
+      explanation:
+        "Compartilham o objetivo (auto-balancear) mas têm regras de rebalanceamento e análise diferentes.",
+    },
+  ]}
+/>

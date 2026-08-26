@@ -1,0 +1,249 @@
+---
+id: bst
+title: "BST: Árvore Binária de Busca"
+resources:
+  - title: "Binary Search Tree (VisuAlgo)"
+    url: https://visualgo.net/en/bst
+    type: artigo
+    lang: en
+    free: true
+  - title: "BST (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+---
+
+BST é a árvore binária com uma propriedade extra: pra cada nó, todos
+os valores à **esquerda** são **menores**, e todos à **direita** são
+**maiores**. Essa propriedade única destrava busca, inserção e remoção
+em `O(log n)` - mas só se a árvore estiver **balanceada**.
+
+## O essencial 🟢
+
+**Propriedade BST:** pra todo nó `N`:
+
+- Todos os nós na subárvore **esquerda** têm valor **menor** que `N`.
+- Todos os nós na subárvore **direita** têm valor **maior** que `N`.
+
+<Mermaid
+  chart={`graph TB
+    A["8"] --> B["3"]
+    A --> C["10"]
+    B --> D["1"]
+    B --> E["6"]
+    E --> F["4"]
+    E --> G["7"]
+    C --> H["14"]
+    H --> I["13"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff
+    style E fill:#1f6feb,stroke:#fff,color:#fff
+    style F fill:#1f6feb,stroke:#fff,color:#fff
+    style G fill:#1f6feb,stroke:#fff,color:#fff
+    style H fill:#1f6feb,stroke:#fff,color:#fff
+    style I fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="BST: cada nó da subárvore esquerda é menor, cada nó da direita é maior. Travessia em-ordem: 1, 3, 4, 6, 7, 8, 10, 13, 14 - em ordem."
+/>
+
+**Busca:** começa na raiz. Se o valor procurado é menor, vai pra
+esquerda. Se é maior, vai pra direita. Repete até achar ou chegar
+em `None` (não existe). Em árvore balanceada, descarta metade a cada
+nível - `O(log n)`.
+
+```python
+def busca(no, valor):
+    if no is None or no.valor == valor:
+        return no
+    if valor < no.valor:
+        return busca(no.esquerda, valor)
+    else:
+        return busca(no.direita, valor)
+```
+
+**Inserção:** mesma lógica da busca - desce até achar uma posição
+`None` (onde a recursão parou) e cria o novo nó ali.
+
+```python
+def inserir(no, valor):
+    if no is None:
+        return No(valor)
+    if valor < no.valor:
+        no.esquerda = inserir(no.esquerda, valor)
+    elif valor > no.valor:
+        no.direita = inserir(no.direita, valor)
+    return no
+```
+
+**Remoção:** três casos, em ordem de complexidade:
+
+1. **Nó folha** (sem filhos): só remove. `O(1)`.
+2. **Nó com 1 filho:** substitui pelo filho. `O(1)` (depois de achar).
+3. **Nó com 2 filhos:** acha o **sucessor em-ordem** (menor valor
+   da subárvore direita) ou o **predecessor em-ordem** (maior valor
+   da subárvore esquerda), copia o valor pro nó a ser removido, e
+   remove o sucessor/predecessor (que cai no caso 1 ou 2).
+
+**Achar mínimo:** desce sempre pela esquerda até `None`. Retorna o
+último nó não-nulo. Usado pra sucessor em-ordem.
+
+## Aprofundamento 🟡
+
+**O "defeito" da BST pura: desbalanceamento.** Se você inserir valores
+em ordem (1, 2, 3, 4, 5), a árvore vira uma **lista ligada**:
+
+```
+1
+ \
+  2
+   \
+    3
+     \
+      4
+       \
+        5
+```
+
+Busca vira `O(n)` - não tem ganho sobre array ordenado. O pior caso
+acontece com dados já ordenados (ou quase ordenados) - comum em
+cenários reais (timestamps, IDs sequenciais).
+
+**Solução:** árvore **auto-balanceada** (próximo nó). Mas vale
+conhecer a operação que mantém a árvore balanceada: **rotação**.
+
+<Mermaid
+  chart={`graph LR
+    subgraph "Antes"
+      direction TB
+      A1["X"] --- B1["Y"]
+      A1 --- C1["T1"]
+      B1 --- D1["T2"]
+      B1 --- E1["T3"]
+    end
+    subgraph "Depois (rotação direita)"
+      direction TB
+      A2["Y"] --- B2["X"]
+      A2 --- C2["T3"]
+      B2 --- D2["T1"]
+      B2 --- E2["T2"]
+    end`}
+  caption="Rotação à direita: Y (filho esquerdo de X) sobe, X desce pra direita, T2 muda de pai. Mantém propriedade BST."
+/>
+
+**Validação de BST:** percorre em-ordem e checa se a sequência é
+estritamente crescente. `O(n)`. Útil em entrevistas e em testes
+de propriedades invariantes.
+
+```python
+def eh_bst(no, minimo=float('-inf'), maximo=float('inf')):
+    if no is None: return True
+    if no.valor <= minimo or no.valor >= maximo: return False
+    return (eh_bst(no.esquerda, minimo, no.valor) and
+            eh_bst(no.direita, no.valor, maximo))
+```
+
+**Quando usar BST na vida real:** quase nunca, em código de
+aplicação. Use `SortedSet` (Java), `set` ordenado (C++),
+`SortedDict` (Python via `sortedcontainers` - biblioteca de
+terceiros). Por baixo, eles usam árvore **red-black** (não BST
+pura) - então o `O(log n)` é garantido.
+
+BST pura é boa pra:
+
+- **Aprender o conceito** (entrevistas pedem).
+- **Problema com garantia externa de balanceamento** (dados vêm
+  em ordem aleatória, sem garantia mas com esperança estatística).
+- **Variações especializadas** (treap, splay tree) que adicionam
+  heurística de balanceamento.
+
+## Pra quem quer ir além 🔴
+
+**Análise da altura esperada de BST aleatória:** se você inserir `n`
+valores em ordem **aleatória** numa BST pura, a altura esperada é
+`Θ(log n)`. É um resultado contra-intuitivo (parece que altura
+poderia ser `n`), mas a probabilidade de desbalanceamento grave
+decresce rápido. Referência: capítulo 12 do CLRS.
+
+**Treap e Splay Tree:** BST que se auto-balanceiam sem as regras
+rígidas de AVL/Red-Black. Treap usa **prioridade aleatória** por nó
+(heap + BST simultaneamente). Splay Tree move o nó acessado pra
+raiz (auto-otimiza pra acessos repetidos). Úteis em sistemas
+embarcados e caches.
+
+**Leitura recomendada:**
+
+- Capítulo 12 do _Introduction to Algorithms_ (CLRS) - BST, análise
+  de altura, remoção com sucessor em-ordem.
+- Capítulo 3 do _Algorithms_ (Sedgewick) - versão mais didática
+  em Java.
+
+> Dica: BST pura é **case study** - você implementa uma vez pra
+> aprender, depois usa a variação auto-balanceada. Em produção,
+> quase nunca vale o risco de `O(n)` no pior caso.
+
+No próximo nó, vamos ver **como** as árvores auto-balanceadas
+(AVL, Red-Black) garantem `O(log n)` sempre, via rotações.
+
+<Checkpoint
+  challenge="Implemente busca em BST. Implemente `buscaBST(raiz, valor)` que retorna `true` se o valor está na árvore."
+  starterCode={`class No {
+  constructor(valor) {
+    this.valor = valor;
+    this.esquerda = null;
+    this.direita = null;
+  }
+}
+
+function buscaBST(no, valor) {
+// Retorna true se valor está na BST, false caso contrário.
+return false;
+}
+
+// Árvore: 8
+// / \
+// 3 10
+// / \ \
+// 1 6 14
+// / \ /
+// 4 7 13
+
+const raiz = new No(8);
+raiz.esquerda = new No(3);
+raiz.direita = new No(10);
+raiz.esquerda.esquerda = new No(1);
+raiz.esquerda.direita = new No(6);
+raiz.esquerda.direita.esquerda = new No(4);
+raiz.esquerda.direita.direita = new No(7);
+raiz.direita.direita = new No(14);
+raiz.direita.direita.esquerda = new No(13);
+
+console.log(buscaBST(raiz, 7)); // esperado: true
+console.log(buscaBST(raiz, 99)); // esperado: false
+console.log(buscaBST(raiz, 4)); // esperado: true`}
+expected="true
+false
+true"
+slug="estruturas-de-dados"
+nodeId="bst"
+/>
+
+<Quiz
+  question="Qual a complexidade de busca em uma BST balanceada com 1 milhão de nós?"
+  options={[
+    {
+      text: "O(1) - acesso direto",
+      correct: false,
+      explanation:
+        "BST não é hash table. Você precisa descer nível por nível comparando.",
+    },
+    { text: "O(log n) ≈ 20 comparações no pior caso", correct: true },
+    {
+      text: "O(n) - precisa percorrer todos os nós",
+      correct: false,
+      explanation:
+        "Isso seria o pior caso de BST desbalanceada. Em BST balanceada, descarta metade a cada nível.",
+    },
+  ]}
+/>

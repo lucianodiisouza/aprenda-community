@@ -1,0 +1,228 @@
+---
+id: grafos-algoritmos
+title: "Algoritmos Clássicos de Grafos: Dijkstra, MST e Ordenação Topológica"
+resources:
+  - title: "Dijkstra (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "Algoritmos de grafos (VisuAlgo)"
+    url: https://visualgo.net/en/sssp
+    type: artigo
+    lang: en
+    free: true
+---
+
+BFS e DFS servem pra grafos não ponderados ou pra travessia
+genérica. Quando o grafo tem **pesos nas arestas** (distancias,
+custos, latências), entram algoritmos mais especializados:
+Dijkstra pro caminho mínimo, Prim/Kruskal pra árvore geradora
+mínima, e ordenação topológica pra dependências.
+
+## O essencial 🟢
+
+**Dijkstra** (Edsger Dijkstra, 1956) acha o **caminho de menor
+custo** entre um vértice e todos os outros em grafo com pesos
+**não negativos**. É a base de GPS, redes (menor latência entre
+servidores), e routing na internet.
+
+Idéia: mantém um conjunto de vértices com **distância final**
+conhecida, e uma fila de prioridade (heap) com os candidatos.
+A cada passo, pega o vértice de **menor distância provisória**,
+"fecha" ele, e atualiza as distâncias dos vizinhos.
+
+```python
+import heapq
+
+def dijkstra(grafo, inicio):
+    # grafo: dict vértice -> list de (vizinho, peso)
+    distancias = {v: float('inf') for v in grafo}
+    distancias[inicio] = 0
+    fila = [(0, inicio)]  # (distância, vértice)
+    while fila:
+        dist, v = heapq.heappop(fila)
+        if dist > distancias[v]:
+            continue  # entrada velha, ignora
+        for vizinho, peso in grafo[v]:
+            nova = dist + peso
+            if nova < distancias[vizinho]:
+                distancias[vizinho] = nova
+                heapq.heappush(fila, (nova, vizinho))
+    return distancias
+```
+
+**Complexidade:** `O((V + E) log V)` com heap binário (cada
+operação de heap é `O(log V)`).
+
+**Por que Dijkstra não funciona com pesos negativos:** o algoritmo
+assume que, uma vez "fechado" um vértice, sua distância é final.
+Com peso negativo, isso quebra - um caminho mais longo com
+pesos negativos pode ser melhor que o "fechado" curto.
+
+<Mermaid
+  chart={`graph LR
+    A["A<br/>dist=0"] ---|"5"| B["B<br/>dist=5"]
+    A ---|"1"| C["C<br/>dist=1"]
+    B ---|"2"| D["D<br/>dist=7"]
+    C ---|"4"| D
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#388bfd,stroke:#fff,color:#fff
+    style C fill:#388bfd,stroke:#fff,color:#fff
+    style D fill:#1f6feb,stroke:#fff,color:#fff`}
+  caption="Dijkstra de A: A(0) → C(1) → B(5 via A) → D(7 via C, melhor que 9 via B)."
+/>
+
+**Ordenação topológica** (DAG): ordem linear dos vértices de
+modo que toda aresta `u → v` tenha `u` antes de `v` na ordem.
+Aplicação clássica: ordem de execução de tarefas com
+dependências (build: `tsc` antes de `webpack` antes de
+`deploy`).
+
+```python
+def ordenacao_topologica(grafo):
+    # grafo: dict vértice -> list de vizinhos (direcionado).
+    in_degree = {v: 0 for v in grafo}
+    for v in grafo:
+        for u in grafo[v]:
+            in_degree[u] = in_degree.get(u, 0) + 1
+
+    fila = [v for v in grafo if in_degree[v] == 0]
+    ordem = []
+    while fila:
+        v = fila.pop(0)
+        ordem.append(v)
+        for u in grafo[v]:
+            in_degree[u] -= 1
+            if in_degree[u] == 0:
+                fila.append(u)
+    return ordem if len(ordem) == len(grafo) else None  # None = tem ciclo
+```
+
+**Detecção de ciclo** sai de graça: se a ordem tem menos vértices
+que o grafo, tem ciclo (não dá pra ordenar).
+
+**MST (Minimum Spanning Tree / Árvore Geradora Mínima):** em
+grafo **conexo não direcionado com pesos**, a MST é o subconjunto
+de arestas que conecta todos os vértices com **menor soma de
+pesos** e sem ciclos (é uma árvore). Aplicação: projetar rede
+de fibra ótica que conecta cidades com menor custo total.
+
+**Prim e Kruskal** são os dois algoritmos clássicos. Ambos `O(E
+log V)` com boas estruturas auxiliares.
+
+## Aprofundamento 🟡
+
+**Bellman-Ford** resolve caminho mínimo **com pesos negativos**.
+`O(V · E)` - mais lento que Dijkstra, mas funciona onde Dijkstra
+falha. Detecta ciclos negativos (soma < 0, dá pra ficar rodando
+infinitamente).
+
+```python
+def bellman_ford(grafo, inicio):
+    # grafo: list de (u, v, peso).
+    distancias = {v: float('inf') for u, v, _ in grafo}
+    distancias[inicio] = 0
+    for _ in range(len(grafo) - 1):
+        for u, v, peso in grafo:
+            if distancias[u] + peso < distancias[v]:
+                distancias[v] = distancias[u] + peso
+    return distancias
+```
+
+**Floyd-Warshall** acha caminho mínimo **entre todos os pares**
+de vértices. `O(V³)` - quadraticamente mais lento que rodar
+Dijkstra de cada vértice, mas implementação de 5 linhas. Útil
+em grafos pequenos ou quando você precisa de "todos os pares
+de uma vez".
+
+```python
+def floyd_warshall(matriz):
+    # matriz[i][j] = peso da aresta i → j, ou inf se não há.
+    n = len(matriz)
+    for k in range(n):
+        for i in range(n):
+            for j in range(n):
+                if matriz[i][k] + matriz[k][j] < matriz[i][j]:
+                    matriz[i][j] = matriz[i][k] + matriz[k][j]
+    return matriz
+```
+
+**Kruskal** usa **union-find** (estrutura que mantém conjuntos
+disjuntos) pra escolher arestas em ordem de peso, pulando as
+que formam ciclo. **Prim** cresce uma árvore a partir de um
+vértice, sempre adicionando a aresta de menor peso que conecta
+um vértice dentro da árvore a um de fora. Na prática, Prim com
+heap é mais rápido pra grafos densos; Kruskal pra esparsos.
+
+**Quando usar cada um:**
+
+- **Dijkstra:** caminho mínimo com pesos não negativos, grafo
+  de tamanho médio/grande.
+- **Bellman-Ford:** pesos negativos, ou detecção de ciclo
+  negativo.
+- **Floyd-Warshall:** todos os pares, grafo pequeno (até ~500
+  vértices), ou quando simplicidade importa mais que velocidade.
+- **Prim/Kruskal:** MST, redes, clustering.
+
+**Em código real:** você raramente implementa esses algoritmos
+na mão. NetworkX (Python) tem tudo pronto. `std::graph` (C++23
+em diante) promete grafos na standard library. Neo4j, Memgraph
+e outros bancos de grafo têm as queries embutidas. Mas saber
+o que está por baixo ajuda a escolher a ferramenta e a debugar
+quando algo não escala.
+
+## Pra quem quer ir além 🔴
+
+**Algoritmo de Johnson:** combina Bellman-Ford + Dijkstra pra
+"todos os pares" com pesos negativos, em `O(V · E + V² log V)` -
+mais rápido que Floyd-Warshall em grafos esparsos. Usa truque
+de "reweighting" pra eliminar pesos negativos.
+
+**Algoritmo de Tarjan pra pontes e pontos de articulação:**
+encontra arestas e vértices que, se removidos, **desconectam**
+o grafo. Usado em análise de vulnerabilidade de redes
+(qual roteador é mais crítico?), análise de comunidades, e
+detecção de gargalos.
+
+**Algoritmo de Hopcroft-Karp pra matching bipartido máximo:**
+encontra o **emparelhamento máximo** em grafo bipartido em
+`O(E · √V)`. Aplicação: atribuir tarefas a workers, casais em
+sítios de encontro, alocação de recursos.
+
+**Leitura recomendada:**
+
+- Capítulo 24 do _Introduction to Algorithms_ (CLRS) - caminho
+  mínimo (Dijkstra, Bellman-Ford, Floyd-Warshall).
+- Capítulo 23 do mesmo livro - MST (Prim, Kruskal).
+- Capítulo 4 do _Algorithms_ (Dasgupta et al., online) -
+  versão mais didática.
+
+> Dica: Dijkstra e ordenação topológica cobrem 80% dos
+> problemas reais de grafo. MST quando você precisa de "menor
+> custo conectando todos". Bellman-Ford e Floyd-Warshall
+> raramente, mas vale saber que existem. Na dúvida: modela o
+> problema como grafo, depois pensa em qual algoritmo
+> responde.
+
+No próximo nó, vamos ver **tries** - uma estrutura especializada
+pra texto, base de autocomplete e busca por prefixo.
+
+<Quiz
+  question="Você tem um mapa com cidades conectadas por estradas, e cada estrada tem a distância em km. Qual algoritmo para achar o menor caminho (em km) entre duas cidades, assumindo todas as distâncias positivas?"
+  options={[
+    {
+      text: "BFS - ele expande nível por nível",
+      correct: false,
+      explanation:
+        "BFS dá o caminho com menor número de arestas (saltos), não o de menor peso. Cidade A pode estar a 2 saltos mas a 1000km; cidade B pode estar a 3 saltos mas a 50km.",
+    },
+    { text: "Dijkstra - ele considera os pesos das arestas", correct: true },
+    {
+      text: "Bellman-Ford - ele também acha caminho mínimo",
+      correct: false,
+      explanation:
+        "Bellman-Ford funciona aqui, mas é mais lento (O(V·E) vs O((V+E) log V)). Use Dijkstra quando não há pesos negativos.",
+    },
+  ]}
+/>
