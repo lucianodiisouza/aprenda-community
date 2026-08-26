@@ -1,0 +1,105 @@
+---
+id: async-aprofundado
+title: "Promises, async/await e o Event Loop"
+resources:
+  - title: "The Node.js Event Loop (docs oficial, em inglês)"
+    url: https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick
+    type: doc
+    lang: en
+    free: true
+  - title: "MDN: async function (PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Statements/async_function
+    type: doc
+    lang: pt
+    free: true
+---
+
+Você já escreveu `async (req, res) => { ... }` no Express e provavelmente
+já chamou `await prisma.user.findMany()` algumas vezes. Mas o que
+realmente acontece quando o JavaScript encontra um `await`? Por que
+o servidor **não trava** esperando o banco, e continua aceitando outras
+requisições enquanto isso?
+
+A resposta mora no **Event Loop** - o mecanismo que o Node usa pra
+cuidar de várias operações ao mesmo tempo sem precisar de uma thread
+pra cada uma.
+
+### Promise, async/await - o que é o quê
+
+Uma **Promise** é um "valei-pau" de uma operação assíncrona: representa
+algo que vai terminar no futuro, com sucesso (resolvida) ou erro
+(rejeitada).
+
+```javascript
+const resposta = await fetch("https://api.exemplo.com/dados");
+//                                  ^
+// "pausa" só esta função, não o servidor inteiro
+console.log(resposta);
+```
+
+`async/await` é **açúcar sintático** sobre Promise. O código de cima
+equivale a:
+
+```javascript
+fetch("https://api.exemplo.com/dados")
+  .then((resposta) => console.log(resposta))
+  .catch((erro) => console.error(erro));
+```
+
+A diferença é que `await` deixa o código linear, sem aninhar `.then()`
+- mais fácil de ler, **mesmo comportamento por baixo**.
+
+### O Event Loop em 30 segundos
+
+O Node mantém uma **fila de tarefas** e processa uma de cada vez.
+Quando você faz `await fetch(...)`, três coisas acontecem:
+
+1. A operação de rede **começa** e devolve uma Promise pendente.
+2. O Event Loop **libera a thread** e volta a atender outras
+   requisições.
+3. Quando a resposta chega, o callback é **enfileirado** de volta e
+   roda na próxima rodada do loop.
+
+```text
+requisição A: await banco.query()  ─┐
+                                    │  (libera a thread)
+                                    ▼
+outra requisição B: app.get(...)    ─┐
+                                    │  (atende B enquanto A espera)
+                                    ▼
+resposta de A chega → continua A
+```
+
+Por isso **um único processo Node** consegue atender milhares de
+conexões ao mesmo tempo. A "espera" não bloqueia.
+
+### O erro que pega muita gente de surpresa
+
+```javascript
+// ⚠️ cuidado
+app.get("/usuarios/:id", async (req, res) => {
+  const usuario = await prisma.user.findUnique({
+    where: { id: Number(req.params.id) },
+  });
+  res.json(usuario); // e se o id não existe? devolve `null` mesmo assim
+});
+```
+
+E se o banco cair? O `await` rejeita, a Promise rejeita, e... o Express
+**não sabe lidar com Promise rejeitada por padrão**. O servidor pode
+travar ou devolver um 500 genérico. Esse é o caso do próximo nó.
+
+Três conceitos pra fixar:
+
+- **Promise** - o "valei-pau" de uma operação assíncrona: pendente,
+  resolvida ou rejeitada.
+- **async/await** - sintaxe que lineariza o uso de Promise sem mudar
+  o comportamento.
+- **Event Loop** - o ciclo que processa callbacks na fila enquanto
+  operações I/O (banco, rede, disco) acontecem em paralelo.
+
+> Dica: no editor, **passe o mouse em cima de um `await`** - ele sempre
+> devolve uma Promise. Ler o tipo do retorno te poupa de adivinhar.
+
+No próximo nó, vamos ver como o Express lida (ou não) com erros em
+rotas assíncronas, e como centralizar isso num único lugar.

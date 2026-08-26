@@ -37,11 +37,25 @@
       "title": "JavaScript no Servidor",
       "type": "subtopic",
       "recommended": true,
+      "children": ["async-aprofundado"]
+    },
+    {
+      "id": "async-aprofundado",
+      "title": "Promises, async/await e o Event Loop",
+      "type": "subtopic",
+      "recommended": true,
       "children": ["express"]
     },
     {
       "id": "express",
       "title": "Express: Seu Primeiro Servidor",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["error-handling"]
+    },
+    {
+      "id": "error-handling",
+      "title": "Tratamento de Erros em uma API",
       "type": "subtopic",
       "recommended": true,
       "children": ["rest-api"]
@@ -84,6 +98,13 @@
     {
       "id": "testes",
       "title": "Testes Automatizados",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["debugging"]
+    },
+    {
+      "id": "debugging",
+      "title": "Debug de uma API Node: do console.log ao debugger",
       "type": "subtopic",
       "recommended": true,
       "children": ["projeto-final"]
