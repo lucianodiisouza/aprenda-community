@@ -1,0 +1,134 @@
+---
+id: por-que-mensageria
+title: "Por que filas existem"
+resources:
+  - title: "O que é mensageria e quando usar (RabbitMQ docs, EN)"
+    url: https://www.rabbitmq.com/tutorials/amqp-concepts
+    type: doc
+    lang: en
+    free: true
+---
+
+Muita gente aprende fila como "um lugar onde eu mando uma mensagem e
+outro sistema consome". Funciona como definição, mas não te ajuda em
+nada na hora de decidir. O resultado é sempre um dos dois: usar fila
+onde não precisava, ou não usar onde precisava muito.
+
+Antes de falar de RabbitMQ, exchange, routing key e esse monte de nome,
+vamos entender o problema. Porque fila não é sobre a ferramenta - é
+sobre uma decisão de arquitetura.
+
+## O pedido que demora uma eternidade
+
+Imagina uma loja online. O usuário clica em "finalizar pedido" e o seu
+sistema precisa:
+
+- registrar o pedido no banco
+- processar o pagamento
+- emitir a nota fiscal
+- dar baixa no estoque
+- enviar o e-mail de confirmação
+
+Repara numa coisa: registrar no banco e dar baixa no estoque são coisas
+suas. Mas **pagamento depende de um gateway externo**. Nota fiscal
+depende da Receita ou de um intermediário. E-mail depende de um serviço
+de envio.
+
+Se você faz tudo em sequência, dentro da mesma request, o usuário fica
+olhando pro spinner esperando **três sistemas que não são seus**
+responderem.
+
+```js
+// tudo numa request só - o usuário espera por tudo
+await registrarPedido(pedido)
+await processarPagamento(pedido)   // gateway externo
+await emitirNotaFiscal(pedido)     // Receita
+await darBaixaEstoque(pedido)
+await enviarEmail(pedido)          // serviço de e-mail
+
+return { status: "ok" }
+```
+
+E aí vem a pergunta que resolve tudo: **se a emissão da nota falhar, o
+que acontece?** O pagamento já passou. O estoque já baixou. Você vai ter
+que desfazer o processo inteiro na mão - e torcer pra que o desfazer
+também não falhe.
+
+> **"Mas eu quebro em microserviços que resolve."** Não resolve. Se o
+> serviço de pedidos precisa chamar pagamento, esperar, chamar nota,
+> esperar, chamar estoque e esperar, você só trocou funções por
+> requisições HTTP. Microserviço que depende de outro pra responder não
+> é microserviço, é **monolito distribuído** - com a latência da rede
+> de brinde.
+
+## A virada de chave
+
+O que a mensageria propõe é o seguinte: responde pro usuário **assim que
+o pedido estiver registrado**. O resto acontece depois.
+
+Em vez de chamar cada serviço, o sistema de pedidos anuncia um fato:
+"pedido criado". Quem se interessa por esse fato consome e faz sua
+parte, no seu tempo.
+
+<Mermaid
+  chart={`flowchart LR
+    U["Usuário"] -->|"faz pedido"| P["Serviço de Pedidos"]
+    P -->|"responde na hora"| U
+    P -->|"publica: pedido criado"| B(["Broker"])
+    B --> PG["Pagamento"]
+    B --> NF["Nota Fiscal"]
+    B --> ES["Estoque"]
+    B --> EM["E-mail"]
+
+    classDef user fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
+    classDef svc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef brk fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    class U user
+    class P,PG,NF,ES,EM svc
+    class B brk`}
+  caption="O usuário recebe a resposta sem esperar os sistemas externos."
+/>
+
+O usuário recebeu a confirmação em milissegundos. Se a Receita estiver
+fora do ar, a mensagem espera na fila e é processada quando voltar -
+sem derrubar a compra e sem desfazer nada.
+
+Três ideias pra levar deste nó:
+
+- **Fila desacopla no tempo.** Quem publica não espera quem consome.
+  Uma parte lenta para de segurar a resposta.
+- **Fila absorve pico e queda.** Serviço fora do ar não perde trabalho,
+  a mensagem fica guardada esperando.
+- **Fila muda o modelo mental**: em vez de *mandar alguém fazer*, você
+  *anuncia que algo aconteceu*. Quem quiser, reage.
+
+> Dica: nem tudo vira fila. Se o usuário **precisa** do resultado pra
+> continuar - login, consulta de saldo, validação de cupom - resposta
+> síncrona é o certo. Fila é pra trabalho que pode terminar depois sem
+> ninguém olhando.
+
+No próximo nó a gente coloca nome nas peças: produtor, exchange, fila e
+consumidor - e você vai ver uma mensagem andando entre elas antes de
+instalar qualquer coisa.
+
+<Quiz
+  question="Em qual destes casos a resposta síncrona, sem fila, é a escolha certa?"
+  options={[
+    {
+      text: "Validar o cupom de desconto antes de fechar a compra",
+      correct: true,
+    },
+    {
+      text: "Enviar o e-mail de confirmação depois do pedido",
+      correct: false,
+      explanation:
+        "E-mail é trabalho que pode terminar depois, sem ninguém olhando - caso clássico de fila.",
+    },
+    {
+      text: "Emitir a nota fiscal via Receita",
+      correct: false,
+      explanation:
+        "Depende de um sistema externo e pode esperar na fila; não deve segurar a resposta ao usuário.",
+    },
+  ]}
+/>

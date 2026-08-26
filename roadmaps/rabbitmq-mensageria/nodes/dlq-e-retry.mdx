@@ -1,0 +1,146 @@
+---
+id: dlq-e-retry
+title: "Dead letter queue e retry"
+resources:
+  - title: "Dead Letter Exchanges (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/dlx
+    type: doc
+    lang: en
+    free: true
+  - title: "Time-To-Live e expiração de mensagens (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/ttl
+    type: doc
+    lang: en
+    free: true
+---
+
+Toda fila em produção cedo ou tarde recebe uma mensagem que **nunca vai
+funcionar**: JSON quebrado, um id que não existe mais, um campo que
+mudou de formato. Sem um plano pra ela, você tem duas saídas ruins -
+descartar em silêncio e perder o dado, ou devolver pra fila e criar o
+loop infinito do nó anterior.
+
+A saída boa é a terceira: manda pra outra fila e segue a vida.
+
+## Dead letter exchange
+
+A **DLX** é uma exchange pra onde as mensagens rejeitadas são
+redirecionadas automaticamente. Você declara ela na criação da fila
+principal:
+
+```js
+await channel.assertExchange("pedidos.dlx", "direct", { durable: true })
+await channel.assertQueue("fila.pagamento.morta", { durable: true })
+await channel.bindQueue("fila.pagamento.morta", "pedidos.dlx", "morta")
+
+await channel.assertQueue("fila.pagamento", {
+  durable: true,
+  deadLetterExchange: "pedidos.dlx",
+  deadLetterRoutingKey: "morta",
+})
+```
+
+Agora, quando o consumidor der `nack` com `requeue: false`, em vez de
+sumir a mensagem vai parar na `fila.pagamento.morta`.
+
+<Mermaid
+  chart={`flowchart LR
+    Q["fila.pagamento"] --> C["Consumer"]
+    C -->|"ack"| OK["removida"]
+    C -->|"nack requeue:false"| DLX{{"pedidos.dlx"}}
+    DLX --> DLQ["fila.pagamento.morta"]
+
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    classDef work fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    class Q,DLQ queue
+    class C,OK work
+    class DLX exch`}
+  caption="Mensagem rejeitada vai pra DLQ em vez de sumir ou voltar em loop."
+/>
+
+Três coisas mandam mensagem pra DLQ automaticamente: `nack`/`reject` com
+`requeue: false`, mensagem que estourou o **TTL**, e fila que atingiu o
+**tamanho máximo**.
+
+## Por que a DLQ vale tanto
+
+A DLQ não conserta nada sozinha - e é justamente esse o ponto. Ela te dá
+**a mensagem original preservada**, com os headers de quantas vezes e
+por que falhou, num lugar onde você pode olhar com calma.
+
+Na prática você ganha três coisas: a fila principal não entope, o dado
+não se perde, e a DLQ vira seu alarme - fila morta enchendo é sinal de
+bug em produção antes de qualquer usuário reclamar.
+
+## Retry com espera
+
+Erro temporário merece nova tentativa, mas não imediatamente - se o
+banco caiu, tentar de novo no mesmo instante falha igual. O truque é
+usar **TTL + DLX** pra criar uma fila de espera:
+
+```js
+// fila de espera: segura por 30s e devolve pra principal
+await channel.assertQueue("fila.pagamento.retry", {
+  durable: true,
+  messageTtl: 30000,
+  deadLetterExchange: "pedidos",
+  deadLetterRoutingKey: "order.created",
+})
+```
+
+O caminho fica: falhou → vai pra `retry` → espera 30s → o TTL estoura →
+a DLX devolve pra fila principal → tenta de novo.
+
+Pra não tentar pra sempre, conte as tentativas. O RabbitMQ mantém um
+header `x-death` com o histórico:
+
+```js
+const mortes = msg.properties.headers?.["x-death"]?.[0]?.count ?? 0
+
+if (mortes >= 3) {
+  channel.nack(msg, false, false)   // desiste, vai pra DLQ definitiva
+} else {
+  channel.publish("pedidos.retry", "espera", msg.content)
+  channel.ack(msg)
+}
+```
+
+> Dica: separe as duas filas por intenção. A de **retry** é pra erro
+> temporário e devolve sozinha. A **DLQ definitiva** é pra erro
+> permanente e só sai de lá com intervenção humana. Misturar as duas
+> é o que faz mensagem quebrada ficar circulando pra sempre.
+
+Três coisas pra fixar:
+
+- **DLQ preserva a mensagem** que falhou, com o motivo, em vez de
+  descartar.
+- **TTL + DLX = espera.** É assim que se faz retry com intervalo no
+  RabbitMQ.
+- **Conte tentativas com `x-death`** e tenha um limite. Retry infinito
+  é o mesmo loop, só mais lento.
+
+No próximo nó a gente junta tudo nos três padrões que cobrem quase todo
+caso real.
+
+<Quiz
+  question="Como se faz um retry que espera 30s antes de tentar de novo no RabbitMQ?"
+  options={[
+    {
+      text: "Uma fila de espera com messageTtl: 30000 e uma DLX que devolve pra fila principal quando o TTL estoura",
+      correct: true,
+    },
+    {
+      text: "Um setTimeout de 30s dentro do consumidor antes do ack",
+      correct: false,
+      explanation:
+        "Prende o worker e não sobrevive a restart. No RabbitMQ o jeito é TTL mais DLX.",
+    },
+    {
+      text: "nack com requeue: true",
+      correct: false,
+      explanation:
+        "Devolve na hora, sem espera - e vira loop se o erro for permanente.",
+    },
+  ]}
+/>

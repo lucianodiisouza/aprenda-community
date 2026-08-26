@@ -1,0 +1,107 @@
+---
+id: projeto-final
+title: "Projeto final: processamento assíncrono"
+resources:
+  - title: "amqplib - referência da API (EN)"
+    url: https://amqp-node.github.io/amqplib/channel_api.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Chegou a hora de juntar tudo - exchange, binding, ack, prefetch, DLQ e
+retry - num projeto só. A ideia é simples de descrever e cobre todos os
+conceitos da trilha.
+
+## A missão
+
+Uma API que aceita um trabalho pesado e **responde na hora**, com um
+worker processando por trás.
+
+O exemplo sugerido é processamento de imagem, mas vale qualquer coisa
+lenta: gerar PDF, transcodificar áudio, importar CSV grande, disparar
+lote de e-mail. Escolha o que te interessa - o que importa é o fluxo.
+
+<Mermaid
+  chart={`flowchart LR
+    U["Cliente"] -->|"POST /jobs"| A["API"]
+    A -->|"202 + jobId"| U
+    A -->|"publica"| E{{"jobs (direct)"}}
+    E --> Q["fila.processamento"]
+    Q --> W["Worker"]
+    W -->|"falhou 3x"| DLQ["fila.morta"]
+    U -->|"GET /jobs/:id"| A
+
+    classDef svc fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    class U,A,W svc
+    class E exch
+    class Q,DLQ queue`}
+  caption="A API responde imediatamente; o worker processa por fila."
+/>
+
+## Requisitos
+
+**A API**
+
+- `POST /jobs` recebe o pedido, gera um `jobId`, publica na exchange e
+  responde **202 Accepted** com o id - sem esperar o processamento.
+- `GET /jobs/:id` devolve o status atual: `pendente`, `processando`,
+  `concluido` ou `falhou`.
+
+**O worker**
+
+- Processo separado da API, consumindo a fila.
+- `prefetch(1)`, porque o trabalho é lento.
+- `ack` só depois de terminar de verdade.
+- Atualiza o status onde a API consegue ler (banco, Redis, o que
+  preferir).
+
+**Resiliência**
+
+- Exchange e fila duráveis, mensagens persistentes.
+- DLQ configurada pra mensagem que falha.
+- Retry com espera, desistindo depois de 3 tentativas.
+- Consumidor idempotente - reprocessar o mesmo `jobId` não pode
+  duplicar resultado.
+
+## Como saber que funcionou
+
+Testa cada garantia de propósito, uma por vez:
+
+1. **Assincronia** - dispara um job de 30 segundos e confirma que o
+   `POST` respondeu na hora.
+2. **Durabilidade** - publica com o worker desligado, reinicia o
+   container do RabbitMQ, sobe o worker. A mensagem tem que estar lá.
+3. **Resiliência** - mata o worker no meio do processamento. A mensagem
+   volta pra fila e é reprocessada.
+4. **DLQ** - manda um payload propositalmente inválido e confirma que,
+   depois das tentativas, ele para na fila morta.
+5. **Escala** - sobe três workers, dispara vinte jobs e veja a
+   distribuição.
+
+O teste 3 é o mais importante: matar processo no meio é exatamente o que
+acontece em deploy, e é o que separa "funciona na minha máquina" de
+sistema confiável.
+
+## Se quiser ir além
+
+- **Docker Compose** com RabbitMQ, API e workers subindo juntos - encaixa
+  com a trilha de Compose.
+- **Prioridade**: jobs de usuário pago passam na frente.
+- **Notificação**: quando terminar, publica um segundo evento numa fanout
+  pra quem quiser saber - agora você tem pub/sub em cima de work queue.
+- **Painel**: uma tela simples com profundidade da fila e contagem da
+  DLQ.
+
+> Dica: não comece pela resiliência. Faça o caminho feliz funcionar
+> ponta a ponta primeiro - publicar, consumir, atualizar status. Depois
+> volte e adicione DLQ, retry e idempotência um de cada vez, testando
+> cada um. Tentar tudo junto de primeira é receita pra não saber o que
+> quebrou.
+
+Terminando isso, você fez o que a maior parte dos backends de verdade
+faz: aceitar trabalho, responder rápido e processar com garantia. É o
+mesmo desenho de sistema de pagamento, importação e envio de e-mail em
+qualquer empresa - só muda o que o worker faz lá dentro.

@@ -1,0 +1,134 @@
+---
+id: primeira-fila
+title: "Sua primeira fila: publicando e consumindo"
+resources:
+  - title: "Hello World - tutorial oficial em JavaScript (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-one-javascript
+    type: doc
+    lang: en
+    free: true
+  - title: "amqplib - referência da API (EN)"
+    url: https://amqp-node.github.io/amqplib/channel_api.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Broker rodando, teoria na cabeça. Agora a gente conecta código nele.
+
+Os exemplos aqui são em Node com a biblioteca `amqplib`, mas a ideia é
+igual em qualquer linguagem - muda o nome dos métodos, não o conceito.
+
+```bash
+npm install amqplib
+```
+
+## Publicando
+
+São sempre os mesmos quatro passos: conecta, abre um canal, garante que
+a estrutura existe, publica.
+
+```js
+import amqp from "amqplib"
+
+const conn = await amqp.connect("amqp://localhost")
+const channel = await conn.createChannel()
+
+await channel.assertExchange("pedidos", "direct", { durable: true })
+await channel.assertQueue("fila.pagamento", { durable: true })
+await channel.bindQueue("fila.pagamento", "pedidos", "order.created")
+
+channel.publish(
+  "pedidos",
+  "order.created",
+  Buffer.from(JSON.stringify({ pedidoId: 42 }))
+)
+
+await channel.close()
+await conn.close()
+```
+
+Repara nos três `assert`: eles **criam se não existir, e não fazem nada
+se já existir**. Rodar duas vezes não quebra. É assim que se garante a
+estrutura na subida da aplicação, sem depender de alguém ter clicado no
+painel.
+
+E note que a mensagem vai como **Buffer** - o RabbitMQ trafega bytes, não
+objeto. Serializar pra JSON e converter pra Buffer é responsabilidade
+sua.
+
+## Consumindo
+
+O consumidor é um processo separado que fica escutando:
+
+```js
+import amqp from "amqplib"
+
+const conn = await amqp.connect("amqp://localhost")
+const channel = await conn.createChannel()
+
+await channel.assertQueue("fila.pagamento", { durable: true })
+
+channel.consume("fila.pagamento", (msg) => {
+  if (!msg) return
+  const conteudo = JSON.parse(msg.content.toString())
+  console.log("processando pedido", conteudo.pedidoId)
+  channel.ack(msg)
+})
+```
+
+O `consume` não é um loop que você controla: você registra uma função e
+o RabbitMQ chama ela toda vez que chega mensagem. O processo fica de pé
+esperando - se ele terminar, para de consumir.
+
+O `channel.ack(msg)` no fim é o que avisa o broker que deu tudo certo e
+a mensagem pode ser removida da fila. **Sem ack, a mensagem volta** -
+esse é o assunto inteiro do próximo nó.
+
+## Vendo acontecer
+
+Com o painel aberto em `localhost:15672`, roda o publisher algumas vezes
+com o consumidor desligado. A aba **Queues** mostra o contador da
+`fila.pagamento` subindo - as mensagens estão lá, guardadas, esperando.
+
+Agora sobe o consumidor. O contador zera na hora.
+
+Isso é o desacoplamento no tempo que a gente falou lá no primeiro nó,
+acontecendo na sua frente.
+
+Três coisas pra fixar:
+
+- **`assert` é idempotente** - cria se não existe, ignora se existe.
+  Chame sempre na subida.
+- **Mensagem trafega como bytes.** Serializar e desserializar é com você.
+- **`consume` registra um callback**, não é um loop. O processo precisa
+  ficar vivo.
+
+> Dica: publisher e consumer são processos separados de propósito.
+> Roda em dois terminais - é assim que vai ser em produção, com o
+> worker num container diferente da API.
+
+No próximo nó a gente fala do que acontece quando o consumidor falha no
+meio do processamento - e por que `ack` é mais importante do que parece.
+
+<Quiz
+  question="O que channel.assertQueue(...) faz se a fila já existir?"
+  options={[
+    {
+      text: "Nada - cria se não existir, ignora se já existir",
+      correct: true,
+    },
+    {
+      text: "Lança erro porque a fila está duplicada",
+      correct: false,
+      explanation:
+        "assert é idempotente - não quebra se a fila já existe.",
+    },
+    {
+      text: "Apaga a fila antiga e cria uma nova vazia",
+      correct: false,
+      explanation:
+        "Não recria nem apaga nada; só garante que existe. Rodar duas vezes é seguro.",
+    },
+  ]}
+/>

@@ -1,0 +1,99 @@
+{
+  "slug": "rabbitmq-mensageria",
+  "title": "RabbitMQ e Mensageria",
+  "description": "Trilha para quem já constrói APIs e precisa desacoplar sistemas com filas. Começa pelo problema que a mensageria resolve, monta o modelo mental de exchanges e roteamento, e só então parte pro código: publicar, consumir, garantir entrega e tratar o que falha. Pré-requisito: uma linguagem de backend e noções de Docker.",
+  "difficulty": "intermediario",
+  "skills": ["rabbitmq", "mensageria", "filas", "amqp", "arquitetura", "backend"],
+  "creators": [
+    {
+      "name": "Rafael Coelho",
+      "github": "rafa-coelho"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "por-que-mensageria",
+      "title": "Por que filas existem",
+      "type": "topic",
+      "recommended": true,
+      "children": ["conceitos-amqp"]
+    },
+    {
+      "id": "conceitos-amqp",
+      "title": "Producer, exchange, queue, consumer",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["exchange-direct"]
+    },
+    {
+      "id": "exchange-direct",
+      "title": "Direct exchange e routing keys",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["exchange-fanout-topic"]
+    },
+    {
+      "id": "exchange-fanout-topic",
+      "title": "Fanout e topic: broadcast e padrões",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["subindo-o-rabbitmq"]
+    },
+    {
+      "id": "subindo-o-rabbitmq",
+      "title": "Subindo o RabbitMQ com Docker",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["primeira-fila"]
+    },
+    {
+      "id": "primeira-fila",
+      "title": "Sua primeira fila: publicando e consumindo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ack-e-durabilidade"]
+    },
+    {
+      "id": "ack-e-durabilidade",
+      "title": "Ack, nack e não perder mensagem",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["prefetch-e-concorrencia"]
+    },
+    {
+      "id": "prefetch-e-concorrencia",
+      "title": "Prefetch e vários consumidores",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["dlq-e-retry"]
+    },
+    {
+      "id": "dlq-e-retry",
+      "title": "Dead letter queue e retry",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["padroes-de-mensageria"]
+    },
+    {
+      "id": "padroes-de-mensageria",
+      "title": "Work queue, pub/sub e RPC",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["producao-e-armadilhas"]
+    },
+    {
+      "id": "producao-e-armadilhas",
+      "title": "Erros comuns em produção",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: processamento assíncrono",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}
