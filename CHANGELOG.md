@@ -4,7 +4,35 @@ Todas as mudanças notáveis deste projeto são documentadas aqui. O formato
 segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o
 projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Não lançado]
+## [Não liberado]
+
+### Adicionado
+- 🎓 **Trilha Fundamentos de Ciência da Computação** (`roadmaps/fundamentos-de-cs`, 10
+  nós): o "mínimo viável de CS" que serve como base comum pra qualquer trilha
+  específica. Estruturada pra servir quatro públicos simultaneamente
+  (iniciante querendo virar dev, dev júnior/pleno nivelando, universitário
+  complementando curso, dev experiente revisando) via **profundidade
+  progressiva** dentro de cada nó, com três camadas por nó (🟢 Essencial /
+  🟡 Aprofundamento / 🔴 Pra quem quer ir além) e um **nó 0 de
+  auto-diagnóstico** que devolve perfil e marca quais camadas pular ou
+  focar. Os 10 nós: `auto-diagnostico` (quiz de 8 perguntas, devolve
+  perfil), `como-um-computador-funciona` (von Neumann, CPU/memória/I/O,
+  ciclo de instrução), `representacao-de-dados` (binário, hex, encoding,
+  endianness, IEEE 754), `logica-e-pensamento-computacional`
+  (decomposição, padrões, abstração, algoritmos, lógica booleana),
+  `algoritmos-e-complexidade` (Big-O e por que importa na prática,
+  apontando pra trilha `complexidade-de-algoritmos`),
+  `estruturas-de-dados-fundamentais` (array, lista, hash, árvore, grafo,
+  quando usar cada), `memoria-stack-heap` (stack vs heap, ciclo de
+  vida, GC vs manual, escape analysis), `do-codigo-a-execucao`
+  (AOT/bytecode/JIT, linkagem, otimizações), `redes-o-minimo`
+  (DNS/TCP/HTTP/TLS, o que acontece num `fetch`, latência vs banda,
+  diagrama de sequência Mermaid) e `pensando-em-sistemas`
+  (decomposição, contratos, composição, DDD, teoria dos tipos). Não
+  conflita com `programacao-do-zero` (prática de código, pré-requisito
+  recomendado) nem com `complexidade-de-algoritmos` (específica, este
+  nó 5 é a introdutória). Decisões editoriais completas em
+  `roadmaps/fundamentos-de-cs/meta/editorial-decisions.md`.
 
 ## [1.16.1] - 2026-08-25
 

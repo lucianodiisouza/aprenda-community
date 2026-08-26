@@ -1,0 +1,114 @@
+---
+id: do-codigo-a-execucao
+title: "Do Código à Execução"
+resources:
+  - title: "MDN Glossary: Compile (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Glossary/Compile
+    type: doc
+    lang: en
+    free: true
+  - title: "Crafting Interpreters (livro aberto, online)"
+    url: https://craftinginterpreters.com/
+    type: curso
+    lang: en
+    free: true
+---
+
+Você escreve código. Como ele vira algo que roda? O caminho depende
+da linguagem, e entender esse caminho é o que explica por que
+Python demora pra iniciar, Java demora **mais** ainda, C é rápido,
+e JavaScript moderno consegue ser rápido **depois** de rodar um
+pouco. Não é magia - é uma sequência bem definida de etapas.
+
+## O essencial 🟢
+
+Três modelos dominam o mundo real, com uma quarta forma híbrida que
+é o padrão moderno.
+
+**Compilação pura (AOT - Ahead of Time)** - o compilador lê seu
+código-fonte inteiro e gera um binário (executável) que roda direto
+na CPU. C, C++, Rust, Go (na maior parte dos casos). Vantagem: o
+runtime é leve, a inicialização é rápida, e a otimização é máxima.
+Desvantagem: compilar é lento, e você precisa compilar pra cada
+arquitetura/sistema operacional.
+
+**Interpretação pura** - o interpretador lê linha por linha do
+fonte, "entende" cada instrução e executa na hora. PHP antigo, Shell
+script, BASIC. Vantagem: zero etapa de build, você edita e roda.
+Desvantagem: cada execução refaz o trabalho de "entender" o código,
+e fica lento.
+
+**Bytecode + VM** - o compilador traduz o fonte pra um formato
+intermediário (bytecode), e uma **máquina virtual** (VM) executa
+esse bytecode. Java, Python, C#, Ruby. Vantagem: portabilidade
+("roda em qualquer lugar que tenha a VM") e um meio-termo de
+performance. Desvantagem: o bytecode ainda é "interpretado", então
+inicia mais lento que código AOT.
+
+**JIT (Just In Time) compilation** - a VM percebe que partes do
+código estão rodando muito, e **compila dinamicamente** essas partes
+pra código de máquina nativo. É o que faz JavaScript (V8), Java
+(HotSpot), e C# (.NET) serem surpreendentemente rápidos apesar de
+não serem AOT. A otimização é feita **em tempo de execução**, com
+informações reais (perfil de uso, tipos observados) - otimizações
+que um compilador AOT não consegue fazer com a mesma precisão.
+
+```python
+# Quem compila, quem interpreta, e quem faz JIT
+print("Olá!")  # Python: compila pra bytecode (.pyc), VM executa.
+               #          A VM pode ter JIT parcial (PyPy).
+```
+
+> Dica: por que `node app.js` inicia quase instantâneo mas
+> `java -jar app.jar` demora? Java carrega a VM, otimiza classes
+> em tempo de execução, e só depois "esquenta". JavaScript moderno
+> (V8) também faz JIT, mas o overhead inicial é menor porque a
+> linguagem é mais simples.
+
+## Aprofundamento 🟡
+
+**Linkagem** é a etapa que junta vários arquivos `.o` (código
+objeto) num único executável, resolvendo símbolos (chamadas de
+função) entre eles. Erros clássicos:
+
+- **Linker error**: função declarada mas nunca definida. Em C,
+  `undefined reference to 'foo'`.
+- **Símbolo duplicado**: duas bibliotecas definem a mesma função.
+  Comum em C++ com múltiplas versões de uma lib.
+- **Distinguir `static` vs `extern`**: `static` em C é "privado ao
+  arquivo", `extern` é "visível pra linkagem".
+
+**Otimizações comuns** que compiladores e JITs aplicam:
+
+- **Inlining**: substituir uma chamada de função pelo corpo dela
+  (quando vale a pena).
+- **Dead code elimination**: remover código cujo resultado ninguém
+  usa.
+- **Constant folding**: `2 + 3` virando `5` em tempo de compilação.
+- **Loop unrolling**: replicar o corpo de um loop pra reduzir
+  overhead de branches.
+
+Em linguagens com JIT, **o tipo observado importa**: o JIT pode
+gerar código especializado pra "essa função sempre recebe um
+`int32`". Se o tipo muda, o JIT invalida o código e gera de novo -
+é a "deopt" do V8, que aparece em profiles como
+*"deoptimization event"*.
+
+## Pra quem quer ir além 🔴
+
+**SSA (Static Single Assignment)** é a representação intermediária
+em que toda variável é atribuída exatamente uma vez. É a base das
+otimizações modernas de compilador. **Liveness analysis** descobre
+quais variáveis estão "vivas" em cada ponto. **Register allocation**
+decide quais variáveis ficam nos preciosos registradores da CPU
+(acesso `O(1)`) e quais vão pra RAM. Esses três conceitos são o
+núcleo de um curso de compiladores.
+
+**Referência:** o livro *Crafting Interpreters* (Robert Nystrom,
+link no recurso acima) implementa dois interpretadores completos
+em ~600 páginas - um em Java, outro em C. É o melhor lugar pra
+quem quer **escrever** um interpretador do zero, não só entender.
+
+No próximo nó, vamos sair da máquina local e olhar **redes** - o
+mínimo que dev precisa saber sobre como seu código conversa com o
+resto do mundo.
