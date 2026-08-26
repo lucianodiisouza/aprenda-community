@@ -1,0 +1,98 @@
+---
+id: escolhendo-entre-sql-e-nosql
+title: "SQL ou NoSQL: Como Decidir"
+resources:
+  - title: "Martin Fowler - NoSQL Distilled (resumo, em inglês)"
+    url: https://martinfowler.com/bliki/NosqlDefinition.html
+    type: doc
+    lang: en
+    free: true
+---
+
+"Devo usar SQL ou NoSQL?" é a pergunta mais comum em modelagem
+de dados. A resposta **não é tribal** ("SQL é ultrapassado!" ou
+"NoSQL é brinquedo!"). É sobre **caso de uso**.
+
+### O framework de decisão
+
+Faça essas três perguntas, em ordem:
+
+**1. Os dados são estruturados e relacionados?**
+
+- Sim, com integridade forte (bancos, pedidos, usuários) → **SQL**
+- Não, são semi-estruturados (logs, eventos, catálogos) →
+  **Documento (MongoDB)**
+
+**2. Você precisa de queries complexas (joins, agregações)?**
+
+- Sim, com regularidade → **SQL** (Postgres resolve bem)
+- Não, sempre busca por chave → **Chave-valor (Redis)**
+
+**3. Latência de microssegundos é requisito?**
+
+- Sim (leaderboard em tempo real, sessão, rate limit) →
+  **Redis** (ou outro in-memory)
+- Não → qualquer um
+
+### O cenário mais comum: combinando os dois
+
+Sistemas reais quase nunca escolhem "um banco". Combinam:
+
+```text
+cliente ─► API ─► Postgres (dados de negócio)
+            │
+            └────► Redis (cache + sessão + rate limit)
+```
+
+**Postgres** é a fonte de verdade (dados persistentes, com
+relacionamento e integridade). **Redis** é o acelerador
+(consultas frequentes, contadores, expiração automática). Cada
+banco faz o que faz de melhor.
+
+### Quando **não** misturar
+
+- **Sistema simples com 1 tipo de dado**: complica à toa.
+  Use Postgres e ponto.
+- **Time pequeno sem experiência em NoSQL**: adicionar Redis
+  antes de precisar é otimização prematura.
+- **Quando SQL resolve fácil**: cachear Postgres com Redis é
+  comum; trocar Postgres por MongoDB sem motivo é barulho.
+
+### O que cada banco **faz de melhor**
+
+| Necessidade | Banco | Por quê |
+| --- | --- | --- |
+| Transações com integridade forte | **SQL (Postgres)** | ACID nativo, FK |
+| Dados semi-estruturados / flexíveis | **Documento (MongoDB)** | Schema flexível |
+| Cache com TTL automático | **Chave-valor (Redis)** | In-memory, expiração |
+| Sessão com revogação | **Chave-valor (Redis)** | `DEL` invalida |
+| Rate limit | **Chave-valor (Redis)** | `INCR` atômico |
+| Pub/Sub em tempo real | **Chave-valor (Redis)** | Streams, low latency |
+| Busca textual avançada | **SQL FTS** ou **Elasticsearch** | Depende do volume |
+| Séries temporais | **Colunar** ou time series DB | Caso específico |
+| Grafos / redes | **Grafo (Neo4j)** | Caso específico |
+
+### A armadilha do "NoSQL resolve tudo"
+
+Cobrir NoSQL **não é trocar SQL por MongoDB** no mesmo projeto.
+É entender que **existem ferramentas diferentes** e cada uma
+resolve um problema diferente. Quem sai da trilha de SQL achando
+"agora vou usar MongoDB" cai na armadilha de modelar relacional
+em documento e descobrir que perdeu integridade sem ganhar nada.
+
+Três conceitos pra fixar:
+
+- **SQL resolve 80% dos casos** - começar por Postgres é raramente
+  errado.
+- **NoSQL complementa** - Redis pra performance, MongoDB pra
+  dados flexíveis. Não substitui.
+- **Sistemas reais combinam** - Postgres + Redis é a stack
+  padrão de mercado, não exceção.
+
+> Dica: se você está começando um projeto novo, **Postgres + Redis**
+>  é uma stack que te leva longe. Adicione MongoDB quando aparecer
+>  um caso onde "esquema fixo está atrapalhando" de verdade.
+
+No próximo nó, o **projeto final**: uma API Express com
+**Postgres (dados) + Redis (cache + sessão + rate limit)** -
+juntando SQL, NoSQL e a decisão de quando cada um entra.

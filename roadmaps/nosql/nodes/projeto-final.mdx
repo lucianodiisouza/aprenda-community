@@ -1,0 +1,182 @@
+---
+id: projeto-final
+title: "Projeto Final: API com Postgres + Redis"
+resources:
+  - title: "Template inicial: api-rest-com-autenticacao (em PT-BR)"
+    url: https://github.com/lucianodiisouza/aprenda-community/blob/main/projects/api-rest-com-autenticacao.mdx
+    type: doc
+    lang: pt
+    free: true
+  - title: "docker-compose: Postgres + Redis + app (em inglês)"
+    url: https://docs.docker.com/compose/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você percorreu SQL (Postgres via Prisma) e NoSQL (Redis como
+acelerador). Agora é hora de juntar os dois numa API real:
+**dados de negócio no Postgres, performance e sessão no Redis**.
+
+Esse projeto reaproveita o brief de
+[**`api-rest-com-autenticacao`**](https://github.com/lucianodiisouza/aprenda-community/blob/main/projects/api-rest-com-autenticacao.mdx)
+e adiciona a camada Redis que faltava.
+
+### O que você vai construir
+
+Uma API Express com:
+
+- **CRUD de produtos** (criar, listar, atualizar, deletar) com
+  persistência em **Postgres** via Prisma.
+- **Cache de leitura**: `GET /produtos/:id` consulta Redis antes
+  do banco; invalida no update.
+- **Sessão de login** no Redis (em vez de JWT stateless) com
+  revogação por logout.
+- **Rate limit** simples: cada IP pode fazer 60 requests por
+  minuto.
+- **Healthcheck** em `/health` que checa Postgres e Redis.
+- **Docker Compose** com `app + postgres + redis`, tudo sobe
+  com um comando.
+
+### Estrutura de pastas sugerida
+
+```text
+src/
+├── server.ts
+├── app.ts
+├── routes/
+│   ├── produtos.ts
+│   └── auth.ts
+├── lib/
+│   ├── prisma.ts        # singleton do PrismaClient
+│   ├── redis.ts         # singleton do ioredis
+│   ├── cache.ts         # helpers get/set/invalidate
+│   └── ratelimit.ts     # middleware de rate limit
+├── middleware/
+│   ├── auth.ts          # lê sessão do Redis
+│   └── error.ts
+└── types.ts             # declare global Express.Request
+
+prisma/
+└── schema.prisma        # model Produto, model Usuario
+
+docker-compose.yml       # app + postgres + redis
+```
+
+### As três peças de Redis que você vai implementar
+
+**1. Cache com invalidação:**
+
+```typescript
+// lib/cache.ts
+export async function getCached<T>(key: string): Promise<T | null> {
+  const data = await redis.get(key);
+  return data ? JSON.parse(data) : null;
+}
+
+export async function setCache(key: string, value: unknown, ttl = 3600) {
+  await redis.set(key, JSON.stringify(value), "EX", ttl);
+}
+
+export async function invalidate(key: string) {
+  await redis.del(key);
+}
+```
+
+```typescript
+// routes/produtos.ts
+app.get("/produtos/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const cacheKey = `produto:${id}`;
+
+  const cached = await getCached<Produto>(cacheKey);
+  if (cached) return res.json(cached);  // cache hit
+
+  const produto = await prisma.produto.findUnique({ where: { id } });
+  if (!produto) return res.status(404).json({ erro: "não encontrado" });
+
+  await setCache(cacheKey, produto);
+  res.json(produto);
+});
+
+app.put("/produtos/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const produto = await prisma.produto.update({
+    where: { id },
+    data: req.body,
+  });
+  await invalidate(`produto:${id}`);  // invalida cache
+  res.json(produto);
+});
+```
+
+**2. Sessão no Redis (em vez de JWT):**
+
+```typescript
+// routes/auth.ts
+app.post("/login", async (req, res) => {
+  const { email, senha } = req.body;
+  const usuario = await prisma.usuario.findUnique({ where: { email } });
+  if (!usuario || !(await bcrypt.compare(senha, usuario.senhaHash))) {
+    return res.status(401).json({ erro: "credenciais inválidas" });
+  }
+
+  const sid = crypto.randomUUID();
+  await redis.set(
+    `sessao:${sid}`,
+    JSON.stringify({ usuarioId: usuario.id }),
+    "EX", 60 * 60 * 24  // 1 dia
+  );
+
+  res.cookie("sid", sid, { httpOnly: true, sameSite: "lax" });
+  res.json({ ok: true });
+});
+```
+
+**3. Rate limit:**
+
+```typescript
+// lib/ratelimit.ts
+export async function rateLimit(ip: string, maxPorMinuto: number) {
+  const key = `ratelimit:${ip}:${Math.floor(Date.now() / 60000)}`;
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 60);
+  return count <= maxPorMinuto;
+}
+
+app.use(async (req, res, next) => {
+  const ip = req.ip ?? "unknown";
+  if (!(await rateLimit(ip, 60))) {
+    return res.status(429).json({ erro: "muitas requisições" });
+  }
+  next();
+});
+```
+
+### Critérios de aceite
+
+A API está pronta quando:
+
+- `docker compose up` sobe app + Postgres + Redis, e a aplicação
+  conecta nos dois.
+- `GET /produtos/:id` na primeira chamada lê do Postgres; na
+  segunda, vem do Redis (verificável com `redis-cli` ou
+  log estruturado).
+- `PUT /produtos/:id` **invalida o cache** - próxima leitura
+  vai no banco de novo.
+- `POST /login` cria sessão no Redis; `POST /logout` remove;
+  requests autenticadas funcionam só com sessão válida.
+- 61ª request no mesmo minuto devolve **429**.
+- `/health` confirma Postgres e Redis respondendo.
+
+### O que esse projeto testa de NoSQL
+
+- Quando usar **embed vs reference** (aqui não se aplica - é SQL
+  com cache, não modelagem de documento).
+- **Cache com invalidação manual** - o padrão mais comum.
+- **Sessão com TTL no Redis** - alternativa ao JWT stateless.
+- **Rate limit com `INCR` + `EXPIRE`** - atômico, simples, barato.
+- **Healthcheck** dos dois bancos - boa prática de produção.
+
+Se você chegou aqui, **você sabe quando usar cada banco** - e
+mais importante, **sabe quando não usar**.

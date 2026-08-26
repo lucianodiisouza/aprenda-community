@@ -1,0 +1,146 @@
+---
+id: mongodb-crud
+title: "MongoDB: Inserir, Buscar, Atualizar e Remover"
+resources:
+  - title: "MongoDB - CRUD Operations (em inglês)"
+    url: https://www.mongodb.com/docs/manual/crud/
+    type: doc
+    lang: en
+    free: true
+  - title: "MongoDB Node.js Driver - CRUD (em inglês)"
+    url: https://www.mongodb.com/docs/drivers/node/current/fundamentals/crud/
+    type: doc
+    lang: en
+    free: true
+---
+
+CRUD no MongoDB segue um padrão limpo: **uma coleção, um método
+por operação, sempre recebe um filtro ou um documento**. Vamos
+cobrir `mongosh` e o driver Node lado a lado.
+
+### Create: inserir documentos
+
+```javascript
+// mongosh
+db.usuarios.insertOne({ nome: "Ana", idade: 28 });
+db.usuarios.insertMany([
+  { nome: "Bruno", idade: 35 },
+  { nome: "Carla", idade: 42 }
+]);
+```
+
+```javascript
+// Node
+await usuarios.insertOne({ nome: "Ana", idade: 28 });
+await usuarios.insertMany([
+  { nome: "Bruno", idade: 35 },
+  { nome: "Carla", idade: 42 }
+]);
+```
+
+`insertOne` devolve `{ acknowledged, insertedId }`. `insertMany`
+devolve `{ acknowledged, insertedCount, insertedIds }`.
+
+### Read: buscar documentos
+
+A busca é sempre via `find()`. **Sem filtro** = todos os documentos:
+
+```javascript
+// mongosh
+db.usuarios.find();               // todos
+db.usuarios.findOne({ nome: "Ana" });  // um específico
+```
+
+```javascript
+// Node
+const todos = await usuarios.find().toArray();
+const ana = await usuarios.findOne({ nome: "Ana" });
+```
+
+O filtro é um **documento de match** - cada campo é uma condição
+de igualdade (a não ser que use operadores, que vem no próximo nó).
+
+### Update: atualizar documentos
+
+Atenção ao detalhe: o MongoDB tem **dois pares** de update - um
+**substitui** o documento inteiro, o outro **modifica campos específicos**.
+
+```javascript
+// $set: atualiza só os campos passados
+db.usuarios.updateOne(
+  { nome: "Ana" },         // filtro
+  { $set: { idade: 29 } }  // modificação
+);
+
+db.usuarios.updateMany(
+  { ativo: true },
+  { $set: { newsletter: true } }
+);
+```
+
+```javascript
+// substitui o documento inteiro (perigoso se esquecer campos)
+db.usuarios.replaceOne(
+  { nome: "Ana" },
+  { nome: "Ana", idade: 30 }  // ⚠️ só tem esses campos agora
+);
+```
+
+A diferença:
+
+- `updateOne` / `updateMany` com `$set` = **merge** - mantém os
+  outros campos.
+- `replaceOne` = **substitui** o documento inteiro, perdendo
+  campos não listados.
+
+Pra evitar perda de dado, prefira `$set` quase sempre.
+
+### Delete: remover documentos
+
+```javascript
+// mongosh
+db.usuarios.deleteOne({ nome: "Ana" });
+db.usuarios.deleteMany({ ativo: false });
+
+// Node
+await usuarios.deleteOne({ nome: "Ana" });
+await usuarios.deleteMany({ ativo: false });
+```
+
+Cuidado: `deleteMany({})` (sem filtro) **apaga a coleção inteira**.
+Sempre confira o filtro antes de rodar.
+
+### Operadores comuns em filtro
+
+```javascript
+// comparação
+{ idade: { $gt: 18 } }        // maior que
+{ idade: { $gte: 18, $lt: 65 } }  // entre
+{ nome: { $in: ["Ana", "Bruno"] } }  // está na lista
+
+// lógicos
+{ $and: [{ ativo: true }, { idade: { $gte: 18 } }] }
+{ $or: [{ premium: true }, { admin: true }] }
+
+// existência
+{ email: { $exists: true } }  // tem o campo
+{ telefone: { $exists: false } }  // não tem
+```
+
+Três conceitos pra fixar:
+
+- **`updateOne` com `$set`** é o caminho seguro - atualiza
+  campos sem perder os outros.
+- **`find()`** sempre devolve coleção; **`.toArray()`** no
+  driver Node materializa a `Cursor` em array de documentos.
+- **Filtros são documentos** - `{ campo: valor }` ou
+  `{ campo: { $operador: valor } }` pra condições além de
+  igualdade.
+
+> Dica: o **driver Node** tem um método `find()` que devolve
+> `Cursor`, não array direto. Esquecer o `.toArray()` é fonte
+> comum de bug ("por que meu `await` resolve numa coisa que
+> não dá pra usar?").
+
+No próximo nó, vamos além do CRUD básico: **filtros compostos,
+projeção, ordenação, paginação e agregação**.

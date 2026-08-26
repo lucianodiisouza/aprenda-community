@@ -1,0 +1,167 @@
+---
+id: mongodb-setup
+title: "MongoDB: Instalação e Primeiro Documento"
+resources:
+  - title: "MongoDB - Install (em inglês)"
+    url: https://www.mongodb.com/docs/manual/installation/
+    type: doc
+    lang: en
+    free: true
+  - title: "mongosh - Shell oficial (em inglês)"
+    url: https://www.mongodb.com/docs/mongodb-shell/
+    type: doc
+    lang: en
+    free: true
+---
+
+Vamos colocar a mão na massa. Esta seção cobre a instalação do
+MongoDB local (com Docker, que é o jeito mais limpo), conectar
+pelo shell, e criar o primeiro documento.
+
+### Instalação local com Docker
+
+A maneira mais rápida de subir MongoDB pra estudar:
+
+```bash
+docker run -d \
+  --name mongodb \
+  -p 27017:27017 \
+  -v mongodb_data:/data/db \
+  mongo:7
+```
+
+Isso sobe um MongoDB na porta `27017` (porta padrão), com
+volume nomeado `mongodb_data` pra não perder dados quando o
+container reiniciar. Pra parar e remover:
+
+```bash
+docker stop mongodb
+docker rm mongodb
+```
+
+Se preferir instalação nativa (sem Docker), o guia oficial
+cobre macOS, Windows e Linux - mas Docker é mais limpo pra
+ambiente de estudo.
+
+### Conectando com `mongosh`
+
+O `mongosh` é o shell oficial do MongoDB. Instale e conecte:
+
+```bash
+# se tiver via npm
+npm install -g mongosh
+
+# conecta no MongoDB local
+mongosh "mongodb://localhost:27017"
+```
+
+Você cai num prompt tipo:
+
+```text
+test>
+```
+
+`test` é o banco default. Pra listar os bancos existentes:
+
+```javascript
+show dbs
+```
+
+Provavelmente só `admin`, `config`, `local` aparecem. Vamos criar
+o nosso:
+
+```javascript
+use aprendacom
+```
+
+`use` não cria o banco imediatamente - ele só marca como "atual".
+A criação efetiva acontece quando você inserir o primeiro documento.
+
+### Primeiro documento
+
+```javascript
+db.usuarios.insertOne({
+  nome: "Ana",
+  email: "ana@ex.com",
+  idade: 28,
+  ativo: true
+});
+```
+
+Resposta:
+
+```jsonc
+{
+  "acknowledged": true,
+  "insertedId": ObjectId("...")
+}
+```
+
+O MongoDB gerou o `_id` automaticamente. Agora o banco `aprendacom`
+e a coleção `usuarios` existem de verdade.
+
+### Lendo o documento de volta
+
+```javascript
+db.usuarios.find();
+```
+
+```jsonc
+[
+  {
+    _id: ObjectId("..."),
+    nome: "Ana",
+    email: "ana@ex.com",
+    idade: 28,
+    ativo: true
+  }
+]
+```
+
+Note que `find()` devolve um **array de documentos** - mesmo
+quando tem só um. É o padrão do MongoDB: tudo é coleção, e
+resultado de query é coleção.
+
+### Instalando o driver Node
+
+Pra usar no seu código:
+
+```bash
+npm install mongodb
+```
+
+Conectando e inserindo:
+
+```javascript
+import { MongoClient } from "mongodb";
+
+const client = new MongoClient("mongodb://localhost:27017");
+await client.connect();
+
+const db = client.db("aprendacom");
+const usuarios = db.collection("usuarios");
+
+await usuarios.insertOne({
+  nome: "Bruno",
+  email: "bruno@ex.com",
+  idade: 35,
+});
+
+await client.close();
+```
+
+Três conceitos pra fixar:
+
+- **Docker é o caminho mais limpo** pra subir MongoDB local -
+  sem poluir o sistema.
+- **`mongosh`** é o shell oficial; `use` troca de banco, `db`
+  é sempre o banco atual, `db.colecao` é a coleção atual.
+- **Driver Node** (`mongodb`) é a ponte entre seu código e o
+  banco - tudo via `client.db().collection()`.
+
+> Dica: crie um `docker-compose.yml` pro MongoDB no seu projeto
+> (e talvez pro app). Aí `docker compose up` sobe tudo, sem
+> precisar lembrar do comando de `docker run`.
+
+No próximo nó, vamos ver o **CRUD completo**: inserir vários,
+buscar com filtro, atualizar, e remover.
