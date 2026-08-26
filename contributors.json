@@ -146,6 +146,39 @@
       ]
     },
     {
+      "github": "rafa-coelho",
+      "name": "Rafael Coelho",
+      "avatar": "https://github.com/rafa-coelho.png",
+      "profile": "https://github.com/rafa-coelho",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 3,
+        "bootcamps": 0,
+        "total": 4
+      },
+      "trilhas": [
+        {
+          "slug": "rabbitmq-mensageria",
+          "title": "RabbitMQ e Mensageria"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "central-de-notificacoes",
+          "title": "Central de Notificações"
+        },
+        {
+          "slug": "fila-de-atendimento",
+          "title": "Fila de Atendimento"
+        },
+        {
+          "slug": "processador-de-planilhas",
+          "title": "Processador de Planilhas"
+        }
+      ],
+      "bootcamps": []
+    },
+    {
       "github": "obrenoalvim",
       "name": "Breno Alvim",
       "avatar": "https://github.com/obrenoalvim.png",
@@ -200,26 +233,6 @@
           "via": "trilha:backend"
         }
       ]
-    },
-    {
-      "github": "rafa-coelho",
-      "name": "Rafael Coelho",
-      "avatar": "https://github.com/rafa-coelho.png",
-      "profile": "https://github.com/rafa-coelho",
-      "counts": {
-        "trilhas": 1,
-        "projetos": 0,
-        "bootcamps": 0,
-        "total": 1
-      },
-      "trilhas": [
-        {
-          "slug": "rabbitmq-mensageria",
-          "title": "RabbitMQ e Mensageria"
-        }
-      ],
-      "projetos": [],
-      "bootcamps": []
     }
   ]
 }
