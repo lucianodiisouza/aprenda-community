@@ -1,0 +1,135 @@
+---
+id: chave-valor-redis
+title: "Redis: O Banco Chave-Valor"
+resources:
+  - title: "Redis - Documentação oficial (em inglês)"
+    url: https://redis.io/docs/latest/
+    type: doc
+    lang: en
+    free: true
+  - title: "ioredis - Cliente Node recomendado (em inglês)"
+    url: https://github.com/redis/ioredis
+    type: doc
+    lang: en
+    free: true
+---
+
+**Redis** (REmote DIctionary Server) é um banco que mora
+**inteiro na memória RAM**, expondo uma interface de chave-valor
+com tipos ricos. Foi pensado pra ser **muito rápido** (latência
+de microssegundos) e hoje é peça padrão em quase toda stack
+backend - normalmente ao lado do banco principal, como cache
+ou message broker.
+
+### Subir Redis com Docker
+
+```bash
+docker run -d \
+  --name redis \
+  -p 6379:6379 \
+  redis:7-alpine
+```
+
+A imagem `redis:7-alpine` é a recomendada pra dev/start. Em
+produção, você usa Redis com persistência (`--appendonly yes`)
+ou um managed service (Upstash, ElastiCache, etc.).
+
+### Conectando com `redis-cli`
+
+```bash
+# instala (ou usa via Docker)
+docker exec -it redis redis-cli
+
+# prompt do redis-cli
+127.0.0.1:6379>
+```
+
+Os comandos mais básicos:
+
+```bash
+SET saudacao "Olá, mundo"      # cria/atualiza
+GET saudacao                    # lê
+DEL saudacao                    # remove
+EXISTS saudacao                 # checa se existe
+```
+
+### Tipos de dados ricos
+
+Redis não é só string - tem 5 tipos úteis:
+
+```bash
+# String - o básico
+SET contador 0
+INCR contador                   # 1
+INCRBY contador 10              # 11
+
+# Hash - objeto com campos
+HSET usuario:42 nome "Ana" email "ana@ex.com"
+HGET usuario:42 nome            # "Ana"
+HGETALL usuario:42              # todos os campos
+
+# List - lista ordenada (insertion order)
+LPUSH tarefas "comprar pão"     # prepend
+RPUSH tarefas "estudar Redis"   # append
+LRANGE tarefas 0 -1             # todas
+
+# Set - conjunto sem ordem, sem duplicata
+SADD tags "node" "backend" "api"
+SMEMBERS tags                   # ["node", "backend", "api"]
+
+# Sorted set - conjunto com score (pra leaderboard)
+ZADD ranking 100 "ana" 95 "bruno" 80 "carla"
+ZREVRANGE ranking 0 2 WITHSCORES    # top 3
+```
+
+### Cliente Node: `ioredis`
+
+A maioria dos projetos Node usa o pacote `ioredis` - tem
+tipagem TS forte, reconexão automática, e suporte a cluster.
+
+```bash
+npm install ioredis
+```
+
+```typescript
+import Redis from "ioredis";
+
+const redis = new Redis("redis://localhost:6379");
+
+await redis.set("saudacao", "Olá");
+const valor = await redis.get("saudacao");
+await redis.del("saudacao");
+```
+
+### Tempo de vida: chaves que se auto-destroem
+
+Quase toda chave no Redis tem **expiração**. Isso é o que faz
+cache funcionar sem encher a memória:
+
+```bash
+SET sessao:abc123 "{ ... }" EX 3600   # expira em 1 hora
+TTL sessao:abc123                       # quanto falta (segundos)
+EXPIRE sessao:abc123 1800               # muda a expiração
+```
+
+No Node:
+
+```typescript
+await redis.set("sessao:abc123", "...", "EX", 3600);
+const ttl = await redis.ttl("sessao:abc123");
+```
+
+Três conceitos pra fixar:
+
+- **Redis é in-memory** - tudo cabe na RAM, latência de
+  microssegundos, mas tem limite de tamanho.
+- **5 tipos de dados** (string, hash, list, set, sorted set) -
+  cada um com casos de uso próprios.
+- **`EX` na escrita** define expiração automática - toda chave
+  de cache/sessão devia ter.
+
+> Dica: use o `EX` ou `PX` direto no `SET` em vez de `EXPIRE`
+> depois. É atômico - a chave nunca existe sem expiração.
+
+No próximo nó, vamos ver os **casos de uso reais** do Redis
+em backend: cache, sessão, rate limit, contador e pub/sub.

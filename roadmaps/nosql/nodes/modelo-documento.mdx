@@ -1,0 +1,107 @@
+---
+id: modelo-documento
+title: "Modelo de Documento: Coleções e JSON-like"
+resources:
+  - title: "MongoDB - Documentos (em inglês)"
+    url: https://www.mongodb.com/docs/manual/core/document/
+    type: doc
+    lang: en
+    free: true
+---
+
+Um banco de documento (como MongoDB) organiza dado em **coleções**
+de **documentos** - em vez de tabelas de linhas. Cada documento
+é um objeto JSON-like (chamado **BSON** no MongoDB), e cada
+coleção é um "saco" de documentos que podem ter formatos
+diferentes.
+
+### Documento: o JSON-like do MongoDB
+
+```jsonc
+// documento
+{
+  "_id": ObjectId("..."),
+  "nome": "Ana",
+  "idade": 28,
+  "tags": ["admin", "beta"],
+  "endereco": {
+    "rua": "Av. Paulista",
+    "cidade": "São Paulo"
+  },
+  "ativo": true
+}
+```
+
+Quatro coisas a notar:
+
+- **`_id`** é o identificador único. Se você não passar, o MongoDB
+  gera um `ObjectId` (12 bytes) automaticamente.
+- **Campos podem ser de qualquer tipo**, incluindo arrays e
+  objetos aninhados (até 100 níveis de profundidade).
+- **Schema é flexível** - dois documentos da mesma coleção
+  podem ter campos diferentes. O banco não reclama.
+- **Tipo importa** - `"28"` (string) é diferente de `28` (number).
+
+### Coleção: o agrupamento de documentos
+
+```javascript
+// coleção "usuarios" - arquivos do mesmo "tipo"
+[
+  { _id: 1, nome: "Ana", idade: 28 },
+  { _id: 2, nome: "Bruno", idade: 35, premium: true }
+  // ^ esse tem campo "premium" - schema flexível
+]
+```
+
+Em SQL, "tabela" implica schema fixo. Em MongoDB, **coleção é só
+um namespace** - o conteúdo é que define o schema de cada documento.
+
+### Schema flexível: o superpoder e a armadilha
+
+A vantagem:
+
+```javascript
+// adiciona campo novo sem migration
+db.usuarios.updateMany({}, { $set: { newsletter: true } });
+// só afeta documentos que ainda não têm o campo
+```
+
+A armadilha:
+
+```javascript
+// dois documentos "do mesmo tipo" com formatos incompatíveis
+{ nome: "Ana", endereco: { rua: "Av. X" } }
+{ nome: "Bruno", address: { street: "Av. Y" } }  // typo em inglês
+```
+
+Se ninguém padronizar, seu banco vira bagunça. **MongoDB 3.6+**
+tem **schema validation** (regras opcionais que o banco enforça),
+mas o default é confiar na aplicação.
+
+### Comparação direta com SQL
+
+| SQL | MongoDB |
+| --- | --- |
+| Banco | Banco |
+| Tabela | Coleção |
+| Linha | Documento |
+| Coluna | Campo |
+| Chave primária | `_id` |
+| `JOIN` | `$lookup` ou embed |
+| Schema fixo | Schema flexível (com validação opcional) |
+
+Três conceitos pra fixar:
+
+- **Documento** = objeto JSON-like (BSON), com tipos ricos e
+  campos aninhados.
+- **Coleção** = agrupamento de documentos do "mesmo tipo" -
+  namespace, sem schema rígido.
+- **Schema flexível** é poder (sem migration) e risco (sem
+  validação) ao mesmo tempo.
+
+> Dica: use schema validation desde cedo em produção. Cria no
+> MongoDB regras por coleção (`required`, `type`, `enum`) e
+> deixa o banco te avisar quando algo destoa.
+
+No próximo nó, vamos **colocar a mão na massa** com MongoDB:
+instalar, conectar pelo terminal, criar o primeiro documento.

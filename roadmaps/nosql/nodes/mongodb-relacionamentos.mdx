@@ -1,0 +1,118 @@
+---
+id: mongodb-relacionamentos
+title: "MongoDB: Embed vs Reference"
+resources:
+  - title: "MongoDB - Embedding (em inglês)"
+    url: https://www.mongodb.com/docs/manual/data-modeling/concepts/embedding/
+    type: doc
+    lang: en
+    free: true
+  - title: "MongoDB - Reference (em inglês)"
+    url: https://www.mongodb.com/docs/manual/data-modeling/concepts/referencing/
+    type: doc
+    lang: en
+    free: true
+---
+
+Em SQL, relacionamento é regra: `pedido.clienteId` aponta pra
+`cliente.id`, e o `JOIN` resolve a leitura. Em MongoDB, **você
+escolhe** entre duas estratégias - e essa escolha define a forma
+do seu banco.
+
+### Embed: tudo num documento só
+
+```jsonc
+// coleção "pedidos"
+{
+  _id: "ped-001",
+  cliente: {
+    nome: "Ana",
+    email: "ana@ex.com"
+  },
+  itens: [
+    { produto: "Teclado", preco: 250, qtd: 1 },
+    { produto: "Mouse", preco: 80, qtd: 2 }
+  ],
+  total: 410
+}
+```
+
+Cliente e itens vivem **dentro** do pedido. Pra ler o pedido com
+tudo, **uma query** resolve.
+
+### Reference: documento aponta pro outro
+
+```jsonc
+// coleção "pedidos"
+{ _id: "ped-001", clienteId: "u-001", total: 410 }
+
+// coleção "usuarios"
+{ _id: "u-001", nome: "Ana", email: "ana@ex.com" }
+```
+
+Cliente mora em outra coleção; o pedido guarda só o `clienteId`.
+Pra ler o pedido **com** o cliente, você precisa de uma segunda
+query (ou `$lookup`).
+
+### Quando usar cada
+
+A regra geral é **acesso**:
+
+| Situação | Estratégia | Por quê |
+| --- | --- | --- |
+| Sempre lê junto | **Embed** | 1 query, sem `$lookup` |
+| Lê separado às vezes | **Reference** | Evita duplicação |
+| Lado "N" de um 1-N pequeno | **Embed** | Lista cabe no doc |
+| Lado "N" de um 1-N grande (pedidos × cliente) | **Reference** | Documento explodiria |
+| 1-1 sempre juntos | **Embed** | Mesma leitura |
+| 1-1 independente | **Reference** | Carrega só o que precisa |
+
+**Embed** é o padrão no MongoDB. **Reference** é a exceção, pra
+evitar duplicação e documentos grandes demais.
+
+### O limite do embed: documento de 16 MB
+
+O BSON tem limite de **16 MB por documento**. Se você embedar
+1000 itens num pedido, um dia estoura. A regra prática: **se a
+lista pode crescer sem teto, use reference**.
+
+### `$lookup`: o "JOIN" do MongoDB
+
+Quando você precisa juntar dados de duas coleções **na query**:
+
+```javascript
+db.pedidos.aggregate([
+  {
+    $lookup: {
+      from: "usuarios",            // coleção a juntar
+      localField: "clienteId",     // campo no pedido
+      foreignField: "_id",         // campo no usuário
+      as: "cliente"                // nome do campo no resultado
+    }
+  }
+]);
+```
+
+Resultado: cada pedido vem com um array `cliente` (1 elemento
+nesse caso de N-1, vários em N-N). É equivalente a um `LEFT JOIN`
+do SQL.
+
+`$lookup` é **caro** - cada vez que roda, o banco precisa ler
+duas coleções e juntar em memória. Se você usa toda hora, **a
+decisão de modelagem provavelmente está errada** - devia ser
+embed.
+
+Três conceitos pra fixar:
+
+- **Embed** = subdocumento dentro do documento. **1 query, 0 join**.
+- **Reference** = `_id` de outra coleção. **N queries ou `$lookup`**.
+- **`$lookup`** é o "join" do MongoDB - útil pra relatórios
+  pontuais, ruim pra queries do dia a dia.
+
+> Dica: modele **pelo padrão de acesso**, não pela forma dos
+> dados. Se você sempre lê `pedido + cliente` junto, embed é
+> mais rápido. Se cada pedido pode ter 10k itens, reference é
+> mais seguro.
+
+No próximo nó, vamos trocar de modelo: o **Redis**, banco
+chave-valor que é praticamente sinônimo de cache em backend.
