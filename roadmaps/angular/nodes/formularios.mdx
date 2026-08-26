@@ -1,0 +1,35 @@
+---
+id: formularios
+title: "Formulários"
+resources:
+  - title: "Angular: Forms"
+    url: https://angular.dev/guide/forms
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Reactive forms"
+    url: https://angular.dev/guide/forms/reactive-forms
+    type: doc
+    lang: en
+    free: true
+---
+
+Formulário é onde o usuário entrega dados para o app. Angular tem formulários
+template-driven e reactive forms; para apps médios e grandes, reactive forms
+costumam deixar validação e estado mais explícitos.
+
+```ts
+form = new FormGroup({
+  titulo: new FormControl("", { nonNullable: true }),
+});
+```
+
+Com reactive forms, o estado do formulário fica em objetos TypeScript. O template
+renderiza campos e mensagens, mas a regra principal fica testável.
+
+- **FormControl** representa um campo.
+- **FormGroup** agrupa campos relacionados.
+- **Validators** impedem dados inválidos antes do submit.
+- **Forms tipados** reduzem erro ao ler valores.
+
+No próximo nó, vamos buscar e enviar dados com HTTP.

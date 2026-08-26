@@ -6,6 +6,18 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+### Adicionado
+
+- 🅰️ **Trilha Angular** (`roadmaps/angular`, 24 nós): para quem já sabe a base
+  da web e quer construir aplicações frontend maiores com TypeScript,
+  organização de código, rotas, formulários, comunicação com APIs e estado.
+  Começa pelo ambiente e pelo modelo mental do framework, passa por
+  componentes standalone, lifecycle, inputs/outputs, templates, binding,
+  diretivas, pipes, control flow, estilos, services e DI, rotas, guards,
+  interceptors, forms, HTTP, RxJS, Signals, estado da aplicação, Angular
+  Material/CDK, acessibilidade, i18n, PWA, testes, performance, SSR e deploy,
+  e fecha com um projeto final de dashboard.
+
 ## [1.19.0] - 2026-08-26
 
 ### Adicionado

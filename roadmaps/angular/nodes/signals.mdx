@@ -1,0 +1,35 @@
+---
+id: signals
+title: "Signals e Reatividade Moderna"
+resources:
+  - title: "Angular: Signals"
+    url: https://angular.dev/guide/signals
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Signals API"
+    url: https://angular.dev/api/core/signal
+    type: doc
+    lang: en
+    free: true
+---
+
+Signals representam valores reativos de forma direta. Você lê o valor chamando a
+signal como função e atualiza com métodos como `set` e `update`.
+
+```ts
+const contador = signal(0);
+const dobro = computed(() => contador() * 2);
+
+contador.update((valor) => valor + 1);
+```
+
+Signals são úteis para estado local, valores derivados e telas que precisam
+reagir sem espalhar subscriptions.
+
+- **`signal`** guarda um valor mutável e reativo.
+- **`computed`** deriva valor a partir de outras signals.
+- **`effect`** executa uma reação quando dependências mudam.
+- **Interop com RxJS** ajuda em apps que usam os dois modelos.
+
+No próximo nó, vamos decidir onde guardar estado em uma aplicação real.

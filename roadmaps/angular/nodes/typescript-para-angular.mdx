@@ -1,0 +1,42 @@
+---
+id: typescript-para-angular
+title: "TypeScript para Angular"
+resources:
+  - title: "Angular: TypeScript configuration"
+    url: https://angular.dev/reference/configs/typescript-configuration
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript Handbook"
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Angular usa TypeScript como base. Você não precisa dominar todos os recursos da
+linguagem antes de começar, mas precisa ficar confortável com tipos, classes,
+interfaces, generics e inferência.
+
+```ts
+type Tarefa = {
+  id: string;
+  titulo: string;
+  feita: boolean;
+};
+
+const tarefas: Tarefa[] = [];
+```
+
+Esse tipo simples já ajuda o editor a apontar erro antes do navegador quebrar.
+Em Angular, isso aparece em componentes, services, formulários e chamadas HTTP.
+
+- **Tipos explícitos** deixam contratos claros entre componentes e services.
+- **Interfaces e types** descrevem dados vindos de APIs.
+- **Classes** aparecem em componentes, services e pipes.
+- **Generics** ajudam em `HttpClient`, forms tipados e helpers reutilizáveis.
+
+> Dica: quando uma resposta de API ainda não tem tipo, crie um type pequeno. Não
+> deixe `any` se espalhar pelo app.
+
+No próximo nó, vamos montar a unidade principal da interface: o componente.

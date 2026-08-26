@@ -1,0 +1,40 @@
+---
+id: servicos-di
+title: "Serviços e Injeção de Dependências"
+resources:
+  - title: "Angular: Dependency injection"
+    url: https://angular.dev/guide/di
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Creating injectable services"
+    url: https://angular.dev/guide/di/creating-injectable-service
+    type: doc
+    lang: en
+    free: true
+---
+
+Services guardam lógica que não pertence diretamente à tela: buscar dados,
+compartilhar estado, encapsular regras e conversar com APIs. A injeção de
+dependências entrega esses services para quem precisa deles.
+
+```ts
+import { Injectable } from "@angular/core";
+
+@Injectable({ providedIn: "root" })
+export class TrilhasService {
+  listar() {
+    return [{ id: "angular", titulo: "Angular" }];
+  }
+}
+```
+
+Um componente chama o service, mas não precisa saber como ele foi criado. Isso
+reduz acoplamento e facilita testes.
+
+- **Service** concentra regra reutilizável.
+- **`providedIn: "root"`** cria uma instância compartilhada no app.
+- **DI** evita instanciar dependências manualmente.
+- **Componentes finos** ficam mais fáceis de manter.
+
+No próximo nó, vamos navegar entre telas com o router.

@@ -1,0 +1,40 @@
+---
+id: inputs-outputs
+title: "Inputs, Outputs e Comunicação"
+resources:
+  - title: "Angular: Accepting data with input properties"
+    url: https://angular.dev/guide/components/inputs
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Custom events with outputs"
+    url: https://angular.dev/guide/components/outputs
+    type: doc
+    lang: en
+    free: true
+---
+
+Componentes ficam mais reutilizáveis quando recebem dados de fora e avisam o
+componente-pai quando algo acontece. Em Angular, esse fluxo aparece com inputs e
+outputs.
+
+```ts
+@Component({
+  selector: "app-topico",
+  template: `<button (click)="concluir.emit(id)">Concluir</button>`,
+})
+export class TopicoComponent {
+  id = input.required<string>();
+  concluir = output<string>();
+}
+```
+
+Pense em componente como uma peça com contrato: quais dados entram, quais eventos
+saem e o que ele renderiza.
+
+- **Input** recebe dados do componente-pai.
+- **Output** emite eventos para o componente-pai.
+- **Contrato pequeno** facilita reuso e teste.
+- **Estado compartilhado** demais pode indicar que um service é melhor.
+
+No próximo nó, vamos ligar dados e eventos ao HTML do template.

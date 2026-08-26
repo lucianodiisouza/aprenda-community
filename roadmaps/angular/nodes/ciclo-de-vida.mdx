@@ -1,0 +1,36 @@
+---
+id: ciclo-de-vida
+title: "Ciclo de Vida do Componente"
+resources:
+  - title: "Angular: Component lifecycle"
+    url: https://angular.dev/guide/components/lifecycle
+    type: doc
+    lang: en
+    free: true
+---
+
+Componentes nascem, recebem dados, atualizam a tela e podem ser destruídos. O
+ciclo de vida é o conjunto de momentos em que o Angular permite rodar código para
+preparar ou limpar alguma coisa.
+
+```ts
+export class PerfilComponent implements OnInit, OnDestroy {
+  ngOnInit() {
+    // carregar dados iniciais
+  }
+
+  ngOnDestroy() {
+    // limpar listeners ou subscriptions manuais
+  }
+}
+```
+
+Use hooks com intenção. Se tudo vira `ngOnInit`, o componente começa a esconder
+regra demais.
+
+- **`ngOnInit`** roda quando o componente já pode iniciar sua carga de dados.
+- **`ngOnChanges`** reage a mudanças em inputs.
+- **`ngAfterViewInit`** roda depois que a view foi inicializada.
+- **`ngOnDestroy`** limpa recursos antes do componente sair da tela.
+
+No próximo nó, vamos passar dados e eventos entre componentes.

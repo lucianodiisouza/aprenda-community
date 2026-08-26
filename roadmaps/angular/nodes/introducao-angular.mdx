@@ -1,0 +1,43 @@
+---
+id: introducao-angular
+title: "O que é Angular"
+resources:
+  - title: "Angular: What is Angular?"
+    url: https://angular.dev/overview
+    type: doc
+    lang: en
+    free: true
+  - title: "roadmap.sh: Angular Developer Roadmap"
+    url: https://roadmap.sh/angular
+    type: artigo
+    lang: en
+    free: true
+---
+
+Angular é um framework para criar aplicações web com TypeScript, HTML e CSS. Em
+vez de montar a interface toda na mão, você divide a tela em componentes e deixa
+o Angular cuidar de renderização, rotas, formulários, comunicação HTTP e
+organização do código.
+
+```ts
+import { Component } from "@angular/core";
+
+@Component({
+  selector: "app-root",
+  template: `<h1>Olá, Angular</h1>`,
+})
+export class AppComponent {}
+```
+
+Esse exemplo já mostra a ideia central: uma classe TypeScript descreve o estado
+e um template descreve o que aparece na tela.
+
+- **Framework**: Angular traz decisões prontas para app grande, não só uma lib
+  de UI.
+- **TypeScript primeiro**: tipos fazem parte do fluxo normal, não são um extra.
+- **Componentes**: cada parte da tela ganha template, lógica e estilo próprios.
+- **Ecossistema**: CLI, router, forms, HTTP, testes e Material vivem no mesmo
+  universo.
+
+No próximo nó, vamos preparar o ambiente e criar o primeiro projeto com Angular
+CLI.

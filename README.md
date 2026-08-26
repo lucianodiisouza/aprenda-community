@@ -30,6 +30,12 @@ Trilhas hoje:
 - 🟣 [**Frontend**](./roadmaps/frontend) - para quem quer construir a
   parte visual e interativa da web: HTML, CSS, JavaScript, React.
   **12 nós**. Assume o básico de JS.
+- 🅰️ [**Angular**](./roadmaps/angular) - framework web completo para
+  construir SPAs com TypeScript: CLI, componentes standalone, templates,
+  services, rotas, guards, formulários, HTTP, RxJS, Signals, estado,
+  Material/CDK, acessibilidade, i18n, PWA, testes, performance, SSR e deploy.
+  **24 nós**. Assume HTML, CSS, JavaScript e
+  TypeScript básico.
 - 🟠 [**Backend**](./roadmaps/backend) - para quem quer construir a
   parte que roda no servidor: HTTP, Node.js, Express, REST, banco de
   dados, ORM, autenticação JWT, validação, testes, async profundo,

@@ -1,0 +1,40 @@
+---
+id: estilos-componentes
+title: "Estilos e Organização Visual"
+resources:
+  - title: "Angular: Styling components"
+    url: https://angular.dev/guide/components/styling
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Component selectors"
+    url: https://angular.dev/guide/components/selectors
+    type: doc
+    lang: en
+    free: true
+---
+
+Cada componente pode ter seu próprio CSS. Isso ajuda a manter o estilo perto da
+interface que ele afeta e reduz conflito entre telas.
+
+```ts
+@Component({
+  selector: "app-progresso",
+  template: `<div class="barra"><span></span></div>`,
+  styles: [`
+    .barra { height: 8px; background: #e5e7eb; }
+    .barra span { display: block; width: 60%; height: 100%; }
+  `],
+})
+export class ProgressoComponent {}
+```
+
+O ponto não é colocar todo CSS inline. O ponto é entender o escopo do estilo e
+escolher entre `styles`, `styleUrl` e estilos globais.
+
+- **Estilo local** pertence ao componente.
+- **Estilo global** serve para tokens, reset, layout base e temas.
+- **Classes pequenas** deixam o template previsível.
+- **Consistência visual** vale mais que inventar padrão novo a cada tela.
+
+No próximo nó, vamos tirar dados e regras de dentro dos componentes com services.

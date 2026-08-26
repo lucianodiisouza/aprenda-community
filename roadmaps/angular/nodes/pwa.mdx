@@ -1,0 +1,34 @@
+---
+id: pwa
+title: "PWA e Service Worker"
+resources:
+  - title: "Angular: Service worker"
+    url: https://angular.dev/ecosystem/service-workers
+    type: doc
+    lang: en
+    free: true
+  - title: "web.dev: Progressive Web Apps"
+    url: https://web.dev/explore/progressive-web-apps
+    type: artigo
+    lang: en
+    free: true
+---
+
+PWA é útil quando o app precisa abrir rápido, funcionar melhor em rede instável
+ou se comportar mais perto de um aplicativo instalado. Em Angular, o service
+worker oficial ajuda com cache e atualização.
+
+```bash
+ng add @angular/pwa
+```
+
+Não adicione PWA só pelo selo. Cache errado pode entregar tela antiga, esconder
+bug e confundir usuário. Primeiro entenda qual experiência offline ou de
+instalação você quer oferecer.
+
+- **Service worker** fica entre app, rede e cache.
+- **Manifest** descreve nome, ícones e comportamento de instalação.
+- **Cache strategy** decide o que fica salvo e por quanto tempo.
+- **Atualização** precisa ser tratada para o usuário receber versões novas.
+
+No próximo nó, vamos testar as partes importantes do app.

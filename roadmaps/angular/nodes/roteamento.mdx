@@ -1,0 +1,36 @@
+---
+id: roteamento
+title: "Rotas e Navegação"
+resources:
+  - title: "Angular: Routing"
+    url: https://angular.dev/guide/routing
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Router reference"
+    url: https://angular.dev/api/router/Router
+    type: doc
+    lang: en
+    free: true
+---
+
+O router transforma uma SPA em várias telas navegáveis. Em vez de controlar a
+tela atual com `if` no componente principal, você declara rotas e deixa o Angular
+renderizar o componente certo.
+
+```ts
+export const routes = [
+  { path: "", component: DashboardComponent },
+  { path: "trilhas/:id", component: DetalheTrilhaComponent },
+];
+```
+
+Rotas também carregam parâmetros, protegem áreas e ajudam a dividir código por
+feature conforme o app cresce.
+
+- **Path** define a URL.
+- **Component** define a tela renderizada naquela URL.
+- **Route params** carregam ids como `:id`.
+- **Lazy loading** evita baixar o app inteiro de uma vez.
+
+No próximo nó, vamos capturar e validar dados com formulários.

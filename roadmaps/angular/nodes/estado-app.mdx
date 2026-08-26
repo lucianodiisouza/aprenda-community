@@ -1,0 +1,37 @@
+---
+id: estado-app
+title: "Estado da Aplicação"
+resources:
+  - title: "Angular: Signals"
+    url: https://angular.dev/guide/signals
+    type: doc
+    lang: en
+    free: true
+  - title: "NgRx: Getting started"
+    url: https://ngrx.io/guide/store
+    type: doc
+    lang: en
+    free: true
+---
+
+Estado é tudo que muda e afeta a tela: usuário logado, filtros, carrinho,
+progresso, cache de API e preferências. O erro comum é usar uma ferramenta grande
+antes de entender o tamanho real do problema.
+
+```ts
+@Injectable({ providedIn: "root" })
+export class ProgressoStore {
+  concluidas = signal<string[]>([]);
+}
+```
+
+Comece simples: estado local no componente, depois service com signals ou RxJS.
+Bibliotecas como NgRx fazem sentido quando o fluxo tem muita tela, evento e regra
+compartilhada.
+
+- **Estado local** pertence a uma tela pequena.
+- **Service store** compartilha estado entre componentes próximos.
+- **NgRx** ajuda quando o app precisa de fluxo previsível e depuração forte.
+- **Cache** não é a mesma coisa que estado de interface.
+
+No próximo nó, vamos usar componentes prontos e utilitários de UI.

@@ -1,0 +1,33 @@
+---
+id: rxjs
+title: "RxJS e Programação Reativa"
+resources:
+  - title: "Angular: RxJS interop"
+    url: https://angular.dev/ecosystem/rxjs-interop
+    type: doc
+    lang: en
+    free: true
+  - title: "RxJS: Overview"
+    url: https://rxjs.dev/guide/overview
+    type: doc
+    lang: en
+    free: true
+---
+
+RxJS trabalha com valores que chegam ao longo do tempo: resposta de API, eventos,
+busca digitada, filtros e streams. Em Angular, você encontra observables no
+router, no HTTP e em bibliotecas de estado.
+
+```ts
+this.trilhas$ = this.http.get<Trilha[]>("/api/trilhas");
+```
+
+O sufixo `$` é uma convenção comum para avisar que aquela variável é um
+observable. Ela não guarda o valor final; ela representa uma fonte de valores.
+
+- **Observable** emite valores com o tempo.
+- **Operators** transformam, filtram e combinam streams.
+- **Subscription** inicia o consumo de uma stream.
+- **Async pipe** ajuda o template a assinar e limpar subscriptions.
+
+No próximo nó, vamos ver Signals, a reatividade moderna do Angular.

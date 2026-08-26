@@ -1,0 +1,42 @@
+---
+id: componentes-standalone
+title: "Componentes Standalone"
+resources:
+  - title: "Angular: Components"
+    url: https://angular.dev/guide/components
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Component lifecycle"
+    url: https://angular.dev/guide/components/lifecycle
+    type: doc
+    lang: en
+    free: true
+---
+
+Componentes são os blocos da tela. No Angular moderno, componentes standalone
+podem importar diretamente o que usam, sem depender de um `NgModule` para cada
+feature.
+
+```ts
+import { Component } from "@angular/core";
+
+@Component({
+  selector: "app-card",
+  standalone: true,
+  template: `<article>{{ titulo }}</article>`,
+})
+export class CardComponent {
+  titulo = "Minha trilha";
+}
+```
+
+Um bom componente tem uma responsabilidade clara: exibir uma lista, representar
+um card, receber dados ou emitir uma ação.
+
+- **Selector** é o nome usado no HTML para renderizar o componente.
+- **Template** mostra a estrutura visual.
+- **Classe** guarda dados, métodos e dependências.
+- **Imports** declaram outros componentes, pipes e diretivas usados ali.
+
+No próximo nó, vamos ligar dados da classe com o template.

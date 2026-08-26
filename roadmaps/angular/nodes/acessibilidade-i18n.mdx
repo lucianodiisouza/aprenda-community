@@ -1,0 +1,41 @@
+---
+id: acessibilidade-i18n
+title: "Acessibilidade e i18n"
+resources:
+  - title: "Angular: Accessibility"
+    url: https://angular.dev/best-practices/a11y
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Internationalization"
+    url: https://angular.dev/guide/i18n
+    type: doc
+    lang: en
+    free: true
+  - title: "WAI: WCAG overview"
+    url: https://www.w3.org/WAI/standards-guidelines/wcag/
+    type: doc
+    lang: en
+    free: true
+---
+
+Angular não torna um app acessível sozinho, mas oferece ferramentas para você
+fazer a coisa certa: atributos, componentes, CDK, mensagens traduzíveis e build
+por idioma.
+
+```html
+<button type="button" aria-label="Fechar diálogo">
+  ×
+</button>
+```
+
+Acessibilidade começa no HTML: botão de verdade, label de campo, foco visível e
+texto alternativo. i18n começa evitando texto solto e formatando datas, números e
+moedas conforme o idioma.
+
+- **A11y** garante que mais pessoas consigam usar o app.
+- **Semântica HTML** vale mesmo dentro de componente Angular.
+- **i18n** prepara texto e formatos para outros idiomas.
+- **Componentes prontos** não substituem revisão de contraste, foco e teclado.
+
+No próximo nó, vamos transformar a aplicação em PWA quando isso fizer sentido.

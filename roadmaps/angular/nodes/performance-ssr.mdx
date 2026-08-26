@@ -1,0 +1,38 @@
+---
+id: performance-ssr
+title: "Performance, SSR e Deploy"
+resources:
+  - title: "Angular: Build for production"
+    url: https://angular.dev/tools/cli/build
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Server-side rendering"
+    url: https://angular.dev/guide/ssr
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Deferrable views"
+    url: https://angular.dev/guide/templates/defer
+    type: doc
+    lang: en
+    free: true
+---
+
+Angular não termina quando a tela funciona localmente. Um app real precisa
+carregar rápido, gerar bundle enxuto e ter uma estratégia de publicação.
+
+```bash
+ng build
+```
+
+O build de produção otimiza os arquivos finais. Para apps públicos, SSR e
+pre-render podem melhorar tempo de primeira renderização, SEO e experiência em
+redes lentas.
+
+- **Build de produção** gera os arquivos que vão para o servidor.
+- **Lazy loading** reduz o JavaScript inicial.
+- **`@defer`** atrasa partes caras da UI até serem necessárias.
+- **SSR/hydration** ajudam quando a primeira tela precisa aparecer rápido.
+
+No próximo nó, você junta a trilha em um projeto completo.

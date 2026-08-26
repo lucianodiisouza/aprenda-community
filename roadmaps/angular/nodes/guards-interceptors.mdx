@@ -1,0 +1,35 @@
+---
+id: guards-interceptors
+title: "Guards e Interceptors"
+resources:
+  - title: "Angular: Route guards"
+    url: https://angular.dev/guide/routing/route-guards
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: HTTP interceptors"
+    url: https://angular.dev/guide/http/interceptors
+    type: doc
+    lang: en
+    free: true
+---
+
+Guards decidem se uma navegação pode acontecer. Interceptors passam por todas as
+requisições HTTP e respostas, então são bons para autenticação, logs, headers e
+tratamento global de erro.
+
+```ts
+export const authGuard: CanActivateFn = () => {
+  return inject(AuthService).estaLogado();
+};
+```
+
+Essas duas peças ficam perto da borda do app: entrada por URL e saída para API.
+Por isso, use com cuidado e mantenha regras simples.
+
+- **Guard** protege rotas ou impede saída de uma tela.
+- **Interceptor** altera ou observa requests e responses.
+- **Auth token** costuma entrar por interceptor.
+- **Regra sensível** precisa ser validada também no backend.
+
+No próximo nó, vamos capturar dados do usuário com formulários.

@@ -1,0 +1,45 @@
+---
+id: templates-binding
+title: "Templates, Binding e Eventos"
+resources:
+  - title: "Angular: Templates"
+    url: https://angular.dev/guide/templates
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Binding dynamic text, properties and attributes"
+    url: https://angular.dev/guide/templates/binding
+    type: doc
+    lang: en
+    free: true
+---
+
+Template é onde a tela encontra os dados do componente. Você mostra valores com
+interpolação, altera propriedades com binding e reage a cliques, submits e outros
+eventos.
+
+```ts
+@Component({
+  template: `
+    <h2>{{ titulo }}</h2>
+    <button type="button" (click)="concluir()">Concluir</button>
+  `,
+})
+export class AulaComponent {
+  titulo = "Templates";
+
+  concluir() {
+    this.titulo = "Aula concluída";
+  }
+}
+```
+
+O template não deve virar um arquivo cheio de regra de negócio. Ele deve mostrar
+o estado e chamar métodos pequenos quando o usuário interage.
+
+- **Interpolação** mostra texto: `{{ valor }}`.
+- **Property binding** liga atributos e propriedades do DOM.
+- **Event binding** responde a ações: `(click)`, `(submit)`, `(input)`.
+- **Template limpo** melhora leitura e teste.
+
+No próximo nó, vamos controlar repetição, condição e transformação visual.

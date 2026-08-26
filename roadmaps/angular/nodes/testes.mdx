@@ -1,0 +1,34 @@
+---
+id: testes
+title: "Testes em Angular"
+resources:
+  - title: "Angular: Testing"
+    url: https://angular.dev/guide/testing
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular DevTools"
+    url: https://angular.dev/tools/devtools
+    type: doc
+    lang: en
+    free: true
+---
+
+Testes em Angular servem para provar comportamento: service calcula certo,
+componente reage ao input, formulário valida e fluxo importante não quebra.
+
+```ts
+it("deve somar tópicos concluídos", () => {
+  expect(totalConcluido([{ feita: true }, { feita: false }])).toBe(1);
+});
+```
+
+Comece testando lógica pura e services. Depois teste componentes onde existe
+risco real de regressão: formulários, fluxos com rotas e telas com estado.
+
+- **Teste unitário** cobre função, pipe, service ou componente isolado.
+- **TestBed** monta componentes com dependências do Angular.
+- **Mocks** substituem APIs e services externos.
+- **DevTools** ajuda a entender árvore de componentes e performance.
+
+No próximo nó, vamos preparar o app para carregar bem e ir para produção.

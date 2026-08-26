@@ -1,0 +1,34 @@
+---
+id: http-client
+title: "HTTP e Integração com APIs"
+resources:
+  - title: "Angular: HTTP client"
+    url: https://angular.dev/guide/http
+    type: doc
+    lang: en
+    free: true
+  - title: "MDN: HTTP overview"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview
+    type: doc
+    lang: en
+    free: true
+---
+
+Quase todo app Angular conversa com uma API. O `HttpClient` resolve o básico:
+GET, POST, headers, tratamento de erro e respostas tipadas.
+
+```ts
+type Trilha = { id: string; titulo: string };
+
+this.http.get<Trilha[]>("/api/trilhas");
+```
+
+Coloque chamadas HTTP em services. O componente deve pedir dados e reagir ao
+resultado, não montar URL e headers em vários lugares.
+
+- **GET** busca dados.
+- **POST/PUT/PATCH/DELETE** mudam dados no servidor.
+- **Tipos genéricos** descrevem o formato esperado da resposta.
+- **Interceptors** ajudam com autenticação, logging e erros globais.
+
+No próximo nó, vamos entender o padrão reativo que aparece nas APIs do Angular.

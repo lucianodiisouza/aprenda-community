@@ -1,0 +1,39 @@
+---
+id: workspace-config
+title: "Workspace e Configuração"
+resources:
+  - title: "Angular: Workspace configuration"
+    url: https://angular.dev/reference/configs/workspace-config
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: File structure"
+    url: https://angular.dev/reference/configs/file-structure
+    type: doc
+    lang: en
+    free: true
+---
+
+Um projeto Angular tem convenções fortes. Isso é bom: quando você abre um app
+novo, sabe onde procurar código, assets, configuração de build e configuração de
+TypeScript.
+
+```text
+meu-app/
+  angular.json
+  package.json
+  src/
+    app/
+    assets/
+```
+
+O `angular.json` descreve como o Angular CLI deve construir, servir e testar o
+projeto. Você não precisa decorar tudo, mas precisa saber que esse arquivo existe
+e que muitas opções do CLI param nele.
+
+- **Workspace** é a pasta raiz gerenciada pelo Angular CLI.
+- **`src/app`** concentra componentes, rotas, services e features.
+- **`angular.json`** guarda alvos como build, serve e test.
+- **Configs por ambiente** ajudam a separar dev, staging e produção.
+
+No próximo nó, vamos revisar o TypeScript que aparece no dia a dia do Angular.

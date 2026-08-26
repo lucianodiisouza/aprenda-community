@@ -1,0 +1,41 @@
+---
+id: diretivas-pipes
+title: "Diretivas, Pipes e Control Flow"
+resources:
+  - title: "Angular: Control flow"
+    url: https://angular.dev/guide/templates/control-flow
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Pipes"
+    url: https://angular.dev/guide/templates/pipes
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Directives"
+    url: https://angular.dev/guide/directives
+    type: doc
+    lang: en
+    free: true
+---
+
+Aplicações reais precisam mostrar listas, esconder blocos e formatar valores. O
+Angular faz isso com control flow, diretivas e pipes.
+
+```html
+@for (aula of aulas; track aula.id) {
+  <p>{{ aula.titulo | titlecase }}</p>
+} @empty {
+  <p>Nenhuma aula cadastrada.</p>
+}
+```
+
+Use control flow para decidir o que aparece. Use pipes para transformar valores
+na hora de mostrar, como datas, moedas e capitalização.
+
+- **`@if`** mostra um bloco quando uma condição é verdadeira.
+- **`@for`** renderiza listas e precisa de uma chave estável em `track`.
+- **Diretivas** adicionam comportamento em elementos existentes.
+- **Pipes** transformam dados para exibição, sem alterar o dado original.
+
+No próximo nó, vamos falar de estilos e organização visual dos componentes.

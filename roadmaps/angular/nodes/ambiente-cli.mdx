@@ -1,0 +1,39 @@
+---
+id: ambiente-cli
+title: "Ambiente e Angular CLI"
+resources:
+  - title: "Angular: Installation"
+    url: https://angular.dev/installation
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular CLI"
+    url: https://angular.dev/tools/cli
+    type: doc
+    lang: en
+    free: true
+---
+
+O Angular CLI é a ferramenta que cria, roda, testa e gera partes da aplicação.
+Ele evita começar com configuração solta e dá um padrão de projeto que outros
+devs Angular reconhecem rápido.
+
+```bash
+npm install -g @angular/cli
+ng new meu-app
+cd meu-app
+ng serve
+```
+
+Depois disso, o app fica disponível localmente e você pode editar os arquivos em
+`src/`. A configuração principal do workspace fica em `angular.json`.
+
+- **`ng new`** cria o workspace e pergunta escolhas iniciais.
+- **`ng serve`** roda o servidor de desenvolvimento.
+- **`ng generate`** cria componentes, services, pipes e outras peças.
+- **`angular.json`** guarda opções de build, serve, test e assets.
+
+> Dica: use o CLI para gerar arquivos enquanto aprende. Isso reduz erro de nome,
+> import e estrutura.
+
+No próximo nó, vamos revisar o TypeScript que mais aparece em Angular.
