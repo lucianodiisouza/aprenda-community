@@ -1,0 +1,95 @@
+---
+id: http-https-apis
+title: "HTTP, HTTPS e APIs"
+resources:
+  - title: "Uma visão geral do HTTP — MDN"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Guides/Overview
+    type: doc
+    lang: pt
+    free: true
+  - title: "Transport Layer Security Cheat Sheet — OWASP"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Se você desenvolve para a Web, provavelmente já encontrou palavras como `GET`, `POST`, status `200`, API e HTTPS.
+
+Agora vamos juntar essas peças.
+
+O **HTTP** é um protocolo utilizado para troca de mensagens entre clientes e servidores na Web.
+
+A ideia básica é simples:
+
+```text
+Cliente
+   |
+   | requisição
+   v
+Servidor
+   |
+   | resposta
+   v
+Cliente
+```
+
+O cliente envia uma **requisição** pedindo ou enviando alguma coisa. O servidor processa essa requisição e devolve uma **resposta**.
+
+Imagine uma API que retorna os dados de um produto:
+
+```http
+GET /produtos/10
+```
+
+A aplicação pode responder:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "id": 10,
+  "produto": "Teclado"
+}
+```
+
+O `GET` indica a ação que está sendo solicitada. O `200` informa que a requisição foi processada com sucesso, e o corpo da resposta contém os dados enviados pelo servidor.
+
+É exatamente esse modelo de requisição e resposta que permite que muitas **APIs** funcionem.
+
+Uma API cria uma forma definida para que sistemas diferentes consigam se comunicar.
+
+Seu front-end pode pedir informações para o back-end. Seu back-end pode consultar outro serviço. Um aplicativo pode consumir a mesma API utilizada pelo site.
+
+Agora entra uma parte muito importante para segurança: **HTTPS**.
+
+HTTP, por si só, não oferece a proteção criptográfica que esperamos para dados trafegando pela Internet. O HTTPS utiliza HTTP sobre uma conexão protegida por TLS.
+
+De forma simplificada:
+
+```text
+HTTP
+dados trafegando sem a proteção do TLS
+
+HTTPS
+HTTP + TLS
+```
+
+O TLS ajuda a proteger a comunicação contra leitura e alteração indevida durante o transporte, além de permitir que o cliente valide a identidade apresentada pelo servidor através de certificados.
+
+Isso é especialmente importante quando sua aplicação transmite:
+
+- credenciais;
+- tokens;
+- informações pessoais;
+- dados financeiros;
+- qualquer outra informação sensível.
+
+Mas existe uma pegadinha importante: **HTTPS não torna uma aplicação automaticamente segura**.
+
+Você pode ter HTTPS funcionando perfeitamente e ainda possuir falhas de autorização, autenticação, validação de entrada ou outras vulnerabilidades dentro da aplicação.
+
+HTTPS protege a comunicação. A aplicação ainda precisa proteger o que acontece antes e depois dela.
+
+No próximo nó, vamos entender dois conceitos que vivem sendo confundidos: **autenticação e autorização**.

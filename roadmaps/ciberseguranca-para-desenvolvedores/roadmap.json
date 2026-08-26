@@ -1,0 +1,106 @@
+{
+  "slug": "ciberseguranca-para-desenvolvedores",
+  "title": "Fundamentos de Cibersegurança para Desenvolvedores",
+  "description": "Trilha introdutória de Segurança da Informação para desenvolvedores: dos fundamentos de dados, redes e protocolos até vulnerabilidades, OWASP Top 10 e conceitos iniciais de pentest.",
+  "difficulty": "iniciante",
+  "skills": [
+    "seguranca-da-informacao",
+    "ciberseguranca",
+    "redes",
+    "owasp",
+    "pentest"
+  ],
+  "nodes": [
+    {
+      "id": "introducao-seguranca-informacao",
+      "title": "Introdução à Segurança da Informação",
+      "type": "topic",
+      "recommended": true,
+      "children": ["dados-e-informacao"]
+    },
+    {
+      "id": "dados-e-informacao",
+      "title": "Dados e Informação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["principios-seguranca-informacao"]
+    },
+    {
+      "id": "principios-seguranca-informacao",
+      "title": "Confidencialidade, Integridade e Disponibilidade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["riscos-ameacas-vulnerabilidades"]
+    },
+    {
+      "id": "riscos-ameacas-vulnerabilidades",
+      "title": "Ativos, Ameaças, Vulnerabilidades e Riscos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["redes-computadores"]
+    },
+    {
+      "id": "redes-computadores",
+      "title": "Redes de Computadores",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["protocolos-rede"]
+    },
+    {
+      "id": "protocolos-rede",
+      "title": "Protocolos de Rede",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["portas-servicos"]
+    },
+    {
+      "id": "portas-servicos",
+      "title": "Portas e Serviços",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["http-https-apis"]
+    },
+    {
+      "id": "http-https-apis",
+      "title": "HTTP, HTTPS e APIs",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["autenticacao-autorizacao"]
+    },
+    {
+      "id": "autenticacao-autorizacao",
+      "title": "Autenticação e Autorização",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["vulnerabilidades-seguranca"]
+    },
+    {
+      "id": "vulnerabilidades-seguranca",
+      "title": "Vulnerabilidades de Segurança",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["owasp-top-10"]
+    },
+    {
+      "id": "owasp-top-10",
+      "title": "Introdução ao OWASP Top 10",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["etica-autorizacao-escopo"]
+    },
+    {
+      "id": "etica-autorizacao-escopo",
+      "title": "Ética, Autorização e Escopo em Testes de Segurança",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["introducao-pentest"]
+    },
+    {
+      "id": "introducao-pentest",
+      "title": "Introdução ao Pentest",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

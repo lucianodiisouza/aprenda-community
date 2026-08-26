@@ -1,0 +1,84 @@
+---
+id: portas-servicos
+title: "Portas e Serviços"
+resources:
+  - title: "Service Name and Transport Protocol Port Number Registry — IANA"
+    url: https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já sabe que um endereço IP ajuda a identificar para qual dispositivo uma comunicação deve seguir.
+
+Mas imagine um servidor executando uma API, um banco de dados e vários outros serviços ao mesmo tempo.
+
+Como o servidor sabe **qual aplicação deve receber aquela comunicação?**
+
+É aqui que entram as **portas**.
+
+Uma porta é um identificador numérico utilizado pelos protocolos de transporte para direcionar uma comunicação ao serviço correto em um dispositivo.
+
+Podemos pensar assim:
+
+```text
+IP
+"Qual é o servidor?"
+
+Porta
+"Qual serviço nesse servidor?"
+```
+
+Imagine um prédio comercial.
+
+O endereço do prédio leva você até o lugar certo. Mas, depois de chegar, você ainda precisa saber em qual sala está a empresa que procura.
+
+Nesse exemplo, o IP seria o endereço do prédio e a porta ajudaria a identificar a "sala" lógica onde determinado serviço está disponível.
+
+Alguns serviços possuem portas tradicionalmente associadas a eles.
+
+Por exemplo:
+
+```text
+HTTP  -> 80
+HTTPS -> 443
+```
+
+Isso não significa que um serviço seja obrigado a usar somente essas portas. Uma aplicação Web pode, por exemplo, ser configurada para escutar em outra porta.
+
+Quando você inicia uma aplicação local e vê algo como:
+
+```text
+http://localhost:3000
+```
+
+o `3000` representa a porta utilizada por aquele serviço.
+
+O conceito de **serviço** também é importante.
+
+Um mesmo servidor pode executar vários serviços diferentes:
+
+```text
+Servidor
+  |
+  |-- Aplicação Web
+  |-- Banco de dados
+  |-- Serviço de monitoramento
+  `-- Outros serviços
+```
+
+Do ponto de vista de segurança, isso importa porque nem todo serviço precisa estar acessível para todo mundo.
+
+Se um banco de dados só precisa receber conexões da sua aplicação, por exemplo, expor sua porta diretamente para toda a Internet aumenta desnecessariamente a superfície de exposição.
+
+É por isso que quando está analisando uma arquitetura, uma pergunta que você deve fazer é:
+
+**Quais portas realmente precisam estar abertas e quem precisa conseguir acessar elas?**
+
+A ideia não é decorar centenas de números de portas. É entender a relação:
+
+```text
+Dispositivo -> IP -> Porta -> Serviço
+```
+
+No próximo nó, vamos usar tudo isso para entender uma das comunicações mais presentes na vida de quem desenvolve aplicações: **HTTP, HTTPS e APIs**.

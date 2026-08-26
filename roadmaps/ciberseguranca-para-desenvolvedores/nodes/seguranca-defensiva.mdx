@@ -1,0 +1,93 @@
+---
+id: seguranca-defensiva
+title: "Introdução à Segurança Defensiva"
+resources:
+  - title: "NIST Cybersecurity Framework"
+    url: https://www.nist.gov/cyberframework
+    type: doc
+    lang: en
+    free: true
+  - title: "Logging Cheat Sheet — OWASP"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Até aqui, falamos bastante sobre coisas que podem dar errado: riscos, ameaças e vulnerabilidades.
+
+Agora precisamos falar sobre o outro lado dessa história: **o que fazemos para proteger nossos sistemas?**
+
+A segurança defensiva reúne práticas utilizadas para prevenir problemas, identificar comportamentos suspeitos e responder quando alguma coisa acontece.
+
+Podemos pensar em três momentos:
+
+```text
+Prevenir
+   |
+   v
+Detectar
+   |
+   v
+Responder
+```
+
+A **prevenção** acontece quando implementamos controles para reduzir a chance de um incidente acontecer.
+
+Como desenvolvedor, você participa disso quando implementa uma autorização corretamente, protege credenciais, atualiza dependências ou valida dados recebidos pela aplicação.
+
+Mas nenhum controle é perfeito.
+
+Por isso também precisamos **detectar**.
+
+Imagine que alguém tente autenticar em uma conta várias vezes em poucos segundos.
+
+Se sua aplicação simplesmente responde:
+
+```text
+401 Unauthorized
+```
+
+e não registra nada, aquela informação desaparece depois da resposta.
+
+Agora imagine que a aplicação registre eventos relevantes:
+
+```text
+20:10 - falha de autenticação - usuário A
+20:10 - falha de autenticação - usuário A
+20:10 - falha de autenticação - usuário A
+20:11 - falha de autenticação - usuário A
+```
+
+Esses **logs** criam registros que podem ajudar sistemas e pessoas a perceber que existe um comportamento que merece atenção.
+
+Quando logs relevantes são coletados e acompanhados, entramos também no contexto de **monitoramento**.
+
+O monitoramento permite observar o ambiente e criar alertas quando determinados eventos ou padrões acontecem.
+
+E, se um incidente realmente ocorrer, entra a **resposta**.
+
+Responder pode envolver investigar o que aconteceu, limitar o impacto, corrigir a causa do problema e utilizar o aprendizado para evitar que ele se repita.
+
+Perceba que desenvolvimento aparece em todas essas etapas.
+
+```text
+Prevenção:
+implementar controles seguros
+
+Detecção:
+gerar logs úteis
+
+Resposta:
+corrigir a falha e melhorar o sistema
+```
+
+Isso mostra por que segurança não deve ser vista como uma equipe que aparece no final do projeto para dizer o que está errado.
+
+Desenvolvimento, infraestrutura, DevOps e Segurança precisam trabalhar juntos.
+
+Como desenvolvedor, você não precisa executar sozinho todo o processo de defesa de uma empresa. Mas precisa construir aplicações que permitam que essa defesa aconteça.
+
+Um sistema que não valida acesso, não registra eventos importantes e não permite entender seus próprios erros torna o trabalho defensivo muito mais difícil.
+
+Com essa base, você já consegue começar a enxergar Segurança da Informação não apenas como um conjunto de ferramentas, mas como um processo contínuo de **entender riscos, aplicar controles, observar o ambiente e melhorar o sistema**.

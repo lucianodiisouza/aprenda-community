@@ -1,0 +1,68 @@
+---
+id: protocolos-rede
+title: "Protocolos de Rede"
+resources:
+  - title: "Como a Web funciona — MDN"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works
+    type: doc
+    lang: pt
+    free: true
+  - title: "RFC 9293 — Transmission Control Protocol (TCP)"
+    url: https://datatracker.ietf.org/doc/rfc9293/
+    type: doc
+    lang: en
+    free: true
+---
+
+No nó anterior, vimos que computadores e aplicações precisam trocar dados através de redes.
+
+Mas existe uma pergunta importante: **como dois sistemas diferentes sabem como essa comunicação deve acontecer?**
+
+A resposta está nos **protocolos**.
+
+Um protocolo é um conjunto de regras que define como uma comunicação deve acontecer.
+
+Pense em duas pessoas tentando conversar sem compartilhar nenhuma regra de comunicação. Uma fala português, outra responde em japonês e nenhuma das duas sabe quando a outra terminou de falar.
+
+Provavelmente não vai funcionar muito bem.
+
+Na rede acontece algo parecido. Os dispositivos precisam seguir regras conhecidas pelos dois lados para saber como enviar, receber e interpretar os dados.
+
+Existem vários protocolos, cada um com uma responsabilidade diferente.
+
+Você vai encontrar com frequência nomes como:
+
+- **IP:** ajuda a endereçar e encaminhar os dados até o destino;
+- **TCP:** fornece uma comunicação orientada à conexão e busca entregar os dados de forma confiável e ordenada;
+- **UDP:** permite uma comunicação mais simples, sem as mesmas garantias de entrega e ordenação do TCP;
+- **HTTP:** define como clientes e servidores Web trocam requisições e respostas.
+
+Podemos imaginar essas responsabilidades em camadas:
+
+```text
+HTTP
+"Como cliente e servidor Web conversam"
+
+TCP
+"Como essa comunicação será transportada"
+
+IP
+"Para onde esses dados precisam ir"
+```
+
+Não significa que toda comunicação da Internet utilize exatamente essa combinação. O importante agora é entender que **protocolos diferentes resolvem problemas diferentes**.
+
+Isso também importa para segurança.
+
+Quando você entende qual protocolo uma aplicação utiliza, começa a entender melhor:
+
+- quais tipos de comunicação ela aceita;
+- como os dados são transportados;
+- quais controles podem existir naquele caminho;
+- onde uma configuração incorreta pode criar exposição desnecessária.
+
+Uma API Web, por exemplo, pode utilizar HTTP para definir a troca de mensagens, enquanto outros protocolos trabalham nas camadas abaixo para permitir que essas mensagens cheguem ao destino.
+
+Você não precisa decorar todas as siglas existentes. Neste momento, o mais importante é entender que uma comunicação de rede não acontece de qualquer jeito: **ela segue regras conhecidas pelos dois lados**.
+
+No próximo nó, vamos adicionar mais uma peça nessa comunicação e entender para que servem as **portas e os serviços**.

@@ -1,0 +1,87 @@
+---
+id: riscos-ameacas-vulnerabilidades
+title: "Riscos, Ameaças e Vulnerabilidades"
+resources:
+  - title: "NIST Glossary — Risk"
+    url: https://csrc.nist.gov/glossary/term/risk
+    type: doc
+    lang: en
+    free: true
+  - title: "NIST Glossary — Vulnerability"
+    url: https://csrc.nist.gov/glossary/term/vulnerability
+    type: doc
+    lang: en
+    free: true
+  - title: "NIST Glossary — Cyber Threat"
+    url: https://csrc.nist.gov/glossary/term/Cyber_Threat
+    type: doc
+    lang: en
+    free: true
+---
+
+Agora que você já conhece os princípios da Segurança da Informação, precisamos entender o que pode colocar esses princípios em risco.
+
+É aqui que entram alguns termos que você vai ouvir sempre que estiver falando sobre Segurança da Informação: **ativo, ameaça, vulnerabilidade, risco e controle**.
+
+Vamos imaginar que você desenvolveu uma aplicação que armazena os dados dos clientes da empresa.
+
+O banco de dados, a aplicação e as próprias informações dos clientes são exemplos de **ativos**. Em outras palavras, ativo é qualquer coisa que tenha valor e que, por esse motivo, precisa ser protegido.
+
+Agora imagine que a aplicação possui uma falha que permite que uma pessoa acesse informações que não deveria.
+
+Essa falha é uma **vulnerabilidade**.
+
+Uma vulnerabilidade é uma fraqueza presente em um sistema, aplicação, configuração ou processo que pode permitir que algo indesejado aconteça.
+
+Mas uma vulnerabilidade sozinha ainda não conta toda a história.
+
+Também precisamos de uma **ameaça**: algo que tenha potencial para causar algum impacto negativo ao ativo.
+
+Podemos organizar nosso exemplo assim:
+
+```text
+Ativo:
+Dados dos clientes
+
+Vulnerabilidade:
+Controle de acesso configurado de forma incorreta
+
+Ameaça:
+Acesso não autorizado
+
+Possível impacto:
+Exposição dos dados
+```
+
+E onde entra o **risco**?
+
+O risco representa a possibilidade de uma ameaça explorar ou acionar uma vulnerabilidade e causar um impacto.
+
+Por isso, quando avaliamos um risco, normalmente pensamos em duas perguntas:
+
+- **Qual é a chance de isso acontecer?**
+- **Qual seria o impacto caso acontecesse?**
+
+Uma falha em uma tela interna de testes, por exemplo, pode representar um risco diferente da mesma falha existente em uma aplicação pública utilizada por milhares de clientes.
+
+Depois de entender o risco, precisamos decidir o que fazer com ele.
+
+É aí que entram os **controles de segurança**.
+
+Um controle é uma medida utilizada para reduzir um risco. Nesse exemplo, poderíamos implementar uma validação de autorização adequada antes de permitir o acesso aos dados.
+
+```text
+Ativo + Vulnerabilidade + Ameaça
+                |
+                v
+              Risco
+                |
+                v
+             Controle
+```
+
+Esses conceitos vão aparecer várias vezes daqui para frente.
+
+Quando alguém disser que encontrou uma vulnerabilidade, tente não pensar apenas na falha. Pergunte também: **qual ativo está envolvido, qual ameaça pode se aproveitar disso e qual é o risco para o negócio?**
+
+No próximo nó, vamos sair um pouco da aplicação e entender **como os dispositivos se comunicam através de uma rede**.

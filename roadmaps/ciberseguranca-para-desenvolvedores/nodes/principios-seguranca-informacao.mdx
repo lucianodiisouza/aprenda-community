@@ -1,0 +1,60 @@
+---
+id: principios-seguranca-informacao
+title: "Princípios da Segurança da Informação"
+---
+
+# Princípios da Segurança da Informação
+
+Agora que você já sabe diferenciar dado de informação, vamos falar sobre os princípios que regem a proteção dessas informações.
+
+E eles são 3:
+
+- **Confidencialidade:** só quem deve ter acesso tem acesso;
+- **Integridade:** a informação não pode ser alterada de maneira indevida ou não autorizada;
+- **Disponibilidade:** a informação está disponível sempre que necessária.
+
+Esses 3 princípios estão presentes em praticamente todas as decisões tomadas no contexto de Segurança da Informação. Eles são avaliados em processos, aplicações, arquiteturas e controles de segurança.
+
+Trazendo isso para o mundo do desenvolvimento, estamos falando do seguinte:
+
+Quando você garante que existam mecanismos de autenticação e autorização ao longo da sua aplicação, você está contribuindo para o princípio da **CONFIDENCIALIDADE**.
+
+Uma tela de login que solicita usuário e senha, uma segregação de acesso por função que garante que o administrador veja as telas 1, 2 e 3, mas o usuário tenha acesso apenas às telas 1 e 2, ou uma validação do nível da conta de um usuário (`basic`, `premium`, etc.) são exemplos disso.
+
+O objetivo é garantir que determinada informação seja acessada apenas por quem realmente deveria ter acesso a ela.
+
+
+
+Quando você garante que uma informação não seja alterada indevidamente durante seu processamento, armazenamento ou transmissão, estamos falando do princípio da **INTEGRIDADE**.
+
+O dado pode até passar por transformações legítimas dentro da aplicação, mas essas alterações precisam acontecer de maneira controlada e esperada. O que não pode acontecer é uma informação ser modificada de maneira indevida, seja por uma falha da aplicação, erro de processamento ou ação não autorizada.
+
+Por exemplo:
+
+```text
+Banco:
+2026-08-26T17:30:00Z (UTC)
+
+Aplicação:
+26/08/2026 às 14:30 (Fuso UTC-3)
+```
+
+A informação foi transformada, mas sua integridade não foi comprometida.
+
+O problema seria, por exemplo, um valor sair como `R$ 100,00` e chegar ao usuário como `R$ 1.000,00` por causa de uma alteração indevida.
+
+
+
+E, por fim, quando você garante que a aplicação consiga entregar a informação quando o usuário precisar dela, estamos falando do princípio da **DISPONIBILIDADE**.
+
+Seu usuário não pode deixar de receber uma informação necessária para fechar uma venda, por exemplo, porque um serviço ficou indisponível, porque o API Gateway apresentou uma latência que gerou um timeout ou porque uma possível falha não foi prevista durante o desenvolvimento e a arquitetura da aplicação.
+
+
+
+E aqui existe um ponto importante: segurança não é responsabilidade apenas da equipe de Segurança.
+
+Desenvolvedores, profissionais de infraestrutura, DevOps, arquitetura e Segurança compartilham essa responsabilidade.
+
+Como desenvolvedor, muitas das decisões que você toma no código podem impactar diretamente a **confidencialidade, a integridade e a disponibilidade** das informações.
+
+Ou seja: também é sua responsabilidade.
