@@ -1,0 +1,89 @@
+---
+id: subindo-o-rabbitmq
+title: "Subindo o RabbitMQ com Docker"
+resources:
+  - title: "Imagem oficial do RabbitMQ no Docker Hub (EN)"
+    url: https://hub.docker.com/_/rabbitmq
+    type: doc
+    lang: en
+    free: true
+  - title: "Management Plugin - o painel de administração (EN)"
+    url: https://www.rabbitmq.com/docs/management
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já sabe o que é exchange, fila, binding e routing key. Agora dá pra
+subir um RabbitMQ sem ficar perdido no painel - porque você vai
+reconhecer cada coisa que aparecer na tela.
+
+E subir é a parte fácil: um comando.
+
+## O comando
+
+```bash
+docker run -d --name rabbitmq \
+  -p 5672:5672 \
+  -p 15672:15672 \
+  rabbitmq:3-management
+```
+
+Duas portas, e vale entender a diferença porque confundir as duas é
+clássico:
+
+- **5672** - a porta do **protocolo AMQP**. É por onde sua aplicação
+  publica e consome. Nenhum humano usa essa porta.
+- **15672** - a porta do **painel web**. É por onde *você* olha o que
+  está acontecendo.
+
+A tag `3-management` é a mesma imagem do RabbitMQ, só que já com o
+plugin do painel ligado. Sem `-management` o broker funciona igual, mas
+você fica sem interface pra ver nada - e nessa fase de aprendizado ver é
+metade do valor.
+
+## Entrando no painel
+
+Abre `http://localhost:15672`. Usuário e senha são **`guest` / `guest`**.
+
+Vale saber desde já: o `guest` só funciona a partir da própria máquina.
+Se um dia você subir isso num servidor e tentar logar de fora, vai tomar
+recusa - e é proteção, não bug.
+
+Lá dentro, as abas que interessam agora são exatamente o vocabulário dos
+nós anteriores:
+
+- **Exchanges** - repare que já existem várias criadas por padrão. A
+  primeira da lista, com nome em branco, é a *default exchange* que a
+  gente comentou.
+- **Queues** - vazia por enquanto. É aqui que suas filas vão aparecer.
+- **Connections** e **Channels** - vão encher quando sua aplicação
+  conectar, no próximo nó.
+
+## Não perder tudo ao reiniciar
+
+Do jeito que subiu, se você remover o container, leva junto filas,
+exchanges e mensagens. Pra desenvolvimento normalmente tanto faz - mas
+quando incomodar, um volume resolve:
+
+```bash
+docker run -d --name rabbitmq \
+  -p 5672:5672 -p 15672:15672 \
+  -v rabbitmq-data:/var/lib/rabbitmq \
+  rabbitmq:3-management
+```
+
+Três coisas pra fixar:
+
+- **5672 é pra aplicação, 15672 é pra você.** Portas diferentes,
+  propósitos diferentes.
+- **A tag `-management`** é o que te dá o painel web.
+- **`guest` só entra de localhost** - comportamento esperado, não erro
+  de configuração.
+
+> Dica: deixa o painel aberto numa aba enquanto faz o próximo nó. Ver a
+> fila aparecer, o contador subir e zerar quando o consumidor processa
+> ensina mais rápido que qualquer log.
+
+No próximo nó a gente conecta uma aplicação Node nesse broker e publica
+a primeira mensagem de verdade.

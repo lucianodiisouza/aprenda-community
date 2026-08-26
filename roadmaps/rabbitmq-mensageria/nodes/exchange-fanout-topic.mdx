@@ -1,0 +1,106 @@
+---
+id: exchange-fanout-topic
+title: "Fanout e topic: broadcast e padrões"
+resources:
+  - title: "Publish/Subscribe - tutorial oficial de fanout (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-three-python
+    type: doc
+    lang: en
+    free: true
+  - title: "Topics - tutorial oficial de topic exchange (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-five-python
+    type: doc
+    lang: en
+    free: true
+---
+
+A direct resolve quando cada evento tem um destino certo. Mas e quando
+**muita gente precisa saber da mesma coisa**? É aí que entram a fanout e
+a topic.
+
+## Fanout: manda pra todo mundo
+
+A fanout é a mais simples de todas, porque ela **ignora a routing key**.
+Não tem filtro, não tem comparação: chegou mensagem, todas as filas
+ligadas naquela exchange recebem uma cópia.
+
+<Mermaid
+  chart={`flowchart LR
+    P["Order Service"] --> E{{"pedidos (fanout)"}}
+    E --> Q1["fila.pagamento"]
+    E --> Q2["fila.estoque"]
+    E --> Q3["fila.notificacao"]
+
+    classDef prod fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    class P prod
+    class E exch
+    class Q1,Q2,Q3 queue`}
+  caption="Fanout: todas as filas ligadas recebem, sem filtro."
+/>
+
+Você pode até informar uma routing key na hora de publicar - ela
+simplesmente não é levada em conta.
+
+Lembra do exemplo da loja lá do primeiro nó? "Pedido criado" é um fato
+que interessa a três serviços ao mesmo tempo: pagamento, estoque e
+notificação. Fanout resolve isso sem você precisar listar quem escuta.
+
+E é aí que mora a vantagem real: pra plugar um quarto serviço - digamos,
+antifraude - você **não mexe no produtor**. Cria a fila, liga na
+exchange, pronto. O serviço de pedidos nem fica sabendo.
+
+## Topic: o meio-termo com curinga
+
+A topic é uma direct que aceita **padrão** em vez de texto exato. A
+routing key vira uma sequência de palavras separadas por ponto - tipo
+`pedido.br.criado` - e a binding key pode usar dois curingas:
+
+- **`*`** - substitui **exatamente uma** palavra.
+- **`#`** - substitui **zero ou mais** palavras.
+
+Essa diferença é sutil no texto e óbvia no exemplo. Com a routing key
+`pedido.br.criado`:
+
+| Binding key | Casa? | Por quê |
+|---|---|---|
+| `pedido.br.criado` | sim | texto idêntico |
+| `pedido.*.criado` | sim | `*` cobre `br`, uma palavra |
+| `pedido.#` | sim | `#` cobre `br.criado`, duas palavras |
+| `#` | sim | `#` cobre tudo |
+| `pedido.*` | **não** | `*` cobre uma palavra só, sobrou `criado` |
+| `*.criado` | **não** | sobrou uma palavra no meio |
+| `pedido.br` | **não** | faltou `criado` |
+
+A linha que pega todo mundo é a quinta: `pedido.*` **não** casa com
+`pedido.br.criado`, porque `*` vale por uma palavra e sobrou uma. Se
+você quer "tudo que começa com pedido", o certo é `pedido.#`.
+
+> Dica: monte a routing key do mais geral pro mais específico -
+> `dominio.regiao.evento`, tipo `pedido.br.criado`. Assim `pedido.#`
+> pega o domínio inteiro e `pedido.br.#` pega só o Brasil. Chave mal
+> ordenada, tipo `criado.pedido.br`, deixa o curinga inútil.
+
+## Qual usar
+
+| Exchange | Use quando |
+|---|---|
+| **direct** | cada evento tem um destino certo e conhecido |
+| **fanout** | todo mundo ligado precisa saber, sem exceção |
+| **topic** | os consumidores querem recortes diferentes do mesmo fluxo |
+
+Existe ainda a **headers**, que roteia pelos cabeçalhos da mensagem em
+vez da routing key. É bem menos comum - vale saber que existe e seguir
+em frente.
+
+Três coisas pra fixar:
+
+- **Fanout ignora a routing key** e entrega pra todas as filas ligadas.
+- **`*` é uma palavra, `#` é zero ou mais.** Trocar os dois é o erro
+  clássico de topic.
+- **Fanout é pra broadcast, topic é pra recorte.** Se todo mundo recebe
+  tudo mesmo, fanout é mais simples e mais honesto.
+
+Agora que o modelo mental tá montado, chegou a hora de sair da teoria:
+no próximo nó a gente sobe um RabbitMQ de verdade com Docker.

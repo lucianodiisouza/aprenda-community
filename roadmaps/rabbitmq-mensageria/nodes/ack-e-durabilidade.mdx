@@ -1,0 +1,106 @@
+---
+id: ack-e-durabilidade
+title: "Ack, nack e não perder mensagem"
+resources:
+  - title: "Confirmações de entrega e acknowledgements (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/confirms
+    type: doc
+    lang: en
+    free: true
+---
+
+Fila só vale a pena se a mensagem sobreviver ao caos: consumidor que
+morre no meio, broker que reinicia, deploy no horário errado. Esse nó é
+sobre as três garantias que você precisa ligar - porque **nenhuma delas
+vem ligada por padrão do jeito que você imagina**.
+
+## Ack: quem decide que terminou é você
+
+Quando o consumidor recebe a mensagem, o RabbitMQ segura ela num estado
+de "entregue, mas não confirmada". Ela só some de verdade quando chega o
+`ack`.
+
+Se o consumidor cair antes de dar `ack`, o broker percebe que a conexão
+morreu e **devolve a mensagem pra fila**. Outro consumidor pega. Nada se
+perde.
+
+```js
+channel.consume("fila.pagamento", async (msg) => {
+  try {
+    await processarPagamento(JSON.parse(msg.content.toString()))
+    channel.ack(msg)              // deu certo, pode remover
+  } catch (erro) {
+    channel.nack(msg, false, false) // falhou, não devolve pra fila
+  }
+})
+```
+
+O perigo mora no modo automático:
+
+```js
+// evite: a mensagem é dada como entregue ANTES de você processar
+channel.consume("fila.pagamento", handler, { noAck: true })
+```
+
+Com `noAck: true` o RabbitMQ considera entregue no instante em que
+manda. Se seu processo cair um milissegundo depois, a mensagem **já
+sumiu** - e ninguém processou. Use ack manual em qualquer coisa que
+importe.
+
+## Os três parâmetros do nack
+
+O `nack` tem uma assinatura que confunde: `nack(msg, allUpTo, requeue)`.
+
+| Parâmetro | O que faz |
+|---|---|
+| `allUpTo` | `true` afeta todas as mensagens não confirmadas até essa |
+| `requeue` | `true` devolve pra fila, `false` descarta ou manda pra DLQ |
+
+O `requeue: true` é a maior armadilha do RabbitMQ, e vale entender
+agora: se a mensagem falha **por causa do conteúdo dela** - um JSON
+quebrado, um campo faltando - devolver pra fila só faz ela ser
+processada de novo, falhar de novo, e voltar de novo. **Loop infinito**,
+consumindo CPU pra sempre.
+
+A regra prática: `requeue: true` só quando a falha é **temporária**
+(banco fora do ar, timeout de rede). Se o problema é a mensagem,
+`requeue: false` e trate no próximo nó, com DLQ.
+
+## Durabilidade: as três camadas
+
+Ack protege de consumidor que morre. Mas e se o **broker** reiniciar?
+Aí você precisa de três coisas ligadas ao mesmo tempo - e faltando uma,
+a corrente arrebenta:
+
+```js
+await channel.assertExchange("pedidos", "direct", { durable: true })  // 1
+await channel.assertQueue("fila.pagamento", { durable: true })        // 2
+
+channel.publish("pedidos", "order.created", conteudo, {
+  persistent: true,                                                   // 3
+})
+```
+
+1. **Exchange durável** - sobrevive ao restart.
+2. **Fila durável** - a fila em si continua existindo.
+3. **Mensagem persistente** - o conteúdo vai pro disco.
+
+Fila durável com mensagem não-persistente é o erro clássico: a fila
+volta depois do restart, **vazia**. Ela existe, as mensagens não.
+
+> Dica: durabilidade custa disco e latência. Pra evento crítico -
+> pagamento, pedido, nota - vale sempre. Pra métrica de clique ou log
+> de navegação, perder algumas no restart pode ser perfeitamente
+> aceitável. É decisão de negócio, não de código.
+
+Três coisas pra fixar:
+
+- **`noAck: true` perde mensagem** se o consumidor cair. Prefira ack
+  manual no que importa.
+- **`requeue: true` em erro permanente vira loop infinito.** Só use pra
+  falha temporária.
+- **Durabilidade são três flags** - exchange, fila e mensagem. Faltando
+  uma, não adianta as outras.
+
+No próximo nó a gente vê por que um consumidor sozinho pode entupir
+enquanto os outros ficam parados - e como o prefetch resolve isso.

@@ -1,0 +1,109 @@
+---
+id: padroes-de-mensageria
+title: "Work queue, pub/sub e RPC"
+resources:
+  - title: "Work Queues - tutorial oficial (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-two-javascript
+    type: doc
+    lang: en
+    free: true
+  - title: "RPC - tutorial oficial (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-six-javascript
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já tem todas as peças. Agora vale reconhecer os três arranjos que
+elas formam - porque quase todo caso real é um desses, e saber o nome
+ajuda a decidir rápido.
+
+## Work queue: dividir trabalho
+
+Uma fila, vários workers, cada mensagem processada **uma vez só**. É o
+que você montou no nó de prefetch.
+
+Serve pra tarefa pesada que dá pra paralelizar: processar imagem, gerar
+relatório, enviar lote de e-mail. Escalar é subir mais worker - nada no
+código muda.
+
+- Exchange: `direct` (ou a default)
+- Vários consumidores na **mesma** fila
+- `prefetch(1)` pra distribuição justa
+
+## Pub/sub: avisar todo mundo
+
+Um evento, vários interessados, cada um com **sua própria fila**. A
+diferença pro work queue é essa: fila separada por consumidor significa
+que todos recebem uma cópia, em vez de dividirem.
+
+<Mermaid
+  chart={`flowchart LR
+    P["Pedidos"] --> E{{"fanout"}}
+    E --> Q1["fila.estoque"] --> S1["Estoque"]
+    E --> Q2["fila.email"] --> S2["E-mail"]
+    E --> Q3["fila.analytics"] --> S3["Analytics"]
+
+    classDef prod fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    class P,S1,S2,S3 prod
+    class E exch
+    class Q1,Q2,Q3 queue`}
+  caption="Pub/sub: cada serviço tem sua fila e recebe uma cópia do evento."
+/>
+
+É o padrão do exemplo da loja lá do primeiro nó, e o mais valioso em
+arquitetura: pra plugar um serviço novo você **não toca no produtor**.
+
+- Exchange: `fanout` (todos) ou `topic` (recortes)
+- **Uma fila por consumidor** - esse é o detalhe que define o padrão
+
+> Cuidado com o erro clássico: ligar dois serviços diferentes na
+> **mesma** fila achando que é pub/sub. Não é - vira work queue, e cada
+> evento chega em só um deles. Metade dos e-mails não sai, e você passa
+> a tarde procurando bug no lugar errado.
+
+## RPC: pedir resposta de volta
+
+Aqui você manda uma mensagem e **espera o retorno**. O cliente cria uma
+fila temporária de resposta e manda o nome dela junto:
+
+```js
+const { queue } = await channel.assertQueue("", { exclusive: true })
+
+channel.sendToQueue("fila.calculo", Buffer.from("42"), {
+  replyTo: queue,          // pra onde responder
+  correlationId: "abc123", // pra saber qual resposta é de qual pedido
+})
+```
+
+O servidor processa e publica o resultado na fila do `replyTo`. O
+`correlationId` é o que permite casar resposta com pergunta quando você
+tem várias em andamento.
+
+Funciona - mas repara no que aconteceu: você voltou a ser **síncrono**,
+com o cliente esperando. Perdeu o desacoplamento no tempo, que é o
+motivo de existir da fila.
+
+Na prática, RPC sobre RabbitMQ quase sempre é sinal de que uma chamada
+HTTP resolveria melhor - com menos peça e stack trace decente. Vale
+saber que existe, e desconfiar quando aparecer.
+
+## Escolhendo
+
+| Padrão | Cada mensagem vai pra | Use quando |
+|---|---|---|
+| Work queue | um worker | dividir trabalho pesado |
+| Pub/sub | todos os interessados | anunciar que algo aconteceu |
+| RPC | um, e responde de volta | raramente - prefira HTTP |
+
+Três coisas pra fixar:
+
+- **Work queue divide, pub/sub copia.** A diferença está em ter uma fila
+  ou várias.
+- **Fila por consumidor** é o que faz o pub/sub funcionar.
+- **RPC te devolve o acoplamento** que a fila tinha resolvido. Pense
+  duas vezes.
+
+No próximo nó, os erros que só aparecem quando isso vai pra produção.

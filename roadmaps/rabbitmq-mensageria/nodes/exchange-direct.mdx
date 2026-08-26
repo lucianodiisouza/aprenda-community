@@ -1,0 +1,81 @@
+---
+id: exchange-direct
+title: "Direct exchange e routing keys"
+resources:
+  - title: "Routing - tutorial oficial de direct exchange (EN)"
+    url: https://www.rabbitmq.com/tutorials/tutorial-four-python
+    type: doc
+    lang: en
+    free: true
+---
+
+A **direct** é a exchange mais simples de entender, e o nome já entrega:
+ela manda a mensagem exatamente pra onde você disse. Sem mistério, sem
+curinga, sem espalhar pros lados.
+
+A regra dela é uma comparação de texto: a mensagem chega com uma
+**routing key**, cada fila está ligada na exchange por uma **binding
+key**, e a mensagem vai pras filas onde as duas forem **idênticas**.
+
+## Um exemplo de loja
+
+Imagina o serviço de pedidos publicando numa exchange `pedidos`, com
+três filas ligadas nela:
+
+<Mermaid
+  chart={`flowchart LR
+    P["Order Service"] -->|"routing key"| E{{"pedidos (direct)"}}
+    E -->|"order.created"| Q1["fila.pagamento"]
+    E -->|"order.cancelled"| Q2["fila.cancelamento"]
+    E -->|"order.error"| Q3["fila.erros"]
+
+    classDef prod fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    class P prod
+    class E exch
+    class Q1,Q2,Q3 queue`}
+  caption="Cada fila escuta uma binding key diferente na mesma exchange."
+/>
+
+Agora é só seguir a regra. Se o pedido foi criado, você publica com a
+routing key `order.created` - e só a `fila.pagamento` recebe. Se o
+pedido foi cancelado, publica `order.cancelled` e só a
+`fila.cancelamento` recebe.
+
+| Routing key publicada | Fila que recebe | Por quê |
+|---|---|---|
+| `order.created` | fila.pagamento | bate exatamente com a binding key |
+| `order.cancelled` | fila.cancelamento | bate exatamente |
+| `order.error` | fila.erros | bate exatamente |
+| `order.updated` | **nenhuma** | nenhuma binding key com esse texto |
+| `Order.Created` | **nenhuma** | a comparação diferencia maiúscula |
+
+As duas últimas linhas são as importantes. Não existe "quase casou": ou
+o texto é igual, ou a mensagem é descartada.
+
+## Duas filas com a mesma binding key
+
+Nada impede que **duas filas diferentes** usem a mesma binding key. Aí a
+mensagem é copiada pras duas.
+
+Isso costuma confundir quem acha que direct significa "uma fila só". Não
+significa - direct é sobre **igualdade exata da chave**, não sobre
+quantidade de destinos. Se três filas registram `order.created`, as três
+recebem uma cópia.
+
+Três coisas pra fixar:
+
+- **Direct compara texto exato.** `order.created` casa com
+  `order.created` e com mais nada.
+- **Sem binding compatível, a mensagem some** - silenciosamente, como
+  você viu no nó anterior.
+- **Mesma binding key em várias filas** entrega uma cópia pra cada uma.
+
+> Dica: direct é a escolha certa quando cada tipo de evento tem um
+> destino bem definido. Quando você começa a criar `order.created.email`,
+> `order.created.sms`, `order.created.push` só pra separar quem escuta o
+> quê, é sinal de que você quer uma **topic** - assunto do próximo nó.
+
+No próximo nó a gente vê a fanout, que ignora a routing key
+completamente, e a topic, que aceita curingas.

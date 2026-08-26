@@ -1,0 +1,91 @@
+---
+id: prefetch-e-concorrencia
+title: "Prefetch e vários consumidores"
+resources:
+  - title: "Consumer Prefetch (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/consumer-prefetch
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma fila com muita mensagem e um consumidor só é gargalo. A solução
+parece óbvia - sobe mais consumidores - e é mesmo. Mas tem um detalhe
+que, se você não ligar, faz três workers renderem menos que um.
+
+## Vários consumidores na mesma fila
+
+Ligue quantos processos quiser na mesma fila. O RabbitMQ distribui as
+mensagens entre eles em **round-robin**: primeira pro worker 1, segunda
+pro 2, terceira pro 3, quarta volta pro 1.
+
+<Mermaid
+  chart={`flowchart LR
+    Q["fila.pagamento"] --> W1["Worker 1"]
+    Q --> W2["Worker 2"]
+    Q --> W3["Worker 3"]
+
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    classDef work fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    class Q queue
+    class W1,W2,W3 work`}
+  caption="Round-robin: cada worker recebe uma mensagem por vez, em rodízio."
+/>
+
+Cada mensagem vai pra **um** worker só - não é cópia, é divisão de
+trabalho. Isso é o padrão *work queue*, e escalar vira só subir mais
+container.
+
+## O problema do round-robin cego
+
+Round-robin distribui **sem olhar se o worker está ocupado**. E aí mora
+o problema.
+
+Imagina 6 mensagens e 3 workers. O RabbitMQ entrega 1, 4 pro worker 1;
+2, 5 pro worker 2; 3, 6 pro worker 3 - **tudo de uma vez**, antes de
+qualquer um começar.
+
+Se a mensagem 1 for um relatório de 10 minutos e as outras forem
+rapidinhas, o worker 1 fica com a 4 presa na fila dele enquanto os
+workers 2 e 3 terminam tudo e ficam **de braços cruzados**. A mensagem 4
+espera 10 minutos por nada.
+
+## Prefetch: só o que dá pra processar
+
+O `prefetch` limita quantas mensagens não confirmadas o broker manda pra
+cada consumidor:
+
+```js
+await channel.prefetch(1)
+```
+
+Com `prefetch(1)`, o worker recebe **uma** mensagem e não recebe outra
+até dar `ack`. Aí a distribuição deixa de ser cega: quem terminou pede
+mais, quem está ocupado não recebe. Os workers 2 e 3 do exemplo acima
+puxariam a mensagem 4 assim que ficassem livres.
+
+| Prefetch | Quando usa |
+|---|---|
+| `1` | tarefas lentas ou de duração muito variável |
+| `10` a `50` | tarefas rápidas e uniformes, onde ida e volta pesa |
+| sem prefetch | quase nunca - o padrão é ilimitado |
+
+O padrão do RabbitMQ é **ilimitado**: ele empurra tudo que puder pro
+consumidor. Por isso `prefetch` costuma ser a primeira linha de
+qualquer consumidor sério.
+
+> Dica: prefetch alto demais também machuca. As mensagens ficam na
+> memória do worker, e se ele morrer, todas voltam pra fila de uma vez.
+> Comece com `1`, meça, e só suba se a ida-e-volta com o broker for
+> mesmo o gargalo.
+
+Três coisas pra fixar:
+
+- **Round-robin divide, não copia.** Cada mensagem vai pra um worker só.
+- **Sem prefetch, a distribuição é cega** e worker ocioso convive com
+  worker entupido.
+- **`prefetch(1)` é o padrão seguro** pra tarefa lenta ou de duração
+  variável.
+
+No próximo nó a gente resolve o destino das mensagens que falham sempre -
+com dead letter queue e retry.
