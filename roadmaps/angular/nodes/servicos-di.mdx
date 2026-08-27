@@ -7,34 +7,73 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "Angular: Creating injectable services"
-    url: https://angular.dev/guide/di/creating-injectable-service
+  - title: "Angular: Creating an injectable service"
+    url: https://angular.dev/tutorials/first-app/09-services
     type: doc
     lang: en
     free: true
 ---
 
-Services guardam lógica que não pertence diretamente à tela: buscar dados,
-compartilhar estado, encapsular regras e conversar com APIs. A injeção de
-dependências entrega esses services para quem precisa deles.
+Componente que busca dado, valida regra, salva no storage e controla a tela
+parece prático no começo. Depois fica impossível testar e reutilizar.
+
+Serviços existem para tirar esse peso do componente. Eles centralizam dados,
+regras e integrações que várias partes do app precisam usar.
 
 ```ts
-import { Injectable } from "@angular/core";
+import { Injectable } from "@angular/core"
+
+type Trilha = { id: string; titulo: string }
 
 @Injectable({ providedIn: "root" })
 export class TrilhasService {
+  private trilhas: Trilha[] = []
+
   listar() {
-    return [{ id: "angular", titulo: "Angular" }];
+    return this.trilhas
   }
 }
 ```
 
-Um componente chama o service, mas não precisa saber como ele foi criado. Isso
-reduz acoplamento e facilita testes.
+## Providers
 
-- **Service** concentra regra reutilizável.
-- **`providedIn: "root"`** cria uma instância compartilhada no app.
-- **DI** evita instanciar dependências manualmente.
-- **Componentes finos** ficam mais fáceis de manter.
+`providedIn: "root"` registra o serviço no app inteiro. É o caso mais comum para
+serviços compartilhados, como sessão, API, configurações e estado global.
 
-No próximo nó, vamos navegar entre telas com o router.
+Também dá para fornecer dependências em um componente ou rota. Isso cria uma
+instância mais local, útil quando você quer isolar estado de uma feature.
+
+## inject
+
+Em vez de criar o serviço com `new`, o componente pede a dependência ao Angular:
+
+```ts
+import { inject } from "@angular/core"
+
+export class TrilhasComponent {
+  private readonly trilhasService = inject(TrilhasService)
+}
+```
+
+Isso deixa o componente menos acoplado e facilita teste, porque uma dependência
+pode ser trocada por uma versão falsa.
+
+## Tokens
+
+Nem toda dependência é uma classe. Às vezes você precisa injetar uma URL base,
+uma config ou uma implementação abstrata. Para isso existem injection tokens.
+
+```ts
+export const API_URL = new InjectionToken<string>("API_URL")
+```
+
+Três ideias pra levar deste nó:
+
+- **Componente cuida da tela.**
+- **Service cuida de regra, dados e integração.**
+- **Provider define onde a dependência nasce e quanto tempo ela vive.**
+
+> Dica: se dois componentes copiam a mesma regra, ela provavelmente pertence a
+> um service ou a uma função compartilhada.
+
+No próximo nó, vamos transformar componentes em telas navegáveis com o router.

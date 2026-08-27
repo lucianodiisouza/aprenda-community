@@ -7,28 +7,52 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "web.dev: Progressive Web Apps"
-    url: https://web.dev/explore/progressive-web-apps
-    type: artigo
+  - title: "MDN: Progressive web apps"
+    url: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps
+    type: doc
     lang: en
     free: true
 ---
 
-PWA é útil quando o app precisa abrir rápido, funcionar melhor em rede instável
-ou se comportar mais perto de um aplicativo instalado. Em Angular, o service
-worker oficial ajuda com cache e atualização.
+Nem todo app precisa virar PWA. Mas quando o usuário abre em rede ruim, volta
+sempre às mesmas telas ou precisa de uma experiência mais próxima de app
+instalável, PWA entra na conversa.
+
+Service worker é a peça que fica entre o navegador e a rede. Ele pode cachear
+arquivos, controlar atualização e melhorar a experiência offline.
 
 ```bash
 ng add @angular/pwa
 ```
 
-Não adicione PWA só pelo selo. Cache errado pode entregar tela antiga, esconder
-bug e confundir usuário. Primeiro entenda qual experiência offline ou de
-instalação você quer oferecer.
+Esse comando adiciona manifest, ícones, configuração de service worker e ajustes
+no build.
 
-- **Service worker** fica entre app, rede e cache.
-- **Manifest** descreve nome, ícones e comportamento de instalação.
-- **Cache strategy** decide o que fica salvo e por quanto tempo.
-- **Atualização** precisa ser tratada para o usuário receber versões novas.
+## O que PWA costuma cobrir
 
-No próximo nó, vamos testar as partes importantes do app.
+- manifest para instalação.
+- ícones e nome do app.
+- cache de assets.
+- estratégia para dados.
+- atualização de versão.
+- experiência quando a rede falha.
+
+## O cuidado
+
+Cache é útil, mas também cria problema: usuário vendo versão antiga, dado
+desatualizado ou comportamento diferente entre desenvolvimento e produção.
+
+Você precisa decidir o que pode ser cacheado. Arquivos estáticos são mais
+simples. Dados de API exigem mais cuidado, principalmente quando envolvem sessão,
+permissão ou informação que muda rápido.
+
+Três ideias pra levar deste nó:
+
+- **PWA melhora instalação, cache e uso em rede instável.**
+- **Service worker precisa de estratégia de atualização.**
+- **Cache errado pode piorar a experiência.**
+
+> Dica: teste atualização de versão. O problema real de PWA não é só funcionar
+> offline; é garantir que o usuário receba a versão nova sem confusão.
+
+No próximo nó, vamos escrever testes para reduzir medo de mexer no app.

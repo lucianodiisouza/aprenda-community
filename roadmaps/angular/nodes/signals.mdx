@@ -7,29 +7,72 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "Angular: Signals API"
-    url: https://angular.dev/api/core/signal
+  - title: "Angular: RxJS interop with signals"
+    url: https://angular.dev/ecosystem/rxjs-interop
     type: doc
     lang: en
     free: true
 ---
 
-Signals representam valores reativos de forma direta. Você lê o valor chamando a
-signal como função e atualiza com métodos como `set` e `update`.
+Nem todo estado precisa ser um fluxo complexo. Às vezes você só precisa guardar
+o valor atual e recalcular a tela quando ele muda.
+
+Signals resolvem esse caso de um jeito direto.
 
 ```ts
-const contador = signal(0);
-const dobro = computed(() => contador() * 2);
+import { computed, effect, signal } from "@angular/core"
 
-contador.update((valor) => valor + 1);
+const contador = signal(0)
+const dobro = computed(() => contador() * 2)
+
+contador.update((valor) => valor + 1)
 ```
 
-Signals são úteis para estado local, valores derivados e telas que precisam
-reagir sem espalhar subscriptions.
+Você lê um signal chamando como função: `contador()`. Quando ele muda, o Angular
+sabe quais partes dependem dele e atualiza a interface.
 
-- **`signal`** guarda um valor mutável e reativo.
-- **`computed`** deriva valor a partir de outras signals.
-- **`effect`** executa uma reação quando dependências mudam.
-- **Interop com RxJS** ajuda em apps que usam os dois modelos.
+## Set, update e computed
 
-No próximo nó, vamos decidir onde guardar estado em uma aplicação real.
+Use `set` quando você já tem o novo valor. Use `update` quando o novo valor
+depende do anterior.
+
+```ts
+contador.set(10)
+contador.update((valor) => valor + 1)
+```
+
+Use `computed` para valor derivado:
+
+```ts
+const tarefas = signal<Tarefa[]>([])
+const pendentes = computed(() => tarefas().filter((t) => !t.feita))
+```
+
+## Effect
+
+`effect` reage a mudanças. Ele é útil para sincronizar com algo externo, como
+log, storage ou integração. Evite usar `effect` para empurrar estado de um lado
+para outro sem necessidade; isso pode criar fluxo difícil de entender.
+
+```ts
+effect(() => {
+  localStorage.setItem("contador", String(contador()))
+})
+```
+
+## Signals ou RxJS?
+
+Use Signals para estado local, estado derivado e leitura simples no template.
+Use RxJS para HTTP, eventos assíncronos, streams, cancelamento e combinação de
+fontes ao longo do tempo.
+
+Três ideias pra levar deste nó:
+
+- **Signal guarda o valor atual.**
+- **Computed deriva valor de outros signals.**
+- **Effect é para efeito colateral, não para regra espalhada.**
+
+> Dica: a pergunta não é "qual é melhor?". A pergunta é "isso é estado atual ou
+> fluxo ao longo do tempo?".
+
+No próximo nó, vamos organizar estado de aplicação sem jogar tudo no componente.

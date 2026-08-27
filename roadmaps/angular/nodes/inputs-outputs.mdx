@@ -2,39 +2,86 @@
 id: inputs-outputs
 title: "Inputs, Outputs e Comunicação"
 resources:
-  - title: "Angular: Accepting data with input properties"
-    url: https://angular.dev/guide/components/inputs
-    type: doc
-    lang: en
-    free: true
-  - title: "Angular: Custom events with outputs"
-    url: https://angular.dev/guide/components/outputs
+  - title: "Angular: Sharing data between components"
+    url: https://angular.dev/guide/components/inputs-outputs
     type: doc
     lang: en
     free: true
 ---
 
-Componentes ficam mais reutilizáveis quando recebem dados de fora e avisam o
-componente-pai quando algo acontece. Em Angular, esse fluxo aparece com inputs e
-outputs.
+Quando a tela cresce, um componente precisa conversar com outro. A lista passa
+dados para o card. O card avisa que foi clicado. O formulário avisa que salvou.
+
+Angular resolve comunicação direta entre pai e filho com inputs e outputs. O pai
+envia dados. O filho emite eventos. Essa direção evita que todo componente
+altere todo mundo.
+
+## Input: dado entrando
 
 ```ts
+import { Component, input } from "@angular/core"
+
 @Component({
-  selector: "app-topico",
-  template: `<button (click)="concluir.emit(id)">Concluir</button>`,
+  selector: "app-trilha-card",
+  standalone: true,
+  template: `<h2>{{ titulo() }}</h2>`,
 })
-export class TopicoComponent {
-  id = input.required<string>();
-  concluir = output<string>();
+export class TrilhaCardComponent {
+  titulo = input.required<string>()
 }
 ```
 
-Pense em componente como uma peça com contrato: quais dados entram, quais eventos
-saem e o que ele renderiza.
+O pai usa o componente assim:
 
-- **Input** recebe dados do componente-pai.
-- **Output** emite eventos para o componente-pai.
-- **Contrato pequeno** facilita reuso e teste.
-- **Estado compartilhado** demais pode indicar que um service é melhor.
+```html
+<app-trilha-card [titulo]="trilha.titulo" />
+```
 
-No próximo nó, vamos ligar dados e eventos ao HTML do template.
+Inputs podem ser opcionais, obrigatórios, ter alias e até transformação. Use
+isso para deixar o contrato do componente explícito.
+
+```ts
+destacado = input(false, { transform: Boolean })
+```
+
+## Output: evento saindo
+
+```ts
+import { Component, output } from "@angular/core"
+
+export class TrilhaCardComponent {
+  abrir = output<string>()
+
+  selecionar(id: string) {
+    this.abrir.emit(id)
+  }
+}
+```
+
+O pai escuta o evento:
+
+```html
+<app-trilha-card
+  [titulo]="trilha.titulo"
+  (abrir)="abrirTrilha($event)"
+/>
+```
+
+## E two-way binding?
+
+Two-way binding é útil quando um valor precisa entrar e sair pelo mesmo contrato,
+como em componentes de formulário. Mas não use como padrão para tudo. Em muitos
+casos, input + output separado deixa o fluxo mais claro.
+
+Três coisas pra levar deste nó:
+
+- **Input entra no componente.**
+- **Output sai como evento.**
+- **Filho comunica intenção; pai decide a regra.**
+
+> Dica: se você está passando dados por muitos níveis de componentes, talvez o
+> problema não seja input/output. Talvez exista estado compartilhado pedindo um
+> service.
+
+No próximo nó, vamos ligar dados e ações ao HTML com templates, binding e
+eventos.

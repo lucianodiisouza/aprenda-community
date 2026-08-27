@@ -14,22 +14,70 @@ resources:
     free: true
 ---
 
-Guards decidem se uma navegação pode acontecer. Interceptors passam por todas as
-requisições HTTP e respostas, então são bons para autenticação, logs, headers e
-tratamento global de erro.
+Quando o app ganha login e API, duas perguntas aparecem rápido: quem pode entrar
+em cada tela? E como evitar repetir token e tratamento de erro em toda chamada?
+
+Guards cuidam da navegação. Interceptors cuidam do caminho das requisições HTTP.
+
+## Guards
+
+Guard decide se uma rota pode ser acessada, carregada ou abandonada. Os casos
+mais comuns são:
+
+- `CanActivate`: pode entrar nesta rota?
+- `CanMatch`: esta rota deve ser considerada no matching?
+- `CanDeactivate`: pode sair desta tela com alterações não salvas?
+- resolver/carregamento prévio: a rota precisa de dados antes de abrir?
 
 ```ts
-export const authGuard: CanActivateFn = () => {
-  return inject(AuthService).estaLogado();
-};
+import { inject } from "@angular/core"
+import { Router } from "@angular/router"
+
+export const authGuard = () => {
+  const auth = inject(AuthService)
+  const router = inject(Router)
+
+  return auth.estaLogado() ? true : router.parseUrl("/login")
+}
 ```
 
-Essas duas peças ficam perto da borda do app: entrada por URL e saída para API.
-Por isso, use com cuidado e mantenha regras simples.
+Guard melhora o fluxo do front-end, mas não substitui segurança no backend. A
+API ainda precisa validar permissão.
 
-- **Guard** protege rotas ou impede saída de uma tela.
-- **Interceptor** altera ou observa requests e responses.
-- **Auth token** costuma entrar por interceptor.
-- **Regra sensível** precisa ser validada também no backend.
+## Interceptors
 
-No próximo nó, vamos capturar dados do usuário com formulários.
+Interceptor é bom para comportamento repetido: anexar token, padronizar headers,
+medir tempo de requisição, renovar credencial ou tratar erro global.
+
+```ts
+export const authInterceptor = (req, next) => {
+  const token = localStorage.getItem("token")
+
+  return next(req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` },
+  }))
+}
+```
+
+Também é comum capturar erros:
+
+```ts
+export const errorInterceptor = (req, next) =>
+  next(req).pipe(
+    catchError((error) => {
+      console.error("falha HTTP", error)
+      return throwError(() => error)
+    })
+  )
+```
+
+Três ideias pra levar deste nó:
+
+- **Guard protege fluxo de navegação.**
+- **Interceptor centraliza regra de HTTP.**
+- **Front-end não é a barreira final de segurança.**
+
+> Dica: se você copiou o mesmo header em três services, está na hora de pensar
+> em interceptor.
+
+No próximo nó, vamos cuidar da entrada de dados com formulários.

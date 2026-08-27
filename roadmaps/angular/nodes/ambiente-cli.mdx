@@ -14,9 +14,12 @@ resources:
     free: true
 ---
 
-O Angular CLI é a ferramenta que cria, roda, testa e gera partes da aplicação.
-Ele evita começar com configuração solta e dá um padrão de projeto que outros
-devs Angular reconhecem rápido.
+Antes de discutir arquitetura, você precisa conseguir criar e rodar um app. No
+Angular, esse caminho passa pelo Angular CLI.
+
+O CLI é a ferramenta que cria o projeto, sobe servidor local, gera arquivos,
+roda build e aciona testes. Ele evita que cada pessoa monte a estrutura do zero
+de um jeito diferente.
 
 ```bash
 npm install -g @angular/cli
@@ -25,15 +28,49 @@ cd meu-app
 ng serve
 ```
 
-Depois disso, o app fica disponível localmente e você pode editar os arquivos em
-`src/`. A configuração principal do workspace fica em `angular.json`.
+Depois disso, o app fica disponível no navegador. A partir daí você edita os
+arquivos em `src/` e vê a tela recarregar durante o desenvolvimento.
 
-- **`ng new`** cria o workspace e pergunta escolhas iniciais.
-- **`ng serve`** roda o servidor de desenvolvimento.
-- **`ng generate`** cria componentes, services, pipes e outras peças.
-- **`angular.json`** guarda opções de build, serve, test e assets.
+## O que está acontecendo
 
-> Dica: use o CLI para gerar arquivos enquanto aprende. Isso reduz erro de nome,
-> import e estrutura.
+`ng new` cria um workspace com TypeScript, build, assets, configuração de teste e
+um primeiro componente. `ng serve` inicia o servidor local. `ng generate` cria
+peças novas no padrão do framework.
 
-No próximo nó, vamos revisar o TypeScript que mais aparece em Angular.
+```bash
+ng generate component trilhas
+ng generate service trilhas
+```
+
+Três coisas pra levar deste nó:
+
+- **Use o CLI enquanto aprende.** Ele reduz erro de nome, pasta e import.
+- **`ng serve` é para desenvolvimento**, não para publicar o app.
+- **`ng build` gera a versão de produção**, que será servida por outra camada.
+
+> Dica: se um tutorial manda criar muitos arquivos na mão, tente descobrir o
+> comando `ng generate` equivalente. Em projeto real, consistência vale muito.
+
+No próximo nó, vamos abrir a estrutura criada e entender onde cada coisa mora.
+
+<Quiz
+  question="Qual comando roda o servidor local de desenvolvimento do Angular?"
+  options={[
+    {
+      text: "ng serve",
+      correct: true,
+    },
+    {
+      text: "ng build",
+      correct: false,
+      explanation:
+        "ng build empacota a aplicação para produção; não é o servidor de desenvolvimento.",
+    },
+    {
+      text: "ng publish",
+      correct: false,
+      explanation:
+        "Esse não é o comando padrão para rodar um app Angular localmente.",
+    },
+  ]}
+/>

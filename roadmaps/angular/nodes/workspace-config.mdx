@@ -14,26 +14,63 @@ resources:
     free: true
 ---
 
-Um projeto Angular tem convenções fortes. Isso é bom: quando você abre um app
-novo, sabe onde procurar código, assets, configuração de build e configuração de
-TypeScript.
+Um projeto Angular tem convenções fortes. Isso é uma vantagem: quando você abre
+um app novo, já sabe onde procurar código, assets, configuração de build e
+entrada da aplicação.
 
 ```text
 meu-app/
   angular.json
   package.json
+  tsconfig.json
   src/
+    main.ts
+    index.html
+    styles.css
     app/
     assets/
 ```
 
-O `angular.json` descreve como o Angular CLI deve construir, servir e testar o
-projeto. Você não precisa decorar tudo, mas precisa saber que esse arquivo existe
-e que muitas opções do CLI param nele.
+## O mapa do projeto
 
-- **Workspace** é a pasta raiz gerenciada pelo Angular CLI.
-- **`src/app`** concentra componentes, rotas, services e features.
-- **`angular.json`** guarda alvos como build, serve e test.
-- **Configs por ambiente** ajudam a separar dev, staging e produção.
+O `src/main.ts` inicializa o app. A pasta `src/app` guarda componentes, rotas,
+services e features. O `package.json` declara scripts e dependências. O
+`tsconfig.json` controla o TypeScript. O `angular.json` diz ao CLI como
+construir, servir e testar.
+
+Você não precisa decorar cada campo do `angular.json`, mas precisa saber que
+muitas decisões param ali: assets, estilos globais, configurações de build,
+budgets, output, opções por ambiente e alvos como `build`, `serve` e `test`.
+
+```json
+{
+  "projects": {
+    "meu-app": {
+      "architect": {
+        "build": {},
+        "serve": {}
+      }
+    }
+  }
+}
+```
+
+## Ambientes
+
+Aplicações reais costumam ter diferenças entre desenvolvimento e produção:
+URL da API, flags, analytics, logs e otimizações. Angular permite configurações
+por ambiente no build.
+
+O cuidado é não colocar segredo no front-end. Tudo que vai para o bundle pode
+ser visto pelo usuário.
+
+Três coisas pra levar deste nó:
+
+- **Workspace é a raiz gerenciada pelo CLI.**
+- **`src/app` é onde o produto cresce.**
+- **Configuração de ambiente não é lugar para segredo.**
+
+> Dica: antes de criar uma pasta nova, veja como o projeto já organiza features.
+> Em Angular, seguir a convenção local geralmente é melhor que inventar outra.
 
 No próximo nó, vamos revisar o TypeScript que aparece no dia a dia do Angular.

@@ -19,23 +19,68 @@ resources:
     free: true
 ---
 
-Aplicações reais precisam mostrar listas, esconder blocos e formatar valores. O
-Angular faz isso com control flow, diretivas e pipes.
+Aplicação real quase nunca mostra uma tela fixa. Ela mostra lista quando tem
+dado, mensagem quando está vazia, loading enquanto busca e erro quando a API
+falha.
+
+Angular organiza isso com control flow, diretivas e pipes.
+
+## Control flow
 
 ```html
-@for (aula of aulas; track aula.id) {
-  <p>{{ aula.titulo | titlecase }}</p>
-} @empty {
-  <p>Nenhuma aula cadastrada.</p>
+@if (carregando) {
+  <p>Carregando...</p>
+} @else {
+  @for (aula of aulas; track aula.id) {
+    <p>{{ aula.titulo | titlecase }}</p>
+  } @empty {
+    <p>Nenhuma aula cadastrada.</p>
+  }
 }
 ```
 
-Use control flow para decidir o que aparece. Use pipes para transformar valores
-na hora de mostrar, como datas, moedas e capitalização.
+Use `@if` para condição, `@for` para lista, `@empty` para estado vazio e
+`@switch` quando existem vários casos exclusivos.
 
-- **`@if`** mostra um bloco quando uma condição é verdadeira.
-- **`@for`** renderiza listas e precisa de uma chave estável em `track`.
-- **Diretivas** adicionam comportamento em elementos existentes.
-- **Pipes** transformam dados para exibição, sem alterar o dado original.
+```html
+@switch (status) {
+  @case ("pendente") { <p>Pendente</p> }
+  @case ("concluido") { <p>Concluído</p> }
+  @default { <p>Status desconhecido</p> }
+}
+```
+
+## Diretivas
+
+Diretivas adicionam comportamento a elementos ou componentes. Algumas mudam
+atributos e classes; outras conectam APIs do Angular, como formulários e router.
+
+Exemplos comuns:
+
+- `routerLink` cria navegação declarativa.
+- `formControlName` conecta input a formulário reativo.
+- `ngClass` e `ngStyle` ajudam quando classe/estilo precisam de objeto.
+
+## Pipes
+
+Pipes formatam valores na exibição:
+
+```html
+<p>{{ valor | currency: "BRL" }}</p>
+<p>{{ progresso | percent }}</p>
+<p>{{ atualizadoEm | date: "short" }}</p>
+```
+
+Pipes não deveriam esconder regra de negócio. Eles são ótimos para formato de
+tela; decisão de produto fica em componente, service ou função testável.
+
+Três ideias pra levar deste nó:
+
+- **Control flow decide o que aparece.**
+- **Diretivas adicionam comportamento a elementos.**
+- **Pipes formatam dados sem alterar o dado original.**
+
+> Dica: sempre implemente estado vazio. Lista sem item não é erro; é uma tela
+> que precisa comunicar o próximo passo.
 
 No próximo nó, vamos falar de estilos e organização visual dos componentes.

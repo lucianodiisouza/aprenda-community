@@ -7,30 +7,74 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "Angular: Router reference"
-    url: https://angular.dev/api/router/Router
-    type: doc
-    lang: en
-    free: true
 ---
 
-O router transforma uma SPA em várias telas navegáveis. Em vez de controlar a
-tela atual com `if` no componente principal, você declara rotas e deixa o Angular
-renderizar o componente certo.
+Sem router, uma aplicação com várias telas vira um monte de estado manual:
+"se estiver na tela X, mostra isso; se estiver na Y, esconde aquilo". A URL
+perde significado e o usuário não consegue compartilhar uma página específica.
+
+Router resolve isso declarando qual componente responde por cada caminho.
 
 ```ts
-export const routes = [
-  { path: "", component: DashboardComponent },
-  { path: "trilhas/:id", component: DetalheTrilhaComponent },
-];
+import { Routes } from "@angular/router"
+
+export const routes: Routes = [
+  { path: "", redirectTo: "trilhas", pathMatch: "full" },
+  { path: "trilhas", loadComponent: () => import("./trilhas.page") },
+  { path: "trilhas/:id", loadComponent: () => import("./trilha-detalhe.page") },
+]
 ```
 
-Rotas também carregam parâmetros, protegem áreas e ajudam a dividir código por
-feature conforme o app cresce.
+## Router outlet e links
 
-- **Path** define a URL.
-- **Component** define a tela renderizada naquela URL.
-- **Route params** carregam ids como `:id`.
-- **Lazy loading** evita baixar o app inteiro de uma vez.
+O componente principal precisa ter um lugar onde a rota atual aparece:
 
-No próximo nó, vamos capturar e validar dados com formulários.
+```html
+<nav>
+  <a routerLink="/trilhas">Trilhas</a>
+</nav>
+
+<router-outlet />
+```
+
+Use `routerLink` em vez de montar navegação manual com `href` quando a navegação
+é interna ao app Angular.
+
+## Rota com parâmetro
+
+Detalhes, edição e perfil costumam depender de um id na URL:
+
+```ts
+import { ActivatedRoute } from "@angular/router"
+import { inject } from "@angular/core"
+
+const route = inject(ActivatedRoute)
+const id = route.snapshot.paramMap.get("id")
+```
+
+Quando o parâmetro pode mudar sem destruir o componente, prefira observar o
+`paramMap` em vez de usar só `snapshot`.
+
+## Lazy loading
+
+Rotas podem carregar componentes ou grupos de rotas sob demanda. Isso evita
+mandar o app inteiro no primeiro carregamento.
+
+```ts
+{
+  path: "admin",
+  loadChildren: () => import("./admin/routes").then((m) => m.adminRoutes),
+}
+```
+
+Três ideias pra levar deste nó:
+
+- **Rota dá endereço para uma tela.**
+- **Parâmetro representa dado vindo da URL.**
+- **Lazy loading evita carregar tudo no início.**
+
+> Dica: uma tela importante do produto merece URL própria. Isso ajuda usuário,
+> suporte, teste e depuração.
+
+No próximo nó, vamos controlar acesso e comportamento HTTP com guards e
+interceptors.

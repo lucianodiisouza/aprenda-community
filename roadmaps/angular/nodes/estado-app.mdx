@@ -2,36 +2,68 @@
 id: estado-app
 title: "Estado da Aplicação"
 resources:
-  - title: "Angular: Signals"
-    url: https://angular.dev/guide/signals
+  - title: "Angular: Sharing data between components"
+    url: https://angular.dev/guide/components/inputs-outputs
     type: doc
     lang: en
     free: true
-  - title: "NgRx: Getting started"
-    url: https://ngrx.io/guide/store
+  - title: "NgRx: Signal Store"
+    url: https://ngrx.io/guide/signals/signal-store
     type: doc
     lang: en
     free: true
 ---
 
-Estado é tudo que muda e afeta a tela: usuário logado, filtros, carrinho,
-progresso, cache de API e preferências. O erro comum é usar uma ferramenta grande
-antes de entender o tamanho real do problema.
+Estado é tudo que a aplicação precisa lembrar: usuário logado, filtros, lista
+carregada, item selecionado, progresso, permissões e mensagens de erro.
+
+O erro comum é guardar tudo no componente que encontrou o problema primeiro.
+Depois outra tela precisa do mesmo dado e começa a duplicação.
+
+## Onde o estado mora
+
+Use a menor solução que resolve:
+
+- estado local fica no componente
+- estado de pai e filho passa por input/output
+- estado usado por várias telas vai para um service
+- estado de domínio complexo pode pedir uma store
 
 ```ts
 @Injectable({ providedIn: "root" })
-export class ProgressoStore {
-  concluidas = signal<string[]>([]);
+export class SessaoService {
+  private readonly usuario = signal<Usuario | null>(null)
+  usuarioAtual = this.usuario.asReadonly()
+
+  entrar(usuario: Usuario) {
+    this.usuario.set(usuario)
+  }
 }
 ```
 
-Comece simples: estado local no componente, depois service com signals ou RxJS.
-Bibliotecas como NgRx fazem sentido quando o fluxo tem muita tela, evento e regra
-compartilhada.
+## Estado de servidor e estado de UI
 
-- **Estado local** pertence a uma tela pequena.
-- **Service store** compartilha estado entre componentes próximos.
-- **NgRx** ajuda quando o app precisa de fluxo previsível e depuração forte.
-- **Cache** não é a mesma coisa que estado de interface.
+Nem todo estado é igual. Uma lista vinda da API é estado de servidor. Um modal
+aberto é estado de UI. Um filtro pode estar na URL, no componente ou em um
+service, dependendo se precisa ser compartilhável.
 
-No próximo nó, vamos usar componentes prontos e utilitários de UI.
+Separar isso evita exagero. Você não precisa de store global para saber se um
+dropdown está aberto. E não deveria duplicar em três componentes a lista
+principal de trilhas carregada da API.
+
+## Store
+
+Bibliotecas de estado ajudam quando existe muito evento, regra e derivação. Elas
+também cobram estrutura. Antes de instalar, desenhe quem lê, quem altera e quem
+precisa ser avisado.
+
+Três ideias pra levar deste nó:
+
+- **Estado precisa ter dono.**
+- **Duplicação de estado gera inconsistência.**
+- **Service com Signals resolve muitos casos antes de uma store global.**
+
+> Dica: se você não consegue explicar onde um dado nasce e quem pode alterá-lo,
+> o problema ainda não é ferramenta; é desenho de estado.
+
+No próximo nó, vamos falar da camada visual com Angular Material e CDK.

@@ -16,7 +16,25 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   diretivas, pipes, control flow, estilos, services e DI, rotas, guards,
   interceptors, forms, HTTP, RxJS, Signals, estado da aplicação, Angular
   Material/CDK, acessibilidade, i18n, PWA, testes, performance, SSR e deploy,
-  e fecha com um projeto final de dashboard.
+  e fecha com um projeto final de dashboard. Os 24 nós:
+  `introducao-angular` (o que é Angular), `ambiente-cli` (ambiente e Angular
+  CLI), `workspace-config` (workspace e configuração),
+  `typescript-para-angular` (TypeScript para Angular),
+  `componentes-standalone` (componentes standalone), `ciclo-de-vida` (ciclo
+  de vida do componente), `inputs-outputs` (inputs, outputs e comunicação),
+  `templates-binding` (templates, binding e eventos), `diretivas-pipes`
+  (diretivas, pipes e control flow), `estilos-componentes` (estilos e
+  organização visual), `servicos-di` (serviços e injeção de dependências),
+  `roteamento` (rotas e navegação), `guards-interceptors` (guards e
+  interceptors), `formularios` (formulários), `http-client` (HTTP e integração
+  com APIs), `rxjs` (RxJS e programação reativa), `signals` (Signals e
+  reatividade moderna), `estado-app` (estado da aplicação),
+  `angular-material-cdk` (Angular Material e CDK), `acessibilidade-i18n`
+  (acessibilidade e i18n), `pwa` (PWA e service worker), `testes` (testes em
+  Angular), `performance-ssr` (performance, SSR e deploy) e `projeto-final`
+  (dashboard Angular). **Interatividade: 3 quizzes formativos, 1 diagrama
+  Mermaid**. Trilha escrita por **Lucas Pedro**
+  ([@LucasPedruo](https://github.com/LucasPedruo)).
 
 ## [1.19.0] - 2026-08-26
 

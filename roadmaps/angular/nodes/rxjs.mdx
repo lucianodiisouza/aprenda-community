@@ -14,20 +14,62 @@ resources:
     free: true
 ---
 
-RxJS trabalha com valores que chegam ao longo do tempo: resposta de API, eventos,
-busca digitada, filtros e streams. Em Angular, você encontra observables no
-router, no HTTP e em bibliotecas de estado.
+Alguns valores não chegam de uma vez. Eles acontecem ao longo do tempo:
+resposta de API, evento de clique, texto digitado, parâmetro da rota, websocket
+e timer.
+
+RxJS é a ferramenta que modela esses fluxos com `Observable`.
 
 ```ts
-this.trilhas$ = this.http.get<Trilha[]>("/api/trilhas");
+this.trilhas$ = this.http.get<Trilha[]>("/api/trilhas")
 ```
 
 O sufixo `$` é uma convenção comum para avisar que aquela variável é um
 observable. Ela não guarda o valor final; ela representa uma fonte de valores.
 
-- **Observable** emite valores com o tempo.
-- **Operators** transformam, filtram e combinam streams.
-- **Subscription** inicia o consumo de uma stream.
-- **Async pipe** ajuda o template a assinar e limpar subscriptions.
+## Operadores
+
+Pensa numa busca enquanto o usuário digita. Você não quer chamar a API a cada
+tecla sem controle. Quer esperar um pouco, ignorar texto repetido e cancelar a
+busca anterior quando vier uma nova.
+
+```ts
+resultado$ = this.busca.valueChanges.pipe(
+  debounceTime(300),
+  distinctUntilChanged(),
+  switchMap((termo) => this.api.buscar(termo))
+)
+```
+
+Alguns operadores aparecem muito:
+
+- `map` transforma valores.
+- `filter` deixa passar só o que interessa.
+- `switchMap` troca uma stream por outra e cancela a anterior.
+- `catchError` trata falha.
+- `combineLatest` combina fontes.
+
+## Subscription e limpeza
+
+No template, prefira `async` pipe quando possível:
+
+```html
+@if (trilhas$ | async; as trilhas) {
+  <app-lista [items]="trilhas" />
+}
+```
+
+Quando você assina manualmente com `subscribe`, precisa pensar em limpeza para
+não deixar trabalho rodando depois que o componente saiu da tela.
+
+Três ideias pra levar deste nó:
+
+- **Observable emite valores com o tempo.**
+- **Operators transformam, filtram e combinam streams.**
+- **Async pipe ajuda a assinar e limpar no template.**
+
+> Dica: não transforme tudo em RxJS por hábito. Use quando existe fluxo,
+> assíncrono ou composição temporal. Para estado local simples, o próximo nó
+> apresenta uma opção mais direta.
 
 No próximo nó, vamos ver Signals, a reatividade moderna do Angular.

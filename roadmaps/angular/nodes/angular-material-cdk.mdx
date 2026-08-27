@@ -14,21 +14,63 @@ resources:
     free: true
 ---
 
-Angular Material entrega componentes visuais prontos. O CDK entrega peças de
-comportamento sem impor a aparência: overlay, drag and drop, acessibilidade,
-tabelas e padrões de interação.
+Construir cada componente de interface do zero parece controle total. Até você
+precisar de dialog com foco correto, autocomplete acessível, tabela com estados,
+menu por teclado e overlay que funciona em tela pequena.
+
+Angular Material entrega componentes prontos. O CDK entrega blocos de
+comportamento para você construir componentes próprios.
 
 ```bash
 ng add @angular/material
 ```
 
-Use Material quando o objetivo é montar UI consistente rápido. Use CDK quando
-você precisa do comportamento, mas quer desenhar o visual com seu próprio design
-system.
+## Material
 
-- **Material** acelera formulários, menus, diálogos, tabs e tabelas.
-- **CDK** resolve interações complexas sem prender ao tema visual.
-- **Acessibilidade** melhora quando você usa componentes bem testados.
-- **Tema** deve ser configurado cedo para evitar retrabalho visual.
+Material é útil para acelerar interfaces comuns:
 
-No próximo nó, vamos testar componentes e services.
+- botão
+- campo de formulário
+- select
+- dialog
+- menu
+- tabs
+- table
+- snackbar
+
+Com standalone components, você importa no componente o que usa:
+
+```ts
+import { MatButtonModule } from "@angular/material/button"
+
+@Component({
+  standalone: true,
+  imports: [MatButtonModule],
+  template: `<button matButton>Salvar</button>`,
+})
+export class SalvarButtonComponent {}
+```
+
+## CDK
+
+CDK é para quando você quer comportamento sem necessariamente usar o visual do
+Material. Ele ajuda com overlay, portal, drag-drop, a11y, scroll e collections.
+
+Isso é valioso quando o produto tem design próprio, mas ainda precisa de
+comportamento robusto.
+
+## Tema
+
+Material também traz sistema de tema. Defina cores, tipografia e densidade com
+critério. Tema não é só estética; ele afeta consistência e acessibilidade.
+
+Três ideias pra levar deste nó:
+
+- **Material entrega componentes prontos.**
+- **CDK entrega comportamento reutilizável.**
+- **UI pronta não substitui organização do app.**
+
+> Dica: comece pelos componentes mais difíceis de acertar manualmente: dialog,
+> menu, select, autocomplete, table e overlay.
+
+No próximo nó, vamos cuidar de acessibilidade e internacionalização.

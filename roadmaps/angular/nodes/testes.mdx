@@ -7,28 +7,68 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "Angular DevTools"
-    url: https://angular.dev/tools/devtools
-    type: doc
-    lang: en
-    free: true
 ---
 
-Testes em Angular servem para provar comportamento: service calcula certo,
-componente reage ao input, formulário valida e fluxo importante não quebra.
+Teste não existe para deixar CI bonito. Ele existe para você mudar o app sem
+ficar refazendo tudo na mão e torcendo.
+
+Em Angular, comece pelo que tem regra clara: service, pipe, validação de
+formulário e componente com fluxo importante.
+
+## Testando regra
+
+Service costuma ser o primeiro lugar bom para testar, porque tem menos ruído de
+DOM.
 
 ```ts
-it("deve somar tópicos concluídos", () => {
-  expect(totalConcluido([{ feita: true }, { feita: false }])).toBe(1);
-});
+it("marca trilha como concluída", () => {
+  const service = new TrilhasService()
+
+  service.adicionar({ id: "angular", titulo: "Angular", feita: false })
+  service.concluir("angular")
+
+  expect(service.listar()[0].feita).toBe(true)
+})
 ```
 
-Comece testando lógica pura e services. Depois teste componentes onde existe
-risco real de regressão: formulários, fluxos com rotas e telas com estado.
+## Testando componente
 
-- **Teste unitário** cobre função, pipe, service ou componente isolado.
-- **TestBed** monta componentes com dependências do Angular.
-- **Mocks** substituem APIs e services externos.
-- **DevTools** ajuda a entender árvore de componentes e performance.
+Quando o componente tem dependências do Angular, use `TestBed`:
 
-No próximo nó, vamos preparar o app para carregar bem e ir para produção.
+```ts
+await TestBed.configureTestingModule({
+  imports: [TrilhaCardComponent],
+}).compileComponents()
+
+const fixture = TestBed.createComponent(TrilhaCardComponent)
+fixture.componentRef.setInput("titulo", "Angular")
+fixture.detectChanges()
+
+expect(fixture.nativeElement.textContent).toContain("Angular")
+```
+
+## O que vale testar
+
+Teste comportamento importante:
+
+- service com regra de domínio
+- formulário inválido e válido
+- estado vazio
+- loading e erro
+- navegação
+- output emitido por componente
+- interceptor ou guard crítico
+
+Mock ajuda a isolar API, router e dependências externas. O objetivo não é
+simular o mundo inteiro; é provar que aquela unidade faz o que promete.
+
+Três ideias pra levar deste nó:
+
+- **Service costuma ser mais fácil de testar que tela inteira.**
+- **Teste deve proteger comportamento importante.**
+- **Mock ajuda a isolar dependências externas.**
+
+> Dica: se você tem medo de alterar uma função, ela é candidata forte a teste.
+
+No próximo nó, vamos preparar a aplicação para produção: performance, SSR e
+deploy.

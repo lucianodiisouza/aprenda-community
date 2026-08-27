@@ -7,37 +7,71 @@ resources:
     type: doc
     lang: en
     free: true
-  - title: "roadmap.sh: Angular Developer Roadmap"
-    url: https://roadmap.sh/angular
-    type: artigo
-    lang: en
-    free: true
 ---
 
-Angular é um framework para criar aplicações web com TypeScript, HTML e CSS. Em
-vez de montar a interface toda na mão, você divide a tela em componentes e deixa
-o Angular cuidar de renderização, rotas, formulários, comunicação HTTP e
-organização do código.
+Muita gente chega no Angular depois de aprender HTML, CSS e JavaScript achando
+que a diferença principal é "usar componentes". Componentes são parte da
+história, mas não explicam o motivo do framework existir.
+
+O problema aparece quando a interface deixa de ser uma página e vira um produto:
+rotas, formulários, API, permissão, loading, erro, estado compartilhado e build.
+Sem uma arquitetura clara, cada tela começa a resolver essas coisas de um jeito.
+
+## O app que cresceu demais
+
+Imagina um dashboard de estudos. No começo ele só lista trilhas. Depois precisa
+filtrar por status, abrir detalhes, cadastrar metas, salvar progresso, mostrar
+erro da API e impedir acesso sem login.
+
+Se tudo fica em um arquivo só, o código vira uma mistura de HTML, regra,
+requisição, validação e navegação.
 
 ```ts
-import { Component } from "@angular/core";
+import { Component } from "@angular/core"
 
 @Component({
   selector: "app-root",
+  standalone: true,
   template: `<h1>Olá, Angular</h1>`,
 })
 export class AppComponent {}
 ```
 
-Esse exemplo já mostra a ideia central: uma classe TypeScript descreve o estado
-e um template descreve o que aparece na tela.
+Esse exemplo é pequeno, mas já mostra o modelo: uma classe TypeScript guarda
+estado e comportamento; o template descreve o que aparece na tela.
 
-- **Framework**: Angular traz decisões prontas para app grande, não só uma lib
-  de UI.
-- **TypeScript primeiro**: tipos fazem parte do fluxo normal, não são um extra.
-- **Componentes**: cada parte da tela ganha template, lógica e estilo próprios.
-- **Ecossistema**: CLI, router, forms, HTTP, testes e Material vivem no mesmo
-  universo.
+Três ideias pra levar deste nó:
+
+- **Angular é um framework**, não só uma biblioteca de UI.
+- **Ele é opinativo de propósito**: router, forms, HTTP, build e testes seguem
+  padrões do próprio ecossistema.
+- **Ele faz mais sentido em apps que crescem**, com várias telas e regras.
+
+> Dica: não avalie Angular por uma tela simples. Ele parece grande quando o
+> problema é pequeno, mas começa a fazer sentido quando o app precisa manter
+> organização por meses ou anos.
 
 No próximo nó, vamos preparar o ambiente e criar o primeiro projeto com Angular
 CLI.
+
+<Quiz
+  question="Qual problema o Angular tenta resolver melhor?"
+  options={[
+    {
+      text: "Organizar uma aplicação web que cresce em telas, estado e regras",
+      correct: true,
+    },
+    {
+      text: "Substituir HTML e CSS por completo",
+      correct: false,
+      explanation:
+        "Angular usa HTML e CSS; ele organiza como essas peças entram numa aplicação.",
+    },
+    {
+      text: "Rodar JavaScript sem navegador",
+      correct: false,
+      explanation:
+        "Esse é o papel de runtimes como Node.js. Angular roda no contexto de aplicações web.",
+    },
+  ]}
+/>
