@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 18,
+        "trilhas": 19,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 31
+        "total": 32
       },
       "trilhas": [
         {
@@ -65,6 +65,10 @@
         {
           "slug": "kubernetes",
           "title": "Kubernetes"
+        },
+        {
+          "slug": "nextjs",
+          "title": "Next.js e Meta-frameworks"
         },
         {
           "slug": "nosql",
@@ -142,6 +146,41 @@
           "slug": "desenvolvedor-backend",
           "title": "Desenvolvedor Backend",
           "via": "creator"
+        }
+      ]
+    },
+    {
+      "github": "obrenoalvim",
+      "name": "Breno Alvim",
+      "avatar": "https://github.com/obrenoalvim.png",
+      "profile": "https://github.com/obrenoalvim",
+      "counts": {
+        "trilhas": 2,
+        "projetos": 1,
+        "bootcamps": 1,
+        "total": 4
+      },
+      "trilhas": [
+        {
+          "slug": "seo-aeo-geo",
+          "title": "SEO, AEO e GEO"
+        },
+        {
+          "slug": "sql-banco-de-dados",
+          "title": "SQL e Banco de Dados"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-seo-aeo-geo",
+          "title": "Auditoria de SEO, AEO e GEO"
+        }
+      ],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:sql-banco-de-dados"
         }
       ]
     },

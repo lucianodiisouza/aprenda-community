@@ -1,0 +1,65 @@
+---
+slug: auditoria-seo-aeo-geo
+title: "Auditoria de SEO, AEO e GEO"
+description: "Audite e otimize uma página real nas três camadas: SEO técnico, resposta direta (AEO) e citação por IA generativa (GEO)."
+difficulty: intermediario
+skills:
+  - seo
+  - aeo
+  - geo
+  - dados-estruturados
+  - core-web-vitals
+trilhas:
+  - seo-aeo-geo
+estimate: "1 fim de semana"
+published: "2026-08-28"
+creators:
+  - name: "Breno Alvim"
+    github: "obrenoalvim"
+---
+
+Escolha uma página real (sua, de um projeto pessoal, ou até um dos projetos
+que você já fez nessa plataforma) e audite ela nas três camadas que a trilha
+cobriu: o que um buscador tradicional vê, o que um motor de resposta
+extrai, e o que uma IA generativa consegue citar.
+
+## Objetivo
+
+Praticar diagnóstico antes de otimização: medir o estado atual de uma
+página real em SEO, AEO e GEO, e aplicar pelo menos uma melhoria
+verificável em cada camada.
+
+## Requisitos
+
+- [ ] Escolher uma página pública real (não vale página local ou atrás de
+  login)
+- [ ] Checar SEO on-page: `<title>` tem entre 50 e 60 caracteres, meta
+  description entre 150 e 160, um único `<h1>` na página
+- [ ] Checar SEO técnico: a página está no `robots.txt` sem bloqueio
+  indevido, aparece no sitemap, e tem uma nota de Core Web Vitals (via
+  PageSpeed Insights ou similar)
+- [ ] Adicionar ou corrigir pelo menos um schema JSON-LD (`Article`,
+  `FAQPage` ou `HowTo`, o que fizer sentido pro conteúdo da página)
+- [ ] Reescrever um trecho do conteúdo em bloco autocontido (resposta
+  direta em 40-60 palavras, funcionando fora do contexto ao redor)
+- [ ] Testar a mesma pergunta que a página responde no Google, no ChatGPT e
+  no Perplexity, e registrar se a página aparece citada em algum deles
+
+## Desafios extras
+
+- [ ] Validar o JSON-LD com o Rich Results Test do Google antes de publicar
+- [ ] Adicionar uma estatística com fonte no trecho reescrito (o estudo do
+  KDD 2024 mostra que isso aumenta chance de citação por IA)
+- [ ] Checar se o `robots.txt` da página bloqueia algum robô de IA
+  (GPTBot, PerplexityBot, ClaudeBot) sem essa ser a intenção
+- [ ] Repetir a checagem de citação em IA um mês depois e comparar o
+  resultado
+
+## Dicas
+
+- Comece medindo antes de mudar qualquer coisa. Sem o "antes" registrado,
+  fica impossível saber se a mudança funcionou.
+- Uma página só, bem auditada nas três camadas, ensina mais do que dez
+  páginas com um ajuste superficial em cada uma.
+- Se a página escolhida não tiver nenhuma seção de perguntas frequentes,
+  esse é um bom motivo pra criar uma: já sai pronta pra virar `FAQPage`.
