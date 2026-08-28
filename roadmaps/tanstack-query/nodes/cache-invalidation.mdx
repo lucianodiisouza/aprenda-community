@@ -1,0 +1,496 @@
+---
+id: cache-invalidation
+title: "Invalidação de cache: invalidateQueries, setQueryData, structural sharing"
+resources:
+  - title: "TanStack Query - invalidateQueries (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations
+    type: doc
+    lang: en
+    free: true
+  - title: "TkDodo - Mastering Mutations in React Query (seção 'Invalidations')"
+    url: https://tkdodo.eu/blog/mastering-mutations-in-react-query#invalidations
+    type: artigo
+    lang: en
+    free: true
+  - title: "TkDodo - React Query Render Optimizations (structural sharing)"
+    url: https://tkdodo.eu/blog/react-query-render-optimizations
+    type: artigo
+    lang: en
+    free: true
+---
+
+Buscar dados é fácil - é um `fetch`. O problema difícil de
+server state é **garantir que o cache bate com o servidor
+depois de uma escrita**. Você acabou de criar um usuário:
+a query de lista está mostrando o conjunto antigo. Você
+acabou de deletar: a query ainda tem o fantasma do item.
+Você editou: a lista mostra o valor antigo e o detalhe
+mostra o novo, e eles brigam.
+
+Este nó é sobre as três ferramentas principais de
+invalidação (`invalidateQueries`, `setQueryData`,
+`removeQueries`), como o **structural sharing** mantém a
+UI performática mesmo quando o cache muda, e a estratégia
+que resolve 90% dos casos: **invalide a key mais específica
+que representa a verdade do servidor**.
+
+## O essencial 🟢
+
+**Por que mutation não atualiza a lista sozinha.** Você
+criou um usuário com `mutate`. Volta o sucesso. Você espera
+que a lista de usuários atualize sozinha, mas ela continua
+mostrando a lista antiga. Isso é correto: o `useQuery` da
+lista não tem como saber que algo mudou no servidor. Você
+precisa dizer pra ele.
+
+Três formas de dizer, em ordem de "cirurgia":
+
+- **`invalidateQueries`** - "essa key está velha, refaz".
+  Refetch em background. Mais simples, custo: 1 request.
+- **`setQueryData`** - "essa key agora tem esse valor".
+  Atualiza direto na memória, sem request. Mais rápido,
+  risco: se você errar o valor, fica errado até a próxima
+  invalidação.
+- **`removeQueries`** - "esquece essa key". Limpa o cache.
+  Útil pra delete (o item não existe mais).
+
+**`invalidateQueries` é o caminho padrão.** Resolve 80-90%
+dos casos. Você marca a key como stale, e o próximo
+componente que ler dispara um refetch em background.
+
+```tsx
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+function BotaoCriar() {
+  const queryClient = useQueryClient();
+
+  const criar = useMutation({
+    mutationFn: (novo: NovoUsuario) =>
+      fetch("/api/usuarios", {
+        method: "POST",
+        body: JSON.stringify(novo),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      // Invalida a lista de usuários. Próximo useQuery
+      // dessa key dispara refetch em background.
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
+  });
+
+  return <button onClick={() => criar.mutate({ nome: "Ana", email: "ana@x.com" })}>Criar</button>;
+}
+```
+
+O `invalidateQueries` aceita `queryKey` parcial. Você
+pode passar `["usuarios"]` (raiz) e TanStack Query invalida
+todas as keys que começam com isso:
+
+```tsx
+// Invalida TUDO que começa com ["usuarios"]
+queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+// Afeta: ["usuarios"], ["usuarios", 1], ["usuarios", { status: "ativo" }], etc.
+
+// Invalida só o usuário com id 1
+queryClient.invalidateQueries({ queryKey: ["usuarios", 1] });
+// Afeta só: ["usuarios", 1]
+
+// Invalida por predicado (avançado)
+queryClient.invalidateQueries({
+  predicate: (query) => query.queryKey[0] === "usuarios",
+});
+```
+
+**`setQueryData` pra atualização direta, sem request.**
+Quando você já sabe o novo valor (porque a mutation
+retornou ele), pode atualizar o cache direto, sem refetch:
+
+```tsx
+const criar = useMutation({
+  mutationFn: (novo: NovoUsuario) =>
+    fetch("/api/usuarios", {
+      method: "POST",
+      body: JSON.stringify(novo),
+    }).then((r) => r.json()),
+  onSuccess: (usuarioCriado) => {
+    // Atualiza a lista sem fazer refetch.
+    // O novo usuário aparece instantaneamente.
+    queryClient.setQueryData<Usuario[]>(
+      ["usuarios"],
+      (antigo) => [...(antigo ?? []), usuarioCriado],
+    );
+  },
+});
+```
+
+O segundo argumento de `setQueryData` é uma função que
+recebe o valor antigo e retorna o novo. O retorno
+**substitui** o valor no cache. Se a key não existe,
+`antigo` é `undefined`.
+
+**`removeQueries` pra delete.** Quando o item deixa de
+existir, você não quer ele no cache. Limpa:
+
+```tsx
+const deletar = useMutation({
+  mutationFn: (id: string) =>
+    fetch(`/api/usuarios/${id}`, { method: "DELETE" }),
+  onSuccess: (_, id) => {
+    // Remove o item específico do cache
+    queryClient.removeQueries({ queryKey: ["usuarios", id] });
+
+    // Atualiza a lista pra remover o item
+    queryClient.setQueryData<Usuario[]>(["usuarios"], (antigo) =>
+      antigo?.filter((u) => u.id !== id),
+    );
+  },
+});
+```
+
+A ordem importa: primeiro remove o detalhe, depois atualiza
+a lista. Se inverter, a lista pode revalidar a partir do
+detalhe antigo (se ele ainda estiver no cache) e trazer o
+item de volta brevemente.
+
+**Fluxo visual de uma mutation bem feita.** Pra fixar
+o padrão "mutation + onSuccess + invalidate/setData":
+
+<Mermaid
+  chart={`sequenceDiagram
+    participant UI as Componente
+    participant TQ as TanStack Query (cache)
+    participant API as Servidor
+
+    UI->>TQ: mutate(novosDados)
+    activate TQ
+    TQ->>API: POST /api/recurso
+    API-->>TQ: 201 Created (recurso criado)
+    deactivate TQ
+    TQ->>UI: isSuccess: true, data: recurso
+
+    alt Optimistic (update direto)
+      UI->>TQ: setQueryData(['recurso', id], recursoCriado)
+      UI->>TQ: setQueryData(['recurso'], lista atualizada)
+      Note over UI,TQ: UI ja mostra o novo valor - sem request extra
+    else Invalidate (refetch)
+      UI->>TQ: invalidateQueries(['recurso'])
+      TQ->>API: GET /api/recurso (revalidacao em background)
+      API-->>TQ: lista atualizada
+      TQ->>UI: data: lista atualizada
+    end
+
+    Note over UI,TQ: onSettled: invalidar SEMPRE pra sincronizar com servidor`}
+  caption="Fluxo de mutation com invalidacao: apos o POST, decide entre setQueryData (update direto) ou invalidateQueries (revalidar em background). onSettled invalida pra cobrir concorrencia."
+/>
+
+**`refetchType: 'all' | 'active' | 'none'` - controle fino.**
+Por padrão, `invalidateQueries` apenas marca a key como
+stale. Você pode pedir pra invalidar e já forçar o refetch
+imediato:
+
+```tsx
+// Padrão: só marca stale, refetch acontece quando alguém ler
+queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+
+// Ativo: invalida E refaz TODAS as queries ativas agora
+queryClient.invalidateQueries({
+  queryKey: ["usuarios"],
+  refetchType: "active",
+});
+
+// Nenhum: só marca stale, mas não refaz nada
+queryClient.invalidateQueries({
+  queryKey: ["usuarios"],
+  refetchType: "none",
+});
+```
+
+A diferença importa em UX: `refetchType: 'active'` faz o
+loading aparecer imediatamente em todas as telas que estão
+mostrando a key. Útil quando você sabe que o dado mudou e
+quer sincronizar já. `refetchType: 'none'` é pra quando a
+mudança é só sua (ex: você editou seu próprio nome) e o
+refetch pode esperar.
+
+**`cancelQueries` - parar refetch em andamento.** Se uma
+revalidação está em curso e você vai fazer um update
+otimista ou um setQueryData, cancele primeiro pra não
+haver race condition:
+
+```tsx
+async function onEditar() {
+  // Para qualquer refetch em andamento
+  await queryClient.cancelQueries({ queryKey: ["posts", postId] });
+
+  // Agora é seguro atualizar o cache direto
+  queryClient.setQueryData(["posts", postId], novoValor);
+}
+```
+
+O `await` é importante - você quer garantir que o refetch
+foi cancelado **antes** de fazer o set. Sem o `await`,
+existe uma janela onde o refetch antigo pode voltar e
+sobrescrever seu update.
+
+**Structural sharing: a UI não re-renderiza à toa.** Quando
+o servidor devolve o **mesmo objeto** (mas com timestamp
+de fetch diferente), TanStack Query compara a estrutura
+e mantém a referência do objeto se nada mudou. Isso
+significa: `data === dataAntigo` continua `true` se o
+conteúdo é o mesmo, e o React pula o re-render.
+
+```tsx
+// Servidor devolveu: { id: 1, nome: "Ana" } - mesmo objeto
+// de antes. data === dataAnterior continua true.
+// Componente NÃO re-renderiza.
+
+useQuery({ queryKey: ["usuarios", 1], queryFn: ... });
+```
+
+Por que isso importa: sem structural sharing, qualquer
+mexida no cache (mesmo um refetch que devolveu o mesmo
+valor) faria o React re-renderizar todo componente que
+usa `data`. Em listas grandes, isso é perceptível.
+TanStack Query faz a comparação profunda automaticamente
+(via `replaceEqualDeep` da lib `fast-equals`).
+
+A pegadinha: se o servidor devolve um **novo objeto a cada
+fetch** (mesmo com mesmo conteúdo), o structural sharing
+não ajuda. A solução é configurar o backend pra devolver
+dados estáveis, ou usar `select` pra derivar um valor
+memoizado e estável:
+
+```tsx
+const { data } = useQuery({
+  queryKey: ["usuarios", 1],
+  queryFn: ...,
+  select: (raw) => ({ id: raw.id, nome: raw.nome }), // só o que importa
+});
+```
+
+## Aprofundamento 🟡
+
+**Estratégia: invalide a key mais específica que tem a
+verdade.** Quando você edita um usuário, três keys podem
+ser afetadas:
+
+- `["usuarios", userId]` - o detalhe
+- `["usuarios"]` - a lista
+- `["usuarios", { status: user.status }]` - lista filtrada
+
+Você pode invalidar a raiz `["usuarios"]` e tudo é
+revalidado. Ou pode ser cirúrgico:
+
+```tsx
+const editar = useMutation({
+  mutationFn: (usuario: Usuario) =>
+    fetch(`/api/usuarios/${usuario.id}`, {
+      method: "PUT",
+      body: JSON.stringify(usuario),
+    }).then((r) => r.json()),
+  onSuccess: (usuarioEditado) => {
+    // Específico: atualiza cada key diretamente
+    queryClient.setQueryData(["usuarios", usuarioEditado.id], usuarioEditado);
+    queryClient.setQueryData<Usuario[]>(["usuarios"], (lista) =>
+      lista?.map((u) => (u.id === usuarioEditado.id ? usuarioEditado : u)),
+    );
+    // Lista filtrada: depende do filtro, pode não existir
+  },
+  onSettled: (_, __, vars) => {
+    // Fallback: invalida a raiz pra garantir consistência
+    queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+  },
+});
+```
+
+A regra: comece cirúrgico (mais rápido, sem requests), e
+termine com `invalidateQueries` no `onSettled` (mais
+seguro). O `setQueryData` cobre o caso "feliz" (cache
+vai pra UI em milissegundos), e o `invalidateQueries`
+cobre o caso "concorrência" (outro usuário mudou algo
+no meio).
+
+**`queryClient.setQueriesData` - atualizar múltiplas
+keys de uma vez.** Útil quando você tem o mesmo dado
+representado em várias keys e quer atualizar todas:
+
+```tsx
+// Marca todos os posts do usuário X como "publicado"
+queryClient.setQueriesData<{ publicado: boolean }>(
+  { queryKey: ["posts"] },
+  (post) => (post ? { ...post, publicado: true } : post),
+);
+```
+
+Funciona como `setQueryData` mas itera em **todas** as
+queries que casam com o filtro. Risco: pode ser lento em
+apps com muitas keys. Use com parcimônia.
+
+**`predicate` pra invalidação condicional.** Quando você
+quer invalidar keys por uma condição que não é só o
+prefixo:
+
+```tsx
+// Invalida todos os caches de "usuarios" onde a key
+// tem mais de 1 elemento (ou seja, não é a lista raiz)
+queryClient.invalidateQueries({
+  predicate: (query) =>
+    query.queryKey[0] === "usuarios" && query.queryKey.length > 1,
+});
+```
+
+Útil em casos raros. Na maioria das vezes, o filtro
+hierárquico de `queryKey` basta.
+
+**`placeholderData` + `setQueryData` pra prefetch em
+server-side.** Em Next, dá pra pré-popular o cache do
+TanStack Query no server (com `dehydrate`) e hidratar no
+client (com `HydrationBoundary`). O resultado: o primeiro
+render do client já tem dado, sem loading flash. Aprofundamento
+fica pra trilha `nextjs` (que tem RSC + Server Actions) -
+aqui só mencionamos que a porta está aberta.
+
+**Optimistic delete com rollback.** Mesmo padrão do
+optimistic update, mas com `removeQueries` ao invés de
+`setQueryData`. Se a request DELETE falhar, restaura o
+item da lista:
+
+```tsx
+const deletar = useMutation({
+  mutationFn: (id: string) =>
+    fetch(`/api/usuarios/${id}`, { method: "DELETE" }),
+  onMutate: async (id) => {
+    await queryClient.cancelQueries({ queryKey: ["usuarios"] });
+    const anterior = queryClient.getQueryData<Usuario[]>(["usuarios"]);
+    queryClient.setQueryData<Usuario[]>(["usuarios"], (lista) =>
+      lista?.filter((u) => u.id !== id),
+    );
+    return { anterior };
+  },
+  onError: (_err, _id, ctx) => {
+    queryClient.setQueryData(["usuarios"], ctx?.anterior);
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+  },
+});
+```
+
+Note o cuidado: o item removido volta no rollback
+(incluindo o id), porque a função `setQueryData` no
+`onMutate` removeu ele da lista e o `anterior` é a lista
+completa.
+
+## Pra quem quer ir além 🔴
+
+**`queryClient.fetchQuery` vs `invalidateQueries`.** Às
+vezes você quer **forçar** o refetch agora, sem esperar
+que algum componente leia a key:
+
+```tsx
+// Forçar refetch imediato
+await queryClient.refetchQueries({ queryKey: ["usuarios"] });
+
+// Equivalente a fetchQuery + setQueryData manual
+const data = await queryClient.fetchQuery({
+  queryKey: ["usuarios"],
+  queryFn: ...,
+});
+```
+
+`refetchQueries` é "invalida E já busca". `fetchQuery` é
+"busca agora, joga no cache, me devolve o resultado".
+Diferença sutil, mas importa em casos de pré-carregamento
+(antes de navegar pra uma tela, por exemplo).
+
+**Caching cross-tab com `broadcastQueryClient`.** Em apps
+com várias abas abertas (dashboard, IDE, etc), você pode
+sincronizar o cache entre abas via `BroadcastChannel`.
+Padrão poderoso, mas exige cuidado (loops de invalidação
+infinita são reais). Menção apenas - projeto real
+multi-tab exige planejamento.
+
+**Persistência parcial com `persister`.** Por padrão, o
+cache some entre reloads. Com `@tanstack/query-persist-client-core`
++ `createSyncStoragePersister`, dá pra persistir no
+`localStorage` e reidratar no mount. Aprofundamento fica
+pra `pwa-offline-first` (issue #51).
+
+**Leitura recomendada:**
+
+- [TanStack Query - Invalidate from Mutations (oficial)](https://tanstack.com/query/latest/docs/framework/react/guides/invalidations-from-mutations) -
+  referência.
+- [TkDodo - Mastering Mutations in React Query](https://tkdodo.eu/blog/mastering-mutations-in-react-query) -
+  a parte de invalidação é a melhor explicação prática.
+- [TkDodo - React Query Render Optimizations](https://tkdodo.eu/blog/react-query-render-optimizations) -
+  structural sharing, `select`, e como evitar re-renders
+  desnecessários.
+
+> Dica: a estratégia de invalidação **muda** com a
+> maturidade do app. No começo, `invalidateQueries` na
+> raiz resolve tudo. Conforme o app cresce e os tipos de
+> dados se multiplicam, migra pra `setQueryData` cirúrgico
+> nos casos quentes. Não tente otimizar antes de ter
+> problema - "invalidar tudo" é simples e correto.
+
+No próximo nó, vamos aos **padrões avançados**: dependent
+queries, parallel queries, infinite queries e a integração
+com `<Suspense>` do React 18+.
+
+<Checkpoint
+  challenge="Implemente o `onSuccess` de uma mutation que edita um usuário. A mutation atualiza o servidor e retorna o usuário editado. Você deve: (1) atualizar a key `['usuarios', userId]` com o novo valor via setQueryData, (2) atualizar a key `['usuarios']` (lista) trocando o item antigo pelo novo, (3) chamar invalidateQueries no onSettled pra sincronizar."
+  starterCode={`import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+type Usuario = { id: string; nome: string; email: string };
+
+function useEditarUsuario(userId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (dados: Partial<Usuario>) =>
+      fetch(\`/api/usuarios/\${userId}\`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados),
+      }).then((r) => {
+        if (!r.ok) throw new Error("Falha ao editar");
+        return r.json() as Promise<Usuario>;
+      }),
+
+    // Implemente:
+    // onSuccess: atualiza ["usuarios", userId] e ["usuarios"] (lista)
+    // onSettled: invalida a raiz pra sincronizar
+  });
+}
+
+// Não edite abaixo - apenas referencia.
+const _hook = useEditarUsuario;
+const _tipo: Usuario = { id: "u-1", nome: "Ana", email: "ana@x.com" };
+console.log(_hook, _tipo);`}
+expected='{"nome":"Ana Editada"}'
+slug="tanstack-query"
+nodeId="cache-invalidation"
+/>
+
+<Quiz
+  question="Qual a diferença prática entre `setQueryData` e `invalidateQueries` depois de uma mutation?"
+  options={[
+    {
+      text: "setQueryData atualiza o cache direto (zero requests); invalidateQueries marca stale e dispara refetch em background (1 request por key afetada).",
+      correct: true,
+      explanation:
+        "setQueryData é cirurgia instantânea - o componente re-renderiza com o novo valor em milissegundos, mas se você errar o valor, fica errado até a próxima invalidação. invalidateQueries é mais lento (espera o refetch) mas sempre bate com o servidor. O padrão de produção: setQueryData no onSuccess (rápido) + invalidateQueries no onSettled (seguro).",
+    },
+    {
+      text: "setQueryData é pra criar, invalidateQueries é pra deletar.",
+      correct: false,
+      explanation:
+        "Não - os dois servem pra qualquer tipo de mutation. setQueryData é 'atualiza esse valor', invalidateQueries é 'marca como stale e revalida'. Você usa os dois em conjunto ou dependendo do caso.",
+    },
+    {
+      text: "São a mesma coisa, só nomes diferentes.",
+      correct: false,
+      explanation:
+        "São diferentes. setQueryData escreve direto no cache, invalidateQueries dispara refetch. O primeiro é instantâneo mas sujeito a erro humano; o segundo tem custo de request mas sempre bate com o servidor.",
+    },
+  ]}
+/>
