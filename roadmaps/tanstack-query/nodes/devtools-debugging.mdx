@@ -1,0 +1,416 @@
+---
+id: devtools-debugging
+title: "Devtools e debugging: React Query Devtools, network tab, erros comuns"
+resources:
+  - title: "TanStack Query Devtools (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/devtools
+    type: doc
+    lang: en
+    free: true
+  - title: "TkDodo - Common React Query Mistakes"
+    url: https://tkdodo.eu/blog/common-mistakes-with-react-query
+    type: artigo
+    lang: en
+    free: true
+  - title: "TkDodo - React Query Error Handling (vídeo, EN)"
+    url: https://www.youtube.com/watch?v=05LC9lSPM-8
+    type: video
+    lang: en
+    free: true
+---
+
+Você aprendeu o que cada hook faz, como configurar o
+parâmetros, e como invalidar. Mas quando o app não
+funciona como esperado, como você descobre **por quê**?
+"Por que minha query não atualiza?" "Por que o cache
+volta pro valor antigo?" "Por que tem 5 requests
+idênticas?"
+
+Este nó é sobre debugging. Cobre o **React Query Devtools**
+(a UI que mostra todo o cache em tempo real), o que olhar
+no **Network tab** pra entender requests, e os 5 erros
+mais comuns que aparecem em produção - com a causa raiz e
+a correção de cada um.
+
+## O essencial 🟢
+
+**React Query Devtools: instalando.** É um componente
+separado que abre um painel flutuante na app em
+desenvolvimento. Mostra todas as queries ativas, o estado
+de cada uma, o que tem no cache, e ações de invalidar/
+refetch manual:
+
+```tsx
+// main.tsx ou App.tsx
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+function App() {
+  return (
+    <>
+      <QueryClientProvider client={queryClient}>
+        <SuaApp />
+      </QueryClientProvider>
+
+      {/* Abre um ícone pequeno no canto da tela */}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </>
+  );
+}
+```
+
+O ícone aparece no canto inferior esquerdo da tela (em
+dev). Clicar abre o painel. **Não vai pra produção** se
+você fizer o import condicional:
+
+```tsx
+// Só inclui em dev
+{process.env.NODE_ENV === "development" && (
+  <ReactQueryDevtools initialIsOpen={false} />
+)}
+```
+
+A maioria dos bundlers (Vite, Next) faz tree-shaking
+correto: se o import é condicional e a condição é `false`
+em prod, o devtools nem entra no bundle final. Mas vale
+conferir com `npx source-map-explorer dist/...js` se
+estiver preocupado com KB.
+
+**O que cada painel do Devtools mostra.** Quando você
+abre, vê três áreas principais:
+
+- **Lista de queries** (esquerda) - cada query ativa
+  no cache, com a `queryKey` formatada. Clicar em uma
+  abre o detalhe.
+- **Detalhe da query** (direita) - tudo sobre a query
+  selecionada: `queryKey`, `queryHash`, status atual
+  (`fresh` / `fetching` / `paused` / `stale` / `inactive`),
+  quando foi atualizado, número de observadores, dados
+  atuais, último erro.
+- **Ações** (topo) - botões pra invalidar (`Invalidate`),
+  refazer (`Refetch`), remover (`Remove`), resetar
+  (`Reset`). Útil pra simular "e se eu clicar aqui?".
+- **Data Explorer** (no detalhe) - mostra o JSON cru do
+  cache. Expande/colapsa objetos. Ótimo pra conferir
+  "o servidor mandou isso mesmo?".
+
+**Os 4 estados visuais da query.** No Devtools, a cor do
+status muda. Memorize:
+
+- **Verde / "fresh"** - dado foi buscado, ainda dentro
+  do `staleTime`. Nenhum refetch vai disparar.
+- **Amarelo / "fetching"** - request em andamento agora.
+- **Cinza / "stale"** - dado está velho (passou do
+  `staleTime`). Próximo acesso dispara refetch em
+  background.
+- **Vermelho / "error"** - última tentativa falhou.
+
+A primeira coisa a fazer quando "minha query não
+atualiza" é abrir o Devtools e ver em qual estado ela
+está. Se está verde fresh, o problema não é o cache -
+é o componente que não está re-renderizando.
+
+**Network tab: o que olhar.** Abra o DevTools do browser
+(F12) → Network tab. Filtro: `Fetch/XHR`. Pra cada
+request, olhe:
+
+- **URL e método** - bate com o esperado?
+- **Status code** - 200? 304? 500? 404? Cada um diz
+  algo diferente.
+- **Initiator** - quem disparou? Útil pra descobrir
+  "tem uma chamada extra vindo de algum lugar".
+- **Size e Time** - request gigante? Lentidão?
+- **Headers** - `Authorization` está sendo enviado?
+  `Content-Type` está certo?
+
+**O erro mais comum: "minha query não atualiza depois
+da mutation".** Três causas possíveis, em ordem de
+frequência:
+
+1. **Esqueceu o `invalidateQueries` no `onSuccess` da
+   mutation.** O cache da query continua stale, e o
+   usuário vê o valor antigo. Solução: ver nó 4.
+2. **Mutation está invalidação a key errada.** Você
+   mutou `["usuarios", 1]` mas invalidou `["user", 1]`
+   (typo). Solução: conferir no Devtools se a key
+   invalidada está visível em "stale".
+3. **`queryKey` da query é diferente da chave da
+   mutation.** Você mutou `["usuarios", userId]` mas a
+   query usa `["user", userId]` (singular vs plural).
+   Solução: garantir que **toda referência** à mesma
+   entidade usa a mesma `queryKey`.
+
+**O segundo erro mais comum: "estou fazendo 10 requests
+idênticas".** Causa típica: cada componente declara sua
+própria `queryKey` com um objeto inline:
+
+```tsx
+// Cada render cria um novo objeto {} - key diferente
+// toda vez
+useQuery({
+  queryKey: ["usuarios", { status: filtro }], // ⚠️ novo objeto cada render
+  queryFn: ...,
+});
+```
+
+Solução: ou memoize o objeto (`useMemo`), ou
+desestruture na key:
+
+```tsx
+// Bom: string primitiva na key
+queryKey: ["usuarios", filtro],
+
+// Bom: objeto memoizado
+const queryKey = useMemo(() => ["usuarios", { filtro }], [filtro]);
+useQuery({ queryKey, queryFn: ... });
+```
+
+No Devtools, você vai ver "10 entries" no cache com a
+mesma key "lógica" mas hash diferente. É o sinal claro
+desse bug.
+
+**O terceiro erro mais comum: "staleTime 0 refaz tudo
+toda hora".** Você tem 5 queries em uma página, e cada
+navegação dispara 5 refetches. Causa: `staleTime: 0`
+(default) significa "todo acesso é stale". Solução:
+aumentar `staleTime` para queries que mudam pouco:
+
+```tsx
+// Configuração global: 30 segundos de "fresh"
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000, // 30s
+    },
+  },
+});
+
+// Ou por query: pra queries lentas de mudar
+useQuery({
+  queryKey: ["categorias"],
+  queryFn: ...,
+  staleTime: 5 * 60 * 1000, // 5min
+});
+```
+
+**O quarto erro mais comum: "o cache vaza entre
+usuários".** Você fez login como Ana, viu os dados
+da Ana. Fez logout, fez login como Bruno, mas os dados
+da Ana ainda aparecem. Causa: TanStack Query não sabe
+quem é o usuário - o cache é global, compartilhado.
+
+Solução: limpar o cache no logout:
+
+```tsx
+const logout = useMutation({
+  mutationFn: () => fetch("/api/logout", { method: "POST" }),
+  onSuccess: () => {
+    // Limpa TUDO do cache. Próximo login começa do zero.
+    queryClient.clear();
+    router.push("/login");
+  },
+});
+```
+
+Ou, se você quer preservar a estrutura do cache e só
+invalidar dados do usuário:
+
+```tsx
+queryClient.removeQueries({ queryKey: ["usuarios"] });
+queryClient.removeQueries({ queryKey: ["posts"] });
+```
+
+**O quinto erro mais comum: "erro 401 em loop
+infinito".** O servidor retorna 401 (token expirou),
+seu `queryFn` tenta refresh do token, a nova tentativa
+também retorna 401, refresh de novo, loop. Causa: você
+não desabilita a query durante o refresh.
+
+Solução: implementar refresh no **cliente HTTP global**
+(axios interceptor ou wrapper do fetch), não dentro do
+`queryFn`. E configurar o `queryFn` pra jogar o 401 sem
+retentar:
+
+```tsx
+queryFn: async () => {
+  const r = await fetch("/api/usuarios");
+  if (r.status === 401) {
+    // Para refresh e tenta de novo
+    const novoToken = await refreshToken();
+    const r2 = await fetch("/api/usuarios", {
+      headers: { Authorization: `Bearer ${novoToken}` },
+    });
+    if (!r2.ok) throw new Error("Sessão expirou");
+    return r2.json();
+  }
+  return r.json();
+},
+```
+
+A solução completa depende do seu auth provider. Em
+Auth.js (Next.js), use o `unstable_update` ou
+middleware do Next. Em Clerk/Lucia, o SDK já lida.
+
+## Aprofundamento 🟡
+
+**Lendo o status `fetchStatus` vs `status`.** O Devtools
+mostra **dois** status por query:
+
+- **`status`** - estado do dado: `pending` (carregando
+  pela primeira vez) / `error` (última tentativa
+  falhou) / `success` (tem dado).
+- **`fetchStatus`** - estado da request: `fetching`
+  (request em andamento) / `paused` (sem rede) / `idle`
+  (nada em andamento).
+
+Eles se combinam:
+
+| `status` | `fetchStatus` | O que significa |
+| --- | --- | --- |
+| `pending` | `fetching` | primeira request, sem cache, carregando |
+| `pending` | `idle` | query está com `enabled: false` |
+| `success` | `fetching` | tem dado, revalidando em background |
+| `success` | `idle` | tem dado, nada em andamento |
+| `error` | `fetching` | erro anterior, tentando de novo |
+| `error` | `paused` | erro, sem rede - vai tentar quando voltar |
+
+Quando o usuário diz "minha UI não atualiza", o
+`fetchStatus` é a melhor pista pra distinguir "não
+atualiza porque está em cache" de "não atualiza porque
+está tentando mas falhou".
+
+**Debugging com `queryClient.getQueryData`.** Pra
+inspecionar o cache programaticamente (em testes ou em
+debug temporário):
+
+```tsx
+// No DevTools console
+window.__queryClient.getQueryData(["usuarios"]);
+```
+
+Pra expor o `queryClient` no `window` (só em dev):
+
+```tsx
+if (process.env.NODE_ENV === "development") {
+  window.__queryClient = queryClient;
+}
+```
+
+Útil pra testes manuais no console: "qual o valor
+atual dessa query?".
+
+**Erro handling customizado com `Error Boundary`.** O
+`useQuery` (não o `useSuspenseQuery`) **não** joga
+erro - ele captura e expõe em `isError`. Pra mostrar
+uma UI de erro global, use um `Error Boundary` em volta
+de um componente que faz `throw`:
+
+```tsx
+// Pattern pra forçar erro como exception (integrar com Error Boundary)
+function useQueryOrThrow<T>(options: UseQueryOptions<T>) {
+  const query = useQuery(options);
+  if (query.isError) throw query.error;
+  return query;
+}
+
+// Em volta
+<ErrorBoundary fallback={<PaginaErro />}>
+  <ComponenteQueUsaUseQueryOrThrow />
+</ErrorBoundary>
+```
+
+Útil quando você quer integrar TanStack Query com a
+infraestrutura existente de Error Boundaries (que
+servem pra erros de render, lazy loading, etc).
+
+**Como ler o `queryHash` no Devtools.** Cada query tem
+um `queryHash` (string que identifica a query de forma
+estável). O hash é gerado a partir da `queryKey` via
+JSON.stringify + hash. Se você ver "10 entries com
+mesmo queryKey mas hash diferente", é o bug do objeto
+inline (erro #2 acima).
+
+## Pra quem quer ir além 🔴
+
+**React Query Devtools em produção (cuidado).** Tecnicamente
+você pode incluir o devtools em produção, mas **não faça**
+sem pensar bem. Razões:
+
+- Expõe todas as `queryKey` e dados do cache, o que pode
+  vazar estrutura interna.
+- A UI inteira do devtools entra no bundle (uns 30KB
+  gzipped).
+- O ícone flutuante aparece pra todos os usuários.
+
+Se você precisa de debugging em produção, prefira
+**logging estruturado** (enviar eventos de query/mutation
+pra um serviço como Sentry) em vez de expor a UI.
+
+**Logger customizado pra mutations.** Em vez do Devtools,
+em produção você pode logar cada mutation:
+
+```tsx
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      console.error("Query error:", query.queryKey, error);
+      // Sentry.captureException(error, { tags: { queryKey: query.queryKey } });
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, variables, context, mutation) => {
+      console.error("Mutation error:", mutation.options.mutationKey, error);
+    },
+  }),
+});
+```
+
+Aprofundamento de logging/observabilidade fica pra
+`observabilidade-frontend` (issue #55).
+
+**Leitura recomendada:**
+
+- [TanStack Query Devtools (oficial)](https://tanstack.com/query/latest/docs/framework/react/devtools) -
+  a referência da API.
+- [TkDodo - Common React Query Mistakes](https://tkdodo.eu/blog/common-mistakes-with-react-query) -
+  exatamente o que vimos aqui, com mais exemplos reais.
+- [TkDodo - React Query Error Handling (vídeo)](https://www.youtube.com/watch?v=05LC9lSPM-8) -
+  padrões avançados de error handling.
+
+> Dica: a primeira coisa a fazer quando algo não funciona
+> é abrir o Devtools. Não o Devtools do browser - o
+> **React Query Devtools**. Ele te diz em segundos se o
+> problema é "dado não está no cache", "está no cache mas
+> stale", "está stale mas não está revalidando", ou
+> "revalidou mas o componente não re-renderizou". Cada
+> um desses tem uma solução diferente, e adivinhar sem
+> ver leva a código desnecessário.
+
+No próximo nó, vamos ao **projeto final**: um app
+completo de tarefas (CRUD) com TanStack Query, usando
+todos os conceitos dos nós anteriores - queries,
+mutations, optimistic updates, cache invalidation, e
+devtools pra validar.
+
+<Quiz
+  question="Qual a primeira coisa a fazer quando "minha query não atualiza depois da mutation"?"
+  options={[
+    {
+      text: "Abrir o React Query Devtools e conferir o status da query e da mutation no cache.",
+      correct: true,
+      explanation:
+        "O Devtools te diz em segundos onde está o problema: a query está em 'stale'? A mutation rodou? O invalidateQueries foi chamado? Sem ver, você está adivinhando. Adivinhar leva a código desnecessário (setInterval, refetch manual, etc) que mascara o problema real.",
+    },
+    {
+      text: "Adicionar refetchInterval na query pra forçar refetch a cada segundo.",
+      correct: false,
+      explanation:
+        "Sintoma, não solução. Se a mutation não está invalidando, o refetchInterval vai disparar requests a cada segundo (caro e desnecessário). Resolve o problema visível, mas a mutation continua sem invalidar - outras queries vão ter o mesmo bug.",
+    },
+    {
+      text: "Reinstalar a dependência do TanStack Query.",
+      correct: false,
+      explanation:
+        "Quase nunca é a dependência. O bug é lógico (key errada, falta de invalidate, objeto inline na key). Reinstalar não muda nada. Use o Devtools antes de qualquer mudança.",
+    },
+  ]}
+/>
