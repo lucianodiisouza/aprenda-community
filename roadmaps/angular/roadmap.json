@@ -3,7 +3,6 @@
   "title": "Angular",
   "description": "Trilha para aprender Angular moderno: TypeScript, CLI, workspace, componentes standalone, templates, serviços, rotas, guards, formulários, HTTP, RxJS, Signals, estado, UI, acessibilidade, i18n, PWA, testes, performance, SSR e deploy.",
   "difficulty": "intermediario",
-  "published": "2026-08-26",
   "skills": ["angular", "typescript", "frontend", "spa", "rxjs"],
   "creators": [
     {
