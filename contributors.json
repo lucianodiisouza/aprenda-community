@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 18,
+        "trilhas": 19,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 31
+        "total": 32
       },
       "trilhas": [
         {
@@ -65,6 +65,10 @@
         {
           "slug": "kubernetes",
           "title": "Kubernetes"
+        },
+        {
+          "slug": "nextjs",
+          "title": "Next.js e Meta-frameworks"
         },
         {
           "slug": "nosql",
