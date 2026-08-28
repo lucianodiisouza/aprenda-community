@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 19,
+        "trilhas": 20,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 32
+        "total": 33
       },
       "trilhas": [
         {
@@ -81,6 +81,10 @@
         {
           "slug": "prompt-engineering",
           "title": "Prompt Engineering"
+        },
+        {
+          "slug": "tanstack-query",
+          "title": "TanStack Query: server state na prática"
         },
         {
           "slug": "terminal-para-devs",
