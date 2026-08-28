@@ -1,0 +1,468 @@
+---
+id: padroes-avancados
+title: "Padrões avançados: dependent, parallel, infinite queries, suspense"
+resources:
+  - title: "TanStack Query - Dependent Queries (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/guides/dependent-queries
+    type: doc
+    lang: en
+    free: true
+  - title: "TanStack Query - Infinite Queries (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries
+    type: doc
+    lang: en
+    free: true
+  - title: "TkDodo - Practical React Query 9: Infinite Queries (vídeo, EN)"
+    url: https://www.youtube.com/watch?v=L2JJnyX1vcM
+    type: video
+    lang: en
+    free: true
+---
+
+Os quatro nós anteriores cobriram o "caminho feliz" do
+TanStack Query: uma query por hook, uma mutation por vez,
+e invalidação de cache. Mas apps reais têm casos
+específicos que precisam de padrões dedicados: queries
+que dependem de outras (pegar perfil → pegar projetos
+dele), queries que precisam rodar em paralelo (dashboard
+com 5 cards), listas que paginam (feed infinito), e a
+integração com `<Suspense>` do React 18+.
+
+Este nó cobre os quatro padrões que mais aparecem em
+produção, e como decidir qual usar em cada caso.
+
+## O essencial 🟢
+
+**Dependent queries: a query B precisa do resultado de A.**
+Padrão clássico: primeiro você busca o usuário, depois os
+posts dele. O problema: a segunda query precisa do `id`
+do usuário, que não existe até a primeira voltar.
+
+A solução é o `enabled: false` que vimos no nó 2,
+combinado com checagem explícita:
+
+```tsx
+function PerfilComPosts({ userId }: { userId: string }) {
+  // Primeira query: dados do usuário
+  const { data: usuario } = useQuery({
+    queryKey: ["usuarios", userId],
+    queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+  });
+
+  // Segunda query: SÓ roda quando o usuario.id existir
+  const { data: posts } = useQuery({
+    queryKey: ["usuarios", userId, "posts"],
+    queryFn: () => fetch(`/api/usuarios/${userId}/posts`).then((r) => r.json()),
+    enabled: !!usuario, // só roda se a primeira já resolveu
+  });
+
+  if (!usuario) return <Spinner />;
+  return (
+    <div>
+      <h1>{usuario.nome}</h1>
+      {/* posts ainda pode ser undefined se a segunda está carregando */}
+      {posts ? <ListaPosts posts={posts} /> : <SpinnerPequeno />}
+    </div>
+  );
+}
+```
+
+A regra: `enabled` recebe uma condição. Se for `false`,
+TanStack Query nem faz a request. Quando vira `true` (no
+caso acima, quando `usuario` resolve), a request dispara.
+
+**Cuidado com timing.** Se você colocar `enabled: !!usuario.id`
+em vez de `!!usuario`, o `usuario` está resolvido mas pode
+não ter `id` ainda (depende do formato da resposta). Use a
+condição mais específica:
+
+```tsx
+// Bom: dependência explícita
+enabled: !!usuario?.id
+
+// Ruim: usuário pode estar resolvido mas com erro
+enabled: !!usuario // se for null em caso de erro, dispara a segunda
+```
+
+**Parallel queries: várias queries independentes ao mesmo
+tempo.** Quando a tela tem 5 cards que puxam dados
+diferentes (dashboard), você quer disparar todas em
+paralelo, não em série. Duas formas:
+
+- **Múltiplos `useQuery` no mesmo componente** - TanStack
+  Query já dispara em paralelo automaticamente (cada
+  `useQuery` é independente).
+- **`useQueries` pra número dinâmico** - quando a lista
+  de queries vem de um array (ex: 10 usuários, cada um
+  com seu detalhe).
+
+```tsx
+// Múltiplos useQuery - paralelo automático
+function Dashboard() {
+  const usuarios = useQuery({ queryKey: ["usuarios"], queryFn: ... });
+  const projetos = useQuery({ queryKey: ["projetos"], queryFn: ... });
+  const tarefas = useQuery({ queryKey: ["tarefas"], queryFn: ... });
+
+  if (usuarios.isLoading) return <Spinner />;
+  return (
+    <div>
+      <Card titulo="Usuários" data={usuarios.data} />
+      <Card titulo="Projetos" data={projetos.data} />
+      <Card titulo="Tarefas" data={tarefas.data} />
+    </div>
+  );
+}
+```
+
+`useQueries` quando o número de queries é dinâmico:
+
+```tsx
+function ListaDePosts({ userIds }: { userIds: string[] }) {
+  const queries = useQueries({
+    queries: userIds.map((id) => ({
+      queryKey: ["usuarios", id],
+      queryFn: () => fetch(`/api/usuarios/${id}`).then((r) => r.json()),
+    })),
+  });
+
+  const carregando = queries.some((q) => q.isLoading);
+  if (carregando) return <Spinner />;
+
+  return (
+    <ul>
+      {queries.map((q, i) => (
+        <li key={userIds[i]}>{q.data.nome}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`useQueries` devolve um array com o resultado de cada
+query, na mesma ordem. O `some(isLoading)` indica se
+alguma ainda está carregando.
+
+**Árvore de decisão: qual padrão usar.** Pra fixar:
+
+<Mermaid
+  chart={`flowchart TD
+    A[Preciso de mais de uma query?]
+    A -->|Nao| B[useQuery normal]
+    A -->|Sim| C[As queries sao independentes?]
+    C -->|Sim| D[Multiplos useQuery ou useQueries]
+    C -->|Nao| E[Uma depende do resultado de outra?]
+    E -->|Sim| F[enabled: condicional com base na anterior]
+    E -->|Nao| G[E uma lista paginada infinita?]
+    G -->|Sim| H[useInfiniteQuery]
+    G -->|Nao| I[Quer integrar com Suspense?]
+    I -->|Sim| J[useSuspenseQuery]
+    I -->|Nao| K[useQuery normal - Suspense nao vale o esforco]`}
+  caption="Arvore de decisao pra escolher entre os 4 padroes: useQuery, dependent (enabled), parallel (useQueries), infinite (useInfiniteQuery), suspense (useSuspenseQuery)."
+/>
+
+**Infinite queries: listas que paginam pra "carregar mais".**
+O `useInfiniteQuery` é um `useQuery` que sabe lidar com
+páginas. O `queryFn` recebe um `pageParam` (parâmetro da
+próxima página), e o hook devolve `fetchNextPage` (carrega
+mais) e `hasNextPage` (tem mais?).
+
+```tsx
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+type Page = {
+  items: Post[];
+  nextCursor: string | null;
+};
+
+function Feed() {
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["posts"],
+    queryFn: ({ pageParam }): Promise<Page> =>
+      fetch(`/api/posts?cursor=${pageParam ?? ""}`).then((r) => r.json()),
+    initialPageParam: null as string | null,
+    getNextPageParam: (ultimaPagina) => ultimaPagina.nextCursor,
+  });
+
+  return (
+    <div>
+      {data?.pages.map((pagina) =>
+        pagina.items.map((post) => <Post key={post.id} post={post} />),
+      )}
+      {hasNextPage && (
+        <button
+          onClick={() => fetchNextPage()}
+          disabled={isFetchingNextPage}
+        >
+          {isFetchingNextPage ? "Carregando..." : "Carregar mais"}
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+As três peças importantes:
+
+- **`queryFn: ({ pageParam })`** - recebe o cursor da
+  próxima página. Na primeira chamada, `pageParam` é o
+  `initialPageParam`. Nas seguintes, é o que `getNextPageParam`
+  retornou.
+- **`getNextPageParam: (ultimaPagina) => ...`** - diz pro
+  TanStack Query "a próxima página é X, ou null se acabou".
+  O retorno é o que vira o `pageParam` da próxima request.
+- **`data.pages`** - array de páginas. `data.pages[0]` é a
+  primeira, `data.pages[1]` a segunda, etc. Você **não**
+  concatena automaticamente - a UI faz isso no `.map`.
+
+**`useSuspenseQuery`: data fetching com Suspense.** O React
+18+ introduziu `<Suspense>` como first-class pra data
+fetching. `useSuspenseQuery` joga uma promise (em vez de
+retornar `isLoading: true`), e o componente pai usa
+`<Suspense fallback={...}>` pra mostrar loading:
+
+```tsx
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Suspense } from "react";
+
+function Perfil({ userId }: { userId: string }) {
+  // Não tem isLoading - ou data está pronto ou joga promise
+  const { data: usuario } = useSuspenseQuery({
+    queryKey: ["usuarios", userId],
+    queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+  });
+
+  // data é garantido não-undefined aqui
+  return <h1>{usuario.nome}</h1>;
+}
+
+function App() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Perfil userId="u-1" />
+    </Suspense>
+  );
+}
+```
+
+A grande vantagem: elimina `if (isLoading) return <Spinner />`
+de cada componente. O `<Suspense>` na borda cuida de todos
+os loadings aninhados. Erros são tratados por `<ErrorBoundary>`
+(o Suspense **não** trata erro - é outra primitiva).
+
+A desvantagem: você precisa de `<ErrorBoundary>` (não nativo
+do React ainda, mas trivial com libs) pra erros. E o
+refactor de "useQuery pra useSuspenseQuery" exige mover a
+lógica de loading pra cima na árvore.
+
+**Quando usar `useSuspenseQuery` vs `useQuery`.** Regra
+prática:
+
+- **Use `useQuery`** em código legado, ou onde você
+  precisa de `isLoading` separado de `isError` (ex:
+  componente que mostra "X itens encontrados" em vez de
+  spinner cheio).
+- **Use `useSuspenseQuery`** em código novo do React 18+,
+  especialmente em apps que já usam Suspense pra outras
+  coisas (lazy components, etc). É a recomendação oficial
+  do time do TanStack Query.
+
+## Aprofundamento 🟡
+
+**`select` + `useQueries` pra agregar dados de várias
+queries.** Às vezes você quer pegar dados de várias queries
+e transformar num único objeto. `select` resolve:
+
+```tsx
+const { data: resumo } = useQueries({
+  queries: [
+    { queryKey: ["usuarios"], queryFn: fetchUsuarios },
+    { queryKey: ["projetos"], queryFn: fetchProjetos },
+    { queryKey: ["tarefas"], queryFn: fetchTarefas },
+  ],
+  combine: (results) => ({
+    usuarios: results[0].data,
+    projetos: results[1].data,
+    tarefas: results[2].data,
+    carregando: results.some((r) => r.isLoading),
+  }),
+});
+```
+
+O `combine` (em vez de `select`) é o padrão novo: roda
+uma vez quando **todas** as queries resolvem, em vez de
+em cada mudança individual. Evita re-renders desnecessários
+em dashboards com muitas queries.
+
+**Infinite queries: `select` pra filtrar ou transformar
+páginas.** O `data.pages` é um array, e cada página tem
+a estrutura que o backend devolveu. Pra UX, às vezes
+você quer "achatar" tudo num único array:
+
+```tsx
+const { data: todosOsPosts } = useInfiniteQuery({
+  queryKey: ["posts"],
+  queryFn: fetchPage,
+  initialPageParam: null,
+  getNextPageParam: (ultima) => ultima.nextCursor,
+  select: (data) => ({
+    ...data,
+    items: data.pages.flatMap((p) => p.items),
+  }),
+});
+
+// Uso: todosOsPosts.items é um array flat de todos os posts
+todosOsPosts?.items.map((p) => <Post key={p.id} post={p} />)
+```
+
+Atenção: o `select` cria um novo objeto a cada render.
+Se a lista for muito grande (10k+ itens), considere
+memoizar ou paginar de outra forma.
+
+**Prefetch pra UX instantânea.** Antes do usuário
+navegar pra uma rota, dá pra "esquentar" o cache:
+
+```tsx
+function LinkParaPerfil({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
+
+  return (
+    <Link
+      href={`/usuarios/${userId}`}
+      onMouseEnter={() => {
+        // Pré-carrega quando o mouse passa por cima
+        queryClient.prefetchQuery({
+          queryKey: ["usuarios", userId],
+          queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+        });
+      }}
+    >
+      Ver perfil
+    </Link>
+  );
+}
+```
+
+Quando o usuário clicar, o cache já tem o dado e a página
+abre sem loading. Padrão "mágico" que aparece em apps como
+Gmail e Notion.
+
+**`useMutationState` + `mutationKey` pra UI global de
+mutations.** Quando várias mutations disparam de
+componentes diferentes, dá pra ter um indicador global
+"saving...":
+
+```tsx
+// No header da app
+const mutations = useMutationState({
+  filters: { status: "pending" },
+  select: (m) => m.options.mutationKey,
+});
+
+const temMutation = mutations.length > 0;
+
+return (
+  <header>
+    {temMutation && <IndicadorSalvando />}
+  </header>
+);
+```
+
+Útil pra feedback unificado em apps com formulários
+espalhados.
+
+## Pra quem quer ir além 🔴
+
+**`useQueries` com `combine` - a evolução do parallel.**
+O `combine` (introduzido no TanStack Query 5.x) é o
+sucessor do `select` pra casos complexos. Em vez de mapear
+cada query, você compõe o resultado final numa única
+função, e o React só re-renderiza quando o resultado
+muda (graças ao `structural sharing` interno).
+
+**Infinite queries com scroll infinito.** O exemplo com
+botão "Carregar mais" é o começo. O padrão mais usado em
+produção é scroll infinito via `IntersectionObserver`:
+
+```tsx
+const observerRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  if (!observerRef.current || !hasNextPage) return;
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) fetchNextPage();
+  });
+  observer.observe(observerRef.current);
+  return () => observer.disconnect();
+}, [fetchNextPage, hasNextPage]);
+
+return (
+  <div>
+    {data?.pages.map(...)}
+    {hasNextPage && <div ref={observerRef}>Carregando...</div>}
+  </div>
+);
+```
+
+Aprofundamento de UX aqui pertence a
+`performance-web` (issue #48) - o `IntersectionObserver`
+em si é uma API do browser, não do TanStack Query.
+
+**`useSuspenseQueries` (paralelo + Suspense).** Versão
+suspense-aware de `useQueries`, mesma ideia do
+`useSuspenseQuery` mas pra múltiplas queries.
+
+**Streaming queries com `experimental_streamedQuery`.**
+TanStack Query 5.x adicionou suporte experimental pra
+streaming (Server-Sent Events, AI streaming). Aprofundamento
+fica pra `real-time-websockets-sse` (issue #52) e
+`engenharia-assistida-por-ia` (issue #55).
+
+**Leitura recomendada:**
+
+- [TanStack Query - Dependent Queries (oficial)](https://tanstack.com/query/latest/docs/framework/react/guides/dependent-queries) -
+  o básico, bem coberto.
+- [TanStack Query - Infinite Queries (oficial)](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries) -
+  a referência completa, com exemplos de cursor e offset.
+- [TkDodo - Practical React Query 9: Infinite Queries (vídeo)](https://www.youtube.com/watch?v=L2JJnyX1vcM) -
+  passo a passo.
+
+> Dica: o erro mais comum em dependent queries é esquecer
+> o `enabled: false` quando o ID é null. O sintoma: a
+> request quebra com "Cannot read property 'id' of null".
+> A correção é simples: `enabled: !!userId && userId !== ""`,
+> ou no caso mais comum `enabled: !!usuario?.id` na
+> segunda query.
+
+No próximo nó, vamos ao **debugging**: como usar o React
+Query Devtools pra entender o que está no cache, o que
+cada query está fazendo, e os erros mais comuns em
+produção.
+
+<Quiz
+  question="Quando você tem uma lista de IDs (ex: 10 userIds) e quer buscar o detalhe de cada um em paralelo, qual hook você usa?"
+  options={[
+    {
+      text: "useQueries - dispara N queries em paralelo e devolve um array com o resultado de cada uma.",
+      correct: true,
+      explanation:
+        "useQueries recebe um array de configurações e devolve um array de resultados, na mesma ordem. Múltiplos useQuery no mesmo componente também funcionam pra casos fixos, mas useQueries é a escolha certa quando o número de queries é dinâmico (vem de um array).",
+    },
+    {
+      text: "useInfiniteQuery - é o hook pra listas dinâmicas.",
+      correct: false,
+      explanation:
+        "useInfiniteQuery é pra paginação (carregar mais, scroll infinito). Não dispara N queries em paralelo; dispara uma query por vez, com getNextPageParam indicando a próxima.",
+    },
+    {
+      text: "useQuery com Promise.all manual - dispara em paralelo via JavaScript.",
+      correct: false,
+      explanation:
+        "Funciona, mas você perde o cache compartilhado e o estado de cada query (isLoading, isError, refetch). useQueries te dá tudo isso, automaticamente.",
+    },
+  ]}
+/>
