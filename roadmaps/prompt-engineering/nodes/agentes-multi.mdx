@@ -1,0 +1,172 @@
+---
+id: agentes-multi
+title: "Agentes: single-agent vs multi-agent"
+resources:
+  - title: "Anthropic - Building effective agents (EN, framework de design)"
+    url: https://www.anthropic.com/research/building-effective-agents
+    type: artigo
+    lang: en
+    free: true
+  - title: "LangGraph docs (EN, orquestração de agentes em grafo)"
+    url: https://langchain-ai.github.io/langgraph/
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Multi-agent research system (EN, case study)"
+    url: https://www.anthropic.com/engineering/built-multi-agent-research-system
+    type: artigo
+    lang: en
+    free: true
+---
+
+"Agente" é a palavra mais inflada de 2025-2026 em IA. Todo mundo fala,
+quase todo mundo usa mal. Vamos separar o que é **agente de verdade**
+do que é **prompt com tool use**.
+
+## O que é um agente (definição útil)
+
+**Agente** é um sistema onde o **modelo decide, em tempo de execução,
+o que fazer a seguir** - incluindo chamar tools, fazer mais perguntas,
+ou parar. A diferença pro **pipeline** (que vimos em
+`decomposicao-tarefas`) é justamente essa: no pipeline, **você** define
+a ordem; no agente, **o modelo** decide.
+
+Na prática, é um loop:
+
+```
+loop:
+  1. observa estado atual
+  2. decide próxima ação
+  3. executa ação
+  4. observa resultado
+  5. decide: terminou? (sim → sai; não → volta pro passo 1)
+```
+
+<Mermaid
+  chart={`flowchart LR
+    A["Usuário:\\n'Planeje minha viagem pro Japão'"] --> B["Agente\\n(loop de decisão)"]
+    B --> C{"Decide:\\no que fazer"}
+    C -- "Buscar voos" --> D["Tool:\\nsearch_flights()"]
+    C -- "Buscar hotéis" --> E["Tool:\\nsearch_hotels()"]
+    C -- "Pedir datas" --> F["Tool:\\nask_user()"]
+    C -- "Já tenho tudo" --> G["Resposta final"]
+    D --> B
+    E --> B
+    F --> B
+    G --> H["Plano completo"]`}
+  caption="Agente: o modelo decide, a cada passo, qual tool chamar, o que perguntar, ou se terminou."
+/>
+
+## Single-agent vs multi-agent
+
+**Single-agent (o default):** um loop, um modelo, várias tools. É o
+que resolve 80% dos casos. Exemplo: agente de suporte que consulta
+pedido, busca FAQ, abre ticket, responde cliente.
+
+**Multi-agent:** dois ou mais agentes, cada um com seu papel/modelo/
+tools, que **conversam entre si**. Um "pesquisador" busca, um
+"redator" escreve, um "crítico" revisa. Mais sofisticado, mais
+caro, mais difícil de debugar.
+
+<Mermaid
+  chart={`flowchart TB
+    subgraph SA["Single-agent (simples)"]
+      direction LR
+      U["Usuário"] --> A1["Agente único\\n(loop, várias tools)"]
+      A1 --> T1["Tool A"]
+      A1 --> T2["Tool B"]
+      A1 --> T3["Tool C"]
+      A1 --> R1["Resposta"]
+    end
+    subgraph MA["Multi-agent (complexo)"]
+      direction LR
+      U2["Usuário"] --> R["Agent Researcher\\nbusca e coleta"]
+      R -- "achados" --> W["Agent Writer\\nescreve"]
+      W -- "rascunho" --> C["Agent Critic\\nrevisa"]
+      C -- "aprovado" --> R2["Resposta final"]
+      C -- "rejeitado" --> W
+    end`}
+  caption="Single-agent: um loop, várias tools. Multi-agent: cada agente tem papel, eles conversam entre si."
+/>
+
+## Quando single-agent basta
+
+- A tarefa é **bem definida** (resumir documento, classificar email,
+  responder FAQ).
+- As tools são **independentes** (consultar banco, calcular,
+  buscar).
+- Você quer **simplicidade operacional** e debug fácil.
+
+## Quando multi-agent ajuda (e quando não)
+
+**Ajuda:**
+
+- Tarefas com **papéis genuinamente diferentes** (pesquisar vs
+  escrever vs revisar).
+- Quando um agente pode **criticar o output** de outro antes de
+  seguir.
+- Workflows longos que se beneficiam de **paralelismo** entre agentes
+  independentes.
+
+**Não ajuda (over-engineering):**
+
+- Tarefas que um agente bem-prompted já resolve.
+- Quando você adiciona agentes pra "parecer mais sofisticado".
+- Quando o overhead de orquestração e custo é maior que o ganho de
+  qualidade.
+
+## Padrões de design que importam
+
+1. **Tool com descrição clara** - vimos em `function-calling`. Vale
+   dobrar pra agente: a descrição é o que o agente usa pra decidir.
+2. **Limite o número de tools** - modelo se perde com 20+ tools.
+   Agrupe, exponha dinamicamente, ou use multi-agent.
+3. **Dê ao agente um "orçamento"** - máximo de N iterações, ou
+   timeout, ou custo máximo. Sem limite, agente pode entrar em loop.
+4. **Logging extensivo** - trace de cada iteração: o que o agente
+   decidiu, por quê, qual tool chamou, qual o resultado. Sem isso,
+   debug é inferno.
+5. **Human-in-the-loop em ações irreversíveis** - "deletar conta",
+   "mandar email externo", "comprar". Agente **propõe**, humano
+   **executa** (com aprovação).
+
+## Frameworks de orquestração
+
+- **LangGraph** (LangChain) - orquestração de agentes em grafo. Mais
+  usado, com tracing bom (LangSmith).
+- **DSPy** - mais declarativo, "compila" o agente junto com
+  otimização.
+- **CrewAI / AutoGen** - multi-agent com papéis pré-definidos.
+- **Anthropic Agent SDK / OpenAI Agents SDK** - frameworks
+  oficiais dos providers.
+
+**Regra prática:** comece com **código explícito** (loop + LLM call +
+tool execution). Só pule pra framework quando a orquestração virar
+complexa de manter.
+
+<Quiz
+  question="Você precisa de um agente que pesquisa, escreve, e revisa artigos de 2000 palavras. Single ou multi-agent?"
+  options={[
+    { text: "Single-agent com 3 tools (pesquisar, escrever, revisar) e prompt bem-feito", correct: false, explanation: "Single-agent com 3 tools dá conta, mas tende a 'misturar' os papéis. Researcher começa a escrever, writer começa a revisar. Em tarefas longas, fica ruidoso." },
+    { text: "Multi-agent: um pesquisa, outro escreve, outro revisa - com mensagens claras entre eles", correct: true },
+    { text: "Tanto faz - é a mesma coisa", correct: false, explanation: "Não é. Em tarefas com papéis distintos e ciclos longos, separar em agentes dá isolamento de responsabilidade e prompts mais focados." }
+  ]}
+/>
+
+- **Agente = loop onde o modelo decide a próxima ação.** Pipeline
+  tem ordem fixa; agente tem ordem dinâmica.
+- **Single-agent (1 loop, várias tools) resolve 80% dos casos.**
+- **Multi-agent ajuda quando os papéis são genuinamente diferentes**
+  (pesquisar vs escrever vs revisar).
+- **Frameworks (LangGraph, CrewAI, SDKs dos providers) entram quando
+  a orquestração fica complexa de manter à mão.**
+- **Sempre:** limite de iterações, logging extensivo, human-in-the-loop
+  em ações irreversíveis.
+
+> Dica: o sinal de que você precisa de multi-agent é: **single-agent
+> está "saindo do papel"** - começa a pesquisar quando devia estar
+> escrevendo, ou a escrever quando devia estar revisando. Esse é o
+> sintoma clássico de que os papéis precisam ser separados.
+
+No próximo nó, vamos para uma dimensão diferente: o modelo que
+**enxerga, ouve e fala** - **multimodal**.

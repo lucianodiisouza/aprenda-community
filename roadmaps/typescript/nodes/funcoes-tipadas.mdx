@@ -1,0 +1,102 @@
+---
+id: funcoes-tipadas
+title: "Funções Tipadas: Parâmetros, Retorno e Overloads"
+resources:
+  - title: "TypeScript Handbook: Functions (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/functions.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Funções são o coração do backend: cada rota, cada validação, cada
+consulta ao banco é uma função. Tipar bem uma função é a diferença
+entre "o editor me ajuda a chamar" e "eu passo struct errado e
+descubro em produção".
+
+### Parâmetros e retorno
+
+```typescript
+function calcularTotal(precoUnitario: number, quantidade: number): number {
+  return precoUnitario * quantidade;
+}
+
+calcularTotal(10, 3);    // ✅ 30
+calcularTotal("10", 3);  // ❌ string não é number
+```
+
+O tipo depois do `)` é o **tipo de retorno**. Se a função tem um
+`return` claro, o TS infere sozinho - mas é boa prática anotar
+funções **exportadas** (que outras pessoas/leitores vão chamar).
+
+### Parâmetros opcionais e default
+
+```typescript
+// Opcional com `?` - pode ser undefined
+function saudacao(nome: string, sobrenome?: string): string {
+  return sobrenome ? `${nome} ${sobrenome}` : nome;
+}
+
+// Default value - se omitido, usa o valor padrão
+function conectar(host: string, porta: number = 3000): void {
+  console.log(`Conectando em ${host}:${porta}`);
+}
+
+saudacao("Ana");          // ✅ "Ana"
+saudacao("Ana", "Silva"); // ✅ "Ana Silva"
+conectar("localhost");    // ✅ porta 3000
+```
+
+### Rest parameters
+
+Quando o número de argumentos é variável:
+
+```typescript
+function somarTudo(...numeros: number[]): number {
+  return numeros.reduce((acc, n) => acc + n, 0);
+}
+
+somarTudo(1, 2, 3, 4); // ✅ 10
+somarTudo();           // ✅ 0 (array vazio)
+```
+
+### Overloads - assinaturas múltiplas
+
+Quando a função pode ser chamada de jeitos diferentes com tipos
+diferentes de retorno:
+
+```typescript
+// Assinaturas (visíveis pra quem chama)
+function processar(input: string): string;
+function processar(input: number): number;
+
+// Implementação (interna, não visível)
+function processar(input: string | number): string | number {
+  return typeof input === "string" ? input.toUpperCase() : input * 2;
+}
+
+processar("ana"); // ✅ retorna string
+processar(5);      // ✅ retorna number
+```
+
+O retorno é **estático**: o TS escolhe a assinatura baseado no
+tipo do argumento, então a pessoa que chama sabe o que vai receber
+sem precisar checar.
+
+Três conceitos pra fixar:
+
+- **Anotação de retorno** depois do `)` - boa prática em funções
+  exportadas; pode ser inferida em funções locais curtas.
+- **Parâmetro opcional** com `?` (pode ser `undefined`); **default**
+  com `=` (valor usado se omitido).
+- **Overloads** definem múltiplas assinaturas visíveis; a
+  implementação real é uma só, que trata todos os casos.
+
+> Dica: função que retorna `void` significa "não importa o
+> retorno, ignore". É diferente de `undefined`: `void` é o tipo
+> de funções que executam efeito colateral e não devolvem valor
+> útil.
+
+No próximo nó, vamos ver **unions e narrowing** - a forma
+elegante de modelar "isso pode ser A ou B, e o TS vai me obrigar
+a tratar os dois casos".

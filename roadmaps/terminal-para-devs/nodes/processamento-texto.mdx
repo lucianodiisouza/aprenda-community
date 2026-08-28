@@ -1,0 +1,192 @@
+---
+id: processamento-texto
+title: "Processamento de texto: sed, awk, cut, sort"
+resources:
+  - title: "sed - manual completo (GNU, EN)"
+    url: https://www.gnu.org/software/sed/manual/sed.html
+    type: doc
+    lang: en
+    free: true
+  - title: "awk - manual completo (GNU, EN)"
+    url: https://www.gnu.org/software/gawk/manual/gawk.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando você precisa **transformar** texto (não só buscar), entram
+`sed`, `awk`, `cut`, `sort`, `uniq`, `tr`. São as ferramentas
+que fazem em milissegundos o que você levaria minutos no editor
+de texto.
+
+## `sed` - editor de streams
+
+O `sed` (stream editor) lê linha a linha, aplica transformações,
+imprime resultado. Caso de uso principal: **substituir texto**.
+
+```bash
+# substitui primeira ocorrência por linha
+sed 's/velho/novo/' arquivo.txt
+
+# substitui TODAS ocorrências (flag 'g' = global)
+sed 's/velho/novo/g' arquivo.txt
+
+# salva em outro arquivo (não modifica o original)
+sed 's/velho/novo/g' arquivo.txt > novo.txt
+
+# edita in-place (modifica o próprio arquivo)
+sed -i 's/velho/novo/g' arquivo.txt     # Linux
+sed -i '' 's/velho/novo/g' arquivo.txt   # macOS (BSD)
+
+# múltiplas substituições
+sed -e 's/a/A/g' -e 's/b/B/g' arquivo.txt
+
+# deleta linhas que contém padrão
+sed '/palavrra/d' arquivo.txt
+
+# imprime linhas 1 a 5
+sed -n '1,5p' arquivo.txt
+```
+
+> **Diferença macOS vs Linux no `sed -i`**: o BSD (macOS) exige
+> `''` como argumento explícito da flag `-i`. O GNU (Linux) não.
+> Pra script cross-platform, use `sed -i.bak 's/x/y/g' arquivo.txt`
+> (cria backup `.bak` automaticamente, funciona nos dois).
+
+A sintaxe do `s/velho/novo/` aceita regex (POSIX basic). Caracteres
+especiais precisam escapar: `\/`, `\.`, `\&` (mantém o match
+na substituição).
+
+## `awk` - processador de colunas
+
+O `awk` é uma linguagem completa (orientada a campos), mas 90%
+do uso é: **processar colunas**.
+
+```bash
+# imprime a 1a coluna de cada linha
+awk '{print $1}' arquivo.txt
+
+# 1a e 3a colunas
+awk '{print $1, $3}' arquivo.txt
+
+# separa por vírgula em vez de espaço
+awk -F, '{print $1, $3}' arquivo.csv
+
+# filtra linhas (1a coluna > 100)
+awk '$1 > 100' arquivo.txt
+
+# combina: filtra + processa
+awk '$3 > 100 {print $1, $3}' dados.txt
+
+# soma a 2a coluna
+awk '{sum += $2} END {print sum}' arquivo.txt
+
+# conta linhas
+awk 'END {print NR}' arquivo.txt
+
+# imprime linhas com número
+awk '{print NR, $0}' arquivo.txt
+```
+
+A mágica do `awk`: ele lê cada linha, separa em campos
+automaticamente (`$1`, `$2`, ..., `$NF` é o último), e roda o
+script em cada. Útil pra CSV, logs estruturados, qualquer coisa
+colunar.
+
+> **Quando usar `awk` vs `cut`?**: `cut` é mais simples e rápido
+> pra casos de **só extrair colunas**. `awk` é mais poderoso:
+> pode filtrar, transformar, somar, condicionar, formatar.
+
+## `cut` - extrai colunas
+
+```bash
+# coluna 1, separado por tab (default)
+cut -f1 arquivo.txt
+
+# colunas 1 e 3
+cut -f1,3 arquivo.txt
+
+# colunas 1 a 3
+cut -f1-3 arquivo.txt
+
+# separador customizado (ex: :)
+cut -d: -f1 /etc/passwd             # todos os usuários do sistema
+
+# por caractere (não por campo)
+cut -c1-10 arquivo.txt              # primeiros 10 chars de cada linha
+```
+
+## `sort`, `uniq`, `tr`
+
+```bash
+# ordena alfabeticamente
+sort arquivo.txt
+
+# ordena numericamente
+sort -n dados.txt                   # 2 vem antes de 10 (não 10 antes de 2)
+
+# reverse
+sort -r arquivo.txt
+
+# por coluna específica
+sort -k2,2 dados.txt                # ordena pela 2a coluna
+
+# único (combinado com sort)
+sort arquivo.txt | uniq             # ordena + remove duplicatas consecutivas
+sort -u arquivo.txt                 # mesma coisa, direto
+
+# conta ocorrências
+sort arquivo.txt | uniq -c          # imprime contagem por linha
+
+# tr substitui caracteres
+echo "hello" | tr 'a-z' 'A-Z'       # HELLO
+echo "123" | tr -d '0-9'             # remove dígitos (vira vazio)
+echo "a b c" | tr ' ' '\n'          # troca espaço por newline
+```
+
+`sort | uniq -c | sort -rn` é o **canivete suíço** de "quais
+são as linhas mais frequentes num arquivo". Combinação clássica
+em análise de logs.
+
+## Expressões regulares uteis
+
+Em `grep`, `sed`, `awk`:
+
+- `^` - início da linha
+- `$` - fim da linha
+- `.` - qualquer caractere único
+- `*` - 0+ do anterior
+- `+` - 1+ do anterior (com `-E`)
+- `?` - 0 ou 1 do anterior (com `-E`)
+- `[abc]` - qualquer um de a, b, c
+- `[^abc]` - qualquer um que NÃO seja a, b, c
+- `[0-9]` - dígito
+- `\b` - boundary (palavra)
+- `(x|y)` - alternation (com `-E`)
+
+## Tabela: qual usar quando
+
+| Comando | Quando                                          |
+| ------- | ----------------------------------------------- |
+| `cut`   | Extrair colunas por posição/delimitador fixo    |
+| `sort`  | Ordenar linhas                                 |
+| `uniq`  | Remover duplicatas (precisa de `sort` antes)   |
+| `tr`    | Substituir/deletar caracteres um a um           |
+| `sed`   | Substituir texto, deletar linhas, transformações simples |
+| `awk`   | Processamento colunar complexo, condicionais, somas |
+
+Três conceitos que você acabou de aprender:
+
+- **`sed`** é pra "substituir" e "deletar linhas". Aceita regex.
+- **`awk`** é uma linguagem de processamento colunar. Quando `cut`
+  não basta, `awk` resolve.
+- **`sort | uniq -c | sort -rn`** é a combinação canônica pra
+  "frequência de linhas" (logs, CSV, etc).
+
+> Dica: pra arquivos de log, `awk '$9 == 500 {print $7}' access.log`
+> extrai URLs de requests que retornaram erro 500. Combinar com
+> `sort | uniq -c | sort -rn` te dá o top N de URLs quebradas.
+
+No próximo, **variáveis de ambiente e configuração do shell** -
+de onde o shell lê config, como exportar variáveis, e o que é
+`PATH`.

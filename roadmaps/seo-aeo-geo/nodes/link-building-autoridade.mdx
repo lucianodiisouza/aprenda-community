@@ -1,0 +1,67 @@
+---
+id: link-building-autoridade
+title: "Link Building e Autoridade de Domínio"
+resources:
+  - title: "Qualify your outbound links (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links
+    type: doc
+    lang: en
+    free: true
+  - title: "Link Building (Moz Beginner's Guide to SEO, em inglês)"
+    url: https://moz.com/beginners-guide-to-link-building
+    type: doc
+    lang: en
+    free: true
+---
+
+Até aqui, a trilha cobriu o que acontece dentro do seu site. Link building é
+sobre o que outros sites fazem: apontar um link pro seu conteúdo. Cada link
+de um site relevante funciona como um voto de confiança.
+
+### Nem todo link vale o mesmo
+
+```text
+link de um site conhecido e relevante na sua área  → peso alto
+link de um site desconhecido, sem relação com o tema → peso baixo
+link comprado ou trocado artificialmente             → risco de penalização
+```
+
+O Google avalia relevância e confiabilidade da origem do link, não só a
+quantidade. Cem links de sites de spam pesam menos (ou pesam contra você)
+comparado a um link de uma fonte respeitada na sua área.
+
+### Rel="nofollow" e rel="sponsored"
+
+```html
+<a href="https://parceiro.com" rel="sponsored">nosso parceiro</a>
+<a href="https://comentario-externo.com" rel="nofollow">fonte citada</a>
+```
+
+Esses atributos avisam ao buscador que um link é pago (`sponsored`) ou não
+deveria transferir confiança automática (`nofollow`). Usar errado, como
+deixar um link pago sem marcação, pode gerar penalização pro site que
+recebeu o link.
+
+### Como conseguir links de forma legítima
+
+```text
+Conteúdo original e útil o suficiente pra outros quererem citar
+Guest post em blogs relevantes da sua área
+Participação genuína em comunidades e fóruns técnicos
+Ferramenta ou recurso gratuito que resolve um problema real
+```
+
+- **Link building** é conseguir que outros sites apontem pra você, de forma
+  orgânica.
+- **Relevância** da origem importa mais que quantidade de links.
+- **`rel="nofollow"`/`rel="sponsored"`** marcam links pagos ou não
+  editoriais corretamente.
+- Comprar link em massa é a forma mais rápida de ser penalizado, não de
+  subir no ranking.
+
+> Dica: o jeito mais sustentável de conseguir link é inverter a pergunta. Em
+> vez de "como consigo um link", pergunte "que conteúdo eu poderia criar que
+> outra pessoa da minha área quereria citar como fonte".
+
+No próximo nó, a trilha muda de direção: como aparecer numa resposta direta
+de busca, sem a pessoa nem precisar clicar em nada. AEO.

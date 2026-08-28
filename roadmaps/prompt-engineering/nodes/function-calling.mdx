@@ -1,0 +1,158 @@
+---
+id: function-calling
+title: "Function calling e structured output"
+resources:
+  - title: "OpenAI - Structured Outputs (EN, JSON Schema garantido)"
+    url: https://platform.openai.com/docs/guides/structured-outputs
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Tool use overview (EN, canônico)"
+    url: https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    type: doc
+    lang: en
+    free: true
+  - title: "JSON Schema - Specification (EN, referência do schema)"
+    url: https://json-schema.org/specification
+    type: doc
+    lang: en
+    free: true
+---
+
+Se RAG é a técnica de produto mais importante, **function calling** é a
+técnica de **engenharia** mais importante. É o que viabiliza o modelo
+interagir com código de forma **determinística** - não "espera-se que
+saia X", mas "é **garantido** que sai X" (desde que você use as
+ferramentas certas do provider).
+
+## O que é function calling, de verdade
+
+É o modelo gerando **uma chamada de função estruturada** em vez de
+texto, quando precisa agir. Em vez de o modelo escrever "Eu deveria
+chamar a função X com argumento Y", ele gera:
+
+```json
+{
+  "name": "consultar_estoque",
+  "arguments": {
+    "produto_id": "tenis-x-42",
+    "quantidade_minima": 1
+  }
+}
+```
+
+Seu código **parseia esse JSON, executa a função, e devolve o resultado
+pro modelo**, que aí sim gera a resposta final em texto (ou outra
+chamada de função, se ainda precisar de mais).
+
+## Structured outputs: a garantia
+
+Em 2024, OpenAI e Anthropic lançaram **structured outputs** (também
+chamado de "JSON mode com schema"). A diferença pro function calling
+clássico: você dá um **JSON Schema** e o provider **garante** que a
+resposta casa 100% com ele.
+
+Sem structured output:
+> "Responda em JSON com `nome`, `idade`, `tags`."
+> → Modelo **tende** a seguir, mas pode escapar.
+
+Com structured output:
+> Você dá o schema, o provider força o modelo a só gerar tokens
+> compatíveis. **Garantia**, não esperança.
+
+<Mermaid
+  chart={`flowchart TB
+    A["Schema JSON\\n(que você define)"] --> B["Provider\\ncompila em gramática"]
+    B --> C["Modelo\\nsó gera tokens\\nválidos nessa gramática"]
+    C --> D["Saída:\\nJSON 100% conforme\\no schema"]
+    E["Sem structured output"] -.-> F["Modelo pode escapar\\ndo schema"]
+    F -.-> G["Parser quebra"]`}
+  caption="Structured outputs: a grammar do schema é forçada no sampling. Saída 100% conforme, sem parser quebrando."
+/>
+
+## Quando usar function calling vs. só structured output
+
+**Function calling (tool use)** - quando o modelo **precisa agir**:
+chamar API, consultar banco, executar cálculo, ler arquivo. O modelo
+**decide** se chama e com quais argumentos.
+
+**Structured output (sem tool)** - quando você quer **só** uma resposta
+JSON determinística, sem ação. Exemplo: classificar review, extrair
+entidades de um texto, gerar dados estruturados. Você dá o schema, o
+modelo responde em JSON, fim.
+
+**Os dois juntos** - a versão mais comum em produção. O modelo tem
+tools disponíveis e responde em JSON estruturado, ambos controlados
+por schema. Você tem **ação confiável** e **resposta final
+parseável**.
+
+## Anatomia de uma definição de função
+
+O modelo "decide" chamar uma função baseado em duas coisas: o que o
+usuário pediu e a **descrição da função**. Então a qualidade da
+descrição é crítica.
+
+```json
+{
+  "name": "consultar_status_pedido",
+  "description": "Consulta o status atual de um pedido. Use quando o
+    usuário perguntar sobre entrega, rastreamento ou situação de um
+    pedido. Retorna status, última atualização e código de rastreio
+    se disponível.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "pedido_id": {
+        "type": "string",
+        "description": "ID único do pedido no formato 'PED-XXXXX'"
+      }
+    },
+    "required": ["pedido_id"]
+  }
+}
+```
+
+Repare:
+- **Nome claro e verb-led** (`consultar_status_pedido`, não
+  `get_status`).
+- **Descrição em prosa** que diz **quando** o modelo deve usar.
+- **Parâmetros tipados** com descrição individual.
+- **`required` explícito** - o que o modelo é obrigado a fornecer.
+
+## Erros comuns
+
+- **Descrição vaga** - "consulta dados". O modelo não sabe quando
+  usar. Seja explícito: "Use quando o usuário perguntar X, Y ou Z."
+- **Nome em camelCase inconsistente** com o resto do código.
+- **Funções demais** - o modelo se perde se tiver 20+ ferramentas.
+  Agrupe, ou exponha dinamicamente só o que faz sentido no contexto.
+- **Não validar argumentos** - mesmo com structured output,
+  valide (no seu código) que os valores fazem sentido. Schema
+  garante **formato**, não **sentido**.
+
+<Quiz
+  question="Você precisa extrair 3 campos de cada review (sentimento, categoria, urgência) e o resultado vai pra um banco. Qual abordagem?"
+  options={[
+    { text: "Prompt normal pedindo JSON e parsear a resposta na unha", correct: false, explanation: "Funciona 95% das vezes, mas os 5% quebram seu pipeline. Pra produção, structured output vale a robustez." },
+    { text: "Structured output com JSON Schema definindo os 3 campos, e o provider garante conformidade", correct: true },
+    { text: "Function calling pra cada campo, com 3 chamadas separadas", correct: false, explanation: "Function calling é pra quando o modelo precisa AGIR. Aqui ele só precisa RESPONDER. Structured output resolve, sem custo de execução." }
+  ]}
+/>
+
+- **Function calling** = modelo age no mundo, gerando chamadas
+  estruturadas que seu código executa.
+- **Structured output** = resposta JSON garantida conforme um schema,
+  sem ação.
+- **Os dois juntos** é o padrão em produção: tools + resposta final
+  estruturada.
+- **A descrição da função é metade do trabalho.** Modelo decide com
+  base nisso.
+- **Schema garante formato, não sentido.** Sempre valide no código.
+
+> Dica: comece qualquer projeto novo com **structured output** desde o
+> dia 1. "Esperar que o JSON venha certo" é a forma #1 de bug em
+> produção com LLMs.
+
+No próximo nó, vamos olhar pra uma parte do prompt que muita gente
+ignora (ou confunde): a diferença entre **system prompt** e **user
+prompt**.

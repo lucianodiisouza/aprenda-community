@@ -1,0 +1,91 @@
+---
+id: como-um-modelo-pensa
+title: "Como um modelo \"pensa\": tokens, contexto e temperatura"
+resources:
+  - title: "Anthropic - How does Claude work? (EN, intuição visual)"
+    url: https://docs.anthropic.com/en/docs/intro/about-claude
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Tokenizer playground (veja como o texto vira tokens)"
+    url: https://platform.openai.com/tokenizer
+    type: exercicio
+    lang: en
+    free: true
+  - title: "Hugging Face - O que é um token? (PT-BR)"
+    url: https://huggingface.co/learn/llm-course/chapter2/4
+    type: doc
+    lang: pt
+    free: true
+---
+
+"Por dentro", um LLM não trabalha com palavras - ele trabalha com **tokens**.
+Um token é um pedaço de texto que pode ser uma palavra inteira, uma sílaba,
+uma letra ou um símbolo de pontuação. "Olá, tudo bem?" em português pode virar
+4 a 6 tokens, dependendo do modelo. Inglês é mais eficiente (1 token ≈ 4
+caracteres em média); português, por ter palavras mais longas e acentos, usa
+**mais tokens** pro mesmo conteúdo.
+
+Por que isso importa pra você? **Três coisas práticas:**
+
+1. **Custo.** A maioria dos providers cobra por **token**, não por palavra.
+   Um prompt em PT-BR costuma custar ~1,5× o equivalente em inglês.
+2. **Janela de contexto.** O modelo tem um limite de quanto "lembrança"
+   consegue usar de uma vez - a **context window**. Claude Sonnet 4 é 200k
+   tokens, GPT-4o é 128k, Gemini 1.5 Pro chega a 1M. Se o seu prompt +
+   histórico + documentos passar desse limite, ele **trunca** (corta do
+   começo) ou recusa.
+3. **Qualidade por token.** Quanto mais tokens você gasta, mais "espaço" o
+   modelo tem pra se perder. Prompts longos não são melhores - são mais
+   caros e por vezes piores.
+
+A geração funciona assim, simplificado:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Prompt\\n(texto de entrada)"] --> B["Tokenizer\\n(texto → tokens)"]
+    B --> C["Modelo\\n(prevê próximo token)"]
+    C --> D{"Mais tokens?"}
+    D -- Sim --> C
+    D -- Não --> E["Detokenizer\\n(tokens → texto)"]
+    E --> F["Resposta\\n(texto de saída)"]`}
+  caption="Fluxo simplificado: o modelo gera a resposta um token por vez, prevendo o próximo a partir de todos os anteriores."
+/>
+
+Repare: o modelo **não pensa a resposta inteira** e depois escreve. Ele gera
+**um token de cada vez**, e cada novo token é influenciado por todos os
+anteriores - incluindo o seu prompt, o que ele já escreveu, e a **temperatura**.
+
+**Temperatura** é o "botão de criatividade":
+
+- **Baixa (0.0–0.3)** - respostas mais determinísticas, conservadoras,
+  repetitivas. Boa pra código, fatos, extração de dados.
+- **Média (0.5–0.8)** - equilíbrio entre coerência e variação. Padrão pra
+  conversa e escrita.
+- **Alta (1.0–1.5)** - respostas mais "criativas" e imprevisíveis. Boa pra
+  brainstorming, ruim pra tarefas factuais.
+
+<Quiz
+  question="Você precisa gerar 50 nomes de produto a partir de uma descrição. Que temperatura é provavelmente a melhor escolha?"
+  options={[
+    { text: "0.0 - máxima determinismo", correct: false, explanation: "Em temperatura 0, as 50 saídas tenderiam a ser muito parecidas ou idênticas." },
+    { text: "0.7-0.9 - equilíbrio entre coerência e variação", correct: true },
+    { text: "0.0 e gerar 50 vezes, trocando o prompt a cada vez", correct: false, explanation: "Funcionaria, mas é mais caro e mais lento. Temperatura alta é o caminho natural pra essa tarefa." }
+  ]}
+/>
+
+- **Token é a unidade de trabalho** do modelo - texto vira tokens, tokens
+  viram texto. **Custo e contexto são medidos em tokens**.
+- **Context window** é a "memória" total do modelo num único request. Se
+  passar, o começo é esquecido.
+- **Temperatura** controla quanto o modelo arrisca. **0** = conservador;
+  **alto** = criativo (e por vezes incoerente).
+- **Português gasta mais tokens** que inglês pro mesmo conteúdo. Não é
+  defeito - é como a tokenização foi treinada.
+
+> Dica: antes de gastar dinheiro num prompt grande, cole-o no
+> [tokenizer da OpenAI](https://platform.openai.com/tokenizer) e descubra
+> exatamente quantos tokens ele custa. É o "fuel gauge" da IA.
+
+No próximo nó, vamos usar tudo isso na prática: a **anatomia de um prompt
+bem-feito** - o esqueleto que você vai reusar pelo resto da trilha.

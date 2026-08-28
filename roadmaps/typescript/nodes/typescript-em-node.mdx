@@ -1,0 +1,119 @@
+---
+id: typescript-em-node
+title: "TypeScript em Node: tsx, Build e ESM"
+resources:
+  - title: "tsx - GitHub do projeto (em inglês)"
+    url: https://github.com/privatenumber/tsx
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript Handbook: ECMAScript Module Support (em inglês)"
+    url: https://www.typescriptlang.org/docs/handbook/2/modules.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Você tem um `tsconfig.json` configurado. Agora precisa de duas
+coisas: rodar TS direto no desenvolvimento (sem build a cada
+vez) e empacotar pra produção. Esse nó cobre o **caminho
+mínimo**: `tsx` no dev, `tsc` no build.
+
+### Desenvolvimento: `tsx`
+
+O `tsx` é um executor de TypeScript que **não precisa de etapa
+de build** - ele transforma o código em memória, sob demanda.
+Quase sempre é a melhor escolha pra dev.
+
+```bash
+npm install -D tsx
+```
+
+Adicione scripts no `package.json`:
+
+```jsonc
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc"
+  }
+}
+```
+
+- `npm run dev` - sobe o servidor em modo watch; qualquer mudança
+  em `src/` recarrega.
+- `npm run build` - roda `tsc`, gera `dist/` com `.js` pronto pra
+  produção.
+- `npm start` - roda o JS compilado (em produção, é o que o
+  servidor/container usa).
+
+### ESM vs CJS: a decisão
+
+Você vai encontrar dois sistemas de módulos:
+
+- **CommonJS (CJS)** - `require()` / `module.exports`. Padrão antigo
+  do Node, ainda presente em muita biblioteca.
+- **ECMAScript Modules (ESM)** - `import` / `export`. Padrão moderno,
+  mesmo do browser.
+
+O TS suporta os dois. Recomendações pra projeto novo em 2026:
+
+```jsonc
+// package.json
+{
+  "type": "module"
+}
+```
+
+Com `"type": "module"`, o Node trata todo `.js` como ESM. Aí
+no TS:
+
+```typescript
+// src/server.ts
+import express from "express"; // ESM - limpo
+// const express = require("express"); // CJS - evita
+```
+
+### Imports com extensão
+
+Em ESM, **a extensão do arquivo é obrigatória** no source TS, mas
+o TS esconde isso no source (e injeta no build):
+
+```typescript
+// src/server.ts - pode omitir .js
+import { rotas } from "./rotas.js";
+//             ↑ no source, você escreve assim; o TS compõe pro .js
+//               no build (porque em ESM a extensão é obrigatória)
+
+// ou usar .ts explicitamente em alguns setups
+import { rotas } from "./rotas.ts";
+```
+
+### Quando **não** usar `tsx` em produção
+
+`tsx` em produção funciona, mas a recomendação é **compilar
+com `tsc` e rodar o `.js`**. Razões:
+
+- **Performance**: o `tsx` precisa transformar o código a cada
+  inicialização. O `.js` compilado já é JS puro, Node lê direto.
+- **Determinismo**: o build gera o mesmo `.js` toda vez, mais
+  fácil de revisar em code review.
+- **Imagens Docker menores**: o `dist/` tem só JS, sem `node_modules`
+  de TypeScript.
+
+Três conceitos pra fixar:
+
+- **`tsx`** roda TS direto, sem build - ideal pra desenvolvimento.
+- **`tsc`** compila pra `.js` - ideal pra produção, e o que vai
+  no Docker/CI.
+- **ESM** é o padrão moderno; `"type": "module"` no `package.json`
+  ativa no Node. `import`/`export` em vez de `require`/`module.exports`.
+
+> Dica: se aparecer o erro `Cannot use import statement outside a module`,
+  o `package.json` não tem `"type": "module"` OU a extensão do import
+  tá errada. Olha os dois.
+
+No próximo nó, vamos usar TypeScript **com Express** - como tipar
+`req`, `res`, middlewares e erros de forma que o editor ajude em
+vez de atrapalhar.

@@ -1,0 +1,65 @@
+---
+id: seo-on-page
+title: "SEO On-Page: Title, Meta Description e Headings"
+resources:
+  - title: "Influence your title links in search results (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/title-link
+    type: doc
+    lang: en
+    free: true
+  - title: "Control your snippets in search results (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/snippet
+    type: doc
+    lang: en
+    free: true
+---
+
+SEO on-page é tudo que você controla direto no HTML da própria página. Três
+elementos concentram a maior parte do impacto, e todos são só marcação.
+
+### Title: a linha mais importante da página
+
+```html
+<title>Calculadora de Gorjeta Online e Grátis | NomeDoSite</title>
+```
+
+O `<title>` vira o link azul clicável no resultado de busca. Regras
+práticas: palavra-chave principal perto do início, entre 50 e 60 caracteres
+(o que passar disso é cortado na tela), único em cada página do site.
+
+### Meta description: o convite pro clique
+
+```html
+<meta name="description" content="Divida a conta e a gorjeta entre as pessoas em segundos. Calculadora grátis, sem cadastro, funciona no celular.">
+```
+
+A meta description não afeta ranqueamento diretamente, mas afeta se a
+pessoa clica ou não. Entre 150 e 160 caracteres, com um motivo claro pra
+clicar naquele resultado e não no de baixo.
+
+### Headings: a estrutura que buscador e leitor seguem juntos
+
+```html
+<h1>Calculadora de Gorjeta</h1>
+  <h2>Como calcular a gorjeta</h2>
+  <h2>Como dividir entre várias pessoas</h2>
+    <h3>Dividindo com valores diferentes por pessoa</h3>
+```
+
+Um `<h1>` por página, com a palavra-chave principal. `<h2>` e `<h3>` seguem
+hierarquia, sem pular nível (nunca ir de `<h1>` direto pra `<h3>`).
+
+- **`<title>`**: 50-60 caracteres, palavra-chave perto do início, único por
+  página.
+- **Meta description**: 150-160 caracteres, foco em fazer a pessoa clicar.
+- **Headings**: um `<h1>` só, hierarquia sem pular nível.
+- Nenhum desses três elementos é invisível pro código, mas quase sempre é
+  ignorado na hora de codar.
+
+> Dica: `<title>` e meta description parecem detalhe, mas são o único
+> "anúncio grátis" que uma página tem num resultado de busca. Escrever os
+> dois pensando em quem vai ler, não só em qual palavra-chave encaixar, é o
+> que separa clique de scroll.
+
+No próximo nó, você vai olhar pra fora do conteúdo em si: a URL da página e
+os links que conectam seu site por dentro.

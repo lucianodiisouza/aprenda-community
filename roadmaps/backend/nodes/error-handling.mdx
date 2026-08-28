@@ -1,0 +1,120 @@
+---
+id: error-handling
+title: "Tratamento de Erros em uma API"
+resources:
+  - title: "Express - Error handling (docs oficial)"
+    url: https://expressjs.com/pt-br/guide/error-handling.html
+    type: doc
+    lang: pt
+    free: true
+  - title: "MDN: try...catch (PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Statements/try...catch
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando uma rota dá erro sem tratamento, o Express devolve um 500
+genérico e imprime a stack trace no log. Pra um cliente da sua API,
+isso é inútil: ele não sabe se o problema foi input inválido (culpa
+dele), recurso inexistente (esperado) ou bug no servidor (culpa sua).
+
+O caminho profissional é: **tipos de erro bem definidos + um middleware
+central que formata a resposta**.
+
+### O problema: erro não-tratado em async
+
+```javascript
+app.get("/usuarios/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    throw new Error("ID inválido"); // ⚠️ 500 genérico pro cliente
+  }
+  const usuario = await prisma.user.findUnique({ where: { id } });
+  if (!usuario) {
+    throw new Error("Usuário não encontrado"); // ⚠️ 500 também
+  }
+  res.json(usuario);
+});
+```
+
+O Express, por padrão, não captura Promise rejeitada numa rota async.
+Aí ou você embrulha em `try/catch` em toda rota, ou usa um helper.
+
+### Passo 1: classes de erro com semântica
+
+```javascript
+// errors.js
+export class HttpError extends Error {
+  constructor(status, mensagem) {
+    super(mensagem);
+    this.status = status;
+  }
+}
+
+export class NotFoundError extends HttpError {
+  constructor(mensagem = "Recurso não encontrado") {
+    super(404, mensagem);
+  }
+}
+
+export class ValidationError extends HttpError {
+  constructor(mensagem = "Dados inválidos") {
+    super(400, mensagem);
+  }
+}
+```
+
+### Passo 2: lançar nas rotas
+
+```javascript
+import { NotFoundError, ValidationError } from "./errors.js";
+
+app.get("/usuarios/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) throw new ValidationError("ID inválido");
+
+  const usuario = await prisma.user.findUnique({ where: { id } });
+  if (!usuario) throw new NotFoundError("Usuário não encontrado");
+
+  res.json(usuario);
+});
+```
+
+### Passo 3: middleware central
+
+```javascript
+// middleware de erro - sempre com 4 argumentos
+app.use((err, req, res, next) => {
+  const status = err.status ?? 500;
+  const mensagem = status === 500 ? "Erro interno do servidor" : err.message;
+
+  if (status === 500) {
+    console.error("💥 Erro não tratado:", err); // loga pra você ver
+  }
+
+  res.status(status).json({ erro: mensagem });
+});
+```
+
+O Express reconhece um middleware como **tratador de erro** porque
+tem **4 parâmetros** (`err, req, res, next`) - o `next` é a dica, mesmo
+que você não use. Aí, qualquer rota que chamar `next(erro)` ou lançar
+dentro de um async wrapper cai aqui.
+
+Três conceitos pra fixar:
+
+- **HttpError** - classe base com `status`; subclasses (`NotFoundError`,
+  `ValidationError`) especializam o status.
+- **Middleware de erro** - função com 4 parâmetros; o Express entende
+  que é o tratador central.
+- **Não vaze erro 500** - loga a stack internamente, devolve mensagem
+  genérica pro cliente (segurança + experiência).
+
+> Dica: erros 4xx são "culpa do cliente" (input ruim, recurso que não
+> existe) - a mensagem pode ser específica. Erros 5xx são "culpa do
+> servidor" - a mensagem tem que ser genérica pra não vazar detalhe
+> interno.
+
+No próximo nó, vamos ver como organizar a API em vários endpoints
+REST com status codes corretos.

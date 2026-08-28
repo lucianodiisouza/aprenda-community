@@ -1,0 +1,106 @@
+{
+  "slug": "seo-aeo-geo",
+  "title": "SEO, AEO e GEO",
+  "description": "Trilha prática de otimização para busca: dos fundamentos de SEO técnico e on-page até AEO (busca por resposta) e GEO (motores generativos como ChatGPT e Perplexity).",
+  "difficulty": "intermediario",
+  "skills": ["seo", "aeo", "geo", "schema-markup", "core-web-vitals"],
+  "creators": [
+    {
+      "name": "Breno Alvim",
+      "github": "obrenoalvim"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "O que é SEO e Por que Importa pra Quem Programa",
+      "type": "topic",
+      "recommended": true,
+      "children": ["como-buscadores-funcionam"]
+    },
+    {
+      "id": "como-buscadores-funcionam",
+      "title": "Como um Buscador Encontra e Ordena Páginas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pesquisa-palavras-chave"]
+    },
+    {
+      "id": "pesquisa-palavras-chave",
+      "title": "Pesquisa de Palavras-Chave e Intenção de Busca",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seo-on-page"]
+    },
+    {
+      "id": "seo-on-page",
+      "title": "SEO On-Page: Title, Meta Description e Headings",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estrutura-links-internos"]
+    },
+    {
+      "id": "estrutura-links-internos",
+      "title": "URL, Arquitetura e Links Internos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seo-tecnico"]
+    },
+    {
+      "id": "seo-tecnico",
+      "title": "SEO Técnico: Robots.txt, Sitemap e Core Web Vitals",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["eeat-qualidade-conteudo"]
+    },
+    {
+      "id": "eeat-qualidade-conteudo",
+      "title": "E-E-A-T: o que Torna um Conteúdo Confiável",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["dados-estruturados"]
+    },
+    {
+      "id": "dados-estruturados",
+      "title": "Dados Estruturados: Ensinando o Buscador a Ler sua Página",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["link-building-autoridade"]
+    },
+    {
+      "id": "link-building-autoridade",
+      "title": "Link Building e Autoridade de Domínio",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["introducao-aeo"]
+    },
+    {
+      "id": "introducao-aeo",
+      "title": "AEO: Otimizando pra Motor de Resposta",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["introducao-geo"]
+    },
+    {
+      "id": "introducao-geo",
+      "title": "GEO: Otimizando pra IA Generativa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estrutura-para-ia"]
+    },
+    {
+      "id": "estrutura-para-ia",
+      "title": "Escrevendo Conteúdo que uma IA Consegue Citar",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["monitoramento-visibilidade-ia"]
+    },
+    {
+      "id": "monitoramento-visibilidade-ia",
+      "title": "Monitorando se Você Está Sendo Citado",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

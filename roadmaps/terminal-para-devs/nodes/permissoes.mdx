@@ -1,0 +1,161 @@
+---
+id: permissoes
+title: "Permissões: chmod, chown e sudo"
+resources:
+  - title: "Permissões de arquivo (MDN, PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+    type: doc
+    lang: pt
+    free: true
+  - title: "chmod - manual completo (GNU, EN)"
+    url: https://www.gnu.org/software/coreutils/manual/html_node/chmod-invocation.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Em algum momento você vai tentar rodar um script e receber
+"Permission denied". Aí entra `chmod`. O sistema de permissões
+do Unix é elegante - uma vez que você entende o modelo, o resto
+segue.
+
+## Os 3 grupos, 3 bits
+
+```bash
+ls -l arquivo.txt
+# -rw-r--r--  1 luciano  staff  1234  Aug 25 10:00  arquivo.txt
+#  ^^^^^^^^^^                                  ^
+#  permissões                                 nome
+```
+
+As permissões são 9 caracteres, em **3 grupos de 3 bits**:
+
+- **dono** (owner) - quem criou o arquivo
+- **grupo** (group) - conjunto de usuários (geralmente o grupo
+  primário do dono)
+- **outros** (others) - todo o resto
+
+Cada grupo tem 3 bits:
+- `r` (read) - pode ler o conteúdo
+- `w` (write) - pode modificar
+- `x` (execute) - pode executar (se for script/binário) ou
+  entrar (se for diretório)
+
+`-rw-r--r--` significa:
+- dono: `rw-` (ler e escrever, não executar)
+- grupo: `r--` (só ler)
+- outros: `r--` (só ler)
+
+## `chmod` - mudando permissões
+
+Dois jeitos de especificar: **simbólico** (legível) e **numérico**
+(conciso). Os dois fazem a mesma coisa.
+
+### Simbólico
+
+```bash
+chmod u+x script.sh                # adiciona execução pro dono
+chmod g+w arquivo.txt              # adiciona escrita pro grupo
+chmod o-r segredo.txt              # remove leitura dos outros
+chmod a+x script.sh                # 'a' = all (ugo)
+chmod u=rwx,g=r,o= arquivo.txt     # seta exato (dono rwx, grupo r, outros nada)
+```
+
+Os símbolos: `u` (user/dono), `g` (group), `o` (others), `a` (all).
+Operações: `+` adiciona, `-` remove, `=` seta exato.
+
+### Numérico (octal)
+
+Cada bit vale: `r` = 4, `w` = 2, `x` = 1. Soma pra cada grupo:
+
+| Perm | Valor |
+| ---- | ----- |
+| `---` | 0 |
+| `--x` | 1 |
+| `-w-` | 2 |
+| `-wx` | 3 |
+| `r--` | 4 |
+| `r-x` | 5 |
+| `rw-` | 6 |
+| `rwx` | 7 |
+
+Exemplos comuns:
+
+```bash
+chmod 755 script.sh                 # rwxr-xr-x (dono tudo, outros leem+executam)
+chmod 644 arquivo.txt               # rw-r--r-- (dono escreve, outros leem)
+chmod 600 ~/.ssh/id_rsa             # rw------- (só dono - chave SSH privada)
+chmod 700 ~/secrets/                # rwx------ (só dono)
+chmod -R 755 public/                # recursivo no diretório
+```
+
+> **Por que `chmod 755` é o padrão pra scripts/binários?** É o
+> mínimo que funciona: dono pode editar, todo mundo pode executar.
+> É o que vem quando você baixa um binário ou compila.
+
+## `chown` - mudando dono e grupo
+
+```bash
+chown luciano arquivo.txt           # muda dono pra luciano
+chown luciano:staff arquivo.txt     # dono e grupo
+chown :staff arquivo.txt            # só grupo
+chown -R luciano:staff projeto/     # recursivo
+```
+
+Só o **root** pode mudar o dono de um arquivo (porque seria uma
+escalação de privilégio caso contrário). O grupo pode ser mudado
+por quem pertence ao grupo destino.
+
+## `sudo` e `su` - executando como outro usuário
+
+```bash
+sudo apt install postgresql        # roda como root (precisa de senha)
+sudo -u postgres psql              # roda como o usuário postgres
+sudo -i                            # abre shell como root (interativo)
+
+su - postgres                       # troca de usuário (precisa da senha dele)
+```
+
+`sudo` é o "faça isso como root" (ou outro usuário via `-u`).
+Você digita **sua** senha (não a do root) e o sistema verifica se
+você pode rodar sudo (geralmente, todo mundo no grupo `sudo`/`wheel`).
+
+`su` é o "troque de usuário" - mais baixo nível, mais verboso.
+Na prática, `sudo` cobre 90% dos casos.
+
+> **Aviso**: `sudo` é poderoso. Comandos destrutivos rodam sem
+> confirmação. Antes de usar `sudo rm -rf`, releia o caminho
+> 3 vezes. `sudo` não tem "undo".
+
+## `umask` - permissão default de novos arquivos
+
+Quando você cria um arquivo, a permissão é `666 - umask` (pra
+arquivos) ou `777 - umask` (pra diretórios). O umask padrão é
+`022`:
+
+```bash
+umask                              # mostra o atual (geralmente 022)
+umask 027                          # arquivos 640, diretórios 750 (mais restritivo)
+```
+
+Útil em servidores multi-usuário onde você quer permissões padrão mais
+restritivas. Pra uso pessoal, raramente muda.
+
+Três conceitos que você acabou de aprender:
+
+- **3 grupos (dono, grupo, outros) x 3 bits (r, w, x)** = 9
+  bits. `chmod` muda esses bits. Modo numérico é só a soma dos
+  valores.
+- **`chown` muda dono/grupo**, `chmod` muda as permissões em si.
+  São coisas diferentes.
+- **`sudo` pede sua senha pra te dar poder de root** - é o
+  portão, não a ferramenta destrutiva. `sudo` em si não quebra
+  nada, mas o comando que vem depois pode.
+
+> Dica: o `ls -la` colorido (`ls -laG` no macOS, `ls -la
+> --color=auto` no Linux) deixa as permissões mais fáceis de
+> ler - diretórios em azul, executáveis em verde, symlinks em
+> ciano. Pequeno detalhe, grande diferença na hora de navegar.
+
+No próximo, processos: o que tá rodando, como matar, e por que
+às vezes o `Ctrl + C` não basta.

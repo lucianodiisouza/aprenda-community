@@ -1,0 +1,100 @@
+---
+id: introducao-nosql
+title: "O que é NoSQL e Quando Usar"
+resources:
+  - title: "NoSQL vs SQL: a real diferença (em inglês)"
+    url: https://www.mongodb.com/nosql-explained/nosql-vs-sql
+    type: doc
+    lang: en
+    free: true
+  - title: "Wikipédia: NoSQL (PT-BR)"
+    url: https://pt.wikipedia.org/wiki/NoSQL
+    type: doc
+    lang: pt
+    free: true
+---
+
+**NoSQL** é um guarda-chuva pra bancos que **não seguem o modelo
+relacional** - ou seja, não usam tabelas com colunas fixas e
+relacionamentos via chaves estrangeiras. O termo nasceu no final
+dos anos 2000 quando os bancos relacionais começaram a patinar
+em certos cenários (escala massiva, dados semi-estruturados, baixa
+latência).
+
+Hoje, "NoSQL" é menos uma categoria técnica e mais um **agrupamento
+por contraste** com SQL. Os quatro modelos principais:
+
+| Modelo | Estrutura | Quando brilha | Exemplo |
+| --- | --- | --- | --- |
+| **Documento** | JSON-like, coleções | Dados semi-estruturados, schemas flexíveis | MongoDB |
+| **Chave-valor** | Dicionário em memória | Cache, sessão, rate limit | Redis |
+| **Colunar** | Tabela larga, colunas agrupadas | Analytics, séries temporais | Cassandra |
+| **Grafo** | Nós + arestas | Redes sociais, recomendações | Neo4j |
+
+Esta trilha cobre os dois primeiros - **documento** e **chave-valor**
+- porque são os que você vai encontrar em 95% dos backends hoje.
+
+### Como um banco de documento "pensa"
+
+Em vez de tabelas e linhas, você tem **coleções** e **documentos**:
+
+```jsonc
+// coleção "usuarios" - cada documento é um objeto JSON-like
+{
+  "_id": "u-001",
+  "nome": "Ana",
+  "email": "ana@ex.com",
+  "endereco": {
+    "cidade": "São Paulo",
+    "estado": "SP"
+  },
+  "tags": ["admin", "beta-tester"]
+}
+```
+
+Compare com o SQL: em vez de cinco tabelas (`usuarios`, `enderecos`,
+`usuarios_tags`, `tags`), você tem **um documento** com tudo dentro.
+
+### Como um banco chave-valor "pensa"
+
+É um **dicionário gigante** em memória:
+
+```bash
+SET sessao:abc123 "{ usuarioId: 42, expira: 1735689600 }"
+GET sessao:abc123
+DEL sessao:abc123
+```
+
+Cada chave é uma string; o valor é um blob (string, número, JSON).
+Sem queries complexas, sem joins, sem schema. **Rápido** porque
+quase tudo cabe em RAM.
+
+### Quando **não** usar NoSQL
+
+O equívoco mais comum é tratar NoSQL como "SQL moderno". Não é.
+Cada modelo tem trade-offs:
+
+- **Documento**: integridade referencial é por convenção, não
+  por garantia do banco. Se você precisa de transações
+  multi-registro fortes, SQL ainda ganha.
+- **Chave-valor**: sem queries. Se você precisa "achar todos os
+  usuários cadastrados em 2024", Redis sozinho não resolve.
+- **Colunar e grafo**: fora do escopo desta trilha, mas同样
+  têm casos específicos onde brilham.
+
+Três conceitos pra fixar:
+
+- **NoSQL** é guarda-chuva pra **4 modelos** de banco: documento,
+  chave-valor, colunar, grafo.
+- **Documento** = JSON-like em coleções; **chave-valor** =
+  dicionário em memória. Cobrimos os dois.
+- **NoSQL não substitui SQL** - cada modelo tem trade-offs;
+  sistemas reais geralmente combinam **mais de um banco**.
+
+> Dica: a pergunta "SQL ou NoSQL?" quase sempre tem resposta
+> "depende". O nó `escolhendo-entre-sql-e-nosql` (perto do fim
+> da trilha) é o framework pra decidir.
+
+No próximo nó, vamos mergulhar no **modelo de documento**:
+coleções, documentos, schema flexível, e quando isso é uma
+vantagem (e quando é uma armadilha).

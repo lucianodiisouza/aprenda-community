@@ -1,0 +1,85 @@
+{
+  "slug": "fundamentos-de-cs",
+  "title": "Fundamentos de Ciência da Computação",
+  "description": "O mínimo viável de CS pra quem programa: como o computador funciona, dados, lógica, algoritmos, estruturas, memória, compilação, redes e pensamento sistêmico. Serve do iniciante ao sênior via profundidade progressiva dentro de cada nó.",
+  "difficulty": "intermediario",
+  "skills": ["ciencia-da-computacao", "fundamentos", "logica", "algoritmos", "sistemas"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "auto-diagnostico",
+      "title": "Auto-diagnóstico: onde você está?",
+      "type": "milestone",
+      "recommended": true,
+      "children": ["como-um-computador-funciona"]
+    },
+    {
+      "id": "como-um-computador-funciona",
+      "title": "Como um Computador Funciona",
+      "type": "topic",
+      "recommended": true,
+      "children": ["representacao-de-dados"]
+    },
+    {
+      "id": "representacao-de-dados",
+      "title": "Representação de Dados",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["logica-e-pensamento-computacional"]
+    },
+    {
+      "id": "logica-e-pensamento-computacional",
+      "title": "Lógica e Pensamento Computacional",
+      "type": "topic",
+      "recommended": true,
+      "children": ["algoritmos-e-complexidade"]
+    },
+    {
+      "id": "algoritmos-e-complexidade",
+      "title": "Algoritmos e Complexidade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estruturas-de-dados-fundamentais"]
+    },
+    {
+      "id": "estruturas-de-dados-fundamentais",
+      "title": "Estruturas de Dados Fundamentais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["memoria-stack-heap"]
+    },
+    {
+      "id": "memoria-stack-heap",
+      "title": "Memória: Stack, Heap e Ciclo de Vida",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["do-codigo-a-execucao"]
+    },
+    {
+      "id": "do-codigo-a-execucao",
+      "title": "Do Código à Execução",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["redes-o-minimo"]
+    },
+    {
+      "id": "redes-o-minimo",
+      "title": "Redes: o Mínimo que Dev Precisa Saber",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pensando-em-sistemas"]
+    },
+    {
+      "id": "pensando-em-sistemas",
+      "title": "Pensando em Sistemas",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

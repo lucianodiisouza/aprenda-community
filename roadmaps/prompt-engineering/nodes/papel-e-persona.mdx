@@ -1,0 +1,106 @@
+---
+id: papel-e-persona
+title: "\"Aja como...\": papel, persona e tom"
+resources:
+  - title: "Anthropic - Give Claude a role (EN, com exemplos)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts#give-claude-a-role
+    type: doc
+    lang: en
+    free: true
+  - title: "Hugging Face - LLM Course (PT-BR, tem capítulo sobre como LLMs interpretam instruções)"
+    url: https://huggingface.co/learn/llm-course
+    type: curso
+    lang: pt
+    free: true
+---
+
+"Aja como um professor universitário", "Você é um copywriter sênior",
+"Comporte-se como um engenheiro de software com 15 anos de experiência em
+backend" - você já viu isso em algum prompt. **Funciona?** Quase sempre,
+mas não pelo motivo que a maioria pensa.
+
+A persona **não** "transforma" o modelo em outra pessoa. Ela **restringe o
+espaço de busca** dos próximos tokens. Quando você diz "você é um pediatra
+com 20 anos de experiência", o modelo **puxa padrões de texto** que mais
+parecem conversa de pediatra experiente - vocabulário, estrutura de
+resposta, nível de detalhe. É condutividade estatística, não método
+Stanislavski.
+
+Dito isso, **funciona muito bem** quando usado com critério. Três
+situações em que persona brilha:
+
+### 1. Quando o tom importa
+
+- "Você é um professor de ensino fundamental explicando para uma criança
+  de 10 anos" - respostas mais simples, com analogias, sem jargão.
+- "Você é um redator técnico sênior" - respostas mais densas, com
+  vocabulário preciso.
+- "Você é um comediante stand-up" - respostas com timing, ironia,
+  estrutura de piada.
+
+### 2. Quando o público é específico
+
+- "Você é um consultor financeiro explicando para um cliente de 35 anos
+  que está começando a investir" - o modelo calibra o que **não**
+  pressupor.
+
+### 3. Quando o estilo é distintivo
+
+- "Você é um escritor que escreve como o João Guimarães Rosa" - o modelo
+  tenta replicar padrões de estilo (com os limites óbvios de não ter
+  plágio).
+
+## Quando persona é **ruim** (ou placebo)
+
+- **"Você é um especialista mundial em X"** - o modelo não é especialista,
+  é um generalista. Declarar uma expertise falsa pode só dar mais
+  confiança a respostas erradas.
+- **Personas com estereótipos negativos** - "Você é um chefe mandão e
+  agressivo" tende a dar respostas que você não quer receber.
+- **Personas redundantes** - se o prompt já é claro sobre o que fazer,
+  adicionar "aja como especialista" raramente muda a saída.
+
+## Como escrever uma persona boa
+
+A boa persona tem 3 coisas:
+
+1. **Papel concreto** - não "expert", mas "engenheiro de backend sênior
+   especializado em PostgreSQL".
+2. **Público-alvo** - pra quem o modelo está falando. "Explica pra um
+   dev júnior" é diferente de "explica pra um CTO".
+3. **Tom/voz** - formal, informal, didático, provocador, humorístico.
+
+**Exemplo bom:**
+> "Você é uma engenheira de dados com 8 anos de experiência em
+> pipelines de ETL, falando com uma pessoa que está aprendendo SQL.
+> Tom: didático, com exemplos do mundo real (e-commerce, fintech), sem
+> jargão desnecessário. Quando um termo técnico for inevitável, defina-o
+> em uma frase logo depois."
+
+**Exemplo ruim:**
+> "Você é um expert em dados. Explique SQL."
+
+<Quiz
+  question="Quando persona tem mais chance de melhorar (e não degradar) a resposta?"
+  options={[
+    { text: "Sempre - toda resposta fica melhor com persona", correct: false, explanation: "Persona é poderosa mas tem custos e pode dar confiança falsa. Não é obrigatória em todo prompt." },
+    { text: "Quando o tom, o público-alvo ou o estilo da resposta importam para o uso final", correct: true },
+    { text: "Quando você quer que o modelo erre menos fatos", correct: false, explanation: "Persona controla tom e estilo, não factualidade. Pra reduzir erro de fato, a ferramenta é RAG (Fase 2) ou grounding." }
+  ]}
+/>
+
+- **Persona restringe o espaço de busca** dos próximos tokens - é
+  estatística, não teatro.
+- **Funciona muito bem para tom, público e estilo.** Funciona mal (ou é
+  placebo) para "expertise" e "verdade".
+- **Persona boa tem 3 coisas:** papel concreto, público-alvo, tom/voz.
+- **Persona redundante atrapalha** - se o prompt já é claro, adicionar
+  "aja como expert" não muda nada.
+
+> Dica: a persona mais subestimada do dia-a-dia é **"explique como se eu
+> tivesse 12 anos"** ou **"explique como se eu fosse um especialista da
+> área"**. Calibrar a profundidade é o uso mais prático e menospreciado
+> de persona.
+
+No próximo nó, vamos ver a peça que mais economiza tempo de quem programa:
+o **formato de saída**.

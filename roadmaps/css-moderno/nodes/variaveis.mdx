@@ -168,6 +168,27 @@ suavemente**. Use pra animar gradientes, transforms em CSS puro.
 > vez, vale pra todo o site) é absurdo. E você vai precisar pra
 > dark mode de qualquer jeito.
 
+<VisualCheckpoint
+  challenge="Defina --destaque: #ff6347 na .cartao e use var(--destaque) na cor do h3."
+  hint="Declare --destaque: #ff6347 na .cartao e use color: var(--destaque) no h3."
+  starterHtml={`<div class="cartao"><h3>Título</h3></div>`}
+  starterCss={`.cartao {\n  /* declare --destaque aqui */\n}\n.cartao h3 {\n  /* use var(--destaque) aqui */\n}`}
+  assert={`
+    const cartao = root.querySelector('.cartao');
+    const h3 = root.querySelector('.cartao h3');
+    if (!cartao || !h3) return { pass: false, message: 'Preciso da .cartao com um h3 dentro.' };
+    const varVal = getComputedStyle(cartao).getPropertyValue('--destaque').trim();
+    if (!varVal) return { pass: false, message: 'Declare a variável --destaque na .cartao.' };
+    const cor = getComputedStyle(h3).color;
+    return {
+      pass: cor === 'rgb(255, 99, 71)',
+      message: 'Declare --destaque: #ff6347 e aplique color: var(--destaque) no h3 (a cor computada deve ser rgb(255, 99, 71)).'
+    };
+  `}
+  slug="css-moderno"
+  nodeId="variaveis"
+/>
+
 No próximo, vamos combinar variáveis com **funções modernas** do
 CSS: `clamp()`, `min()`, `max()` e `calc()` — pra tipografia
 fluida e layout responsivo sem media query.

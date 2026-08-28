@@ -1,0 +1,134 @@
+---
+id: busca
+title: "Busca: find, grep e afins"
+resources:
+  - title: "find - manual completo (GNU, EN)"
+    url: https://www.gnu.org/software/findutils/manual/html_mono/find.html
+    type: doc
+    lang: en
+    free: true
+  - title: "grep - manual completo (GNU, EN)"
+    url: https://www.gnu.org/software/grep/manual/grep.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Achar arquivo por nome, achar texto dentro de arquivo, achar
+comando que executa tal binário. Três buscas diferentes, três
+ferramentas diferentes. Quando você aprende a usar essas três
+em combinação, **nunca mais abre o Finder/Explorer pra procurar
+coisa**.
+
+## Achar arquivo por nome: `find`
+
+```bash
+find . -name "*.log"                          # no diretório atual e subdirs
+find /var/log -name "*.log"                   # a partir de outro lugar
+find . -name "config.json"                    # nome exato
+find . -iname "*.JSON"                        # case-insensitive (macOS, Linux)
+find . -type f -name "*.txt"                  # só arquivos (não diretórios)
+find . -type d -name "node_modules"           # só diretórios
+find . -size +100M                            # maiores que 100 MB
+find . -mtime -7                              # modificados nos últimos 7 dias
+find . -user luciano                          # do usuário luciano
+find . -perm 644                              # com permissão exata 644
+```
+
+O `find` é recursivo por padrão. A sintaxe é `find <onde> <critérios>`.
+Combine critérios pra refinar:
+
+```bash
+# arquivos .log maiores que 50MB modificados no último dia
+find /var/log -type f -name "*.log" -size +50M -mtime -1
+
+# diretórios node_modules pra deletar (cuidado!)
+find . -type d -name "node_modules" -prune -print
+```
+
+> **Dica macOS vs Linux**: o `find` do BSD (macOS) tem flags
+> ligeiramente diferentes do GNU (Linux). `-size +50M` funciona
+> igual nos dois, mas `-printf` (formato de saída) é só GNU.
+> Pra script cross-platform, use `-exec` em vez de `-printf`.
+
+## Achar texto dentro de arquivo: `grep`
+
+```bash
+grep "palavra" arquivo.txt                   # linhas que contém "palavra"
+grep -i "erro" log.txt                       # case-insensitive
+grep -r "TODO" src/                          # recursivo no diretório
+grep -n "TODO" arquivo.txt                   # mostra número da linha
+grep -l "TODO" src/                          # só nomes de arquivos (não o conteúdo)
+grep -c "TODO" arquivo.txt                   # conta matches por arquivo
+grep -v "DEBUG" log.txt                      # linhas que NÃO contém
+grep -E "erro|warning" log.txt               # regex estendido (alternation)
+grep -A 3 "erro fatal" log.txt               # 3 linhas depois do match
+grep -B 3 "erro fatal" log.txt               # 3 linhas antes
+```
+
+> **Regex básico vs estendido**: `grep` usa regex POSIX básico
+> por padrão (onde `(`, `)`, `|`, `{`, `}` precisam de `\`).
+> `grep -E` (ou `egrep`) usa regex estendido (esses chars são
+> metachar). `grep -P` (Perl-compatible) é o mais poderoso e
+> suporta lookahead, lookbehind, etc. Use `-E` por padrão.
+
+`grep` aceita entrada via stdin também (sem arquivo no final).
+Isso é o que habilita pipes:
+
+```bash
+cat arquivo.txt | grep "erro"               # mesmo que grep "erro" arquivo.txt
+ps aux | grep "node"                         # processes rodando node
+history | grep "git"                         # comandos git do histórico
+```
+
+## Achar comando: `which`, `type`, `whereis`
+
+```bash
+which python                                  # caminho do executável
+type ls                                      # mostra se é builtin, função, alias
+whereis node                                 # binário, source, man page
+```
+
+`which` falha silenciosamente se o comando não existe (exit 1).
+`type` é mais útil porque distingue:
+- builtin do shell (`type cd` -> "cd is a shell builtin")
+- função definida pelo usuário
+- alias
+- programa externo
+
+> **Erro "command not found"**: geralmente é variável `PATH`
+> que não inclui o diretório do binário. Veja o nó de variáveis
+> de ambiente.
+
+## `find` + `grep` combinados
+
+A combinação que resolve 90% das buscas em produção:
+
+```bash
+# acha todos os .log do último dia que contém "out of memory"
+find /var/log -name "*.log" -mtime -1 -exec grep -l "out of memory" {} \;
+
+# arquivos modificados hoje no diretório do projeto
+find ~/projeto -mtime 0 -type f
+
+# conta quantas linhas de código tem no projeto
+find src/ -name "*.ts" | xargs wc -l
+```
+
+Três conceitos que você acabou de aprender:
+
+- **`find` acha por metadata** (nome, tamanho, data, dono). **`grep`
+  acha por conteúdo** (texto dentro do arquivo).
+- **`-r` no `grep`** torna recursivo. **`-l`** mostra só o nome do
+  arquivo, não o conteúdo (ótimo pra descobrir "onde isso tá
+  definido").
+- **`type`** é mais útil que `which` pra debug de PATH, porque
+  distingue builtin de executável externo.
+
+> Dica: o combo `find ... -exec grep -l "x" {} \;` é o canivete
+> suíço de "onde no meu projeto tá X". Use `ag` ou `rg` (ripgrep)
+> pra ter regex mais rico e performance muito maior:
+> `brew install ripgrep` ou `apt install ripgrep`.
+
+No próximo nó, vamos falar de **permissões** - quem pode ler,
+escrever, executar. Onde o `chmod 755` finalmente faz sentido.

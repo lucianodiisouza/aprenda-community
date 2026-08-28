@@ -150,3 +150,16 @@ Note o **`aria-label` e `role="img"`** no SVG inline para acessibilidade.
 
 No próximo nó, vamos organizar informações em **listas** - ordinais,
 não-ordenas e de definição.
+
+<VisualCheckpoint
+  challenge="Adicione uma <img> com um atributo alt descritivo (não vazio)."
+  starterHtml={`<!-- sua imagem aqui -->`}
+  assert={`
+    const img = root.querySelector('img');
+    if (!img) return { pass:false, message:'Faltou a <img>.' };
+    const alt = (img.getAttribute('alt') || '').trim();
+    return { pass: alt.length > 0, message: 'A <img> precisa de um alt não-vazio (acessibilidade).' };
+  `}
+  slug="html"
+  nodeId="imagens"
+/>

@@ -1,0 +1,117 @@
+---
+id: projeto-final
+title: "Projeto Final: API Completa em TypeScript"
+resources:
+  - title: "Repositório de exemplo: API de encurtador de URL (em inglês)"
+    url: https://github.com/lucianodiisouza/aprenda-community/tree/main/projects/encurtador-de-url.mdx
+    type: doc
+    lang: pt
+    free: true
+  - title: "Template inicial: api-rest-com-autenticacao (em PT-BR)"
+    url: https://github.com/lucianodiisouza/aprenda-community/tree/main/projects/api-rest-com-autenticacao.mdx
+    type: doc
+    lang: pt
+    free: true
+---
+
+Você percorreu a linguagem, a configuração, o runtime, Express
+e o ORM. Agora é hora de juntar tudo num projeto real: uma API
+completa em TypeScript, com validação, persistência, autenticação
+e testes.
+
+Esse projeto reaproveita o brief de
+[**`api-rest-com-autenticacao`**](https://github.com/lucianodiisouza/aprenda-community/blob/main/projects/api-rest-com-autenticacao.mdx)
+- a diferença é que **você vai implementar em TypeScript**.
+
+### O que você vai construir
+
+Uma API REST com:
+
+- **CRUD de usuários** (criar, listar, atualizar, deletar) com
+  validação Zod no input.
+- **Login com JWT** retornando token, e middleware que protege
+  rotas privadas.
+- **Banco PostgreSQL** via Prisma, com migrations versionadas.
+- **Testes** com Vitest (unit + integração).
+- **Docker Compose** pra subir app + banco com um comando.
+
+Tudo tipado: `req.body` validado pelo Zod vira tipo seguro, retorno
+do Prisma já vem tipado, erros customizados com `HttpError` em
+toda a rota.
+
+### Estrutura de pastas sugerida
+
+```text
+src/
+├── server.ts           # bootstrap (app.listen)
+├── app.ts              # configuração do Express (sem listen)
+├── routes/
+│   ├── usuarios.ts     # router com CRUD
+│   └── auth.ts         # login + refresh
+├── middleware/
+│   ├── auth.ts         # valida JWT, popula req.usuarioId
+│   └── error.ts        # middleware central de erro
+├── schemas/
+│   └── usuario.ts      # schemas Zod (CriarUsuario, AtualizarUsuario)
+├── lib/
+│   ├── prisma.ts       # singleton do PrismaClient
+│   └── jwt.ts          # sign/verify do token
+└── types.ts            # declare global Express.Request
+
+prisma/
+└── schema.prisma       # model Usuario, model Sessao
+
+tests/
+├── usuarios.test.ts    # integração (supertest)
+└── schemas.test.ts     # unitário (Zod)
+```
+
+### Roteiro sugerido
+
+Não precisa seguir linha-a-linha, mas o caminho testado é:
+
+1. **Setup do projeto** - `npm init -y`, instalar deps
+   (`express`, `@prisma/client`, `zod`, `jsonwebtoken`,
+   `bcrypt`), dev deps (`typescript`, `tsx`, `@types/...`,
+   `vitest`, `supertest`, `prisma`).
+2. **`tsconfig.json`** - copie o do nó `configurando-typescript`,
+   ajuste paths.
+3. **Prisma schema + primeira migration** - `npx prisma init`,
+   model `Usuario`, `npx prisma migrate dev --name init`.
+4. **Schemas Zod** - `CriarUsuarioSchema`, `AtualizarUsuarioSchema`,
+   `LoginSchema`.
+5. **Rotas de usuário** - CRUD com validação Zod, erros tipados,
+   middleware central.
+6. **Auth** - rota de login, geração de JWT, middleware
+   `authMiddleware`.
+7. **Testes** - unitários dos schemas, integração das rotas com
+   supertest.
+8. **Docker Compose** - app + Postgres, healthcheck no banco,
+   app sobe depois do banco.
+
+### Critérios de aceite
+
+A API está pronta quando:
+
+- `npm run dev` sobe o servidor em watch mode e conecta no banco.
+- `POST /usuarios` valida input, retorna 400 com erro do Zod
+  em input inválido, 201 com usuário criado em input válido.
+- `POST /login` retorna 401 em credenciais erradas, 200 + JWT
+  em credenciais certas.
+- `GET /perfil` retorna 401 sem token, 200 com dados do usuário
+  com token válido.
+- `npm test` roda os testes e tudo passa.
+- `docker compose up` sobe app + banco do zero.
+
+### O que esse projeto testa de TypeScript
+
+- Configurar `tsconfig.json` do zero.
+- Tipar `req`, `res` e middlewares.
+- Estender `Express.Request` com `usuarioId`.
+- Inferir tipos de `z.infer<...>` pra input de rota.
+- Consumir tipos gerados do Prisma.
+- Tratar erros com narrowing (`instanceof HttpError`).
+
+Se você chegou aqui, **você sabe programar em TypeScript** - não
+só escrever a sintaxe, mas tirar proveito do que a tipagem estática
+oferece.

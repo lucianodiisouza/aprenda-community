@@ -1,0 +1,146 @@
+---
+id: multimodal
+title: "Multimodal: imagem, áudio e vídeo como input e output"
+resources:
+  - title: "Anthropic - Vision (EN, capacidades de visão do Claude)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/vision
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Vision (EN, GPT-4o vision guide)"
+    url: https://platform.openai.com/docs/guides/vision
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - PDF support (EN, parsing de PDF como multimodal)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/pdf-support
+    type: doc
+    lang: en
+    free: true
+---
+
+Até agora tratamos o modelo como **entrada texto → saída texto**. Mas
+em 2026, os modelos são **multimodais** de verdade: recebem imagem,
+áudio, vídeo, PDF, e podem gerar imagem, áudio e (em alguns casos)
+vídeo. Isso muda a anatomia do prompt - porque agora **a entrada
+também é mídia**, e "prompt bem-feito" precisa saber lidar com isso.
+
+## O que é multimodal (e o que cada modelo cobre)
+
+- **Entrada de imagem** - a maioria dos modelos principais (Claude
+  Sonnet 4, GPT-4o, Gemini 1.5/2) aceita imagens. Você envia junto
+  com texto e o modelo "vê".
+- **Entrada de áudio** - input de voz (transcrição + análise).
+  Whisper da OpenAI, modelos multimodais nativos.
+- **Entrada de vídeo** - frame a frame ou amostragem. Gemini é o mais
+  robusto aqui.
+- **Entrada de PDF** - parsing de página, com leitura de tabelas e
+  texto. Claude e GPT-4o bem maduros.
+- **Saída de imagem** - DALL·E, Stable Diffusion, Midjourney,
+  Imagen. **Modelos diferentes** dos LLMs em geral.
+- **Saída de áudio** - TTS (text-to-speech) como ElevenLabs, OpenAI
+  TTS, e os modelos multimodais nativos.
+
+## Como prompting multimodal difere do texto
+
+Três mudanças práticas:
+
+### 1. O "prompt" inclui a mídia
+
+Você não escreve só texto - **manda o arquivo** (ou URL/base64)
+junto. A **ordem importa**: o modelo dá mais peso ao que vem
+primeiro, então estrutura com cuidado.
+
+```
+[imagem anexada]
+[texto:] "Esta é a foto do produto. Liste 3 problemas visuais
+que um cliente notaria e sugira correção pra cada um."
+```
+
+### 2. Instruções precisam ser **específicas pra mídia**
+
+Pedir "descreva a imagem" dá resposta vaga. Pedir **"extraia o texto
+visível na imagem, mantendo a hierarquia de títulos, e liste
+gráficos com seus eixos"** dá resultado útil.
+
+Dica geral: trate a imagem/PDF/áudio como **uma fonte que você está
+fazendo o modelo ler**. Quais informações você quer extrair? Em que
+formato? Com que nível de detalhe?
+
+### 3. Multimodal **aumenta alucinação em algumas tarefas**
+
+Curiosamente, dar uma imagem pode fazer o modelo "ver coisas" que
+não estão lá - especialmente em detalhes pequenos. Para tarefas
+factuais sobre imagens (ler placa, contar objetos, ler número de
+série), **valide** com outra fonte quando crítico.
+
+## Padrões de uso comuns
+
+### OCR e extração de dados de documentos
+
+Suba um PDF ou foto de nota fiscal/recibo, peça:
+> "Extraia: data, valor total, CNPJ do emissor, itens da lista.
+> Responda em JSON conforme o schema:
+> ```json
+> {
+>   \"data\": \"YYYY-MM-DD\",
+>   \"valor_total\": number,
+>   \"cnpj\": string,
+>   \"itens\": [{ \"descricao\": string, \"valor\": number }]
+> }
+> ```"
+
+### Análise de imagem com contexto textual
+
+> "Esta é a foto do interior de um apartamento. O usuário procura
+> um imóvel com: (1) cozinha integrada, (2) boa luz natural, (3)
+> até R$ 3.500 de aluguel. Avalie se a foto atende e dê uma nota
+> de 1-5 em cada critério, com justificativa."
+
+### Geração de imagem (text-to-image)
+
+Aqui o "prompt" é o que vai **pra API de difusão**, não pro LLM.
+Regras diferentes:
+- Seja **descritivo e específico** ("uma mulher de 30 anos, cabelo
+  castanho, blazer azul, em um escritório moderno com luz
+  natural, estilo fotográfico, lente 50mm").
+- Especifique **estilo** (foto, ilustração, pintura, 3D).
+- Especifique **enquadramento** (retrato, paisagem, close-up).
+- **Negativos** ("sem texto, sem marca d'água") são tão
+  importantes quanto positivos.
+
+### TTS (text-to-speech)
+
+Modelos de TTS como ElevenLabs/OpenAI TTS têm **configurações
+separadas** do prompt - voz, velocidade, emoção. Em alguns
+casos, o "prompt" do TTS é o próprio texto a ser falado, com
+marcações tipo `[pausa]` ou `[ênfase em]`.
+
+<Quiz
+  question="Você está pedindo ao modelo para extrair dados de uma foto de uma nota fiscal. Como é o prompt ideal?"
+  options={[
+    { text: "\"O que está escrito nesta imagem?\"", correct: false, explanation: "Vago. 'O que está escrito' pode dar prosa, parágrafos descritivos, ou foco em coisas irrelevantes (marca d'água, paisagem ao fundo)." },
+    { text: "[imagem] \"Extraia data, valor total, CNPJ, e itens com valor. Responda apenas em JSON conforme o schema: {...}\"", correct: true },
+    { text: "\"Resuma esta nota fiscal em 2 frases.\"", correct: false, explanation: "Resumo em prosa é péssimo pra dado estruturado. Dificulta integração com sistemas." }
+  ]}
+/>
+
+- **Multimodal é o default em 2026.** Modelos principais leem imagem,
+  áudio, PDF, vídeo - e geram imagem/áudio.
+- **A anatomia do prompt muda:** mídia anexada + instrução textual
+  específica.
+- **OCR e extração de documentos** são os usos mais comuns em
+  produção - e pedem **JSON Schema**, não prosa.
+- **Geração de imagem tem prompt próprio** (vai pra modelo de difusão,
+  não LLM) - regras diferentes.
+- **Validação adicional** - multimodal alucina detalhes; checar
+  fatos críticos.
+
+> Dica: trate cada modalidade como um **tipo de fonte diferente**.
+  Texto é o que o modelo "leu", imagem é o que o modelo "vê", áudio
+  é o que o modelo "ouviu". O prompting multimodal é, no fundo,
+  "ensinar o modelo a ler cada fonte com critério".
+
+No próximo nó, vamos tratar do **lado sombrio** de tudo isso: como
+protejer seu sistema de quem tenta subverter os prompts - segurança
+e prompt injection.

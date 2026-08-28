@@ -1,0 +1,125 @@
+---
+id: conceitos-amqp
+title: "Producer, exchange, queue, consumer"
+resources:
+  - title: "AMQP 0-9-1 Model Explained (docs oficial, EN)"
+    url: https://www.rabbitmq.com/tutorials/amqp-concepts
+    type: doc
+    lang: en
+    free: true
+  - title: "Simulador visual de exchanges, filas e bindings"
+    url: https://rmq.racoelho.com.br/
+    type: exercicio
+    lang: pt
+    free: true
+---
+
+O RabbitMQ é um **message broker**: ele recebe mensagens, decide pra
+onde elas vão e entrega pra quem tiver interessado. Toda a configuração
+que você vai fazer gira em torno de quatro peças.
+
+## As quatro peças
+
+- **Producer** (produtor) - quem publica a mensagem. Geralmente uma API,
+  mas pode ser um worker em background, um console app, qualquer coisa
+  que rode código.
+- **Exchange** - o roteador. Recebe a mensagem do produtor e decide pra
+  qual fila mandar.
+- **Queue** (fila) - onde a mensagem fica guardada esperando alguém
+  consumir. É FIFO: primeiro que entra, primeiro que sai.
+- **Consumer** (consumidor) - quem lê e processa. Pode ser outro
+  serviço, e nada impede que seja **o mesmo serviço que publicou**.
+
+<Mermaid
+  chart={`flowchart LR
+    P["Producer"] -->|"publica"| E{{"Exchange"}}
+    E -->|"binding key"| Q1["Fila A"]
+    E -->|"binding key"| Q2["Fila B"]
+    Q1 --> C1["Consumer A"]
+    Q2 --> C2["Consumer B"]
+
+    classDef prod fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef exch fill:#7c2d12,stroke:#fb923c,color:#ffedd5
+    classDef queue fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    class P,C1,C2 prod
+    class E exch
+    class Q1,Q2 queue`}
+  caption="O caminho da mensagem: producer, exchange, fila, consumer."
+/>
+
+## Se você for guardar uma coisa deste nó, guarda essa
+
+**O produtor não manda mensagem pra fila. Ele manda pra exchange.**
+
+Esse é o erro de modelo mental mais comum de quem começa - a pessoa
+imagina que publica direto na fila, e aí não entende por que a mensagem
+"sumiu" ou por que chegou em três lugares.
+
+Quem decide o destino é a **exchange**, olhando a **routing key** que
+veio na mensagem e comparando com as **binding keys** das filas ligadas
+nela. Fila não escolhe mensagem: ela é escolhida.
+
+```js
+// o publish aponta pra exchange, não pra fila
+channel.publish(
+  "pedidos",        // exchange
+  "order.created",  // routing key - a exchange usa isso pra rotear
+  Buffer.from(JSON.stringify({ pedidoId: 42 }))
+)
+```
+
+> **E aquele tutorial que publica direto na fila?** Ele usa a *default
+> exchange*, uma exchange sem nome que o RabbitMQ já cria e que entrega
+> pra fila com o nome exato da routing key. Parece que você publicou na
+> fila, mas passou por uma exchange do mesmo jeito. Você vai ver isso no
+> nó da primeira fila.
+
+## Uma armadilha que vale saber desde já
+
+Mensagem publicada numa exchange que **não tem binding compatível**
+simplesmente some. Sem erro, sem exceção, sem log gritando com você - o
+RabbitMQ considera que fez o trabalho dele: procurou fila que casasse,
+não achou, descartou.
+
+É de longe a causa número um do clássico "publiquei e o consumidor não
+recebeu nada". Antes de sair debugando o consumidor, confere se a
+binding key da fila casa com a routing key que você publicou.
+
+> Dica: se preferir ver isso acontecendo em vez de ler, existe um
+> [simulador visual](https://rmq.racoelho.com.br/) onde dá pra montar
+> exchange, fila e binding e acompanhar o caminho da mensagem. É
+> opcional - a trilha inteira funciona sem ele.
+
+Três coisas que você acabou de aprender:
+
+- **Producer → exchange → fila → consumer.** Sempre nessa ordem, sem
+  atalho.
+- **Routing key** vai na mensagem; **binding key** fica na ligação entre
+  exchange e fila. O roteamento é a comparação entre as duas.
+- **Mensagem sem binding compatível é descartada em silêncio.** Não
+  espere um erro.
+
+No próximo nó a gente entra no primeiro tipo de exchange - a direct - e
+vê como essa comparação de chaves funciona na prática.
+
+<Quiz
+  question="Você publicou uma mensagem e o consumidor não recebeu nada, sem erro e sem log. Qual a causa mais provável?"
+  options={[
+    {
+      text: "A routing key não casa com nenhuma binding key, e o RabbitMQ descartou a mensagem em silêncio",
+      correct: true,
+    },
+    {
+      text: "O consumidor esqueceu de dar ack",
+      correct: false,
+      explanation:
+        "O ack decide a remoção depois de processar. Se nada chegou, o problema é antes, no roteamento.",
+    },
+    {
+      text: "A fila estava cheia e recusou a conexão",
+      correct: false,
+      explanation:
+        "A causa número um do 'publiquei e não recebeu nada' é binding incompatível, não fila cheia.",
+    },
+  ]}
+/>

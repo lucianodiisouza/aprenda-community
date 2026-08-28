@@ -63,3 +63,12 @@ Durabilidade  → depois do COMMIT, o dado sobrevive a uma queda
 
 No próximo nó, você vai ver o ataque mais comum contra banco de
 dados, e como escrever SQL que não abre essa porta.
+
+<Quiz
+  question="No ACID, o que a Atomicidade garante?"
+  options={[
+    { text: "Ou todas as operações da transação acontecem, ou nenhuma", correct: true },
+    { text: "Que transações simultâneas não se enxergam", correct: false, explanation: "Isso é o Isolamento." },
+    { text: "Que o dado sobrevive a uma queda após o COMMIT", correct: false, explanation: "Isso é a Durabilidade." }
+  ]}
+/>

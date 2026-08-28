@@ -1,0 +1,224 @@
+---
+id: tries
+title: "Tries e Estruturas para Texto: Autocomplete e Índices"
+resources:
+  - title: "Trie (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "Trie (Wikipedia, em PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Trie
+    type: doc
+    lang: pt
+    free: true
+---
+
+Trie (do latim "retrieval", recuperação) é a estrutura por trás
+de **autocomplete**, **corretor ortográfico**, **busca por prefixo**
+e **roteamento IP**. Quando você digita "São P" e o Google sugere
+"São Paulo", trie está no caminho.
+
+## O essencial 🟢
+
+**Definição:** trie é uma **árvore n-ária** onde cada aresta
+representa um **caractere** (ou byte), e cada caminho da raiz até
+um nó marcado representa uma **string** do conjunto. Caracteres
+compartilhados no início das strings compartilham caminho na
+árvore.
+
+<Mermaid
+  chart={`graph LR
+    R["(raiz)"] --- A["a"]
+    A --- A1["r"]
+    A1 --> A1A["a (★)"]
+    A1 --- A1B["e (★)"]
+    R --- B["b"]
+    B --> B1["o"]
+    B1 --- B1A["l (★)"]
+    B1 --- B1B["a (★)"]
+    R --- C["c"]
+    C --- C1["a"]
+    C1 --- C1A["s (★)"]
+    C1 --- C1B["r (★)"]
+    C1 --- C1C["o (★)"]
+    style R fill:#1f6feb,stroke:#fff,color:#fff
+    style A1A fill:#388bfd,stroke:#fff,color:#fff
+    style A1B fill:#388bfd,stroke:#fff,color:#fff
+    style B1A fill:#388bfd,stroke:#fff,color:#fff
+    style B1B fill:#388bfd,stroke:#fff,color:#fff
+    style C1A fill:#388bfd,stroke:#fff,color:#fff
+    style C1B fill:#388bfd,stroke:#fff,color:#fff
+    style C1C fill:#388bfd,stroke:#fff,color:#fff`}
+  caption='Trie com palavras: ara, are, bol, ba, cas, car, cao. ★ = fim de palavra. "ca" tem 3 filhos (s, r, o) - 3 palavras começam com "ca".'
+/>
+
+**Operações principais:**
+
+- **`insert(palavra)`:** desce caractere por caractere, criando
+  nós conforme necessário. Marca o último nó como "fim de
+  palavra". `O(k)` onde `k` é o comprimento da palavra.
+- **`search(palavra)`:** desce caractere por caractere. Se algum
+  nó falta, retorna `false`. Se chega ao fim e está marcado,
+  retorna `true`. `O(k)`.
+- **`startsWith(prefixo)`:** igual a `search`, mas não precisa
+  estar marcado como fim de palavra. `O(k)`.
+
+**Vantagem sobre hash table:** busca por prefixo. `Map.has("ca")`
+em hash table só te diz se "ca" exato existe - não se há
+palavras **começando com** "ca". Trie te dá isso em `O(k)`.
+
+**Autocomplete** com trie: `startsWith("ca")` te diz se há
+palavras com esse prefixo; depois é só percorrer a subárvore e
+coletar todas as palavras. Implementação ingênua é `O(total de
+palavras com o prefixo)`; com DFS, idem.
+
+```python
+class TrieNode:
+    def __init__(self):
+        self.filhos = {}     # char -> TrieNode
+        self.fim_palavra = False
+
+class Trie:
+    def __init__(self):
+        self.raiz = TrieNode()
+
+    def insert(self, palavra):
+        no = self.raiz
+        for ch in palavra:
+            if ch not in no.filhos:
+                no.filhos[ch] = TrieNode()
+            no = no.filhos[ch]
+        no.fim_palavra = True
+
+    def search(self, palavra):
+        no = self.raiz
+        for ch in palavra:
+            if ch not in no.filhos:
+                return False
+            no = no.filhos[ch]
+        return no.fim_palavra
+
+    def starts_with(self, prefixo):
+        no = self.raiz
+        for ch in prefixo:
+            if ch not in no.filhos:
+                return False
+            no = no.filhos[ch]
+        return True
+```
+
+## Aprofundamento 🟡
+
+**Por que `O(k)` importa:** com hash table, busca é `O(1)`, mas
+a "constante" depende do **tamanho da string** (calcular o hash
+de "São Paulo da Praia" percorre os 18 caracteres). Em trie, a
+"constante" também é `O(k)`, mas o **fator constante é menor** -
+só acessos a um array pequeno por caractere. Na prática, trie
+é mais rápido que hash pra busca por prefixo.
+
+**Trie compactada (radix tree / Patricia tree):** quando um nó
+tem **um único filho**, mescla com o pai. Reduz o número de nós
+significativamente - "aaa" e "aaab" viram "aab" como string
+única, em vez de 3+1 nós. Usado em **routing de IP** (longest
+prefix match) e em **índices de banco de dados** pra busca por
+prefixo (Postgres `text_pattern_ops`).
+
+**Trie com peso (weighted autocomplete):** cada palavra tem uma
+**frequência** ou **score**. Busca retorna as top-N por score,
+não por ordem de inserção. Google Suggest funciona assim: as
+palavras mais buscadas com o prefixo vêm primeiro.
+
+```python
+# Trie com peso: cada fim de palavra tem um score.
+def top_k(trie, prefixo, k):
+    no = trie.raiz
+    for ch in prefixo:
+        if ch not in no.filhos: return []
+        no = no.filhos[ch]
+    # Coleta todas as palavras da subárvore com seus scores.
+    resultados = []
+    def dfs(no, palavra):
+        if no.fim_palavra:
+            resultados.append((no.score, palavra))
+        for ch, filho in no.filhos.items():
+            dfs(filho, palavra + ch)
+    dfs(no, prefixo)
+    resultados.sort(reverse=True)
+    return resultados[:k]
+```
+
+**Memória:** trie ingênua gasta `O(ALPHABET · TOTAL_CHARS)` -
+cada nó tem um array de 26 (ou 128 pra ASCII, 256 pra byte). Pra
+1 milhão de palavras com 8 caracteres médios, são ~200 milhões
+de "slots" - **muito espaço**. Versão com `dict` (acima) só
+gasta pros caracteres que existem. Radix tree é ainda mais
+econômico.
+
+**Suffix trie e suffix array:** trie construída com **todos os
+sufixos** de um texto. "banana" gera "banana", "anana", "nana",
+"ana", "na", "a". Permite busca de substring em `O(m)` onde `m`
+é o comprimento do padrão, **independentemente** do tamanho do
+texto. Usado em **bioinformática** (busca de padrões em DNA) e
+em **busca full-text** (motores de busca). Suffix array é mais
+econômico em memória.
+
+## Pra quem quer ir além 🔴
+
+**Algoritmo Aho-Corasick** (1975): generalização de KMP pra
+múltiplos padrões ao mesmo tempo. Constrói uma trie + autômato
+de fallback (estilo KMP por caractere) em `O(n + m + z)` onde
+`n` é o tamanho do texto, `m` a soma dos padrões, `z` o número
+de matches. Aplicação: **antivírus** (detectar assinatura de
+malware), **filtro de palavras** em chat, **ferramentas de
+busca** em logs, **bioinformática** (procurar múltiplos genes).
+
+**Árvore de_suffixo (suffix tree):** versão "compactada" de
+suffix trie. Mesma informação, muito menos espaço. Construção
+em `O(n)` (algoritmo de Ukkonen). Usada em algoritmos de
+bioinformática (BLAST usa estruturas similares) e em
+compressão de dados (LZW).
+
+**Árvore de busca binária em disco (B-tree):** já vimos no nó
+de árvores balanceadas. É a estrutura por baixo dos **índices
+de banco de dados** - cada nó é uma página de disco, e a
+busca minimiza o número de páginas lidas. O sufixo "B" vem
+de "balanced" e é uma generalização de BST pra alta
+ramificação.
+
+**Leitura recomendada:**
+
+- Capítulo 5 do _Algorithms on Strings_ (Crochemore e Rytter) -
+  tries, suffix arrays, Aho-Corasick.
+- Capítulo 5 do _Algorithms_ (Dasgupta et al., online) - versão
+  mais didática de tries.
+
+> Dica: trie é **a estrutura certa** quando você precisa de
+> busca por prefixo ou matching de múltiplos padrões. Não é
+> sempre a melhor escolha - pra "existe essa palavra exata?",
+> hash table é mais simples e tão rápida. Use trie pra
+> autocomplete, IP routing, busca full-text e detecção de
+> padrões.
+
+No próximo nó, vamos fechar a trilha com o **projeto final**:
+escolher 3 estruturas, implementar duas soluções pra cada
+problema, e **medir de verdade** qual é mais rápida.
+
+<Quiz
+  question="Você está construindo autocomplete para uma busca de produtos (1 milhão de produtos). Qual estrutura te dá busca por prefixo em O(k) onde k é o tamanho do prefixo?"
+  options={[
+    {
+      text: "Hash table (Map) - O(1) médio para qualquer busca",
+      correct: false,
+      explanation:
+        "Hash table não dá busca por prefixo. Você só consegue verificar se a string EXATA existe, não strings que começam com ela.",
+    },
+    { text: "Trie - cada caractere é um nó, busca é O(k)", correct: true },
+    {
+      text: "Array ordenado com binary search - O(log n) para qualquer prefixo",
+      correct: false,
+      explanation:
+        "Binary search acha a posição do primeiro match em O(log n), mas coletar TODOS os matches é O(n) adicional. Trie coleta todos em O(k + z) onde z é o número de matches.",
+    },
+  ]}
+/>

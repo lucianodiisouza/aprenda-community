@@ -1,0 +1,130 @@
+---
+id: formatos-de-saida
+title: "Formatando a saída: JSON, markdown, tabelas e listas"
+resources:
+  - title: "Anthropic - Use XML tags to structure prompts (EN)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Structured Outputs (EN, canônico, JSON Schema)"
+    url: https://platform.openai.com/docs/guides/structured-outputs
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Control output format (EN, exemplos de JSON/markdown)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/control-output
+    type: doc
+    lang: en
+    free: true
+---
+
+O formato de saída é a peça mais subestimada da anatomia. Muita gente
+trata o modelo como "ele responde do jeito que quiser" - e aí recebe
+texto-prosa quando queria JSON, recebe markdown quando queria tabela, ou
+recebe uma resposta que mistura os dois e dá trabalho pra parsear.
+
+**O modelo é obediente.** Se você disser o formato, ele segue. Se você
+não disser, ele vai no default - que é prosa com markdown, e vai te
+dar trabalho.
+
+## Os 4 formatos que você vai usar 95% do tempo
+
+### 1. Prosa natural
+
+Pra conversa, explicações, e-mails, redações.
+
+> "Responda em 2-3 parágrafos, em tom profissional mas humano."
+
+### 2. Listas e bullets
+
+Pra enumerar opções, passos, critérios, prós/contras.
+
+> "Responda em formato de lista numerada, com no máximo 5 itens, cada
+> um com 1-2 frases."
+
+### 3. Tabelas
+
+Pra comparar opções, mapear features, organizar dados estruturados.
+
+> "Responda em formato de tabela markdown com as colunas: Ferramenta,
+> Linguagem principal, Caso de uso ideal, Curva de aprendizado."
+
+### 4. JSON
+
+Pra saída que vira código. A peça que mais economiza tempo de dev.
+
+> "Responda **apenas** com JSON válido no schema:
+> ```json
+> {
+>   \"titulo\": string,
+>   \"resumo\": string,
+>   \"tags\": string[],
+>   \"confianca\": number  // 0.0 a 1.0
+> }
+> ```"
+
+<Mermaid
+  chart={`flowchart LR
+    A["Tarefa"] --> B{"Formato\\nfoi\\nespecificado?"}
+    B -- Sim, claro --> C["Modelo segue\\no schema"]
+    B -- Vago --> D["Modelo no default\\n(prosa + markdown)"]
+    B -- Não --> E["Modelo decide\\npelo usuário"]
+    C --> F["Saída previsível\\nparseável"]
+    D --> G["Trabalho manual\\nde limpeza"]
+    E --> H["Sorte"]`}
+  caption="Saída bem-formatada começa no prompt: 'se você não disser o formato, o modelo decide por você'."
+/>
+
+## Truques que melhoram formatação
+
+### Diga "apenas"
+
+Sem "apenas", o modelo às vezes prefixa com "Claro! Aqui está o JSON:" -
+e quebra seu parser. Com "apenas", ele tende a ir direto.
+
+### Dê um exemplo curto
+
+Mostrar 1 linha do formato desejado vale mais que 3 frases explicando.
+
+> "Responda em JSON. Exemplo de formato:
+> ```json
+> {\"nome\": \"João\", \"idade\": 30}
+> ```"
+
+### Use "se e somente se" pra regras estritas
+
+> "Responda **apenas** com JSON válido. **Não** inclua texto antes ou
+> depois. **Não** use markdown code fences."
+
+### Para JSON em produção: use JSON Schema (structured outputs)
+
+A maioria dos providers tem **structured outputs** - você dá um JSON
+Schema e o modelo é **garantido** (não "espera-se", garantido) a
+produzir um JSON que casa com ele. Em 2026, é o padrão pra qualquer
+uso sério. Detalhes no nó `function-calling` da Fase 2.
+
+<Quiz
+  question="Você está pedindo ao modelo para gerar dados que vão entrar num script. Qual é a melhor instrução de formato?"
+  options={[
+    { text: "\"Responda com os dados em formato estruturado.\"", correct: false, explanation: "Vago. \"Estruturado\" pode ser CSV, JSON, YAML, TSV... e o modelo não vai chutar bem." },
+    { text: "\"Responda apenas com JSON válido, sem markdown, sem texto antes ou depois, seguindo este schema: {nome: string, idade: number}\"", correct: true },
+    { text: "\"Responda em JSON se possível.\"", correct: false, explanation: "\"Se possível\" dá ao modelo permissão pra não fazer. E sem schema explícito, o JSON pode não ter o que você precisa." }
+  ]}
+/>
+
+- **Formato de saída é parte do prompt**, não detalhe. Se você não disser,
+  o modelo decide por você.
+- **Os 4 que resolvem 95% dos casos:** prosa, listas, tabelas, JSON.
+- **"Apenas" + exemplo curto** é a combinação que mais aumenta aderência.
+- **Para JSON em produção**, use **structured outputs / JSON Schema** -
+  garantia, não esperança (detalhes em `function-calling`).
+- **Markdown code fences (` ```json `) na resposta** vão te morder se
+  você não pedir pra omitir.
+
+> Dica: a primeira coisa a testar quando o output vem "mais ou menos" é
+> **"o que eu disse sobre formato?"**. Em 70% dos casos, a resposta é
+> "nada" ou "algo vago". Corrija isso e o problema some.
+
+No próximo nó, vamos falar de uma habilidade que muda tudo: **iterar o
+prompt** em vez de reescrever do zero a cada vez.

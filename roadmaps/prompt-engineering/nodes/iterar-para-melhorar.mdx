@@ -1,0 +1,138 @@
+---
+id: iterar-para-melhorar
+title: "Iterar é tudo: como refinar um prompt sem reescrever do zero"
+resources:
+  - title: "Anthropic - Iterate on your prompts (EN, workflow recomendado)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/iterate-prompts
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Best practices: split complex tasks into subtasks (EN)"
+    url: https://platform.openai.com/docs/guides/prompt-engineering#strategy-split-complex-tasks-into-subtasks
+    type: doc
+    lang: en
+    free: true
+---
+
+Esse é um dos "momentos uau" desta trilha. Se você levar **uma** coisa
+deste nó, leve essa: **trate o prompt como código**. Rode, avalie, ajuste,
+repita. Quem pensa assim, em poucas horas, faz mais do que quem passa
+semanas "tentando achar o prompt perfeito de primeira".
+
+## O loop de iteração
+
+<Mermaid
+  chart={`flowchart LR
+    A["1. PROMPT\\ninicial"] --> B["2. EXECUTAR\\nno modelo"]
+    B --> C["3. AVALIAR\\n(o que veio?)"]
+    C --> D{"Tá bom?"}
+    D -- Não --> E["4. DIAGNOSTICAR\\nonde falhou"]
+    E --> F["5. AJUSTAR\\n(uma coisa por vez)"]
+    F --> B
+    D -- Sim --> G["6. VERSIONAR\\nsalvar como v1"]`}
+  caption="O loop de prompt engineering: nunca busque o prompt perfeito de primeira. Rode, avalie, ajuste, repita."
+/>
+
+A parte que mais gente pula é a **3 (avaliar)** e a **4 (diagnosticar)**.
+A reação natural a uma resposta ruim é "vou reformular tudo". Mas sem
+diagnóstico, a reformulação vira tentativa-e-erro cega. Você gasta 30
+minutos mexendo no escuro.
+
+**O método:**
+
+1. **Rode o prompt inicial** e anote (mentalmente ou num doc) o que veio.
+2. **Liste 2-3 problemas concretos** da resposta. Seja específico: "o tom
+   está formal demais", "faltou o critério X", "veio prosa, eu pedi tabela".
+3. **Mapeie cada problema para a peça do prompt que deve corrigi-lo.**
+   Use a anatomia do `seu-primeiro-prompt` como checklist:
+   - Tom ruim → ajustar **persona** ou adicionar **restrições** de tom
+   - Faltou informação → expandir **contexto**
+   - Fez coisa que não devia → adicionar **restrição** ("NÃO faça X")
+   - Formato errado → ajustar peça **formato**
+   - Não entendeu a tarefa → simplificar **tarefa** ou quebrar em subtarefas
+4. **Mude uma coisa por vez.** Se mudar três, não sabe qual ajudou.
+5. **Rode de novo.** Compare. Repita até a resposta estar boa.
+6. **Salve a versão final** com nome (v1, v2, ...). É seu histórico.
+
+## Exemplo real: refinar um prompt de resumo executivo
+
+**v1 (vago, vai mal):**
+> "Resuma esse relatório."
+
+**Resposta v1:** resumo de 3 parágrafos, foca em histórico, ignora
+números-chave, tom acadêmico.
+
+**Diagnóstico:**
+- Falta contexto de público (pra quem é o resumo?)
+- Falta critério de tamanho
+- Falta diretiva sobre o que priorizar
+
+**v2 (com anatomia, mas iterando):**
+> "Você é um analista de negócios preparando um resumo executivo para
+> o CEO, que tem 5 minutos pra ler.
+>
+> Resuma o relatório abaixo em 200 palavras, priorizando: (1) números
+> e metas, (2) decisões tomadas, (3) próximos passos. Use tom direto e
+> ativo. Termine com 1 bullet 'O que precisa de decisão do CEO'.
+>
+> Relatório: [colar]"
+
+**Resposta v2:** muito melhor, mas ignorou o bullet final.
+
+**Diagnóstico:**
+- Pedido do bullet final ficou "solto" no fim. Modelo deu menos peso.
+
+**v3:**
+> (mesma v2, mas movido o bullet final para uma seção
+> **"OBRIGATÓRIO"** no topo, depois da tarefa)
+
+**Resposta v3:** atende tudo. Salva como v3.
+
+Três iterações, não dez. Cada uma com mudança cirúrgica. **E você tem
+v1, v2, v3 salvas** - se daqui a 6 meses alguém pedir "resumo
+executivo" de novo, você não começa do zero.
+
+## Versionar prompts em arquivo
+
+Quando o prompt vira "reutilizável" (você usa 2+ vezes), ele merece um
+arquivo. Convenção simples:
+
+```
+prompts/
+  resumo-executivo/
+    v1.txt
+    v2.txt
+    v3.txt
+    notas.md   <- o que mudou entre versões e por quê
+```
+
+Você pode usar Git, Notion, Google Docs - qualquer coisa que dê
+histórico. O ponto é: **se você está reescrevendo o mesmo prompt do
+zero toda semana, está fazendo errado**.
+
+<Quiz
+  question="Seu prompt deu uma resposta com tom certo, mas faltou incluir um dado específico que você pediu. O que é mais provável estar faltando?"
+  options={[
+    { text: "Persona mais específica", correct: false, explanation: "Persona controla voz e tom, não a inclusão de dados específicos." },
+    { text: "Restrição ou tarefa mais explícita sobre aquele dado", correct: true, explanation: "Se o modelo não incluiu um dado específico, o pedido dele provavelmente não estava claro ou forte o suficiente. Reforçar a tarefa ou tornar a inclusão uma restrição explícita tende a resolver." },
+    { text: "Mais exemplos few-shot", correct: false, explanation: "Few-shot ajuda, mas aqui o sintoma é 'dado esquecido', não 'formato errado'. Geralmente é problema de clareza da tarefa, não de exemplo." }
+  ]}
+/>
+
+- **Iterar é o trabalho real.** O primeiro prompt quase nunca é o
+  melhor, e tá tudo bem.
+- **Mude uma coisa por vez.** Se mudar três, não sabe qual ajudou.
+- **Sempre diagnostique antes de mudar.** "O que veio + por que veio
+  assim + o que eu queria" é a tríade.
+- **Versione.** Salve v1, v2, v3. Você vai reaproveitar mais do que
+  pensa.
+- **Trate prompt como código**: rode, avalie, ajuste, repita. É o
+  mesmo loop de TDD, só que o "teste" é subjetivo.
+
+> Dica: o "mudar uma coisa por vez" parece ineficiente. Não é. É o
+> atalho. Mexer em três coisas e rezar pra dar certo gasta mais
+> tempo do que três ciclos de uma coisa por vez. Confie.
+
+No próximo nó, vamos olhar pra **o outro lado**: as limitações do modelo
+que vão te morder se você não souber delas. Honestidade sobre a
+ferramenta é o que separa hobby de profissão.

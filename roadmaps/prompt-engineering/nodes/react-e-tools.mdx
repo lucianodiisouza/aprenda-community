@@ -1,0 +1,110 @@
+---
+id: react-e-tools
+title: "ReAct e tool use: o modelo que age no mundo"
+resources:
+  - title: "Yao et al. - ReAct: Synergizing Reasoning and Acting in Language Models (paper original, EN)"
+    url: https://arxiv.org/abs/2210.03629
+    type: artigo
+    lang: en
+    free: true
+  - title: "Anthropic - Tool use (function calling) (EN, canônico)"
+    url: https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Function calling (EN, canônico)"
+    url: https://platform.openai.com/docs/guides/function-calling
+    type: doc
+    lang: en
+    free: true
+---
+
+Até agora, o modelo **só lê texto e escreve texto**. Mas e se ele
+precisasse **buscar a temperatura atual em São Paulo**? **Consultar o
+status de um pedido**? **Calcular algo com precisão**? **Procurar num
+banco de dados**? Sozinho, ele não consegue - o conhecimento dele é
+estático e ele erra matemática.
+
+**Tool use** (também chamado de **function calling**) resolve isso: você
+dá ao modelo acesso a **funções externas**, ele decide quando e como
+chamá-las, e usa o resultado pra continuar a resposta.
+
+## O loop ReAct (Reasoning + Acting)
+
+A ideia original do [paper ReAct](https://arxiv.org/abs/2210.03629):
+intercalar **raciocínio** ("preciso saber X") com **ação** ("vou chamar
+a função Y") e **observação** ("o resultado foi Z, agora...").
+
+<Mermaid
+  chart={`flowchart LR
+    A["Pergunta:\\n'Tempo em SP agora?'"] --> B["Thought:\\n'Preciso de dados em tempo real'"]
+    B --> C["Action:\\nchamar get_weather(SP)"]
+    C --> D["Observation:\\n'23°C, nublado'"]
+    D --> E["Thought:\\n'Tenho o que preciso'"]
+    E --> F["Final Answer:\\n'23°C e nublado em SP'"]`}
+  caption="ReAct: Thought → Action → Observation → Thought → ... → Final Answer. O modelo intercala raciocínio e ação até ter o que precisa."
+/>
+
+Em produção, o loop é um pouco diferente - o modelo não escreve "Thought"
+em texto livre, mas **gera uma chamada de função estruturada** que seu
+código executa. Mas a intuição é a mesma: o modelo **decide** o que
+fazer, age, observa, e repete.
+
+## Como funciona na prática (com function calling)
+
+O fluxo de function calling em providers modernos é:
+
+1. **Você define as funções** que o modelo pode chamar, com nome,
+   descrição e parâmetros (em JSON Schema).
+2. **Você envia a mensagem** do usuário + a lista de funções
+   disponíveis.
+3. **O modelo responde** com: "quero chamar a função X com parâmetros
+   Y" - **ou** com a resposta em texto, se não precisar de função.
+4. **Seu código executa** a função X com parâmetros Y.
+5. **Você devolve o resultado** da função pro modelo, junto com a
+   mensagem original.
+6. **O modelo gera a resposta final** pro usuário, agora com o
+   resultado da função no contexto.
+
+## Tipos de tools mais úteis
+
+- **Busca (search)** - o modelo decide **o que buscar** e você busca
+  (Google, Bing, busca interna). Resolve o problema de knowledge
+  cutoff.
+- **Calculadora / execução de código** - o modelo não erra 23 × 47 se
+  delegar a uma calculadora. Em 2026, a maioria dos providers tem
+  **code execution nativo** (Python sandbox) que o modelo usa.
+- **RAG (busca em base de conhecimento)** - busca em documento/index
+  vetorial. Detalhes no próximo nó.
+- **APIs externas** - mandar e-mail, criar ticket, atualizar CRM,
+  consultar banco. Tudo que seu sistema faz.
+- **Memória persistente** - ler/escrever em um store de longo prazo.
+
+<Quiz
+  question="Você tem um assistente de e-commerce. Cliente pergunta: 'Vocês têm o tênis X no tamanho 42?'. Qual a melhor arquitetura?"
+  options={[
+    { text: "Colar a tabela de estoque no system prompt toda vez", correct: false, explanation: "Desperdiça tokens, vira rapidamente inviável, e mistura 'instruções' com 'dados' (anti-pattern)." },
+    { text: "Tool use: o modelo chama uma função `consultar_estoque(produto, tamanho)` que retorna o status real", correct: true },
+    { text: "Pedir pro modelo adivinhar com base no conhecimento dele", correct: false, explanation: "Modelo não tem seu estoque. Vai alucinar e você vai vender fantasma." }
+  ]}
+/>
+
+- **Tool use dá "superpoderes" ao modelo**: ele passa a poder agir no
+  mundo real, não só gerar texto.
+- **ReAct** é o loop conceitual: Thought → Action → Observation →
+  repetir.
+- **Function calling** é a implementação técnica: o modelo gera
+  chamadas estruturadas, seu código executa.
+- **Tool use resolve:** knowledge cutoff (search), cálculo
+  (code execution), dados privados (RAG), ações (APIs).
+- **Definir bem a descrição e os parâmetros da função é metade do
+  trabalho.** Modelo decide com base nisso.
+
+> Dica: a melhor heurística pra "vale a pena tool use?" é: **"se um
+> humano precisaria de uma ferramenta pra responder, o modelo
+> também precisa"**. Isso inclui buscar, calcular, consultar e
+> agir.
+
+No próximo nó, vamos mergulhar no tool use **mais importante em
+produção**: **RAG** - dar ao modelo acesso a **seus** documentos sem
+treiná-lo de novo.

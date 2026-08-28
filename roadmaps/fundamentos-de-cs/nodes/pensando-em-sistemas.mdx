@@ -1,0 +1,127 @@
+---
+id: pensando-em-sistemas
+title: "Pensando em Sistemas"
+resources:
+  - title: "Domain-Driven Design (Wikipedia EN)"
+    url: https://en.wikipedia.org/wiki/Domain-driven_design
+    type: doc
+    lang: en
+    free: true
+  - title: "Designing Data-Intensive Applications (livro, referência canônica)"
+    url: https://dataintensive.net/
+    type: doc
+    lang: en
+    free: true
+---
+
+Programar é traduzir intenção em código. **Projetar sistemas** é
+organizar essa tradução em peças que durem, escalem, e sejam
+entendidas por outras pessoas. A diferença entre um dev que
+escreve funções e um que projeta sistemas é, antes de tudo, uma
+coleção de hábitos mentais.
+
+## O essencial 🟢
+
+Quatro hábitos sustentam qualquer sistema que dura:
+
+- **Decomposição em módulos** - quebrar o sistema em peças com
+  **responsabilidades claras**. Um módulo "pedidos" não deveria
+  saber nada sobre como emails são enviados. Quando você precisa
+  mudar como emails são enviados, abre **um** módulo. Esse é o
+  teste de fogo: o número de arquivos que você precisa abrir pra
+  mudar uma coisa.
+- **Contratos explícitos** - a fronteira entre módulos é um
+  **contrato**: o que o módulo promete fazer, e o que ele espera
+  receber. Em código, isso aparece como **interfaces** (Java, Go,
+  C#, TypeScript) ou **tipos** bem definidos (Rust, Haskell, TypeScript).
+  O módulo A não precisa saber **como** o módulo B faz - só o
+  **quê**.
+- **Composição sobre cópia** - sempre que precisar de "algo
+  parecido mas diferente", **componha** ao invés de copiar e
+  colar. Função que recebe outra função como argumento. Módulo
+  que recebe outro módulo como dependência. É o que torna o
+  código flexível sem virar espaguete.
+- **State explícito** - "onde está o estado?" é a pergunta mais
+  importante de um sistema. Variáveis globais, banco de dados,
+  cache, sessão do usuário - cada um tem trade-offs de leitura,
+  escrita, consistência, e risco. Esconder estado (variáveis
+  globais disfarçadas, "efeito colateral oculto") é a fonte número
+  um de bugs difíceis.
+
+A frase que captura tudo: **"faz uma coisa bem feita"** (filosofia
+Unix). Cada módulo é responsável por uma coisa, e a faz bem. O
+sistema emerge da composição desses módulos pequenos e afiados.
+
+> Dica: se você está travado num problema grande, escreva o
+> **contrato** primeiro. "Esse módulo recebe X, garante Y, retorna
+> Z". Se você não consegue escrever isso, o problema ainda não
+> está claro o suficiente.
+
+## Aprofundamento 🟡
+
+**Domain-Driven Design (DDD)**, do Eric Evans (2003), é uma caixa
+de ferramentas pra modelar sistemas complexos. Princípios-chave:
+
+- **Linguagem ubíqua**: devs e experts do domínio falam a mesma
+  língua. O código usa os mesmos termos que o cliente usa.
+- **Bounded contexts**: cada subsistema tem seu próprio modelo.
+  "Cliente" pro time de vendas é diferente de "Cliente" pro time
+  de suporte - e tudo bem.
+- **Agregados**: unidades de consistência. Tudo dentro de um
+  agregado é modificado junto; entre agregados, comunicação via
+  eventos ou APIs.
+
+Na prática, DDD ajuda a **evitar o monstro de 50 tabelas todas
+interconectadas** que todo mundo já viu em sistema legado. Não é
+receita pronta - é lente pra você ver o sistema com mais clareza.
+
+**Acoplamento e coesão** são as duas métricas clássicas. **Coesão**
+= quão relacionadas são as coisas dentro de um módulo (alto = bom).
+**Acoplamento** = quão dependentes são os módulos entre si (baixo
+= bom). A regra prática: "mude um módulo sem mexer nos outros" é o
+objetivo. Acoplamento alto torna isso impossível.
+
+## Pra quem quer ir além 🔴
+
+**Teoria dos tipos** é a base matemática de linguagens como Rust,
+Haskell, TypeScript, e Swift. A ideia central: tipos são **provas
+sobre o comportamento do programa**. Um tipo `NonEmptyList`
+impossibilita listas vazias em tempo de compilação. Um tipo
+`Result<T, E>` força você a tratar erros. Quanto mais precisão no
+tipo, menos bugs em produção. Linguagens com tipos dependentes
+(Idris, Lean, Coq) levam isso ao extremo - é possível provar que
+um algoritmo de ordenação realmente ordena.
+
+**Teoria das categorias** é ainda mais abstrata. Composições,
+functores, mônadas - são padrões que aparecem em qualquer
+sistema complexo, não só em código. Vale conhecer pra ter um
+vocabulário, não pra usar no dia a dia (a menos que você trabalhe
+com Haskell).
+
+**Leitura fundamental:** *Designing Data-Intensive Applications*
+(Martin Kleppmann, 2017, link no recurso acima) é provavelmente
+o melhor livro de engenharia de software da década. Cobre
+bancos, filas, cache, consistência, replicação - tudo no nível
+certo pra devs seniores sem ser superficial nem acadêmico.
+
+---
+
+## Recap da trilha
+
+Você percorreu 10 nós: do auto-diagnóstico ao pensamento de
+sistemas. Se você chegou aqui e consegue explicar cada camada
+🟢 em 30 segundos, o objetivo da trilha foi cumprido.
+
+**Próximos passos naturais:**
+
+- Trilhas específicas filhas (planejadas): `sistemas-operacionais`,
+  `redes-para-devs`, `banco-de-dados-teoria`, `arquitetura-de-computadores`,
+  `compiladores`.
+- Trilha de **Complexidade de Algoritmos** pra aprofundar o nó 5.
+- Trilha de **Backend** pra ver como tudo isso se junta num sistema
+  real.
+- Bootcamp **Desenvolvedor Backend** pra costurar trilhas em projeto
+  integrador.
+
+E quando estiver pronto pra ensinar, volta aqui - ensinar é o
+melhor jeito de fixar.

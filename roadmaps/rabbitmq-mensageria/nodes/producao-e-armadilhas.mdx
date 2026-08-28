@@ -1,0 +1,149 @@
+---
+id: producao-e-armadilhas
+title: "Erros comuns em produção"
+resources:
+  - title: "Production Checklist (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/production-checklist
+    type: doc
+    lang: en
+    free: true
+  - title: "Monitoramento e métricas (docs oficial, EN)"
+    url: https://www.rabbitmq.com/docs/monitoring
+    type: doc
+    lang: en
+    free: true
+---
+
+Tudo o que você viu até aqui funciona na sua máquina. Produção adiciona
+volume, concorrência e falha de rede - e é aí que aparecem os problemas
+que nenhum tutorial mostra.
+
+## Conexão por mensagem
+
+O erro de performance número um:
+
+```js
+// nunca faça isso dentro de um handler de request
+async function publicar(evento) {
+  const conn = await amqp.connect("amqp://localhost")
+  const ch = await conn.createChannel()
+  ch.publish("pedidos", "order.created", Buffer.from(evento))
+  await conn.close()
+}
+```
+
+Abrir conexão AMQP é caro - handshake TCP, autenticação, negociação de
+protocolo. Fazer isso a cada mensagem derruba a vazão e ainda esgota os
+file descriptors do broker sob carga.
+
+O certo é **uma conexão por aplicação**, aberta na subida e reaproveitada.
+Canais são baratos: um por thread ou worker, criados a partir da mesma
+conexão.
+
+## Fila que só cresce
+
+Fila é buffer, não banco de dados. Se o consumidor processa mais devagar
+que o produtor publica, ela cresce até estourar a memória do broker - e
+quando isso acontece, o RabbitMQ aplica *backpressure* e **trava os
+publishers**. Sua API começa a pendurar sem motivo aparente.
+
+Duas defesas, e vale ter as duas:
+
+```js
+await channel.assertQueue("fila.pagamento", {
+  durable: true,
+  maxLength: 100000,                    // teto de mensagens
+  deadLetterExchange: "pedidos.dlx",    // o excedente vai pra DLQ
+})
+```
+
+E monitore a **profundidade da fila** ao longo do tempo. Fila oscilando
+é saudável; fila que só sobe é bug ou falta de worker - e você quer
+saber disso antes do disco encher.
+
+## Idempotência
+
+O RabbitMQ garante entrega **pelo menos uma vez**, não exatamente uma.
+Consumidor que caiu depois de processar mas antes do `ack` vai receber a
+mesma mensagem de novo. É comportamento correto, não bug.
+
+Ou seja: **seu consumidor precisa aguentar processar a mesma mensagem
+duas vezes** sem cobrar o cliente em dobro.
+
+O jeito mais simples é dar um id único a cada mensagem e registrar o que
+já foi processado:
+
+```js
+const { messageId } = msg.properties
+
+if (await jaProcessado(messageId)) {
+  channel.ack(msg)   // duplicata, ignora
+  return
+}
+
+await processar(msg)
+await marcarProcessado(messageId)
+channel.ack(msg)
+```
+
+## Mensagem grande demais
+
+Fila não é lugar pra PDF de 40MB. Mensagem grande ocupa memória do
+broker, atrasa todo mundo na fila e complica o retry.
+
+O padrão é **claim check**: sobe o arquivo pro storage (S3, disco) e
+manda só a referência.
+
+```js
+// em vez do arquivo inteiro
+channel.publish("docs", "novo", Buffer.from(JSON.stringify({
+  arquivoUrl: "s3://bucket/nota-123.pdf",
+  tamanho: 42_000_000,
+})))
+```
+
+## O mínimo de observabilidade
+
+Três sinais resolvem a maior parte dos incidentes:
+
+- **Profundidade da fila** - subindo sem parar significa consumidor
+  lento ou parado.
+- **Fila morta enchendo** - tem bug em produção agora.
+- **Consumidores conectados** - caiu pra zero e ninguém percebeu é o
+  pior cenário possível.
+
+> Dica: alerta na DLQ é o de melhor custo-benefício. Fila principal
+> vazia parece saúde, mas se tudo está indo pra DLQ é desastre
+> silencioso - a fila esvazia justamente porque nada está dando certo.
+
+Três coisas pra fixar:
+
+- **Uma conexão por aplicação**, muitos canais. Nunca conexão por
+  mensagem.
+- **Entrega é pelo menos uma vez.** Consumidor precisa ser idempotente.
+- **Fila sem teto é incidente esperando acontecer.** Ponha `maxLength`
+  e monitore a profundidade.
+
+No próximo nó você junta tudo isso num projeto de verdade.
+
+<Quiz
+  question="Por que o consumidor precisa ser idempotente?"
+  options={[
+    {
+      text: "A entrega é pelo menos uma vez: se o consumidor cair depois de processar mas antes do ack, a mensagem volta e é processada de novo",
+      correct: true,
+    },
+    {
+      text: "O RabbitMQ entrega a mesma mensagem pra vários consumidores de propósito",
+      correct: false,
+      explanation:
+        "Numa work queue cada mensagem vai pra um worker só.",
+    },
+    {
+      text: "O produtor sempre publica cada evento duas vezes por segurança",
+      correct: false,
+      explanation:
+        "Não é o produtor; é a garantia de entrega pelo menos uma vez no ack.",
+    },
+  ]}
+/>

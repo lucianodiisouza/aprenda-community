@@ -1,0 +1,101 @@
+---
+id: estruturas-de-dados-fundamentais
+title: "Estruturas de Dados Fundamentais"
+resources:
+  - title: "Estruturas de dados (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+---
+
+Estrutura de dados é o **formato que você escolhe pra guardar e
+organizar informação** na memória. Cada uma tem trade-offs de tempo
+e memória, e cada uma é boa em certas operações e ruim em outras.
+A escolha certa é o que separa código que escala de código que
+engasga. As cinco estruturas a seguir cobrem 90% do que você
+encontrará no dia a dia.
+
+## O essencial 🟢
+
+**Array / Lista (sequência indexada)** - elementos em posições
+contíguas na memória, acessados por índice. Acesso por índice é
+`O(1)`. Adicionar no final, em geral, é `O(1)` amortizado. Adicionar
+no meio é `O(n)` (precisa empurrar os outros).
+
+Use quando: a ordem importa, você acessa por posição, o tamanho
+não muda muito. É a estrutura padrão - "lista de coisas".
+
+**Lista ligada (linked list)** - cada elemento tem o valor e um
+ponteiro pro próximo. Inserção/remoção no meio é `O(1)` se você já
+tem a referência, mas acesso por índice é `O(n)` (precisa percorrer).
+Memória extra por elemento (o ponteiro).
+
+Use quando: inserções/remoções são muito mais frequentes que acesso
+por índice. Em código de alto nível, é raro precisar da linked list
+"na mão" - a maioria das linguagens oferece variantes prontas.
+
+**Hash table (tabela hash)** - mapeia chave pra valor via uma
+função hash. Lookup, inserção e remoção **médios** são `O(1)`. Pior
+caso pode degradar pra `O(n)` (se a função hash for ruim e houver
+muitas colisões).
+
+Use quando: você precisa buscar por chave, contar frequência, ou
+detectar duplicatas. É provavelmente a estrutura mais usada em
+código real - atrás de quase toda boa performance.
+
+**Árvore (tree)** - estrutura hierárquica: cada nó tem filhos.
+Casos especiais importantes:
+
+- **Árvore binária de busca** (BST): filhos menores à esquerda,
+  maiores à direita. Busca `O(log n)` na média. Vira `O(n)` se
+  desbalanceada.
+- **Árvore balanceada** (AVL, Red-Black): mantém a altura curta.
+  Sempre `O(log n)`. A maioria das linguagens usa isso por baixo
+  dos `Set`/`Map` ordenados.
+
+Use quando: dados hierárquicos (DOM, sistema de arquivos, JSON
+aninhado) ou quando precisa de acesso ordenado (`Set` ordenado,
+`PriorityQueue`).
+
+**Grafo** - nós (vértices) ligados por arestas. Pode ser direcionado
+(arestas com sentido) ou não, ponderado (arestas com custo) ou não.
+
+Use quando: modelar redes sociais, mapas, dependências, qualquer
+relação "many-to-many". Algoritmos clássicos: BFS (busca em
+largura), DFS (busca em profundidade), Dijkstra (caminho mínimo).
+
+> Dica: antes de pensar "qual estrutura?", pense "que operações eu
+> vou fazer com mais frequência?" Acesso por índice → array. Busca
+> por chave → hash. Ordem + acesso por extremidade → árvore. Relações
+> complexas → grafo.
+
+## Aprofundamento 🟡
+
+**B-tree e tries** são especializadas que aparecem em engines de
+banco de dados e autocomplete:
+
+- **B-tree**: generaliza a BST, cada nó pode ter muitos filhos.
+  É a estrutura que SQLite, PostgreSQL, MySQL usam por baixo dos
+  índices. Minimiza acessos a disco (cada nó é uma página).
+- **Trie** (prefix tree): cada caractere é um nível da árvore.
+  Busca de prefixo é `O(comprimento do prefixo)`. É o que está por
+  trás de autocomplete e correção de digitação.
+
+**Localidade importa.** Em código de baixo nível, percorrer uma
+lista ligada (cada nó em lugar diferente da memória) é
+significativamente mais lento que percorrer um array (tudo contíguo),
+mesmo sendo a mesma `O(n)`. É o tal do **cache locality** que vimos
+no nó 2. Por isso, na dúvida, prefira array.
+
+## Pra quem quer ir além 🔴
+
+A análise formal da complexidade de cada estrutura (com provas
+matemáticas de por que busca em BST balanceada é `O(log n)`, por
+que hash tem pior caso `O(n)`, e por que BFS visita todos os
+vértices uma vez) está no Capítulo 12 do *Introduction to Algorithms*
+(CLRS) - o livro-texto canônico de algoritmos. É denso, é formal,
+e vale a pena pra quem quer profundidade.
+
+No próximo nó, vamos olhar **memória** - stack, heap, e o ciclo de
+vida dos seus objetos.

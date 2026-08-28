@@ -1,0 +1,178 @@
+---
+id: rede
+title: "Rede no terminal: curl, ping, dig e ss"
+resources:
+  - title: "curl - tudo que você precisa saber (EN)"
+    url: https://curl.se/docs/manual.html
+    type: doc
+    lang: en
+    free: true
+  - title: "HTTP - visão geral (MDN, PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Overview
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando algo na rede não funciona (API retornando 500, DNS
+resolvendo pro lugar errado, porta ocupada), o terminal é onde
+você **debuga**. `curl` é o canivete - tudo que o navegador faz
+pode ser feito pela linha de comando, e mais.
+
+## `curl` - HTTP na linha de comando
+
+```bash
+# GET simples (mostra só o body por padrão)
+curl https://api.exemplo.com/users
+
+# mostra headers de resposta também
+curl -i https://api.exemplo.com/users
+
+# verbose total (request + response + handshake)
+curl -v https://api.exemplo.com/users
+
+# POST com JSON
+curl -X POST -H "Content-Type: application/json" \
+     -d '{"name": "João", "age": 30}' \
+     https://api.exemplo.com/users
+
+# com arquivo JSON
+curl -X POST -H "Content-Type: application/json" \
+     -d @dados.json \
+     https://api.exemplo.com/users
+
+# envia header customizado (auth, API key)
+curl -H "Authorization: Bearer token123" https://api.exemplo.com/me
+
+# segue redirects (default: não segue)
+curl -L https://encurtador.com/abc
+
+# salva em arquivo (igual wget)
+curl -o arquivo.html https://exemplo.com
+curl -O https://exemplo.com/arquivo.zip    # usa o nome do servidor
+
+# timeout customizado
+curl --max-time 10 https://api.exemplo.com   # falha se demorar mais de 10s
+
+# só os headers, sem body
+curl -I https://exemplo.com                  # HEAD request
+
+# testa status code só (útil em CI)
+curl -s -o /dev/null -w "%{http_code}\n" https://exemplo.com
+# 200
+```
+
+> **O `-s` (silent)** suprime a barra de progresso. Combine com
+> `-o /dev/null` pra ignorar o body. `-w` formata o output
+> (status code, tempo, etc). É o padrão pra testar em scripts.
+
+A vantagem do `curl` sobre o navegador: **automatiza** (loop em
+muitos endpoints, testa em CI), **vê os headers** (que o
+navegador esconde), e **simula diferentes clients** (com
+`--user-agent`, `--cookie`, etc).
+
+## `wget` - alternativa ao curl pra download
+
+```bash
+wget https://exemplo.com/arquivo.zip          # baixa
+wget -c https://exemplo.com/arquivo.zip       # continua download interrompido
+wget -r -np https://exemplo.com/docs/         # espelha site inteiro (cuidado!)
+```
+
+`wget` é mais simples que `curl` pra **download recursivo de
+site** ou quando você quer um comando "faz o download e acabou"
+sem se preocupar com saída. Pra requests HTTP com lógica
+complexa, `curl`.
+
+## `ping` e traceroute
+
+```bash
+ping google.com                     # ICMP echo contínuo (Ctrl+C pra parar)
+ping -c 5 google.com                # 5 pings só (Linux/macOS)
+ping -c 5 -i 2 google.com           # 5 pings com 2s entre eles
+
+traceroute google.com               # mostra o caminho (cada roteador)
+tracepath google.com                # alternativa sem root
+```
+
+`ping` testa conectividade básica (host responde ICMP?). Se
+falha, é problema de rede, firewall, ou DNS.
+
+`traceroute` mostra **cada salto** entre você e o destino. Útil
+pra identificar "onde" a conexão tá quebrando.
+
+> **Bloqueio comum**: muitos servidores na nuvem bloqueiam
+> ICMP por default. `ping` falhar não significa que o host tá
+> fora - pode ser só firewall.
+
+## `dig` e `nslookup` - DNS
+
+```bash
+dig exemplo.com                     # lookup A padrão
+dig exemplo.com +short              # só o IP
+dig exemplo.com MX                  # registros MX (email)
+dig exemplo.com TXT                 # registros TXT (SPF, DKIM, etc)
+dig @8.8.8.8 exemplo.com           # usa DNS específico (Google)
+dig -x 8.8.8.8                      # reverse lookup: IP -> hostname
+
+nslookup exemplo.com                # alternativa (mais antiga, menos flexível)
+host exemplo.com                    # ainda mais simples, só o básico
+```
+
+`dig` é o padrão pra debug de DNS. Mostra o TTL, o servidor
+que respondeu, flags - tudo que você precisa pra entender por
+que "não tá resolvendo".
+
+## `ss` e `netstat` - portas e conexões
+
+```bash
+# mostra todas as portas TCP/UDP escutando
+ss -tulnp                           # t=TCP, u=UDP, l=listening, n=numeric, p=process
+netstat -tulnp                      # mesmo, mais antigo (não vem em distros novas)
+
+# conexões estabelecidas
+ss -tnp | grep :443                 # quem tá conectado na porta 443
+
+# processos em portas específicas
+lsof -i :8080                       # quem tá usando a porta 8080
+fuser 8080/tcp                      # ID do processo (mais minimalista)
+```
+
+Quando você recebe "port already in use" ou quer saber se um
+serviço tá realmente escutando, esses comandos respondem.
+
+> **Cuidado com `-p`**: precisa de root (ou capability) pra
+> mostrar o nome do processo. Sem ele, você vê a porta mas não
+> quem tá usando.
+
+## `wget` / `curl` testando TLS/SSL
+
+```bash
+# teste de certificado
+openssl s_client -connect exemplo.com:443 -servername exemplo.com </dev/null
+
+# só o certificado (formato texto)
+echo | openssl s_client -connect exemplo.com:443 2>/dev/null | openssl x509 -text -noout
+```
+
+Útil pra debug de "certificado inválido", "data de validade
+expirada", etc.
+
+Três conceitos que você acabou de aprender:
+
+- **`curl`** é o canivete de HTTP. Em CI/CD, ele testa
+  endpoints. Em debug, ele mostra exatamente o que o servidor
+  respondeu.
+- **`dig` e `ss`** respondem as duas perguntas mais comuns:
+  "esse domínio resolve pra onde?" e "quem tá usando essa
+  porta?".
+- **`ping` falhar ≠ host fora** - muitos servidores bloqueiam
+  ICMP. Use `curl` ou `traceroute` pra confirmar.
+
+> Dica: o combo `curl -v + dig + ss` resolve 90% dos "API não
+> responde". `curl -v` mostra o handshake TLS e os headers,
+> `dig` mostra o IP que o DNS resolveu, `ss` mostra se algo
+> tá escutando na porta.
+
+No próximo, **edição mínima**: `nano` e `vim`. Porque às vezes
+o único editor disponível num servidor é um dos dois.

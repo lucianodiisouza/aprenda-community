@@ -1,0 +1,105 @@
+---
+id: seu-primeiro-prompt
+title: "Seu primeiro prompt: a anatomia de um prompt bem-feito"
+resources:
+  - title: "Anthropic - Be clear and direct (EN, canônico)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/be-clear-and-direct
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Best practices for prompt engineering (EN, canônico)"
+    url: https://help.openai.com/en/articles/6654000-best-practices-for-prompt-engineering
+    type: doc
+    lang: en
+    free: true
+  - title: "Google - Prompting guide 101 (PT-BR)"
+    url: https://ai.google.dev/gemini-for-makers/prompting-guide-101?hl=pt-BR
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um prompt bem-feito não é "pergunta comprida". É um **pacote de informação**
+que dá ao modelo tudo o que ele precisa pra não chutar. A anatomia tem
+**cinco peças**. Você não precisa usar todas sempre - mas saber que elas
+existem te deixa decidir o que está faltando quando o resultado vem ruim.
+
+<Mermaid
+  chart={`flowchart TB
+    subgraph P["As 5 partes de um prompt bem-feito"]
+      direction TB
+      P1["1. PAPEL / PERSONA\\nQuem o modelo está sendo"]
+      P2["2. TAREFA\\nO que ele deve fazer"]
+      P3["3. CONTEXTO\\nO que ele precisa saber pra fazer"]
+      P4["4. RESTRIÇÕES\\nO que ele NÃO deve fazer"]
+      P5["5. FORMATO\\nComo ele deve entregar"]
+      P1 --> P2 --> P3 --> P4 --> P5
+    end`}
+  caption="Anatomia de um prompt: cinco peças que, juntas, tiram a ambiguidade."
+/>
+
+Vamos ver as cinco com um exemplo concreto. Imagine que você quer um e-mail
+de follow-up pra um cliente que ficou em silêncio depois de uma proposta.
+
+**❌ Prompt vago (sem anatomia):**
+> "Escreve um e-mail pro cliente."
+
+**✅ Prompt com anatomia:**
+> ```
+> Você é um vendedor B2B sênior, com 10 anos de experiência em
+> SaaS, tom profissional mas humano.
+>
+> Tarefa: escreva um e-mail de follow-up para um cliente que
+> recebeu uma proposta há 7 dias e não respondeu.
+>
+> Contexto: o cliente é uma indústria de médio porte (200
+> funcionários), o ponto de contato é o CFO, a proposta era
+> para um ERP com valor de R$ 80k anuais, e já tivemos uma
+> call de discovery em que ele se mostrou interessado mas
+> pediu tempo para "alinhar internamente".
+>
+> Restrições: NÃO use pressão comercial agressiva, NÃO
+> mencione a proposta de preço, NÃO sugira uma call sem
+> deixar claro que é opcional.
+>
+> Formato: assunto em uma linha, corpo com no máximo 120
+> palavras, ending com uma pergunta aberta (não um "aguardo
+> retorno" genérico).
+> ```
+
+A diferença é brutal. O primeiro pode dar qualquer coisa - de um
+"Prezado cliente, segue em anexo..." robótico a um textão agressivo de
+vendas. O segundo **define a pessoa, a tarefa, o terreno, os limites e o
+formato de saída** - o modelo tem o contexto certo pra acertar.
+
+**Mas eu preciso usar as 5 sempre?** Não. Use o que fizer sentido:
+
+- Tarefa simples e conhecida ("traduza isso")? Só a tarefa basta.
+- Conversa exploratória? Papel + tarefa + formato.
+- Saída estruturada que vira código? Contexto + restrições + formato são
+  cruciais.
+- Prompt sensível (saúde, jurídico, dinheiro)? As 5, sempre.
+
+<Quiz
+  question="Qual peça do prompt mais provavelmente está faltando quando o modelo responde com o tom errado (ex: muito formal quando você queria algo leve)?"
+  options={[
+    { text: "Restrições", correct: false, explanation: "Restrições tiram coisas (NÃO faça), mas o tom vem antes disso." },
+    { text: "Formato", correct: false, explanation: "Formato controla a estrutura da saída, não o tom." },
+    { text: "Papel / persona", correct: true, explanation: "O tom e a voz vêm principalmente da persona. Sem ela, o modelo usa um 'tom padrão' genérico." }
+  ]}
+/>
+
+- **Papel/Persona** define **quem** o modelo está sendo - e dita tom e voz.
+- **Tarefa** é o verbo: resuma, traduza, gere, critique, planeje.
+- **Contexto** é a informação de fundo que ele precisa pra não chutar.
+- **Restrições** dizem o que **NÃO** fazer (tão importantes quanto dizer
+  o que fazer).
+- **Formato** diz **como** entregar: bullets, JSON, markdown, 50 palavras,
+  3 parágrafos.
+
+> Dica: salve esse esqueleto como template. Toda vez que o resultado vier
+> ruim, percorra as 5 peças e pergunte: "qual está faltando ou está vaga?"
+> Na maioria das vezes, o problema está no **contexto** ou nas **restrições**.
+
+No próximo nó, vamos afiar a peça que mais gente erra: **clareza**. Porque
+mesmo com as 5 peças no lugar, um pedido ambíguo sabota o resultado.

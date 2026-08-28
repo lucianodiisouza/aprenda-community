@@ -1,0 +1,118 @@
+---
+id: auto-diagnostico
+title: "Auto-diagnóstico: Onde Você Está?"
+resources:
+  - title: "Glossary of computer terms (Wikipedia EN)"
+    url: https://en.wikipedia.org/wiki/Glossary_of_computer_terms
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de mergulhar nos fundamentos, vale 5 minutos pra você saber **onde
+está** nesta trilha. Os próximos nós têm três camadas:
+
+- 🟢 **Essencial** - o que todo mundo precisa saber.
+- 🟡 **Aprofundamento** - onde a coisa morde no dia a dia de dev.
+- 🔴 **Pra quem quer ir além** - formalização, papers, história.
+
+Você não precisa fazer todas as camadas em todos os nós. Este quiz
+devolve um perfil e te ajuda a decidir.
+
+## O quiz (8 perguntas, sem nota)
+
+Responde honestamente - não tem gabarito, e o objetivo é te guiar,
+não te avaliar. Pra cada pergunta, marca o nível que mais combina com
+você hoje.
+
+**1. Quando você roda um programa, o que acontece por baixo?**
+- (A) Sei vagamente - "o computador lê e executa".
+- (B) Sei que passa por compilação/interpretação, mas não saberia
+  detalhar.
+- (C) Consigo descrever o ciclo: fetch → decode → execute → writeback.
+- (D) Já implementei um emulador simples ou sei o pipeline de uma CPU
+  moderna.
+
+**2. O que é `Big-O`?**
+- (A) Nunca ouvi falar.
+- (B) Sei que mede "eficiência" mas não saberia classificar uma
+  função.
+- (C) Consigo classificar `O(n)`, `O(n log n)`, `O(n²)` e identificar
+  qual é melhor em cada caso.
+- (D) Já analisei complexidade amortizada, liderei discussão sobre
+  performance em código real.
+
+**3. Qual a diferença entre `stack` e `heap`?**
+- (A) Não sei.
+- (B) "Stack é pra variáveis locais" mas confundo quando uma coisa
+  vai pra heap.
+- (C) Sei a diferença e consigo explicar o ciclo de vida de um objeto
+  alocado.
+- (D) Já otimizei garbage collector, usei profilers de memória, ou
+  trabalhei com alocação manual.
+
+**4. O que é `mutex`? Pra que serve?**
+- (A) Não sei.
+- (B) Já ouvi falar, lembro que tem a ver com "trava" e threads.
+- (C) Sei usar em código, sei por que precisa, sei o que é deadlock.
+- (D) Já implementei primitivas de sincronização ou otimizei código
+  concorrente em produção.
+
+**5. O que acontece quando você digita `https://google.com` no
+navegador e aperta Enter?**
+- (A) "Abre o site".
+- (B) Sei que envolve DNS, HTTP, servidor, renderização - mas não
+  sabria explicar a ordem.
+- (C) Consigo descrever a jornada do pacote: DNS → TCP → TLS → HTTP →
+  response → parsing → render.
+- (D) Já capturei pacotes com Wireshark, configurei proxies, ou
+  deboguei problemas de rede em produção.
+
+**6. Qual a diferença entre compilação e interpretação?**
+- (A) Não sei a diferença.
+- (B) Sei que "Java compila, Python interpreta" mas não saberia
+  explicar por quê.
+- (C) Sei que tem bytecode, JIT, AOT, e que a fronteira é borrada.
+- (D) Já implementei um interpretador simples ou trabalhei com
+  compiladores.
+
+**7. O que é uma `hash table`? Quando você usaria uma em vez de uma
+lista?**
+- (A) Não sei.
+- (B) Sei que "lista é mais lenta pra buscar" mas não saberia dizer
+  a complexidade.
+- (C) Sei que é `O(1)` para lookup médio, e entendo por que o caso
+  pior degrada.
+- (D) Já implementei uma, ou sei quando ela vira `O(n)` e como
+  redimensionar.
+
+**8. O que é abstração? Por que devs falam tanto nisso?**
+- (A) Não tenho clareza.
+- (B) "É esconder detalhes" - mas não saberia dar um bom exemplo.
+- (C) Consigo citar exemplos: API, interface, módulo, contrato.
+- (D) Já modelei sistemas grandes usando abstrações bem definidas,
+  ou penso em tipos como contratos.
+
+## Seu perfil
+
+Some quantos (A), (B), (C) e (D) você marcou.
+
+- **0-3 (D), muitos (A)/(B) - Perfil iniciante.** Vai com calma na
+  camada 🟢. Quando travar num conceito, lê o 🟡 pra ver a aplicação
+  prática. Pula o 🔴 sem peso na consciência.
+- **Distribuição entre (B) e (C), pouco (D) - Perfil prático.** É o
+  perfil mais comum: dev júnior/pleno. 🟢 é revisão rápida, 🟡 é onde
+  você vai gastar energia, 🔴 é bônus se o tema te interessar.
+- **Muitos (C) e alguns (D) - Perfil teórico.** Universitário ou
+  dev buscando fundão. 🟢 é base, 🟡 ancora no real, 🔴 é o que
+  você vai curtir.
+- **Maioria (D) - Perfil especialista.** Você provavelmente já sabe
+  tudo aqui. Pula o 🟢, foca no 🔴 pra pegar referências e conexões
+  que talvez não viu. Se encontrar algo novo, conta pra gente.
+
+> O perfil é um ponto de partida, não uma camisa-de-força. Se um nó
+> 🟢 te ensinou algo, leu com atenção. Se um nó 🔴 te entediou, pula
+> sem culpa. O objetivo é aprender, não completar checklist.
+
+No próximo nó, vamos começar pelo **começo de tudo**: o que tem dentro
+daquela caixa que você usa todo dia, e como ela realmente funciona.

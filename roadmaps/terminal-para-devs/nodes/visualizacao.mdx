@@ -1,0 +1,124 @@
+---
+id: visualizacao
+title: "Lendo arquivos: cat, less, head, tail, wc"
+resources:
+  - title: "Visualização de texto (linuxcommand.org, EN)"
+    url: https://linuxcommand.org/lc3_lts0050.php
+    type: doc
+    lang: en
+    free: true
+---
+
+Criar e mover arquivo é metade da história - a outra metade é
+**ler**. Tem uma dezena de comandos pra isso, cada um com um
+caso de uso. A escolha certa economiza tempo e paciência.
+
+## O "vomita tudo na tela": `cat`
+
+```bash
+cat arquivo.txt                    # imprime o conteúdo inteiro
+cat arquivo1.txt arquivo2.txt      # concatena (por isso o nome)
+cat -n arquivo.txt                 # numera as linhas
+cat arquivo.txt | grep "erro"      # encadeia (pipe - próximo nó)
+```
+
+Bom pra arquivos **pequenos** (algumas linhas, tipo um config).
+Ruim pra arquivos grandes (log de 500MB) - vai travar o terminal.
+
+## O "navega com seta": `less`
+
+```bash
+less arquivo-grande.log            # abre paginador interativo
+```
+
+Dentro do `less`:
+
+- `↑` / `↓` ou `j` / `k` - linha acima/abaixo
+- `Space` ou `f` - próxima página
+- `b` - página anterior
+- `/palavra` - busca pra frente (igual ao vim)
+- `?palavra` - busca pra trás
+- `g` - vai pro começo, `G` - vai pro fim
+- `n` - próxima ocorrência da busca
+- `q` - sai
+
+`less` é **paginador interativo** - abre o arquivo e te deixa
+navegar sem carregar tudo na memória. Pra arquivos grandes, é
+obrigatório. O nome é trocadilho (`less` = menos, em contraste
+com `more`, paginador antigo que só andava pra frente).
+
+> **Por que `less` e não `more`?** O `more` é paginador antigo
+> (1978) que só anda pra frente. O `less` (1985) é "less is more"
+> (a contradição) - permite navegação bidirecional e busca. É
+> melhor, use ele.
+
+## Primeiras e últimas linhas: `head` e `tail`
+
+```bash
+head arquivo.txt                   # primeiras 10 linhas
+head -n 5 arquivo.txt              # primeiras 5
+head -c 100 arquivo.txt             # primeiros 100 bytes
+
+tail arquivo.txt                   # últimas 10 linhas
+tail -n 20 arquivo.txt              # últimas 20
+tail -f /var/log/syslog            # segue em tempo real (vital pra debug)
+```
+
+`tail -f` é **a** ferramenta de debug ao vivo. Roda e fica
+imprimindo as novas linhas conforme o arquivo cresce. Sai com
+`Ctrl + C`. Comum pra ver logs crescendo durante um deploy ou
+quando algo tá dando erro intermitente.
+
+> **Variação útil**: `tail -F` (capital F) também tenta re-abrir
+> o arquivo se ele for rotacionado (comum em logs de produção
+> que usam `logrotate`). Use `-F` em scripts de monitoramento.
+
+## Contando: `wc` e `file`
+
+```bash
+wc arquivo.txt                     # linhas, palavras, bytes
+wc -l arquivo.txt                  # só linhas
+wc -w arquivo.txt                  # só palavras
+wc -c arquivo.txt                  # só bytes
+wc -m arquivo.txt                  # só caracteres (diferente de bytes em UTF-8)
+
+file arquivo.bin                   # detecta tipo ("PDF document, version 1.7")
+```
+
+`wc` (word count) é surpreendentemente útil em scripts e one-liners.
+Quer contar quantas linhas tem num CSV? `wc -l dados.csv`. Quantos
+requests por segundo no log do nginx? `tail -F access.log | wc -l`
+de 5 em 5 segundos.
+
+`file` lê os **primeiros bytes** do arquivo e identifica o tipo -
+não confia na extensão. Útil quando você recebe um `dados.dat`
+e quer saber se é texto, gzip, PDF, binário, etc.
+
+## Tabela: qual usar quando
+
+| Comando | Quando                                          |
+| ------- | ----------------------------------------------- |
+| `cat`   | Arquivo pequeno (< tela cheia)                  |
+| `less`  | Arquivo grande, navegação interativa            |
+| `head`  | Só o começo importa                             |
+| `tail`  | Só o fim importa, ou log ao vivo (`-f`)         |
+| `wc`    | Contar linhas/palavras/bytes                    |
+| `file`  | Descobrir o tipo real (não confiar na extensão) |
+
+Três conceitos que você acabou de aprender:
+
+- **`cat` é pra arquivo pequeno** - pra qualquer coisa maior
+  que a tela, use `less` ou `tail`/`head`.
+- **`tail -f`** é a ferramenta padrão pra debug ao vivo de
+  logs. Use `Ctrl + C` pra sair.
+- **`file` lê o conteúdo, não o nome**. Útil pra arquivos
+  sem extensão ou com extensão mentirosa.
+
+> Dica: o atalho `Ctrl + L` limpa a tela, mas se você quiser
+> apagar **comandos antigos** do terminal (sem sair dele),
+> `clear` faz o mesmo. E `history -c` apaga o histórico da
+> sessão atual.
+
+No próximo, vamos achar coisas: `find`, `grep` e companhia.
+Essa é a parte que vicia - quando você aprende `grep`, você não
+volta mais pro navegador de arquivos.

@@ -135,5 +135,23 @@ não tem shorthand.
 > `justify-content` + `align-items`. Quando precisar de mais
 > (ordem, `flex-grow`), passe pro nó dos itens.
 
+<VisualCheckpoint
+  challenge="Centralize o item na .caixa nos dois eixos usando Flexbox (horizontal e vertical)."
+  hint="display: flex + justify-content (eixo principal) + align-items (eixo cruzado)."
+  starterHtml={`<div class="caixa"><div class="item">eu</div></div>`}
+  starterCss={`.caixa {\n  height: 200px;\n  /* seu CSS aqui */\n}`}
+  assert={`
+    const c = root.querySelector('.caixa');
+    if (!c) return { pass: false, message: 'Não achei a .caixa.' };
+    const s = getComputedStyle(c);
+    return {
+      pass: s.display === 'flex' && s.justifyContent === 'center' && s.alignItems === 'center',
+      message: 'A .caixa precisa de display: flex, justify-content: center e align-items: center.'
+    };
+  `}
+  slug="css-layout"
+  nodeId="flexbox-container"
+/>
+
 No próximo, o outro lado: as propriedades que vão nos **filhos** e
 definem como cada um se comporta individualmente.

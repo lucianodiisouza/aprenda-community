@@ -1,0 +1,58 @@
+---
+slug: api-rest-com-autenticacao
+title: "API REST com Autenticação"
+description: "Uma API de notas com cadastro, login e rotas protegidas — o CRUD completo em Node/Express, com banco, validação e testes."
+difficulty: intermediario
+published: "2026-08-25"
+skills:
+  - backend
+  - api
+  - autenticacao
+  - banco-de-dados
+  - testes
+trilhas:
+  - backend
+estimate: "1-2 semanas"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+O projeto onde tudo o que a trilha de backend ensinou vira uma **API de verdade**:
+um serviço de notas onde cada usuário cria, lê, edita e apaga só as suas — com
+login, senha protegida e rotas que ninguém acessa sem estar autenticado.
+
+## Objetivo
+
+Praticar o ciclo completo de uma **API REST**: modelar recursos, expor um CRUD
+com os verbos e status HTTP certos, persistir em banco, validar entrada e proteger
+rotas com autenticação — do jeito que um backend real é construído.
+
+## Requisitos
+
+- [ ] `POST /registrar` e `POST /login` (senha guardada com hash, nunca em texto puro)
+- [ ] Autenticação por token (JWT ou sessão) nas rotas protegidas
+- [ ] CRUD de notas: `GET /notas`, `POST /notas`, `GET /notas/:id`, `PUT /notas/:id`, `DELETE /notas/:id`
+- [ ] Cada usuário só enxerga e altera as **próprias** notas
+- [ ] Validação de entrada (título obrigatório, tamanho máximo, etc.) com erro claro
+- [ ] Status HTTP corretos: 201 ao criar, 401 sem token, 403 sem permissão, 404 quando não existe
+- [ ] Persistência em banco (SQLite/Postgres) — nada de array em memória
+
+## Desafios extras
+
+- [ ] Testes automatizados dos fluxos principais (registrar → login → criar → listar)
+- [ ] Paginação e busca por texto em `GET /notas`
+- [ ] Refresh token e/ou expiração do token de acesso
+- [ ] Rate limiting no login pra dificultar força bruta
+- [ ] Documente a API (um `README` com as rotas ou um OpenAPI)
+
+## Dicas
+
+- Modele o dado antes do endpoint: `usuarios` e `notas`, com a nota apontando pro
+  dono (`usuario_id`). O "só as suas notas" cai naturalmente do filtro por dono.
+- Nunca guarde senha em texto puro. Use uma função de hash própria pra senhas
+  (bcrypt/argon2), não um hash genérico.
+- O token diz **quem** é a pessoa; a autorização (o que ela pode fazer) é checada
+  em cada rota. São coisas diferentes — não confunda autenticar com autorizar.
+- Teste os caminhos de erro, não só o feliz: token faltando, id de outro usuário,
+  corpo inválido. É onde as APIs de verdade quebram.

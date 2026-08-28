@@ -1,0 +1,31 @@
+{
+  // Slug do bootcamp. kebab-case, sem acentos. Aparece na URL.
+  "slug": "<slug-do-bootcamp>",
+
+  // Título exibido na página do bootcamp. Curto, em PT-BR.
+  "title": "<Título do bootcamp>",
+
+  // 1-2 frases: pra quem é, o que agrupa, em que nível.
+  "description": "<Descrição do bootcamp>",
+
+  // Dificuldade geral: iniciante | intermediario | avancado.
+  "difficulty": "iniciante",
+
+  // O que a pessoa SABE FAZER ao concluir. Bootcamp vende resultado, não conteúdo.
+  "outcome": "<Ao terminar, você consegue ...>",
+
+  // (Opcional) Duração estimada legível.
+  "estimate": "<ex.: 3 meses>",
+
+  // (Opcional) Quem curou/mantém o bootcamp.
+  "creators": [{ "name": "<Seu nome>", "github": "<seu-usuario>" }],
+
+  // Currículo ORDENADO. Cada módulo aponta pra UMA trilha OU UM projeto que já
+  // existe (nunca os dois). A ordem aqui é a ordem sugerida de estudo.
+  // `title`/`description` são opcionais e dão contexto de por que o item entra ali.
+  "modules": [
+    { "trilha": "<slug-de-uma-trilha>", "description": "<por que começa por aqui>" },
+    { "projeto": "<slug-de-um-projeto>", "title": "<rótulo opcional do módulo>" }
+    // ... mais módulos. Bootcamp NÃO tem conteúdo próprio: só curadoria.
+  ]
+}

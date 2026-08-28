@@ -1,0 +1,173 @@
+---
+id: arrays-listas
+title: "Sequências: Arrays, Listas Ligadas e a Memória por Trás"
+resources:
+  - title: "Arrays (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "VisuAlgo - Visualização de Array e Lista Ligada"
+    url: https://visualgo.net/en/list
+    type: artigo
+    lang: en
+    free: true
+---
+
+Tudo que você programa começa com uma **sequência**: lista de itens,
+resultado de busca, fila de tarefas. A escolha entre **array** e
+**lista ligada** é a primeira decisão estrutural que muda tudo - e
+depende menos da sintaxe da sua linguagem e mais de como a memória do
+computador funciona.
+
+## O essencial 🟢
+
+**Array (vetor)** é um bloco de memória **contíguo** com tamanho fixo
+(na maioria das linguagens de baixo nível) ou dinâmico (em linguagens
+de alto nível via "array dinâmico" por baixo dos panos). Cada elemento
+ocupa o mesmo tamanho, então a posição de qualquer item é calculável
+por aritmética: `endereço_base + índice × tamanho_do_item`.
+
+<Mermaid
+  chart={`graph LR
+    A["índice 0<br/>valor: 10"] --- B["índice 1<br/>valor: 20"] --- C["índice 2<br/>valor: 30"] --- D["índice 3<br/>valor: 40"] --- E["índice 4<br/>valor: 50"]
+    style A fill:#1f6feb,stroke:#fff
+    style B fill:#1f6feb,stroke:#fff
+    style C fill:#1f6feb,stroke:#fff
+    style D fill:#1f6feb,stroke:#fff
+    style E fill:#1f6feb,stroke:#fff`}
+  caption="Array: 5 elementos contíguos na memória. Acessar arr[2] é só calcular o endereço - O(1)."
+/>
+
+**Consequência direta:**
+
+- **Acesso por índice:** `arr[2]` é `O(1)` - só uma soma e um acesso
+  à memória. Não importa se o array tem 5 ou 5 milhões de elementos.
+- **Busca por valor:** `arr.includes(x)` é `O(n)` - precisa percorrer
+  até achar (ou até o fim).
+- **Inserção/remoção no meio:** `O(n)` - precisa empurrar todos os
+  elementos depois do ponto de inserção.
+- **Inserção no final:** `O(1)` **amortizado** (em array dinâmico).
+  A maioria das vezes é instantâneo, mas ocasionalmente precisa
+  redimensionar (dobrar de tamanho) e copiar tudo - daí o "amortizado".
+
+**Lista ligada (linked list)** é uma cadeia de **nós** espalhados
+pela memória. Cada nó guarda o **valor** e um **ponteiro** (referência)
+pro próximo nó. O primeiro nó é a "cabeça" da lista.
+
+<Mermaid
+  chart={`graph LR
+    A["nó 1<br/>valor: 10<br/>→"] --- B["nó 2<br/>valor: 20<br/>→"] --- C["nó 3<br/>valor: 30<br/>→"] --- D["nó 4<br/>valor: 40<br/>null"]
+    style A fill:#a371f7,stroke:#fff
+    style B fill:#a371f7,stroke:#fff
+    style C fill:#a371f7,stroke:#fff
+    style D fill:#a371f7,stroke:#fff`}
+  caption="Lista ligada: cada nó tem o valor e o ponteiro pro próximo. Nós podem estar em qualquer lugar da memória."
+/>
+
+**Consequência direta:**
+
+- **Acesso por índice:** `lista[2]` é `O(n)` - precisa percorrer do
+  início, nó por nó, contando até o índice 2.
+- **Inserção/remoção no meio (com referência):** `O(1)` - só ajusta
+  os ponteiros, sem mexer no resto.
+- **Memória extra:** cada nó carrega o ponteiro pro próximo (8 bytes
+  num sistema 64-bit). Em lista **duplamente ligada** (cada nó aponta
+  pro anterior E pro próximo), são 16 bytes extras.
+
+### A regra que resolve 90% dos casos
+
+- **Acessa por índice? Array.**
+- **Insere/remove muito no meio, com referência? Lista ligada.**
+- **Na dúvida? Array.** Em código de alto nível, a "lista ligada" da
+  maioria das linguagens é, na verdade, um **array dinâmico**
+  (`ArrayList` em Java, `list` em Python, `Array` em JS, `vector` em
+  C++). É mais rápido na prática, por causa da **localidade de
+  memória** (próximo ponto).
+
+## Aprofundamento 🟡
+
+**Localidade de memória é o motivo escondido.** CPU moderna tem cache
+(memória rápida e pequena, L1/L2/L3). Acessar memória **contígua**
+(array) aproveita o cache - a próxima leitura provavelmente já está
+carregada. Acessar memória **espalhada** (lista ligada) não aproveita
+
+- cada nó pode estar numa página de memória diferente, forçando
+  "cache miss" (ida à RAM, que é 100× mais lenta que o L1).
+
+Por isso, na prática, percorrer um array de 1 milhão de elementos é
+**bem mais rápido** que percorrer uma lista ligada de 1 milhão de nós,
+mesmo sendo "ambos `O(n)`" no papel. A constante importa - e a
+constante de array é menor.
+
+**Quando linked list vence de verdade:**
+
+- Você já tem a referência pro nó do meio (vai inserir antes dele)
+  e a operação é tão frequente que vale a memória extra.
+- Tamanho da coleção é altamente variável e você precisa de inserção
+  `O(1)` real (não amortizada) sem realocação. Raro em código de
+  aplicação, comum em sistemas operacionais e alocadores de memória.
+- Implementação de outras estruturas (fila, pilha, grafo como lista
+  de adjacência, hash map com chaining). Você usa linked list como
+  **peça de outra estrutura**, não como estrutura principal.
+
+**Em JavaScript:** `Array` é um array dinâmico por baixo. `push`,
+`pop`, acesso por índice - tudo otimizado. `shift` e `unshift` (operações
+no início) são `O(n)` porque precisa deslocar todos os elementos. Se
+você precisa adicionar muito no início, use uma `Deque` (fila dupla)
+ou implemente com buffer circular.
+
+**Em Python:** `list` é array dinâmico. Para "linked list" de verdade,
+você importa `from collections import deque` (que **é** uma lista
+duplamente ligada, otimizada pra `appendleft` e `popleft`).
+
+## Pra quem quer ir além 🔴
+
+A análise formal de por que array dinâmico tem inserção `O(1)`
+**amortizado** usa **análise amortizada** (técnica de somar o custo de
+todas as operações e dividir). A operação cara (`O(n)` no
+redimensionamento) é rara, diluída em tantas operações baratas que a
+média é `O(1)`. O método formal é descrito no capítulo 17 do
+_Introduction to Algorithms_ (CLRS).
+
+Outra estrutura que vale conhecer: **lista ligada com vetor livre**
+(free list) - é como um alocador de memória implementa blocos livres.
+Cada bloco livre aponta pro próximo, sem precisar de array.
+
+**Leitura recomendada:**
+
+- Capítulo 10 do _Algorithms_ (Dasgupta, Papadimitriou, Vazirani) -
+  disponível online em PDF, didático e gratuito.
+- A página de [List no VisuAlgo](https://visualgo.net/en/list) -
+  visualização interativa que mostra o custo de cada operação.
+
+> Dica: antes de pensar "qual estrutura?", pense "que operações eu
+> vou fazer com mais frequência?". Acesso por índice? Array. Inserção
+> em qualquer posição, em massa? Lista ligada. Mas quase sempre,
+> array vence por causa da memória.
+
+No próximo nó, vamos ver duas estruturas que são **filas de acesso
+restrito**: pilha (stack) e fila (queue) - e onde o computador usa
+cada uma por baixo dos panos.
+
+<Quiz
+  question="Você tem uma lista de 1 milhão de elementos e precisa acessar o elemento na posição 500.000 repetidamente, em loop. Qual estrutura é a melhor escolha?"
+  options={[
+    {
+      text: "Lista ligada, porque inserções depois são mais fáceis",
+      correct: false,
+      explanation:
+        "Lista ligada faz acesso por índice em O(n) - pra chegar no 500.000 você percorre meio milhão de nós. A cada loop, isso se repete.",
+    },
+    {
+      text: "Array (dinâmico), porque acesso por índice é O(1)",
+      correct: true,
+    },
+    {
+      text: "Tanto faz, ambos são O(n) no total",
+      correct: false,
+      explanation:
+        "Não é a mesma complexidade. Array faz 1 acesso por iteração (O(1) cada), lista ligada faz 500.000 (O(n) cada). Total: O(n) vs O(n²).",
+    },
+  ]}
+/>

@@ -236,3 +236,17 @@ Algumas tags têm **significado duplo** dependendo do contexto:
 
 No próximo nó, vamos colocar **mídia** na página - áudio, vídeo, e quando
 usar cada um.
+
+<VisualCheckpoint
+  challenge="Estruture a página com as tags semânticas <header>, <main> e <footer>."
+  starterHtml={`<!-- sua estrutura aqui -->`}
+  assert={`
+    const has = t => !!root.querySelector(t);
+    return {
+      pass: has('header') && has('main') && has('footer'),
+      message: 'Use <header>, <main> e <footer> (uma de cada).'
+    };
+  `}
+  slug="html"
+  nodeId="semantica"
+/>

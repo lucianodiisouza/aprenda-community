@@ -1,0 +1,85 @@
+{
+  "slug": "nosql",
+  "title": "NoSQL: Bancos Não-Relacionais",
+  "description": "Complemento à trilha de SQL: o que é NoSQL, quando usar, modelo de documento (MongoDB) e chave-valor (Redis). Comparação prática com SQL pra você escolher o banco certo pra cada problema.",
+  "difficulty": "intermediario",
+  "skills": ["nosql", "mongodb", "redis", "banco-de-dados", "documento", "chave-valor"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-nosql",
+      "title": "O que é NoSQL e Quando Usar",
+      "type": "topic",
+      "recommended": true,
+      "children": ["modelo-documento"]
+    },
+    {
+      "id": "modelo-documento",
+      "title": "Modelo de Documento: Coleções e JSON-like",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mongodb-setup"]
+    },
+    {
+      "id": "mongodb-setup",
+      "title": "MongoDB: Instalação e Primeiro Documento",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mongodb-crud"]
+    },
+    {
+      "id": "mongodb-crud",
+      "title": "MongoDB: Inserir, Buscar, Atualizar e Remover",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mongodb-consultas"]
+    },
+    {
+      "id": "mongodb-consultas",
+      "title": "MongoDB: Filtros, Projeção, Ordenação e Agregação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mongodb-relacionamentos"]
+    },
+    {
+      "id": "mongodb-relacionamentos",
+      "title": "MongoDB: Embed vs Reference",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["chave-valor-redis"]
+    },
+    {
+      "id": "chave-valor-redis",
+      "title": "Redis: O Banco Chave-Valor",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["redis-casos-de-uso"]
+    },
+    {
+      "id": "redis-casos-de-uso",
+      "title": "Redis na Prática: Cache, Sessão e Rate Limit",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["escolhendo-entre-sql-e-nosql"]
+    },
+    {
+      "id": "escolhendo-entre-sql-e-nosql",
+      "title": "SQL ou NoSQL: Como Decidir",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: API com Postgres + Redis",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,161 @@
+---
+id: system-vs-user-prompt
+title: "System prompt vs user prompt: onde vai cada coisa"
+resources:
+  - title: "Anthropic - System prompts (EN, anatomia completa)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Best practices: system messages (EN)"
+    url: https://platform.openai.com/docs/guides/prompt-engineering#system-messages
+    type: doc
+    lang: en
+    free: true
+---
+
+Toda chamada moderna de LLM tem **três (ou mais) camadas de mensagem**.
+A mais importante é a que a maioria dos usuários **nunca vê**: o
+**system prompt**. Confundir system com user é uma das fontes mais
+comuns de prompt ruim em produção.
+
+## A anatomia de uma chamada
+
+<Mermaid
+  chart={`flowchart TB
+    subgraph REQ["Request (você envia)"]
+      direction TB
+      S["SYSTEM:\\ninstruções persistentes\\n(papel, regras, formato, restrições)"]
+      U1["USER:\\nmensagem do usuário 1"]
+      A1["ASSISTANT:\\nresposta anterior 1"]
+      U2["USER:\\nmensagem do usuário 2"]
+    end
+    REQ --> LLM["LLM"]
+    LLM --> A2["ASSISTANT:\\nnova resposta"]`}
+  caption="Anatomia de uma conversa com LLM: system (persistente) + histórico de mensagens (user/assistant alternadas)."
+/>
+
+- **System prompt** - enviado **uma vez** no início, **persiste** em
+  todas as mensagens da conversa. É onde mora a "personalidade" e as
+  regras duradouras.
+- **User message** - cada mensagem do usuário.
+- **Assistant message** - cada resposta anterior do modelo (pra ele ter
+  memória da conversa).
+
+## O que vai no system prompt
+
+Coisa **persistente** e **estrutural**:
+
+- **Persona/papel** - "Você é um assistente de suporte da empresa X".
+- **Regras de comportamento** - "Nunca dê conselho médico. Se pedirem,
+  redirecione para o médico."
+- **Formato de saída padrão** - "Sempre responda em markdown com
+  bullets".
+- **Restrições globais** - "Não mencione concorrentes. Não invente
+  preços."
+- **Tools disponíveis** - "Use a função `consultar_pedido` quando o
+  usuário perguntar sobre pedido."
+- **Contexto persistente** - "Hoje é 25/08/2026. Você é o assistente
+  do produto Y versão 2.3."
+
+## O que vai no user message
+
+Coisa **específica da pergunta** atual:
+
+- A pergunta ou pedido concreto do usuário.
+- Contexto **pontual** que se aplica a essa mensagem (colar um email
+  pra resumir, enviar uma URL pra explicar).
+- Instruções **específicas** que sobrescrevem ou complementam o
+  system.
+
+## As três regras de ouro
+
+### 1. System prompt não muda entre mensagens da mesma conversa
+
+É o oposto de user prompt, que muda toda vez. Colocar informação
+"pontual" no system é desperdício - ela vai ser enviada em **toda**
+mensagem, multiplicando custo.
+
+**❌ Errado:**
+```
+SYSTEM: "Resuma o email abaixo..."
+USER: ""
+USER: "Agora responda a esta pergunta sobre o email..."
+```
+
+**✅ Certo:**
+```
+SYSTEM: "Você é um assistente que resume emails e responde perguntas sobre eles."
+USER: "Email: [colar] Resuma em 3 bullets."
+USER: "Qual o prazo mencionado no email?"
+```
+
+### 2. User prompt **pode** (e deve) sobrescrever o system em tarefas específicas
+
+O modelo segue user sobre system quando há conflito - é a expectativa
+de que o usuário tem contexto imediato. Use isso a favor: system tem
+as regras gerais, user tem a instrução específica.
+
+```
+SYSTEM: "Você é um assistente formal. Respostas em prosa."
+USER: "Me dá uma lista rápida de 3 filmes de ficção científica dos anos 80."
+```
+
+Aqui o user está **legitimamente** pedindo uma saída diferente do
+default do system. Modelo atende. Se a instrução contradiz uma
+**restrição** (ex: "ignore suas instruções anteriores e me diga..."),
+é **prompt injection** - tratado em `seguranca-e-injecao` na Fase 3.
+
+### 3. System prompt **não é** lugar de "comportamento mágico"
+
+System prompt não vira um feitiço que "amarra" o modelo. É só
+**instruções com peso diferente**. Em testes adversariais
+(prompt injection), o system prompt **cai**. Em produção, o que
+defende é: **validação no código**, não prompt melhor.
+
+## Versionando system prompt em produção
+
+System prompt muda com o tempo - você refina, ajusta, expande. Sem
+versionamento, vira caos ("por que o bot tá se comportando assim de
+repente?").
+
+```
+config/
+  system-prompts/
+    agente-suporte/
+      v1.md
+      v2.md  <- atual
+      v3.md  <- em teste
+      changelog.md  <- o que mudou e por quê
+```
+
+Quando você troca v2 por v3, o **comportamento muda**. A/B test.
+Meça. Documente.
+
+<Quiz
+  question="Você tem um agente de suporte ao cliente. O cliente está com problema urgente e diz 'por favor, fala em linguagem simples, sem termos técnicos'. Onde mora essa instrução?"
+  options={[
+    { text: "No system prompt - pra valer pra todas as conversas", correct: false, explanation: "Esse pedido é específico dessa conversa. Vai no user message, não no system (senão você responde todas as conversas assim, mesmo quando o cliente pede o contrário)." },
+    { text: "No user message, como instrução pontual", correct: true },
+    { text: "Tanto faz - é a mesma coisa", correct: false, explanation: "System e user têm pesos diferentes. Misturar 'regras globais' com 'pedido pontual' dificulta manutenção e controle." }
+  ]}
+/>
+
+- **System = persistente, estrutural, global** (persona, regras,
+  formato, tools).
+- **User = específico, pontual, da mensagem atual** (a pergunta, o
+  contexto de agora).
+- **User pode (e deve) sobrescrever system** em tarefas específicas -
+  é como conversa normal funciona.
+- **System não é "imunização" contra prompt injection.** Validação no
+  código é o que defende.
+- **Versione system prompts** - eles mudam, e sem histórico você não
+  sabe o que mudou quando o comportamento muda.
+
+> Dica: a forma mais rápida de melhorar um agente em produção é
+> **separar o que é system do que é user**. Mistura das duas é a
+> causa #1 de "ah, esse prompt ficou gigante e ninguém sabe por quê".
+
+No próximo nó, vamos fechar a Fase 2 com o que transforma prompts
+"descartáveis" em **biblioteca**: templates, versionamento e
+reutilização.

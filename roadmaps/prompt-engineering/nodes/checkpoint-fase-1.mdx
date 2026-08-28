@@ -1,0 +1,75 @@
+---
+id: checkpoint-fase-1
+title: "Checkpoint da Fase 1: o que você já internalizou"
+resources:
+  - title: "Anthropic - Prompt Engineering Overview (EN, recapitulação geral)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+    type: doc
+    lang: en
+    free: true
+---
+
+Você passou por 8 nós. Antes de entrar nas técnicas intermediárias, vale
+parar e **checar se o básico realmente ficou**. Esse nó é uma auto-avaliação
+honesta - sem gabarito, sem pontuação, e o objetivo não é "passar", é
+**perceber onde você ainda tem dúvida**.
+
+## Faça essas 5 perguntas a si mesmo
+
+Responda com honestidade, **sem consultar os nós anteriores**. Anote em
+algum lugar. Se travar em mais de 2, vale revisitar a Fase 1 antes de
+seguir - isso vai economizar muito tempo nas técnicas que vêm.
+
+### 1. Se um modelo te der uma resposta factualmente errada com tom
+perfeito, qual é a causa mais provável?
+
+*Espera:* alucinação - o modelo gera o mais provável, não o que é
+verdade. Conhecer isso muda como você valida saída.
+
+### 2. Liste as 5 peças da anatomia de um prompt.
+
+*Espera:* papel/persona, tarefa, contexto, restrições, formato de saída.
+Se você esqueceu de uma, revise `seu-primeiro-prompt` - essa anatomia é o
+esqueleto que vamos usar pelo resto da trilha.
+
+### 3. Um prompt seu deu resposta com tom errado. Qual peça da anatomia
+você ajusta primeiro?
+
+*Espera:* persona. Tom e voz são o trabalho principal da persona.
+Formato é a peça errada (controla estrutura, não tom).
+
+### 4. Você está gerando 50 ideias de slogan. Que temperatura você usa?
+
+*Espera:* alta (0.7-0.9). Pra geração criativa em volume, alta temperatura
+dá mais variação. Pra código ou fatos, baixa.
+
+### 5. O que você faz quando o prompt "não funciona"?
+
+*Espera:* **iterar**. Não reescrever do zero. Diagnosticar, mudar uma
+peça por vez, comparar. Tratar prompt como código.
+
+<Quiz
+  question="Você travou em 3+ das 5 perguntas acima. O que fazer?"
+  options={[
+    { text: "Seguir mesmo assim, as técnicas intermediárias vão consolidar", correct: false, explanation: "As técnicas da Fase 2 assumem que a anatomia e a iteração já estão internalizadas. Pular essa base vai te frustrar lá na frente." },
+    { text: "Revisar os nós da Fase 1 onde travou, e re-tentar este checkpoint", correct: true },
+    { text: "Pular pra Fase 3 que é a parte \"divertida\"", correct: false, explanation: "Fase 3 é a parte que constrói produto - depende ainda mais da base. Sem o básico, os nós avançados viram cópia de receita sem entender." }
+  ]}
+/>
+
+- **Auto-avaliação honesta é mais valiosa que velocidade.** Travar em
+  pergunta é sinal de onde reinvestir.
+- **A anatomia (papel, tarefa, contexto, restrições, formato) é o
+  esqueleto** que vamos reusar em todos os próximos nós.
+- **Iterar é o trabalho.** As técnicas da Fase 2 são "andaimes" sobre
+  essa base - se a base não está sólida, o andaime balança.
+- **Quem usa IA há muito tempo e trava aqui** geralmente trava em
+  "iterar" - é o que mais custa pra quem veio do "tentar até dar certo".
+
+> Dica: não tenha vergonha de revisitar. Eu (autor) revisito a anatomia
+> toda vez que vou escrever um prompt complexo. **Revisão não é
+> retrocesso**, é ajuste fino.
+
+Pronto pra Fase 2? Vamos lá. O próximo nó é uma das técnicas mais
+poderosas que existem: **few-shot** - dar exemplos pro modelo valer
+mais que mil palavras.

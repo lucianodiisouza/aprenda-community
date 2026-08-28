@@ -1,0 +1,221 @@
+---
+id: hash-tables
+title: "Hash Tables: A Estrutura que Salva Vidas"
+resources:
+  - title: "Hashing (Khan Academy, com legendas PT-BR)"
+    url: https://www.khanacademy.org/computing/computer-science/algorithms
+    type: curso
+    lang: en
+    free: true
+  - title: "VisuAlgo - Hash Table visualizada"
+    url: https://visualgo.net/en/hashtable
+    type: artigo
+    lang: en
+    free: true
+---
+
+Hash table é provavelmente a estrutura de dados mais usada em código
+de produção. Por baixo de `Map` em JavaScript, `dict` em Python,
+`HashMap` em Java, `unordered_map` em C++ - todas são hash tables (ou
+variações). Quando você entende como funciona por dentro, várias
+otimizações e armadilhas ficam óbvias.
+
+## O essencial 🟢
+
+**Ideia central:** você tem um par **chave → valor**. Em vez de
+procurar o valor percorrendo uma lista (`O(n)`), você aplica uma
+**função hash** na chave pra obter um **índice** num array, e acessa
+o array direto (`O(1)`).
+
+```javascript
+// Tabela hash simples: chaves são strings, valores são números.
+const idade = {}; // objeto JS é uma hash table
+idade["alice"] = 30;
+idade["bob"] = 25;
+idade["alice"]; // 30 - acesso "instantâneo" (O(1) médio)
+```
+
+**Função hash** transforma a chave em um número (índice do array).
+Pra string, pode ser algo como "somar os códigos dos caracteres, módulo
+tamanho do array". Pra inteiro, pode ser o próprio número módulo
+tamanho. **Função hash boa** distribui as chaves uniformemente pelo
+array.
+
+**O problema: colisão.** Duas chaves diferentes podem cair no mesmo
+índice. Por exemplo, se o array tem tamanho 10 e a função é
+`soma(caracteres) mod 10`, as chaves "ab" e "ba" caem no mesmo índice
+(soma=1+2=3 mod 10 = 3 e 2+1=3 mod 10 = 3).
+
+Existem duas estratégias principais pra resolver colisão:
+
+<Mermaid
+  chart={`graph TB
+    subgraph "Encadeamento (chaining)"
+      direction TB
+      A["índice 0"] --- A0["vazio"]
+      A1["índice 1"] --- A1L["alice:30 → ana:22"]
+      A2["índice 2"] --- A2L["bob:25"]
+      A3["índice 3"] --- A3L["carla:18 → caio:40"]
+    end
+    subgraph "Endereçamento aberto (open addressing)"
+      direction TB
+      B["índice 0"] --- B0["alice:30"]
+      B1["índice 1"] --- B1L["bob:25"]
+      B2["índice 2"] --- B2L["caio:40 (ocupado)"]
+      B3["índice 3"] --- B3L["carla:18 (tentou 2, foi pra 3)"]
+    end`}
+  caption="Duas estratégias pra resolver colisão: lista ligada no índice (chaining) ou procurar próximo índice livre (open addressing)."
+/>
+
+- **Encadeamento (separate chaining):** cada índice do array guarda
+  uma **lista ligada** de todos os pares chave-valor que caíram ali.
+  Mais simples de implementar. Mais memória extra (ponteiros da
+  lista). Pior caso `O(n)` se todas as chaves colidirem no mesmo
+  índice (hash ruim + muitas chaves).
+- **Endereçamento aberto (open addressing):** quando há colisão,
+  procura o **próximo índice livre** (linear probing: i+1, i+2...;
+  quadratic probing: i+1², i+2²...; double hashing: outro hash
+  decide o passo). Mais cache-friendly (tudo num array só). Pior caso
+  também `O(n)`, mas degrada de forma diferente.
+
+**Fator de carga (load factor)** é a razão entre número de elementos
+e tamanho do array. Quando passa de um limite (geralmente 0.7 a 0.75),
+o hash table **redimensiona**: dobra o array e re-hash tudo. É essa
+operação cara, diluída em muitas operações baratas, que dá o "`O(1)`
+**amortizado**" do lookup.
+
+**A regra do dia a dia:** use o `Map`/`dict`/`HashMap` que sua
+linguagem oferece. Não implemente hash table na mão. Mas saiba por
+que ela é rápida - pra otimizar quando precisar.
+
+## Aprofundamento 🟡
+
+**Por que `Set` é tão usado em entrevistas:** "tem duplicata?" vira
+`O(n)` com `Set`, `O(n²)` com array aninhado. É a otimização mais
+lucrativa que existe.
+
+```javascript
+// "Essa lista tem item duplicado?" - O(n²) com array, O(n) com Set.
+function temDuplicata(arr) {
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = i + 1; j < arr.length; j++) {
+      if (arr[i] === arr[j]) return true;
+    }
+  }
+  return false;
+  // Para arr de 10.000: 100 milhões de comparações
+}
+
+function temDuplicataV2(arr) {
+  return new Set(arr).size !== arr.length;
+  // Para arr de 10.000: 10.000 inserções em hash - ordem de grandeza diferente
+}
+```
+
+**`Map` vs `Object` em JavaScript:** ambos são hash tables, mas
+`Map` é melhor pra chaves dinâmicas (preserva ordem de inserção,
+qualquer valor pode ser chave). `Object` é melhor pra registro
+fixo (config, schema) - JSON serializa direto, sintaxe curta.
+
+**`WeakMap` e `WeakSet`:** versões que não impedem garbage
+collection. Útil pra **memoização** (cache de resultados de função)
+sem vazar memória. Quando a chave é removida do resto do código, a
+entrada some do `WeakMap` automaticamente.
+
+**Em Python:** `dict` é a hash table canônica. `OrderedDict` (do
+`collections`) é um dict que também lembra a ordem de inserção -
+em Python 3.7+, o `dict` comum já faz isso, então `OrderedDict` virou
+"compatibilidade". `defaultdict` (também do `collections`) é um dict
+que cria valor padrão pra chave nova - útil pra agrupar:
+
+```python
+from collections import defaultdict
+grupos = defaultdict(list)
+for nome, cidade in pessoas:
+    grupos[cidade].append(nome)
+# grupos["São Paulo"] = ["alice", "bob", ...] - sem KeyError
+```
+
+## Pra quem quer ir além 🔴
+
+**Hashing consistente (consistent hashing):** é a técnica usada em
+sistemas distribuídos pra distribuir chaves entre servidores sem
+re-mapear tudo quando um servidor entra/sai. É a base de
+balanceadores de carga, cache distribuído (Redis Cluster,
+Cassandra), e CDNs. A ideia: hash de servidor e chave caem no
+mesmo "anel" - cada chave vai pro servidor mais próximo no anel.
+
+**Funções hash criptográficas (SHA-256, BLAKE3):** são funções
+hash que, além de serem rápidas, têm propriedades extras:
+resistência a colisão (impossível encontrar duas entradas que dão
+o mesmo hash) e resistência a preimagem (impossível inverter).
+Usadas em blockchain, assinatura digital, verificação de
+integridade. Bem mais lentas que hash de tabela - porque a
+segurança custa.
+
+**Estruturas probabilísticas baseadas em hash:**
+
+- **Bloom filter:** "essa chave **definitivamente não está** no
+  conjunto" (sem falso negativo) ou "**provavelmente está**" (com
+  falso positivo configurável). Espaço muito menor que hash table.
+  Usado pra evitar cache miss em banco (antes de ir no DB, checa
+  no Bloom).
+- **HyperLogLog:** conta cardinalidade de conjunto (quantos
+  elementos únicos) com erro < 1% usando 12KB de memória, não importa
+  o tamanho do conjunto. Usado em analytics (ex: "quantos usuários
+  únicos visitaram a página hoje?").
+
+**Leitura recomendada:**
+
+- Capítulo 11 do _Algorithms_ (Dasgupta et al., online) - hash tables
+  com análise de complexidade e prova de correção.
+- _Introduction to Algorithms_ (CLRS), capítulo 11 - versão mais
+  formal, com famílias de hash universais.
+
+> Dica: a primeira coisa a tentar quando o código está lento é
+> "isso aqui é uma busca que pode virar `Map`/`Set`?". Na maioria
+> das vezes, sim. O ganho de `O(n²)` pra `O(n)` é a otimização
+> que mais paga em código de aplicação.
+
+No próximo nó, vamos voltar à **recursão** - mas agora com ED: como
+a recursão se apoia na pilha de chamadas pra resolver problemas
+"dividir pra conquistar".
+
+<Checkpoint
+  challenge="Use Set pra detectar se uma lista tem itens duplicados. Implemente `temDuplicata(arr)` que retorna `true` se algum item aparece 2+ vezes."
+  starterCode={`function temDuplicata(arr) {
+  // Use Set pra checar duplicatas. Retorna true se houver.
+  return false;
+}
+
+console.log(temDuplicata([1, 2, 3, 4])); // esperado: false
+console.log(temDuplicata([1, 2, 3, 1])); // esperado: true
+console.log(temDuplicata(["a", "b", "a"])); // esperado: true`}
+expected="false
+true
+true"
+slug="estruturas-de-dados"
+nodeId="hash-tables"
+/>
+
+<Quiz
+  question="Por que o lookup em hash table é O(1) amortizado e não O(1) no pior caso?"
+  options={[
+    {
+      text: "Porque o hash sempre é perfeito - nunca há colisão",
+      correct: false,
+      explanation:
+        "Colisões existem e são comuns. Funções hash boas minimizam, mas não eliminam.",
+    },
+    {
+      text: "Porque o redimensionamento (que é O(n)) é raro e diluído em muitas operações O(1)",
+      correct: true,
+    },
+    {
+      text: "Porque o array subjacente cresce infinitamente",
+      correct: false,
+      explanation:
+        "O array tem tamanho finito - quando enche, realoca. A realocação é o que custa O(n), mas é rara.",
+    },
+  ]}
+/>

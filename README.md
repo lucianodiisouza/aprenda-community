@@ -6,8 +6,8 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-13-success.svg)](./roadmaps)
-[![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
+[![Trilhas](https://img.shields.io/badge/trilhas-16-success.svg)](./roadmaps)
+[![Projetos](https://img.shields.io/badge/projetos-15-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
 
@@ -32,9 +32,22 @@ Trilhas hoje:
   **12 nós**. Assume o básico de JS.
 - 🟠 [**Backend**](./roadmaps/backend) - para quem quer construir a
   parte que roda no servidor: HTTP, Node.js, Express, REST, banco de
-  dados, ORM, autenticação JWT, validação, testes e deploy.
-  **12 nós**. Stack curado: Node.js + Express + Prisma + PostgreSQL +
-  JWT + Zod + Vitest.
+  dados, ORM, autenticação JWT, validação, testes, async profundo,
+  error handling e debugging. **15 nós**. Stack curado: Node.js +
+  Express + Prisma + PostgreSQL + JWT + Zod + Vitest.
+- 🔷 [**TypeScript**](./roadmaps/typescript) - o superconjunto tipado
+  do JavaScript, hoje default do mercado backend. Do "o que é TS" até
+  a integração completa com Express e ORM, passando por tipos
+  primitivos, unions, generics, utilitários (`Partial`, `Pick`,
+  `Omit`, `Record`), `tsconfig.json`, `tsx` + `tsc` em Node, e
+  tipagem de `req`/`res`/middlewares. **12 nós**. Pré-requisito
+  recomendado (não bloqueante) da trilha Backend.
+- 🗃️ [**NoSQL**](./roadmaps/nosql) - complemento à trilha de SQL:
+  o que é NoSQL, **modelo de documento** (MongoDB: setup, CRUD,
+  consultas, agregação, embed vs reference) e **chave-valor**
+  (Redis: tipos de dados, cache, sessão, rate limit), fechando
+  com um guia prático de decisão SQL vs NoSQL e um projeto final
+  de API com **Postgres + Redis**. **10 nós**.
 - 🔀 [**Git**](./roadmaps/git) - controle de versão do zero ao avançado:
   commits, branches, merge, remotos, rebase, reflog, workflows e uma
   primeira contribuição open source. **23 nós**, cobrindo básico,
@@ -87,6 +100,12 @@ Trilhas hoje:
     Ingress, probes (startup/liveness/readiness) + HPA + resource
     limits, Helm (charts, values, Artifact Hub) e projeto final
     de stack completa no cluster.
+
+- 🤖 [**Prompt Engineering**](./roadmaps/prompt-engineering) -
+  ensinar a usar IA na era dos LLMs. **24 nós** em 3 fases lineares
+  (Básico, Intermediário, Avançado), do zero absoluto (o que é um LLM)
+  até construir produtos com IA. Agnóstica de stack: não exige saber
+  programar, com Mermaid, Quiz e projeto final de prompt design.
 
 > Mais trilhas chegando: Python, Estruturas de Dados…
 > Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
@@ -145,6 +164,26 @@ passo. Se for editar texto, dê uma olhada no
 fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge → vira tag
 ```
 
+## 👀 Preview local (veja sua trilha renderizada)
+
+Antes de abrir o PR, dá pra ver sua trilha com o **mesmo visual do site**,
+rodando na sua máquina:
+
+```bash
+cd preview
+npm install
+npm run dev
+```
+
+Abra o endereço que o Vite mostrar (por padrão `http://localhost:5173`). O app
+lê `roadmaps/` **direto** - sem sync, sem o app principal, sem login - e
+recarrega sozinho quando você edita um `.mdx` ou o `roadmap.json`.
+
+É uma **prévia de conteúdo**: reproduz tema, fontes, tipografia, a árvore de nós,
+`Quiz` e `Mermaid`. Progresso, login e busca não estão aqui, e alguns componentes
+interativos aparecem como marcador. Detalhes em
+[`preview/README.md`](./preview/README.md).
+
 ## 📂 Estrutura do repositório
 
 ```
@@ -161,6 +200,8 @@ fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge 
 │   ├── node.mdx                  # esqueleto de um nó
 │   ├── project.mdx               # esqueleto de um projeto
 │   └── roadmap.json              # esqueleto de roadmap.json
+├── preview/
+│   └── ...                       # app local pra ver a trilha renderizada (Vite)
 ├── docs/
 │   └── style-guide.md            # como escrever (voz, tom, curadoria)
 ├── meta/

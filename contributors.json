@@ -1,0 +1,238 @@
+{
+  "generated_by": "scripts/build-contributors.mjs",
+  "count": 4,
+  "contributors": [
+    {
+      "github": "lucianodiisouza",
+      "name": "Luciano dii Souza",
+      "avatar": "https://github.com/lucianodiisouza.png",
+      "profile": "https://github.com/lucianodiisouza",
+      "counts": {
+        "trilhas": 18,
+        "projetos": 12,
+        "bootcamps": 1,
+        "total": 31
+      },
+      "trilhas": [
+        {
+          "slug": "complexidade-de-algoritmos",
+          "title": "Complexidade de Algoritmos"
+        },
+        {
+          "slug": "css-animacoes",
+          "title": "CSS Animações: Movimento com Responsabilidade"
+        },
+        {
+          "slug": "css-fundamentos",
+          "title": "CSS Fundamentos: a Base que Tudo Sustenta"
+        },
+        {
+          "slug": "css-layout",
+          "title": "CSS Layout: Position, Flexbox e Grid Aprofundados"
+        },
+        {
+          "slug": "css-moderno",
+          "title": "CSS Moderno: Variáveis, Seletores Novos e Arquitetura"
+        },
+        {
+          "slug": "docker-compose-e-workflows",
+          "title": "Docker Compose e Workflows"
+        },
+        {
+          "slug": "docker-fundamentos",
+          "title": "Docker Fundamentos"
+        },
+        {
+          "slug": "estruturas-de-dados",
+          "title": "Estruturas de Dados"
+        },
+        {
+          "slug": "frontend",
+          "title": "Frontend"
+        },
+        {
+          "slug": "fundamentos-de-cs",
+          "title": "Fundamentos de Ciência da Computação"
+        },
+        {
+          "slug": "git",
+          "title": "Git"
+        },
+        {
+          "slug": "html",
+          "title": "HTML"
+        },
+        {
+          "slug": "kubernetes",
+          "title": "Kubernetes"
+        },
+        {
+          "slug": "nosql",
+          "title": "NoSQL: Bancos Não-Relacionais"
+        },
+        {
+          "slug": "programacao-do-zero",
+          "title": "Programação do Zero"
+        },
+        {
+          "slug": "prompt-engineering",
+          "title": "Prompt Engineering"
+        },
+        {
+          "slug": "terminal-para-devs",
+          "title": "Terminal para Devs"
+        },
+        {
+          "slug": "typescript",
+          "title": "TypeScript"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "api-rest-com-autenticacao",
+          "title": "API REST com Autenticação"
+        },
+        {
+          "slug": "busca-com-filtros",
+          "title": "Busca com Filtros"
+        },
+        {
+          "slug": "calculadora-de-gorjeta",
+          "title": "Calculadora de Gorjeta"
+        },
+        {
+          "slug": "clima-agora",
+          "title": "Clima Agora"
+        },
+        {
+          "slug": "dashboard-analitico",
+          "title": "Dashboard Analítico"
+        },
+        {
+          "slug": "servico-com-docker",
+          "title": "Empacote um Serviço com Docker"
+        },
+        {
+          "slug": "encurtador-de-url",
+          "title": "Encurtador de URL"
+        },
+        {
+          "slug": "landing-page-responsiva",
+          "title": "Landing Page Responsiva"
+        },
+        {
+          "slug": "lista-de-tarefas",
+          "title": "Lista de Tarefas"
+        },
+        {
+          "slug": "modelagem-de-banco",
+          "title": "Modelagem de um Banco de Dados"
+        },
+        {
+          "slug": "pagina-de-perfil",
+          "title": "Página de Perfil"
+        },
+        {
+          "slug": "quiz-react",
+          "title": "Quiz em React"
+        }
+      ],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "creator"
+        }
+      ]
+    },
+    {
+      "github": "rafa-coelho",
+      "name": "Rafael Coelho",
+      "avatar": "https://github.com/rafa-coelho.png",
+      "profile": "https://github.com/rafa-coelho",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 3,
+        "bootcamps": 0,
+        "total": 4
+      },
+      "trilhas": [
+        {
+          "slug": "rabbitmq-mensageria",
+          "title": "RabbitMQ e Mensageria"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "central-de-notificacoes",
+          "title": "Central de Notificações"
+        },
+        {
+          "slug": "fila-de-atendimento",
+          "title": "Fila de Atendimento"
+        },
+        {
+          "slug": "processador-de-planilhas",
+          "title": "Processador de Planilhas"
+        }
+      ],
+      "bootcamps": []
+    },
+    {
+      "github": "obrenoalvim",
+      "name": "Breno Alvim",
+      "avatar": "https://github.com/obrenoalvim.png",
+      "profile": "https://github.com/obrenoalvim",
+      "counts": {
+        "trilhas": 2,
+        "projetos": 0,
+        "bootcamps": 1,
+        "total": 3
+      },
+      "trilhas": [
+        {
+          "slug": "seo-aeo-geo",
+          "title": "SEO, AEO e GEO"
+        },
+        {
+          "slug": "sql-banco-de-dados",
+          "title": "SQL e Banco de Dados"
+        }
+      ],
+      "projetos": [],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:sql-banco-de-dados"
+        }
+      ]
+    },
+    {
+      "github": "theneocarvalho",
+      "name": "Manoel Carvalho",
+      "avatar": "https://github.com/theneocarvalho.png",
+      "profile": "https://github.com/theneocarvalho",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 0,
+        "bootcamps": 1,
+        "total": 2
+      },
+      "trilhas": [
+        {
+          "slug": "backend",
+          "title": "Backend"
+        }
+      ],
+      "projetos": [],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:backend"
+        }
+      ]
+    }
+  ]
+}

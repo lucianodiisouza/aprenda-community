@@ -1,0 +1,136 @@
+---
+id: chain-of-thought
+title: "Chain-of-thought: \"pense passo a passo\""
+resources:
+  - title: "Wei et al. - Chain-of-Thought Prompting (paper original, EN, 2022)"
+    url: https://arxiv.org/abs/2201.11903
+    type: artigo
+    lang: en
+    free: true
+  - title: "Anthropic - Use chain-of-thought (EN, exemplos práticos)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought
+    type: doc
+    lang: en
+    free: true
+  - title: "Google - Prompting guide: chain-of-thought (PT-BR)"
+    url: https://ai.google.dev/gemini-for-makers/prompting-guide-101?hl=pt-BR
+    type: doc
+    lang: pt
+    free: true
+---
+
+Em 2022, um paper chamado
+[Chain-of-Thought Prompting](https://arxiv.org/abs/2201.11903) mudou
+prompt engineering. A descoberta: pedir pro modelo **"pensar passo a
+passo"** antes de dar a resposta final **melhora drasticamente** a
+performance em tarefas de raciocínio (matemática, lógica, planejamento,
+análise).
+
+Por que funciona? O mesmo motivo de `como-um-modelo-pensa` - o modelo
+gera token a token, e cada token novo é influenciado pelos anteriores.
+Se você força o modelo a **gerar o raciocínio intermediário**, esse
+raciocínio vira **contexto** pras próximas previsões. É como se o
+modelo "fosse pensando em voz alta" e, com isso, não pulasse etapas.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Problema:\\n'João tem 5 maçãs, dá 2, compra mais 3. Quantas tem?'"]
+    B["Sem CoT:\\n'Resposta: 6'"]
+    C["Com CoT:\\n'Vou pensar passo a passo.\\n1. Começa com 5.\\n2. Dá 2, fica com 3.\\n3. Compra 3, fica com 6.\\nResposta: 6.'"]
+    A --> B
+    A --> C
+    B -.->|"acerto por sorte"| D["Saída"]
+    C -.->|"raciocínio explícito\\nreutilizável"| D`}
+  caption="Com CoT, o modelo escreve o raciocínio intermediário - e a resposta final fica mais confiável e auditável."
+/>
+
+## Como usar CoT (3 variações)
+
+### 1. Zero-shot CoT (mais simples)
+
+Basta adicionar **"pense passo a passo"** (ou "let's think step by step")
+ao prompt. Funciona surpreendentemente bem em muitas tarefas.
+
+> "Quanto é 27 × 48? Pense passo a passo antes de responder."
+
+### 2. Few-shot CoT (mais robusto)
+
+Você dá exemplos que incluem o **raciocínio**, não só a resposta.
+
+> "Quanto é 12 × 8? Pense passo a passo.
+>
+> Exemplo:
+> Q: Quanto é 23 × 4?
+> A: 23 × 4. 23 × 4 = 23 × (2 × 2) = 46 × 2 = 92. Resposta: 92.
+>
+> Agora: 27 × 48?"
+
+### 3. CoT estruturado (pra produção)
+
+Forçar o modelo a **raciocinar dentro de tags**, separando "pensamento"
+de "resposta". Vantagens: você pode **validar o raciocínio** antes de
+usar a resposta, e dar **few-shot** mais limpo.
+
+> "Analise o problema. Responda no formato:
+> ```
+> <pensamento>
+> [seu raciocínio passo a passo aqui]
+> </pensamento>
+> <resposta>
+> [a resposta final aqui]
+> </resposta>
+> ```"
+
+## Onde CoT brilha
+
+- **Matemática e cálculo** - "tenho R$ 3500, gastei 23%, depois 8%, quanto sobrou?"
+- **Raciocínio lógico** - "Se A implica B e B implica C, e A é falso, o que sabemos sobre C?"
+- **Análise de cenários** - "Dadas essas 3 opções de arquitetura, qual é mais barata em 2 anos?"
+- **Planejamento** - "Pra organizar um evento de 50 pessoas em 30 dias, quais os passos?"
+- **Debugging** - "Esse código dá erro X. Pense passo a passo no que pode estar errado."
+
+## Onde CoT **não** ajuda (ou atrapalha)
+
+- **Tarefas simples e mecânicas** - tradução, extração direta, formatação.
+  Adicionar CoT aqui só desperdiça tokens.
+- **Tarefas criativas puras** - "escreva um poema sobre o mar". Modelo não
+  "pensa" criativamente, gera. CoT pode até engessar.
+- **Quando a resposta precisa ser curta** - CoT aumenta muito o output.
+  Se a resposta tem que caber em 1 linha, não dá.
+- **CoT mal feito** - "pense muito" sem critério gera raciocínio
+  circular. O truque é "pense passo a passo", com a etapa explícita.
+
+## CoT avançado: self-consistency
+
+Uma evolução: gere **múltiplos raciocínios** (com temperatura alta) e
+pegue a **resposta que mais aparece**. É como perguntar pro modelo
+"de 5 jeitos diferentes" e ver no que ele concorda. Custoso (5x mais
+tokens), mas poderoso em tarefas onde acerto é crítico. Detalhes em
+Fase 3, no nó `avaliacao-de-prompts`.
+
+<Quiz
+  question="Você está pedindo pro modelo classificar reviews em positivo/neutro/negativo. Faz sentido usar chain-of-thought?"
+  options={[
+    { text: "Sim - CoT sempre ajuda", correct: false, explanation: "CoT ajuda em raciocínio, não em classificação simples. Pra esse caso, few-shot com exemplos resolve melhor." },
+    { text: "Não - classificação simples não se beneficia de raciocínio passo a passo; few-shot resolve", correct: true },
+    { text: "Sim, com temperatura alta pra forçar raciocínio criativo", correct: false, explanation: "Temperatura alta em classificação é o oposto do que se quer - introduz variabilidade onde você quer consistência." }
+  ]}
+/>
+
+- **CoT é "pensar passo a passo"** - força o modelo a gerar raciocínio
+  intermediário antes da resposta final.
+- **3 variações:** zero-shot ("pense passo a passo"), few-shot (exemplos
+  com raciocínio), estruturado (tags `<pensamento>`/`<resposta>`).
+- **CoT brilha em raciocínio**: matemática, lógica, planejamento,
+  análise.
+- **CoT é ruído em tarefas simples e criativas** - use com critério.
+- **Self-consistency** (gerar N raciocínios, escolher a maioria) é a
+  evolução - cara, mas poderosa em tarefas críticas.
+
+> Dica: **"Pense passo a passo"** é a frase mais subestimada do
+> prompt engineering. Coloque-a em qualquer tarefa de raciocínio que
+> esteja errando. Em 5 minutos, sem reescrever nada, você vai ver
+> ganho.
+
+No próximo nó, vamos para a técnica que **escala** CoT e few-shot:
+**decompor tarefas** complexas em subtarefas.

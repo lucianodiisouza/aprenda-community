@@ -1,0 +1,81 @@
+---
+id: estrutura-para-ia
+title: "Escrevendo Conteúdo que uma IA Consegue Citar"
+resources:
+  - title: "The /llms.txt file (llmstxt.org, em inglês)"
+    url: https://llmstxt.org/
+    type: doc
+    lang: en
+    free: true
+  - title: "GPTBot (documentação da OpenAI, em inglês)"
+    url: https://platform.openai.com/docs/gptbot
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma IA generativa não lê a página inteira do jeito que uma pessoa leria: ela
+extrai trechos. Um parágrafo que só faz sentido dentro do contexto dos
+parágrafos anteriores é mais difícil de citar do que um bloco que responde
+sozinho.
+
+### Blocos autocontidos
+
+```markdown
+fraco (depende do parágrafo anterior pra fazer sentido):
+"Por isso, ela é a melhor opção pra quem tem pouco tempo."
+
+forte (funciona extraído, sozinho, fora de contexto):
+"A Calculadora de Gorjeta Online calcula o valor por pessoa em menos de
+5 segundos, sem precisar criar conta."
+```
+
+Cada seção importante deveria sobreviver se fosse copiada e colada sozinha
+em outro lugar, e ainda fazer sentido completo.
+
+### Tabela de comparação, não parágrafo de comparação
+
+```markdown
+| Ferramenta          | Grátis | Precisa de conta | Funciona offline |
+|----------------------|--------|-------------------|-------------------|
+| Calculadora A        | Sim    | Não                | Sim               |
+| Calculadora B        | Não    | Sim                | Não               |
+```
+
+Modelos de linguagem extraem dado estruturado (tabela, lista) com mais
+precisão do que dado disperso num parágrafo denso. Perguntas de "X vs Y"
+respondidas em tabela têm mais chance de virar a fonte de uma resposta
+gerada.
+
+### Deixando a porta aberta pros robôs de IA
+
+```text
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+```
+
+Cada assistente de IA tem seu próprio robô de rastreamento (GPTBot da
+OpenAI, PerplexityBot, ClaudeBot da Anthropic, entre outros). Se o
+`robots.txt` bloqueia esses robôs, essa IA simplesmente nunca vai conseguir
+ler, e portanto nunca vai poder citar, o seu conteúdo.
+
+- **Bloco autocontido**: cada seção precisa fazer sentido sozinha, fora do
+  contexto do texto ao redor.
+- **Tabela** vence parágrafo pra comparação e pra dado estruturado.
+- **Robôs de IA no `robots.txt`**: bloquear por engano fecha a porta pra
+  aquela IA te citar, mesmo com conteúdo excelente.
+- Atualizar a data de "última modificação" também ajuda: IA generativa
+  costuma preferir a informação mais recente disponível.
+
+> Dica: escrever pensando em IA não significa escrever pra máquina. O mesmo
+> texto claro, direto e bem estruturado que ajuda uma pessoa a entender
+> rápido também é o texto que uma IA consegue extrair e citar melhor.
+
+No próximo nó, você vai fechar a trilha aprendendo a checar se, de fato,
+você está sendo citado.

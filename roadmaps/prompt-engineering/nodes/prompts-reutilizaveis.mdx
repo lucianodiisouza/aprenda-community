@@ -1,0 +1,155 @@
+---
+id: prompts-reutilizaveis
+title: "Prompts como código: templates, versionamento e biblioteca"
+resources:
+  - title: "Anthropic - Prompt library (EN, exemplos de prompts versionados)"
+    url: https://docs.anthropic.com/en/prompt-library
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Develop a prompt with Claude (EN, workflow)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/develop-prompts
+    type: doc
+    lang: en
+    free: true
+  - title: "GitHub - dotprompt (template engine de prompt da Google, EN)"
+    url: https://github.com/google/dotprompt
+    type: doc
+    lang: en
+    free: true
+---
+
+Você chegou ao fim da Fase 2. Sabe anatomia, few-shot, CoT, decomposição,
+ReAct, RAG, function calling, system vs user. Mas tem uma habilidade que
+multiplica o valor de tudo isso: **tratar prompts como código**. É o que
+separa quem usa IA de vez em quando de quem constrói uma **biblioteca
+pessoal (ou de equipe)** que escala.
+
+## O sinal de que seu prompt virou template
+
+Você está reescrevendo o **mesmo prompt com pequenas variações** há
+mais de 2 vezes. Aí, vira template. Exemplos clássicos:
+
+- "Resuma este email" - mas com tom/ tamanho variando.
+- "Extraia dados deste contrato" - mas com schema variando.
+- "Reescreva este texto para tom X" - mas com tom X variando.
+- "Gere código que faz X" - mas com a stack variando.
+
+Nesses casos, **parametrize**. Vira template.
+
+## O template mais simples: placeholder
+
+```text
+# Prompt: resumo de email (versão: v3)
+
+Você é um assistente que resume emails em tom {tom} para {publico}.
+
+Resuma o email abaixo em {n_palavras} palavras, priorizando:
+{prioridades}
+
+Email:
+{email}
+
+Resumo:
+```
+
+`{variavel}` em vez de hardcoded. Substitua em código, no editor, ou
+na mão. **Já é 80% do valor** pra prompts pessoais.
+
+## Quando partir pra um template engine
+
+Quando você tem:
+
+- **Múltiplos templates** que compartilham lógica (mesma persona, mesmo
+  formato, só a tarefa muda).
+- **Múltiplas personas/formatos** que se combinam (ex: "persona de
+  suporte" + "formato de email" + "tarefa de follow-up").
+- **Contexto dinâmico** (RAG, dados do usuário) que entra no prompt.
+- **Time trabalhando junto** nos mesmos prompts.
+
+Frameworks como [DSPy](https://dspy.ai/), [LangChain](https://www.langchain.com/),
+[Guidance](https://github.com/guidance-ai/guidance) e
+[dotprompt](https://github.com/google/dotprompt) entram aqui. Cada um
+com trade-offs:
+
+- **DSPy** - prompts viram **programas** com otimização automática. Curva
+  de aprendizado maior, mas é o estado da arte em 2026.
+- **LangChain** - ecossistema enorme, mais opinativo. Bom pra protótipo,
+  vira monolito em produção.
+- **Guidance** - templates com "controle de fluxo" no nível de token.
+  Muito controle, sintaxe própria.
+- **dotprompt** - arquivos `.prompt` com frontmatter YAML, simples,
+  feito pela Google.
+
+**Decisão pragmática:** pra começar, **dotprompt ou um template seu
+simples** bastam. DSPy e LangChain entram quando o problema crescer.
+
+## Estrutura recomendada de uma biblioteca de prompts
+
+```
+prompts/
+  README.md                        <- convenções da biblioteca
+  resumos/
+    email-resumo/
+      v1.txt
+      v2.txt                       <- versão atual
+      changelog.md
+      avaliacao/
+        golden-set.jsonl           <- 20 emails + resumo ideal
+        resultados-v1.json
+        resultados-v2.json
+  extracao/
+    contrato-dados/
+      v1.prompt                    <- dotprompt syntax
+      v2.prompt
+      schema.json                  <- JSON Schema da saída
+      ...
+```
+
+O pulo do gato: o **`golden-set.jsonl`**. É um arquivo com
+20-50 exemplos de "input + saída ideal". Você roda o prompt em cima
+dele e compara. É o que vai te dizer se v2 é melhor que v1. Detalhes
+em `avaliacao-de-prompts` (próximo bloco).
+
+## Boas práticas de versionamento
+
+- **Versione em Git** (mesmo que seja Git pessoal). Cada mudança de
+  prompt merece um commit com mensagem que diz **o que mudou e por
+  quê**.
+- **Não reescreva v2 sem salvar v1.** Você pode querer voltar, ou
+  comparar, ou entender por que mudou.
+- **Documente o changelog** - "v3: troquei few-shot por CoT, melhorou
+  15% no golden-set mas dobrou o custo". Esse tipo de nota vale ouro.
+- **Não misture refactor com mudança de comportamento.** Commit
+  separado: "refactor: extraí persona pra shared" e "feat: nova
+  persona de atendimento".
+
+<Quiz
+  question="Você está reescrevendo o mesmo prompt de follow-up comercial há 3 semanas, mudando só o nome do cliente e o valor da proposta. O que fazer?"
+  options={[
+    { text: "Continuar reescrevendo - é mais simples", correct: false, explanation: "Você está gastando 5min toda semana pra fazer o que um template faz em 5 segundos. E está acumulando cópias divergentes que você não controla." },
+    { text: "Transformar em template com placeholders {cliente}, {valor}, {proposta}", correct: true },
+    { text: "Migrar pra LangChain ou DSPy imediatamente", correct: false, explanation: "Prematuro. Antes de framework, template simples. Framework entra quando o problema crescer - se é só 1 prompt com 3 variáveis, é over-engineering." }
+  ]}
+/>
+
+- **Sinal de template: você está reescrevendo o mesmo prompt com
+  variações há 2+ vezes.**
+- **Forma mais simples: placeholders `{variavel}`.** Já resolve 80% dos
+  casos pessoais.
+- **Frameworks (DSPy, LangChain, dotprompt) entram quando a biblioteca
+  cresce** - múltiplos templates, time, contexto dinâmico.
+- **Versione em Git**, documente changelog, e **separe refactor de
+  mudança de comportamento**.
+- **Golden-set + avaliação** é o que torna a biblioteca confiável.
+  Detalhes no próximo bloco.
+
+> Dica: o melhor investimento que você pode fazer na sua carreira com
+> IA em 2026 é **montar sua biblioteca pessoal de prompts** com 10-20
+> templates que você usa toda semana. Vira **vantagem cumulativa** -
+> cada mês, fica mais rápido.
+
+Você fechou a Fase 2. Sabe as técnicas intermediárias. No próximo nó,
+entra na **Fase 3** com o divisor entre hobby e profissão:
+**avaliação de prompts** - como saber, com evidência, se um prompt é
+melhor que outro.

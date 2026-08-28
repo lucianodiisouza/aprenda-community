@@ -1,0 +1,59 @@
+---
+slug: modelagem-de-banco
+title: "Modelagem de um Banco de Dados"
+description: "Modele o banco de um mini e-commerce e escreva as consultas que respondem perguntas de verdade — só SQL, sem ORM no caminho."
+difficulty: intermediario
+published: "2026-08-25"
+skills:
+  - sql
+  - banco-de-dados
+  - modelagem
+  - backend
+trilhas:
+  - sql-banco-de-dados
+estimate: "3-5 dias"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Antes de qualquer API ou ORM, um bom backend começa num **modelo de dados que faz
+sentido**. Aqui você desenha o banco de um mini e-commerce e escreve o SQL que
+responde às perguntas do negócio.
+
+## Objetivo
+
+Praticar **modelagem relacional** e **SQL puro**: normalizar tabelas, criar
+relacionamentos (1-N e N-N), garantir integridade com chaves e escrever consultas
+que agregam e cruzam dados — sem depender de um ORM pra esconder o que acontece.
+
+## Requisitos
+
+- [ ] Modele ao menos: `clientes`, `produtos`, `pedidos` e `itens_do_pedido`
+- [ ] Defina chaves primárias e estrangeiras corretas (um pedido pertence a um cliente; um item liga um pedido a um produto)
+- [ ] Resolva o N-N entre pedidos e produtos com a tabela de junção
+- [ ] Popule o banco com dados de exemplo (`INSERT`) suficientes pra testar
+- [ ] Escreva consultas que respondam:
+  - [ ] Os 5 produtos mais vendidos (em quantidade)
+  - [ ] O faturamento total por mês
+  - [ ] Todos os pedidos de um cliente com o valor de cada um
+  - [ ] Clientes que nunca fizeram um pedido
+
+## Desafios extras
+
+- [ ] Adicione índices onde as consultas mais pesam e compare o plano com `EXPLAIN`
+- [ ] Crie uma `VIEW` para o "faturamento por mês" e consulte a partir dela
+- [ ] Garanta com constraints que a quantidade de um item nunca seja negativa
+- [ ] Escreva uma consulta com `LEFT JOIN` que mostre produtos sem nenhuma venda
+
+## Dicas
+
+- Comece pelo papel: desenhe as tabelas e as setas dos relacionamentos antes de
+  escrever `CREATE TABLE`. Modelagem errada custa caro depois.
+- Uma tabela de junção (`itens_do_pedido`) guarda também o que pode mudar no tempo:
+  o preço do produto **no momento da compra**, não o preço atual.
+- SQLite ou Postgres — tanto faz pra praticar. O SQL que importa aqui é padrão nos
+  dois. Rode as consultas, confira os números na mão nos dados de exemplo.
+- `EXPLAIN` (ou `EXPLAIN QUERY PLAN` no SQLite) mostra se o banco está usando seus
+  índices ou varrendo a tabela inteira. É aqui que a trilha de complexidade encosta
+  no mundo real.

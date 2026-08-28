@@ -1,0 +1,127 @@
+---
+id: redis-casos-de-uso
+title: "Redis na Prática: Cache, Sessão e Rate Limit"
+resources:
+  - title: "Redis - Use Cases (em inglês)"
+    url: https://redis.io/docs/latest/develop/use-cases/
+    type: doc
+    lang: en
+    free: true
+---
+
+Redis brilha em **problemas com padrão de acesso conhecido**:
+você sempre lê o mesmo dado, ou precisa contar/contar coisas
+em tempo real, ou precisa de pub/sub. Esse nó mostra os três
+casos de uso mais comuns em backend.
+
+### Cache: ler uma vez, servir mil
+
+O padrão mais usado: **antes de ir no banco, vê se já tem no
+Redis**.
+
+```typescript
+async function getUsuario(id: number): Promise<Usuario | null> {
+  const cacheKey = `usuario:${id}`;
+
+  // 1. tenta o cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);  // cache hit
+  }
+
+  // 2. cache miss - vai no banco
+  const usuario = await prisma.user.findUnique({ where: { id } });
+  if (!usuario) return null;
+
+  // 3. guarda no cache pra próxima vez
+  await redis.set(cacheKey, JSON.stringify(usuario), "EX", 3600);
+
+  return usuario;
+}
+```
+
+O `EX 3600` é **1 hora**. Depois disso, a chave some e a próxima
+requisição vai no banco de novo (e popula o cache).
+
+### Invalidação: o problema real do cache
+
+Quando o usuário **muda**, o cache fica **desatualizado**. A
+estratégia mais simples: **invalidar** no update.
+
+```typescript
+async function atualizarUsuario(id: number, dados: UpdateInput) {
+  const atualizado = await prisma.user.update({ where: { id }, data: dados });
+
+  // invalida o cache - próxima leitura repopula
+  await redis.del(`usuario:${id}`);
+
+  return atualizado;
+}
+```
+
+A regra é: **toda escrita invalida o cache correspondente**. Esquecer
+disso gera bug clássico de "mudei meu nome e continua aparecendo o
+antigo".
+
+### Sessão: guardar usuário logado
+
+Em vez de cookie assinado ou JWT stateless, dá pra guardar a
+sessão no Redis. Vantagem: dá pra **revogar** (logout invalida
+a sessão).
+
+```typescript
+// no login
+const sessionId = crypto.randomUUID();
+await redis.set(
+  `sessao:${sessionId}`,
+  JSON.stringify({ usuarioId: 42 }),
+  "EX", 60 * 60 * 24  // 1 dia
+);
+res.cookie("sid", sessionId, { httpOnly: true });
+
+// no middleware de auth
+const session = await redis.get(`sessao:${req.cookies.sid}`);
+if (!session) return res.status(401).json({ erro: "não autenticado" });
+req.usuarioId = JSON.parse(session).usuarioId;
+
+// no logout
+await redis.del(`sessao:${req.cookies.sid}`);
+```
+
+### Rate limit: contar requisições por usuário
+
+```typescript
+async function rateLimit(userId: number, maxPorMinuto: number) {
+  const key = `ratelimit:${userId}:${Math.floor(Date.now() / 60000)}`;
+  //                              ↑ minuto atual como parte da chave
+
+  const count = await redis.incr(key);
+  if (count === 1) {
+    // primeira request deste minuto - define expiração
+    await redis.expire(key, 60);
+  }
+
+  return count <= maxPorMinuto;
+}
+```
+
+`INCR` é **atômico** no Redis - mesmo com 1000 requests em
+paralelo, o contador nunca perde incrementos. A chave expira
+em 60s automaticamente, então não acumula memória.
+
+Três conceitos pra fixar:
+
+- **Cache** = `GET` no Redis antes do banco; **invalidação** no
+  update. A combinação resolve 90% do tráfego de leitura.
+- **Sessão** = chave no Redis com TTL; **logout = `DEL` da chave**
+  (revogação instantânea).
+- **Rate limit** com `INCR` + `EXPIRE` por janela de tempo
+  (minuto, hora). Atômico, simples, barato.
+
+> Dica: o **`ioredis`** tem `pipeline()` pra enviar vários
+> comandos de uma vez (1 round-trip em vez de N). Use quando
+> precisa de várias leituras no mesmo request:
+> `const [user, posts] = await redis.multi().get(...).get(...).exec()`.
+
+No próximo nó, vamos juntar tudo: **como decidir entre SQL e
+NoSQL na prática**, sem cair no "depende" vazio.

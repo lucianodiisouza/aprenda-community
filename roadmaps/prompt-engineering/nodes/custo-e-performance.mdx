@@ -1,0 +1,202 @@
+---
+id: custo-e-performance
+title: "Custo, latência e caching: o que ninguém te conta"
+resources:
+  - title: "Anthropic - Prompt caching (EN, feature de cache de prompts)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Pricing (EN, sempre verificar - muda)"
+    url: https://openai.com/api/pricing/
+    type: doc
+    lang: en
+    free: true
+  - title: "Anthropic - Pricing (EN, idem)"
+    url: https://www.anthropic.com/pricing
+    type: doc
+    lang: en
+    free: true
+---
+
+Você tem o melhor prompt do mundo, o agente mais sofisticado, o RAG
+mais afiado. Mas se o sistema **não cabe no orçamento** ou **demora
+demais**, não vai pra produção. Esse nó é sobre o que decide isso:
+custo, latência e caching.
+
+Aviso: preços e features mudam **toda semana**. Os números concretos
+desse nó são ilustrativos - **sempre confira a página oficial do
+provider antes de tomar decisão**.
+
+## Custo: o que paga e como economizar
+
+### O que você paga
+
+Modelos cobram por **token**, separado em:
+
+- **Input tokens** - o que entra (system + user + histórico + tools
+  + retrieved docs).
+- **Output tokens** - o que sai (geralmente mais caro que input, em
+  alguns casos **muito** mais caro).
+- **Cache hits** - input reutilizado de cache (significativamente
+  mais barato, às vezes grátis com TTL).
+- **Embeddings** - por chamada, geralmente bem barato.
+
+Em 2026, preços típicos (ordem de grandeza, não cite literal):
+
+- Modelo de fronteira (Opus, GPT-4 classe): $3-15 / 1M tokens input,
+  $15-75 / 1M output.
+- Modelo médio (Sonnet, GPT-4o): $0.50-3 / 1M input, $1.50-15 / 1M
+  output.
+- Modelo pequeno/eficiente (Haiku, GPT-4o-mini): $0.05-0.30 / 1M
+  input, $0.30-1.20 / 1M output.
+
+Multiplique pelo volume. **10M chamadas/mês com 2k tokens input + 500
+output** num modelo de fronteira pode dar **$200k/mês** fácil. Num
+modelo pequeno, dá **$3-5k**. Diferença brutal.
+
+### Como economizar
+
+<Mermaid
+  chart={`flowchart TB
+    A["Custo alto?"] --> B{"Onde está\\no gasto?"}
+    B -- Input tokens" --> C["1. Reduzir prompt\\n2. Prompt caching\\n3. Modelo menor"]
+    B -- "Output tokens" --> D["1. Limitar max_tokens\\n2. Instrução 'seja conciso'\\n3. Modelo menor"]
+    B -- "Volume" --> E["1. Batch requests\\n2. Cache de respostas\\n3. Modelo menor para\\ntarefas simples"]
+    B -- "Embeddings/RAG" --> F["1. Menos chunks\\n2. Cache de embeddings\\n3. Vetor store certo"]`}
+  caption="Diagnóstico de custo: onde está o gasto? Cada causa tem solução diferente."
+/>
+
+**Reduzir input:**
+
+- **Corte prompt desnecessário.** "Você é o assistente mais útil do
+  mundo" não agrega valor - gasta tokens.
+- **Prompt caching.** Providers têm cache pra prefixo idêntico do
+  prompt. System prompt longo + 10k chamadas = 90% de desconto no
+  input cached.
+- **Modelo certo pra tarefa.** Classificação simples não precisa do
+  Opus.
+
+**Reduzir output:**
+
+- **`max_tokens` explícito** - se a resposta nunca passa de 300
+  palavras, limite a 400 tokens.
+- **Instrução "seja conciso"** funciona, mas não confunda com
+  restrição hard.
+- **Respostas estruturadas e curtas** em vez de prosa longa.
+
+**Reduzir volume:**
+
+- **Cache de respostas** - mesma pergunta recorrente? Cache. FaQ
+  popular vira template.
+- **Batching** - 100 pequenas chamadas é mais caro que 1 chamada
+  com 100 inputs.
+- **Classificador que decide se precisa de LLM** - 80% das queries
+  de suporte são as mesmas 20 perguntas. Responda com template
+  determinístico, LLM só pro resto.
+
+## Latência: o que conta e como derrubar
+
+### Os 3 tipos de latência
+
+- **Time to first token (TTFT)** - quanto até o modelo começar a
+  "responder" (primeiro token sai). Importante pra UX em streaming.
+- **Tokens por segundo (TPS)** - velocidade de geração. Importante
+  pra resposta completa.
+- **Latência total** - prompt + TTFT + geração. Importante pra
+  sistemas síncronos.
+
+Em 2026, modelo pequeno tipicamente: 200-500ms TTFT, 50-150 TPS.
+Modelo grande: 500ms-2s TTFT, 20-60 TPS. **Tarefas interativas
+preferem o pequeno**; tarefas em batch (relatório, análise) aceitam
+o grande.
+
+### Como derrubar latência
+
+- **Modelo menor pra tarefas interativas** (chat curto, classificação,
+  intent detection).
+- **Streaming sempre** - usuário vê resposta em 200ms, mesmo que o
+  total seja 3s. UX fica muito melhor.
+- **Paralelizar** o que dá. RAG: embedding da query + reranking em
+  paralelo. Multi-step: rodar passos independentes em paralelo.
+- **Pré-computar o que dá** - embeddings de documentos conhecidos,
+  respostas de FAQ, etc.
+- **Reduzir tokens de input** (mesmo motivo de custo) - latência
+  escala com input.
+
+## Caching: o superpoder subestimado
+
+Três tipos de cache, e cada provider tem o seu:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Request"] --> B{"Cache hit?"}
+    B -- "Sim, prompt\\nexato" --> C["Provider cache\\n(70-90% mais barato)"]
+    B -- "Sim, semantic" --> D["Vector cache\\n(sua infra)"]
+    B -- "Não" --> E["LLM processa"]
+    C --> F["Resposta"]
+    D --> F
+    E --> F`}
+  caption="Caching em camadas: provider cache (rápido, barato, limitado a prefixo) + cache semântico (sua infra, mais flexível)."
+/>
+
+### 1. Prompt caching (do provider)
+
+Você **não muda o código** - o provider detecta que o **prefixo do
+prompt é idêntico** ao que você mandou antes (mesmo system prompt, por
+exemplo) e cobra muito menos. Anthropic, OpenAI e Gemini têm isso em
+2026. **Liga e esquece**, em 1 linha de config.
+
+Quando aproveita: chamadas com **system prompt longo e estável** +
+muitas chamadas por minuto. Casos clássicos: chatbot de suporte com
+persona detalhada, RAG com instruções longas de system.
+
+### 2. Cache semântico (sua infra)
+
+Você **indexa perguntas e respostas** num vector store, e antes de
+chamar o LLM, busca perguntas similares. Se similaridade > X, devolve
+a resposta cacheada. Bom pra FAQ recorrente, ruim pra perguntas
+únicas.
+
+### 3. Cache de ferramentas
+
+Tools caras (chamadas de API pagas, web search) merecem cache
+separado. **Idempotência** (mesma chamada = mesmo resultado) é o
+indicador.
+
+## Métricas que importam em produção
+
+- **Custo por request** (em $ e em tokens).
+- **P50 / P95 / P99 latência** (mediana e cauda longa).
+- **Cache hit rate** (% de chamadas que bateram cache).
+- **Taxa de erro** (resposta inválida, timeout, alucinação detectada).
+- **Custo total por dia/mês** (com breakdown por feature).
+
+<Quiz
+  question="Seu agente em produção está com custo alto. Análise: 90% do input tokens é o system prompt (que não muda entre chamadas). Qual a melhor otimização?"
+  options={[
+    { text: "Encurtar o system prompt - remover tudo que não é essencial", correct: false, explanation: "Ajuda, mas você precisa do system prompt. Cortar conteúdo útil degrada a qualidade." },
+    { text: "Ativar prompt caching do provider - o prefixo idêntico fica muito mais barato", correct: true },
+    { text: "Mudar pra um modelo menor", correct: false, explanation: "Resolve custo de input e output, mas pode degradar qualidade. Tente primeiro o que não tem trade-off de qualidade (cache)." }
+  ]}
+/>
+
+- **Custo e latência decidem se vai pra produção.** Sem monitorar,
+  você está no escuro.
+- **Cache de prefixo (provider) é o primeiro passo** em qualquer
+  agente com system prompt longo - liga e esquece, 70-90% de
+  economia.
+- **Modelo menor pra tarefas interativas**, grande pra batch.
+- **Streaming sempre** - UX muda completamente.
+- **Cache semântico + cache de tools** pra reuso de respostas
+  frequentes.
+- **Métricas em produção:** custo/request, P50/P95/P99 latência,
+  cache hit rate, taxa de erro.
+
+> Dica: antes de qualquer otimização de modelo, **ative prompt caching
+> e meça**. Em 80% dos casos, isso resolve 50-80% do custo de input
+> sem mudar qualidade nenhuma. É literalmente dinheiro grátis.
+
+Você fechou a Fase 3. Cobriu avaliação, automação, agentes, multimodal,
+segurança e custo. Está pronto pro **projeto final** - o momento de
+colocar tudo isso junto.

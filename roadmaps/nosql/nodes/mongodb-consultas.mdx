@@ -1,0 +1,137 @@
+---
+id: mongodb-consultas
+title: "MongoDB: Filtros, Projeção, Ordenação e Agregação"
+resources:
+  - title: "MongoDB - Aggregation Pipeline (em inglês)"
+    url: https://www.mongodb.com/docs/manual/core/aggregation-pipeline/
+    type: doc
+    lang: en
+    free: true
+  - title: "MongoDB - Query Operators (em inglês)"
+    url: https://www.mongodb.com/docs/manual/reference/operator/query/
+    type: doc
+    lang: en
+    free: true
+---
+
+O CRUD básico dá conta de 80% dos casos. Os outros 20% - "liste
+os top 10 usuários ativos, ordenados por data de cadastro, com
+apenas nome e email" - precisam de **filtros compostos, projeção,
+ordenação, paginação e agregação**.
+
+### Filtros compostos
+
+Combine condições com `$and`, `$or` ou implicitamente:
+
+```javascript
+// implícito: $and
+db.usuarios.find({
+  ativo: true,
+  idade: { $gte: 18 }
+});
+
+// $or explícito
+db.usuarios.find({
+  $or: [
+    { premium: true },
+    { admin: true }
+  ]
+});
+
+// combinando
+db.usuarios.find({
+  ativo: true,
+  $or: [{ premium: true }, { cidade: "São Paulo" }]
+});
+```
+
+### Projeção: trazer só alguns campos
+
+Por padrão, `find()` devolve **todos os campos**. Projeção é
+a lista do que você quer:
+
+```javascript
+db.usuarios.find(
+  { ativo: true },
+  { nome: 1, email: 1, _id: 0 }  // 1 = incluir, 0 = excluir
+);
+```
+
+Resultado: só `nome` e `email` de cada usuário. Útil pra DTOs
+de listagem, e pra reduzir tráfego quando o documento tem
+campos grandes.
+
+### Ordenação, limite e paginação
+
+```javascript
+db.usuarios
+  .find({ ativo: true })
+  .sort({ criadoEm: -1 })   // -1 = desc, 1 = asc
+  .skip(20)                  // pula os primeiros 20
+  .limit(10);                // devolve os próximos 10
+```
+
+Esse padrão é **paginação offset-based**: página 3 de 10 itens
+é `skip(20).limit(10)`. Funciona até a página ~1000. Pra
+milhões de páginas, usa **cursor-based** com base no último
+`_id` ou `criadoEm`.
+
+### Agregação: o "GROUP BY" do MongoDB
+
+O **aggregation pipeline** é uma cadeia de estágios que
+transformam documentos. É o equivalente ao `SELECT ... GROUP BY`
+do SQL, só que **muito mais flexível**.
+
+```javascript
+// quantos usuários ativos por cidade?
+db.usuarios.aggregate([
+  { $match: { ativo: true } },        // filtra
+  { $group: {                         // agrupa
+    _id: "$cidade",
+    total: { $sum: 1 },
+    idadeMedia: { $avg: "$idade" }
+  }},
+  { $sort: { total: -1 } },           // ordena
+  { $limit: 10 }                      // top 10
+]);
+```
+
+Os estágios mais comuns:
+
+- **`$match`** - filtra documentos (como o `WHERE`)
+- **`$group`** - agrupa e calcula métricas
+- **`$project`** - escolhe/renomeia campos
+- **`$sort`** / **`$limit`** / **`$skip`** - ordenação e paginação
+- **`$lookup`** - "join" com outra coleção (avançado)
+- **`$unwind`** - desnormaliza array em documentos
+
+### Índices: a parte que faz diferença
+
+Sem índice, query fica **lenta** em coleção grande. Crie índice
+nos campos que você busca com frequência:
+
+```javascript
+db.usuarios.createIndex({ email: 1 });     // index simples
+db.usuarios.createIndex({ cidade: 1, idade: -1 });  // composto
+```
+
+No `find()`, o índice é usado **automaticamente** quando o filtro
+bate com a ordem do índice.
+
+Três conceitos pra fixar:
+
+- **Filtros** podem ser compostos com `$and`/`$or`; **projeção**
+  escolhe quais campos voltar.
+- **Aggregation pipeline** é o "GROUP BY flexível" do MongoDB -
+  cadeia de estágios (`$match`, `$group`, `$sort`).
+- **Índices** aceleram queries - crie nos campos que você busca
+  com frequência.
+
+> Dica: o método `explain()` mostra se sua query está usando
+> índice ou fazendo **collection scan** (ler tudo). Use sempre
+> que uma query estiver lenta:
+> `db.usuarios.find({ email: "x" }).explain("executionStats")`.
+
+No próximo nó, vamos tratar o ponto mais delicado do modelo
+de documento: **relacionamentos**. Embed vs reference - quando
+colocar tudo num documento só, e quando separar em coleções.

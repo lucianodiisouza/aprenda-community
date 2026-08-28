@@ -1,0 +1,183 @@
+{
+  "slug": "prompt-engineering",
+  "title": "Prompt Engineering",
+  "description": "Trilha completa de Prompt Engineering - do zero absoluto (o que é um LLM) até construir produtos com IA. 24 nós em 3 fases lineares: Básico (8), Intermediário (9) e Avançado (6 + projeto final). Cobre anatomia de prompt, few-shot, chain-of-thought, RAG, function calling, agentes, segurança, avaliação e custo - com Quiz, Mermaid e projeto final agnóstico de stack. Não exige saber programar.",
+  "difficulty": "iniciante",
+  "skills": ["prompt-engineering", "ia-generativa", "llm", "rag", "agentes", "avaliacao", "seguranca"],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "o-que-eh-ia-generativa",
+      "title": "O que é IA generativa (e o que não é)",
+      "type": "topic",
+      "recommended": true,
+      "children": ["como-um-modelo-pensa"]
+    },
+    {
+      "id": "como-um-modelo-pensa",
+      "title": "Como um modelo \"pensa\": tokens, contexto e temperatura",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seu-primeiro-prompt"]
+    },
+    {
+      "id": "seu-primeiro-prompt",
+      "title": "Seu primeiro prompt: a anatomia de um prompt bem-feito",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["clareza-e-instrucoes"]
+    },
+    {
+      "id": "clareza-e-instrucoes",
+      "title": "Clareza mata ambiguidade: como ser específico",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["papel-e-persona"]
+    },
+    {
+      "id": "papel-e-persona",
+      "title": "\"Aja como...\": papel, persona e tom",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["formatos-de-saida"]
+    },
+    {
+      "id": "formatos-de-saida",
+      "title": "Formatando a saída: JSON, markdown, tabelas e listas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["iterar-para-melhorar"]
+    },
+    {
+      "id": "iterar-para-melhorar",
+      "title": "Iterar é tudo: como refinar um prompt sem reescrever do zero",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["limitacoes-comuns"]
+    },
+    {
+      "id": "limitacoes-comuns",
+      "title": "Limitações comuns: alucinação, knowledge cutoff e contexto",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["checkpoint-fase-1"]
+    },
+    {
+      "id": "checkpoint-fase-1",
+      "title": "Checkpoint da Fase 1: o que você já internalizou",
+      "type": "topic",
+      "recommended": true,
+      "children": ["few-shot"]
+    },
+    {
+      "id": "few-shot",
+      "title": "Few-shot: exemplos como superpoder",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["chain-of-thought"]
+    },
+    {
+      "id": "chain-of-thought",
+      "title": "Chain-of-thought: \"pense passo a passo\"",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["decomposicao-tarefas"]
+    },
+    {
+      "id": "decomposicao-tarefas",
+      "title": "Decompondo tarefas: sub-prompts e pipelines mentais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["react-e-tools"]
+    },
+    {
+      "id": "react-e-tools",
+      "title": "ReAct e tool use: o modelo que age no mundo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rag-conceito"]
+    },
+    {
+      "id": "rag-conceito",
+      "title": "RAG: injetando contexto externo no prompt",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["function-calling"]
+    },
+    {
+      "id": "function-calling",
+      "title": "Function calling e structured output",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["system-vs-user-prompt"]
+    },
+    {
+      "id": "system-vs-user-prompt",
+      "title": "System prompt vs user prompt: onde vai cada coisa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["prompts-reutilizaveis"]
+    },
+    {
+      "id": "prompts-reutilizaveis",
+      "title": "Prompts como código: templates, versionamento e biblioteca",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["avaliacao-de-prompts"]
+    },
+    {
+      "id": "avaliacao-de-prompts",
+      "title": "Avaliação: como saber se um prompt é melhor que outro",
+      "type": "topic",
+      "recommended": true,
+      "children": ["automacao-e-frameworks"]
+    },
+    {
+      "id": "automacao-e-frameworks",
+      "title": "Automatizando prompts: LangChain, DSPy e pipelines",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["agentes-multi"]
+    },
+    {
+      "id": "agentes-multi",
+      "title": "Agentes: single-agent vs multi-agent",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["multimodal"]
+    },
+    {
+      "id": "multimodal",
+      "title": "Multimodal: imagem, áudio e vídeo como input e output",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seguranca-e-injecao"]
+    },
+    {
+      "id": "seguranca-e-injecao",
+      "title": "Segurança: prompt injection, jailbreaks e defesas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["custo-e-performance"]
+    },
+    {
+      "id": "custo-e-performance",
+      "title": "Custo, latência e caching: o que ninguém te conta",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: monte seu assistente ou agente",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

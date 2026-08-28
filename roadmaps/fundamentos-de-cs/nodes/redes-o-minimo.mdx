@@ -1,0 +1,118 @@
+---
+id: redes-o-minimo
+title: "Redes: o Mínimo que Dev Precisa Saber"
+resources:
+  - title: "Beej's Guide to Network Programming (canônico, em inglês)"
+    url: https://beej.us/guide/bgnet/
+    type: doc
+    lang: en
+    free: true
+  - title: "Modelo OSI (Wikipedia PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Modelo_OSI
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quase todo software hoje é distribuído. "Funciona localmente" não
+basta - seu app precisa falar com banco, com outras APIs, com
+browsers em outras máquinas. Entender o básico de redes é o que
+explica por que `fetch` demora, por que HTTPS importa, e por que
+"ping" às vezes resolve bugs misteriosos.
+
+## O essencial 🟢
+
+Vamos seguir o que acontece quando você digita
+`https://exemplo.com/artigo/42` no navegador e aperta Enter.
+Simplificado, é isto:
+
+<Mermaid
+  chart={`sequenceDiagram
+    participant U as Você (navegador)
+    participant D as DNS
+    participant T as TCP/TLS
+    participant S as Servidor
+
+    U->>D: exemplo.com → qual IP?
+    D-->>U: 93.184.216.34
+    U->>T: abrir conexão TCP (3-way handshake)
+    T->>S: SYN
+    S-->>T: SYN-ACK
+    T-->>U: ACK (conexão estabelecida)
+    U->>T: handshake TLS (certificado, chaves)
+    T-->>U: conexão segura
+    U->>S: GET /artigo/42 HTTP/1.1
+    S-->>U: 200 OK + HTML
+    U->>S: GET /css/main.css
+    S-->>U: 200 OK + CSS
+    U->>S: GET /img/capa.jpg
+    S-->>U: 200 OK + imagem`}
+  caption="Da URL ao conteúdo: DNS, TCP, TLS, HTTP, requests em paralelo."
+/>
+
+Três peças-chave:
+
+- **DNS** (Domain Name System) - o "lista telefônica" da internet.
+  Traduz `exemplo.com` em `93.184.216.34` (o IP do servidor).
+  Sem DNS, você teria que decorar IPs.
+- **TCP** (Transmission Control Protocol) - conexão **confiável**
+  entre duas máquinas. Garante que os pacotes chegam em ordem, sem
+  duplicar, sem perder. Usa o famoso **3-way handshake**
+  (SYN → SYN-ACK → ACK) pra estabelecer. É o "andar com contrato"
+  da internet.
+- **HTTP** (HyperText Transfer Protocol) - a **linguagem** que
+  cliente e servidor usam uma vez conectados. Você manda um
+  `GET /artigo/42`, o servidor responde com `200 OK` e o conteúdo.
+  Status codes (200, 404, 500) viraram vocabulário comum.
+
+**UDP** é o outro protocolo de transporte importante - mas sem
+garantia. Manda os pacotes e torce. É usado quando velocidade importa
+mais que confiabilidade: videochamada, streaming ao vivo, DNS
+(consultas são curtas e podem ser reenviadas), jogos online. Cada
+pacote é independente.
+
+> Dica: o **tempo de resposta** de uma request tem quatro vilões
+> principais - latência (ida e volta do pacote), banda (tamanho do
+> canal), servidor (tempo de processamento) e serialização
+> (transformar objeto em bytes e vice-versa). "Está lento" quase
+> sempre é um desses.
+
+## Aprofundamento 🟡
+
+**TLS (Transport Layer Security)** - o "S" do HTTPS. É o que faz
+a conexão ser **privada** e **autenticada**. Estabelecer TLS custa
+tempo (handshake com troca de chaves), mas permite que dados
+sensíveis (senha, cartão) viagem sem serem lidos por intermediários.
+A performance do HTTPS hoje é praticamente equivalente à do HTTP,
+graças a **TLS 1.3** e técnicas como **session resumption** (não
+re-negociar chaves a cada conexão).
+
+**Latência vs largura de banda** - são coisas diferentes. **Largura
+de banda** é "quanto cabe" (Mbps). **Latência** é "quanto demora
+pra um pacote chegar" (ms). Uma conexão de fibra com 1 Gbps de
+banda mas 200ms de latência (tipo卫星) é pior pra navegar que uma
+de 10 Mbps com 10ms (fibra urbana). É por isso que o "first byte
+time" importa mais que tamanho da página em conexões rápidas.
+
+**Headers, cookies, e state** - HTTP é **stateless** (cada request
+é independente). Pra manter "usuário logado", o servidor manda um
+`Set-Cookie` na primeira response, e o navegador manda de volta em
+toda request subsequente. É o jeito padrão de "lembrar" entre
+requests.
+
+## Pra quem quer ir além 🔴
+
+O **modelo OSI** (Open Systems Interconnection) divide a rede em 7
+camadas: Física, Enlace, Rede, Transporte, Sessão, Apresentação,
+Aplicação. É um modelo conceitual útil pra classificar protocolos
+(IP = camada 3, TCP = camada 4, HTTP = camada 7), mas na prática
+a internet usa o **modelo TCP/IP** (4 camadas). Saber a diferença
+entre os dois e quando citar cada um é conhecimento cultural de TI.
+
+**TCP em detalhe:** janela deslizante, controle de congestionamento
+(CUBIC, BBR), retransmissão, slow start. O livro *TCP/IP Illustrated*
+(W. Richard Stevens) é o clássico. Volume 1 cobre tudo.
+
+No próximo nó, vamos fechar a trilha com **pensando em sistemas** -
+as habilidades mentais que separam quem escreve código que funciona
+de quem projeta software que dura.

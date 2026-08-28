@@ -64,3 +64,12 @@ git reset --hard HEAD~1    # desfaz o commit E descarta as mudanças (irreversí
 
 Com o básico dominado - criar, comitar, olhar, desfazer - subimos de nível: as
 **branches**, o recurso que faz do Git o que ele é.
+
+<Quiz
+  question="Qual desfaz o último commit MANTENDO as mudanças no diretório de trabalho?"
+  options={[
+    { text: "git reset --soft HEAD~1", correct: true },
+    { text: "git reset --hard HEAD~1", correct: false, explanation: "--hard descarta as mudanças também." },
+    { text: "git commit --amend", correct: false, explanation: "amend reescreve o commit, não o desfaz." }
+  ]}
+/>

@@ -1,0 +1,113 @@
+---
+id: arquivos
+title: "Manipulação de arquivos e diretórios"
+resources:
+  - title: "Operações com arquivos (linuxcommand.org, EN)"
+    url: https://linuxcommand.org/lc3_lts0030.php
+    type: doc
+    lang: en
+    free: true
+---
+
+Criar, copiar, mover, apagar. Quatro verbos que cobrem 90% do que
+você faz com arquivos no dia a dia. Os comandos são óbvios
+(depois que você sabe que existem).
+
+## Criando: `mkdir` e `touch`
+
+```bash
+mkdir novo-dir                     # cria um diretório
+mkdir -p caminho/longo/de/dirs     # cria todos os pais necessários
+mkdir -p src/{components,utils}    # brace expansion: cria 2 de uma vez
+
+touch arquivo.txt                  # cria vazio se não existe
+touch .gitkeep                     # força criar arquivo "vazio"
+```
+
+O `-p` ("parents") é útil quando você cria estrutura de projeto
+inteira de uma vez. Sem ele, `mkdir src/components` falha se
+`src` não existe.
+
+O `touch` parece bobo (só cria arquivo vazio) mas é o jeito
+canônico de "garantir que esse arquivo existe" - útil em scripts
+e pra criar arquivos de placeholder (`.gitkeep` em diretórios
+que o Git ignora por estarem vazios).
+
+## Copiando: `cp`
+
+```bash
+cp origem destino                  # arquivo -> arquivo
+cp origem.txt copia.txt            # renomeia na cópia
+cp -r diretorio/ outro/            # recursivo (essencial pra diretórios)
+cp -r projeto/ projeto-backup/    # copia a pasta inteira
+cp *.txt backup/                   # copia todos os .txt
+```
+
+> **Cuidado**: `cp` sobrescreve sem perguntar. Use `-i` (interactive)
+> pra confirmar antes de sobrescrever. Alias comum no `~/.bashrc`:
+> `alias cp='cp -i'`.
+
+## Movendo e renomeando: `mv`
+
+```bash
+mv origem destino                  # move (renomeia se for no mesmo dir)
+mv arquivo.txt novo-nome.txt       # renomeia
+mv projeto/ ~/Projetos/            # move diretório
+mv *.log /var/log/                 # move vários
+```
+
+`mv` é o mesmo comando pra mover e renomear - não tem "rename"
+separado. E é **atômico**: ou moveu inteiro ou não moveu (em
+geral). Não precisa de `-r` pra diretórios.
+
+## Apagando: `rm`
+
+```bash
+rm arquivo.txt                     # apaga um arquivo
+rm -i arquivo.txt                  # pergunta antes
+rm -r diretorio/                   # recursivo
+rm -rf diretorio/                  # recursivo + força (sem perguntar)
+rm -rf /                           # NÃO FAÇA ISSO NUNCA
+```
+
+> **Não tem lixeira**. `rm` apaga pra sempre. Não dá pra
+> "desfazer". Por isso existem as opções `-i` (pergunta) e
+> `--preserve-root` (protege o `/`). Use `rm -i` se tiver dúvida,
+> ou melhor: use um shell com confirmação por default.
+>
+> Bônus: tem o [`trash-cli`](https://github.com/andreafrancia/trash-cli)
+> que move pra lixeira do sistema em vez de apagar. Vale instalar
+> (`brew install trash` ou `apt install trash-cli`).
+
+## Links: `ln`
+
+Dois tipos. O symlink (atalho) é o que você vai usar 95% das vezes.
+
+```bash
+ln -s /caminho/origem link          # cria symlink (atalho)
+ln -s ~/Projetos/api api            # ./api agora aponta pra ~/Projetos/api
+ln -s ~/.dotfiles/vimrc ~/.vimrc    # symlink pra config versionado
+
+ln origem link                      # hard link (rara, arquivo bruto)
+```
+
+O symlink é só um arquivo com um caminho dentro. Se você apagar o
+origem, o symlink fica "quebrado" (aponta pra lugar que não
+existe). Útil pra ter **um arquivo de config em vários lugares**
+sem duplicar (ex: manter `~/.vimrc` e `~/.config/nvim/init.vim`
+apontando pro mesmo arquivo versionado no Git).
+
+Três conceitos que você acabou de aprender:
+
+- **`mkdir -p`** cria estrutura inteira de uma vez. **`touch`**
+  garante que o arquivo existe, mesmo que vazio.
+- **`mv` é mover E renomear**. Não tem "rename" separado.
+- **`rm -rf` é pra sempre**. Sem lixeira, sem undo. Cuidado.
+
+> Dica: `cp -r projeto projeto-backup` é como você faz "snapshot"
+> rápido antes de uma mudança arriscada. Quando o shell for
+> seu ambiente principal, isso vira reflexo - "antes de mexer,
+> backup; depois, deleto o backup".
+
+No próximo, vamos ler o que tem dentro dos arquivos: `cat`, `less`,
+`head`, `tail`, `wc` e `file`.

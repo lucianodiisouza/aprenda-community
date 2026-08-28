@@ -22,6 +22,7 @@ import { parseFrontmatter } from "./_frontmatter.mjs";
 const ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
 const ROADMAPS_DIR = join(ROOT, "roadmaps");
 const PROJECTS_DIR = join(ROOT, "projects");
+const BOOTCAMPS_DIR = join(ROOT, "bootcamps");
 
 let errors = 0;
 const warn = (msg) => console.warn(`⚠️  ${msg}`);
@@ -30,6 +31,53 @@ const err = (msg) => {
   console.error(`❌ ${msg}`);
 };
 const ok = (msg) => console.log(`✅ ${msg}`);
+
+/**
+ * Valida um array `creators`. O `github` é a chave que liga o criador ao índice
+ * de contribuidores (contributors.json) e ao perfil público - sem ele, a pessoa
+ * some da agregação. Por isso é obrigatório em cada entrada.
+ */
+function checkCreators(creators, where) {
+  if (creators === undefined) return;
+  if (!Array.isArray(creators)) {
+    err(`  ${where}: "creators" deve ser uma lista`);
+    return;
+  }
+  creators.forEach((c, i) => {
+    if (typeof c !== "object" || c === null) {
+      err(`  ${where}: creators[${i}] deve ser um objeto { name, github }`);
+      return;
+    }
+    if (!c.github || typeof c.github !== "string") {
+      err(`  ${where}: creators[${i}] sem "github" (obrigatório - é a chave do contribuidor)`);
+    }
+    if (!c.name || typeof c.name !== "string") {
+      err(`  ${where}: creators[${i}] sem "name"`);
+    }
+  });
+}
+
+/**
+ * Extrai o id do vídeo de uma URL do YouTube (watch, youtu.be, embed, shorts,
+ * incluindo o domínio youtube-nocookie.com). Retorna null se não reconhecer.
+ * Espelha `youTubeId` do schema do app (packages/content/src/schema.ts).
+ */
+function youTubeIdFromUrl(url) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^www\./, "").replace(/^m\./, "");
+  if (host === "youtu.be") return u.pathname.slice(1) || null;
+  if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    if (u.pathname === "/watch") return u.searchParams.get("v") || null;
+    const m = u.pathname.match(/^\/(?:embed|shorts)\/([^/?#]+)/);
+    if (m) return m[1] ?? null;
+  }
+  return null;
+}
 
 async function listRoadmaps() {
   let entries;
@@ -83,6 +131,26 @@ async function validateRoadmap(slug) {
   if (!["iniciante", "intermediario", "avancado"].includes(roadmap.difficulty)) {
     err(`  roadmap.json: difficulty deve ser iniciante|intermediario|avancado (recebido: ${roadmap.difficulty})`);
   }
+
+  // intro_video (opcional): objeto { url, title? } com URL de YouTube válida.
+  if (roadmap.intro_video !== undefined) {
+    const iv = roadmap.intro_video;
+    if (typeof iv !== "object" || iv === null || Array.isArray(iv)) {
+      err(`  roadmap.json: "intro_video" deve ser um objeto { url, title? }`);
+    } else {
+      if (typeof iv.url !== "string" || !iv.url) {
+        err(`  roadmap.json: "intro_video.url" ausente ou não é string`);
+      } else if (youTubeIdFromUrl(iv.url) === null) {
+        err(`  roadmap.json: "intro_video.url" deve ser um vídeo do YouTube válido (recebido: ${iv.url})`);
+      }
+      if (iv.title !== undefined && typeof iv.title !== "string") {
+        err(`  roadmap.json: "intro_video.title" deve ser string`);
+      }
+    }
+  }
+
+  checkCreators(roadmap.creators, `roadmaps/${slug}/roadmap.json`);
+
   if (!Array.isArray(roadmap.nodes) || roadmap.nodes.length === 0) {
     err(`  roadmap.json: "nodes" deve ser um array não-vazio`);
     return;
@@ -216,10 +284,68 @@ async function validateProject(slug, knownRoadmapSlugs) {
       }
     }
   }
-  if (fm.creators !== undefined && !Array.isArray(fm.creators)) {
-    err(`  ${relative(ROOT, path)}: frontmatter "creators" deve ser uma lista`);
-  }
+  checkCreators(fm.creators, relative(ROOT, path));
   ok(`  Projeto "${fm.title || slug}" validou estrutura.`);
+}
+
+async function listBootcamps() {
+  let entries;
+  try {
+    entries = await readdir(BOOTCAMPS_DIR, { withFileTypes: true });
+  } catch (e) {
+    if (e.code === "ENOENT") return [];
+    throw e;
+  }
+  return entries.filter((e) => e.isDirectory()).map((e) => e.name);
+}
+
+async function validateBootcamp(slug, knownRoadmapSlugs, knownProjectSlugs) {
+  const jsonPath = join(BOOTCAMPS_DIR, slug, "bootcamp.json");
+  let content;
+  try {
+    content = await readFile(jsonPath, "utf8");
+  } catch {
+    err(`  bootcamp.json não encontrado em bootcamps/${slug}/`);
+    return;
+  }
+  let bc;
+  try {
+    bc = JSON.parse(content);
+  } catch (e) {
+    err(`  JSON inválido em ${relative(ROOT, jsonPath)}: ${e.message}`);
+    return;
+  }
+
+  if (!bc.slug) err(`  bootcamp.json: campo "slug" ausente`);
+  else if (bc.slug !== slug) err(`  bootcamp.json: slug "${bc.slug}" não bate com a pasta "${slug}"`);
+  if (!bc.title) err(`  bootcamp.json: campo "title" ausente`);
+  if (!bc.description) err(`  bootcamp.json: campo "description" ausente`);
+  if (!bc.outcome) err(`  bootcamp.json: campo "outcome" ausente (o que a pessoa sabe fazer ao concluir)`);
+  if (!["iniciante", "intermediario", "avancado"].includes(bc.difficulty)) {
+    err(`  bootcamp.json: difficulty deve ser iniciante|intermediario|avancado (recebido: ${bc.difficulty})`);
+  }
+  checkCreators(bc.creators, `bootcamps/${slug}/bootcamp.json`);
+  if (!Array.isArray(bc.modules) || bc.modules.length === 0) {
+    err(`  bootcamp.json: "modules" deve ser um array não-vazio`);
+    return;
+  }
+
+  bc.modules.forEach((mod, i) => {
+    const temTrilha = typeof mod.trilha === "string";
+    const temProjeto = typeof mod.projeto === "string";
+    if (temTrilha === temProjeto) {
+      err(`  módulo #${i + 1}: use exatamente UMA chave, "trilha" OU "projeto"`);
+      return;
+    }
+    if (temTrilha && !knownRoadmapSlugs.has(mod.trilha)) {
+      err(`  módulo #${i + 1} referencia trilha inexistente: "${mod.trilha}"`);
+    }
+    if (temProjeto && !knownProjectSlugs.has(mod.projeto)) {
+      err(`  módulo #${i + 1} referencia projeto inexistente: "${mod.projeto}"`);
+    }
+  });
+
+  ok(`  Bootcamp "${bc.title || slug}" validou estrutura (${bc.modules.length} módulos).`);
 }
 
 const slugs = await listRoadmaps();
@@ -244,6 +370,17 @@ if (projectSlugs.length === 0) {
   console.log(`📂 Projetos (${projectSlugs.length}):`);
   for (const slug of projectSlugs) {
     await validateProject(slug, knownRoadmapSlugs);
+  }
+}
+
+// Bootcamps: curadoria de trilhas + projetos existentes (sem conteúdo próprio).
+const knownProjectSlugs = new Set(projectSlugs);
+const bootcampSlugs = await listBootcamps();
+if (bootcampSlugs.length > 0) {
+  console.log("");
+  console.log(`📂 Bootcamps (${bootcampSlugs.length}):`);
+  for (const slug of bootcampSlugs) {
+    await validateBootcamp(slug, knownRoadmapSlugs, knownProjectSlugs);
   }
 }
 

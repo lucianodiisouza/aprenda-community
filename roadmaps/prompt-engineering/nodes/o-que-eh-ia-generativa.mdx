@@ -1,0 +1,72 @@
+---
+id: o-que-eh-ia-generativa
+title: "O que é IA generativa (e o que não é)"
+resources:
+  - title: "Anthropic - Prompt Engineering Overview (EN, fonte canônica)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+    type: doc
+    lang: en
+    free: true
+  - title: "OpenAI - Introduction to Large Language Models (EN)"
+    url: https://platform.openai.com/docs/introduction
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de aprender a falar com uma IA, vale saber **o que ela é de verdade** -
+porque metade dos problemas de quem começa é tratar o modelo como se fosse uma
+pessoa. Não é.
+
+Uma **IA generativa** é um modelo estatístico que aprendeu padrões a partir de
+uma quantidade absurda de texto (e, no caso dos modelos multimodais, de imagens,
+áudio e vídeo também). Dado um trecho de entrada, ela gera a **próxima coisa
+mais provável** - palavra por palavra, token por token. É isso. Não tem
+"entendimento", não tem "intenção", não tem "vontade". Tem **estatística
+treinada em escala**.
+
+Os três tipos que importam agora:
+
+- **LLM (Large Language Model)** - processa e gera texto. Claude, GPT, Gemini,
+  Llama, Mistral. É o que vamos usar 95% do tempo nesta trilha.
+- **Modelo de difusão** - gera imagens a partir de texto. DALL·E, Midjourney,
+  Stable Diffusion. Aparece na Fase 3, em `multimodal`.
+- **Modelo multimodal** - entende e/ou gera mais de um tipo de mídia. GPT-4o,
+  Claude com visão, Gemini multimodal. Mesmo ecossistema do LLM, com superpoderes.
+
+O que **não é** uma IA generativa (e a confusão aqui custa caro):
+
+- Não é um **mecanismo de busca**. Ela não "procura" a resposta num banco;
+  ela **gera** a resposta a partir de padrões. Por isso pode **alucinar**
+  (inventar fatos com cara de verdade).
+- Não é um **raciocinador perfeito**. Ela é boa em imitar raciocínio, mas
+  não raciocina de verdade. Em lógica, matemática e código complexo, ela
+  erra - e erra com confiança.
+- Não é **onisciente**. Ela só sabe o que estava nos dados de treino, e tem
+  uma data de corte. Não sabe o que aconteceu ontem, a não ser que alguém
+  tenha dado a ela essa informação (no prompt ou via RAG).
+
+<Quiz
+  question="Qual é a melhor descrição do que um LLM faz quando você envia um prompt?"
+  options={[
+    { text: "Procura a resposta certa em um banco de dados interno", correct: false, explanation: "LLM não busca em banco - ele gera a resposta token a token a partir de padrões estatísticos." },
+    { text: "Gera a resposta token a token, prevendo o próximo a partir de padrões estatísticos", correct: true },
+    { text: "Acessa a internet em tempo real para responder", correct: false, explanation: "Só se você explicitamente der essa capacidade (tool use / RAG). Por padrão, o modelo opera com o que aprendeu no treino." }
+  ]}
+/>
+
+- **IA generativa gera** - ela não "sabe" no sentido humano, ela **prevê** o
+  próximo pedaço de texto a partir de padrões.
+- **LLM é o tipo que vamos usar aqui** - texto entra, texto sai. Multimodal
+  amplia isso.
+- **Alucinação, knowledge cutoff e a falta de "busca"** são as três
+  limitações que vão te morder se você não souber delas. Tratamos delas
+  em `limitacoes-comuns`.
+
+> Dica: quanto antes você internalizar "isso é estatística, não mágica",
+  mais rápido você para de brigar com o modelo e começa a trabalhar **com**
+  ele. Toda a trilha gira em torno de uma pergunta: como dar a esse gerador
+  estatístico o **contexto certo** pra ele gerar o que você quer.
+
+No próximo nó, vamos abrir a "caixa preta" e ver o que acontece **por dentro**
+quando o modelo gera uma resposta: tokens, contexto e temperatura.

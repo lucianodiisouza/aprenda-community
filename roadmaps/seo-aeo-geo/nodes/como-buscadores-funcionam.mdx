@@ -1,0 +1,55 @@
+---
+id: como-buscadores-funcionam
+title: "Como um Buscador Encontra e Ordena Páginas"
+resources:
+  - title: "How Search Works (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/fundamentals/how-search-works
+    type: doc
+    lang: en
+    free: true
+---
+
+Três passos separados acontecem antes de qualquer resultado aparecer numa
+busca. Entender cada um ajuda a saber onde um problema técnico quebra o SEO
+de um site inteiro.
+
+### 1. Rastreamento (crawling)
+
+Um robô (o Googlebot, por exemplo) visita páginas seguindo links, do jeito
+que uma pessoa navegaria clicando de link em link. Se uma página não tem
+nenhum link apontando pra ela, o robô pode nunca encontrá-la.
+
+```text
+Página inicial → link pra "Sobre" → link pra "Blog" → link pra o post X
+```
+
+### 2. Indexação
+
+Depois de visitar a página, o buscador guarda o conteúdo dela num banco de
+dados gigante, o índice. Uma página bloqueada por `robots.txt` ou marcada com
+`noindex` é rastreada, mas nunca entra no índice.
+
+```html
+<!-- essa página nunca aparece numa busca, mesmo sendo rastreada -->
+<meta name="robots" content="noindex">
+```
+
+### 3. Ranqueamento
+
+Na hora de uma busca, o buscador escolhe, entre as páginas indexadas, quais
+respondem melhor àquela pergunta específica, e em que ordem mostrar. Isso usa
+centenas de sinais: relevância do texto, velocidade de carregamento,
+autoridade do domínio, experiência mobile, entre outros.
+
+- **Rastreamento**: o robô encontra a página seguindo links.
+- **Indexação**: a página entra no banco de dados de busca.
+- **Ranqueamento**: o buscador decide a ordem de exibição pra cada pesquisa.
+- Um problema em qualquer um dos três passos impede os seguintes.
+
+> Dica: se uma página não aparece na busca, primeiro confirme se ela está
+> indexada (`site:seudominio.com/pagina` no Google). Só depois disso vale
+> investigar ranqueamento. Otimizar ranqueamento de uma página que nem está
+> indexada é esforço perdido.
+
+No próximo nó, você vai aprender a escolher as palavras certas antes de
+escrever qualquer conteúdo: pesquisa de palavras-chave.
