@@ -1,0 +1,388 @@
+---
+id: app-router-mental-model
+title: "App Router: Layouts, Pages, Route Groups"
+resources:
+  - title: "Next.js: Defining Routes (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/routing/defining-routes
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js: Layouts and Pages (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts
+    type: doc
+    lang: en
+    free: true
+  - title: "Lee Robinson: App Router mental model (vídeo curto)"
+    url: https://www.youtube.com/watch?v=gSSsEri25bY
+    type: video
+    lang: en
+    free: true
+---
+
+No Pages Router (Next legado), uma rota era um arquivo. Você criava
+`pages/posts/[id].tsx` e pronto. No **App Router** (Next 13+,
+canônico em 2026), a rota é uma **pasta**, e dentro dela mora um
+conjunto de arquivos especiais que definem o comportamento. É mais
+arquivo, mais convenção, mas em troca você ganha layouts aninhados,
+loading/error por rota, e o modelo RSC funcionando de verdade.
+
+Antes de escrever código, primeiro você precisa ver **onde mora
+cada coisa**. Este nó é o mapa da estrutura.
+
+## O essencial 🟢
+
+**Convenção: pasta `app/`, cada pasta = uma rota.** Em vez de
+arquivos espalhados, o App Router mora inteiro dentro de `app/`. Cada
+pasta dentro de `app/` vira uma rota. O nome da pasta vira o
+segmento da URL.
+
+```text
+app/
+├── page.tsx              →  /
+├── about/
+│   └── page.tsx          →  /about
+├── posts/
+│   ├── page.tsx          →  /posts
+│   └── [slug]/
+│       └── page.tsx      →  /posts/<qualquer-coisa>
+├── layout.tsx            →  layout raiz (envolve TUDO)
+└── globals.css           →  estilos globais
+```
+
+**`page.tsx` é a página em si.** É o único arquivo **obrigatório**
+por rota. Sem `page.tsx`, a pasta existe mas não vira rota
+acessível.
+
+```tsx
+// app/about/page.tsx
+export default function AboutPage() {
+  return <h1>Sobre nós</h1>;
+}
+```
+
+Acessar `/about` no browser renderiza esse componente. Fim.
+
+**`layout.tsx` envolve as rotas filhas (e persiste entre navegações).**
+É onde mora o chrome da app: header, sidebar, footer. **Layouts
+aninham** - o layout raiz envolve o da pasta, que envolve o da
+subpasta, e assim por diante. Quando você navega, o Next **não
+re-renderiza o layout** - só o conteúdo que mudou dentro dele.
+
+```tsx
+// app/layout.tsx (layout RAIZ - obrigatório)
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="pt-BR">
+      <body>
+        <Header />
+        <main>{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}
+
+// app/dashboard/layout.tsx (layout da seção /dashboard/*)
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="dashboard">
+      <Sidebar />
+      <div>{children}</div>
+    </div>
+  );
+}
+```
+
+Visitar `/dashboard/posts` renderiza: `RootLayout > DashboardLayout >
+Page`. Navegar de `/dashboard/posts` pra `/dashboard/users` mantém os
+dois layouts e troca só a `page`.
+
+**`loading.tsx` é o fallback automático pra Suspense.** Quando o
+`page.tsx` da rota está esperando dados (fetch lento, suspense
+boundary), o Next mostra esse componente automaticamente. **Não é
+obrigatório** - sem ele, o usuário vê tela em branco até a página
+resolver.
+
+```tsx
+// app/posts/loading.tsx
+export default function Loading() {
+  return <div className="post-skeleton">Carregando posts...</div>;
+}
+```
+
+Na prática, é onde mora o skeleton da rota. Você estiliza com a
+mesma forma que a página, pra evitar layout shift.
+
+**`error.tsx` é o error boundary da rota.** Se um `page.tsx` (ou
+qualquer descendente) lançar erro durante renderização, o Next
+mostra esse componente **no lugar da página**. O resto da árvore
+(layout pai) sobrevive.
+
+```tsx
+// app/posts/error.tsx
+"use client"; // TEM que ser Client Component
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div>
+      <h2>Algo deu errado ao carregar os posts.</h2>
+      <button onClick={() => reset()}>Tentar de novo</button>
+    </div>
+  );
+}
+```
+
+Por que `'use client'`? Porque você precisa de `onClick` (evento de
+browser) e `reset` é uma função. Server Component não tem eventos.
+Veremos isso a fundo em `rsc-fundamentos`.
+
+**`not-found.tsx` é o 404 customizado.** Aciona quando o `page.tsx`
+chama `notFound()` (helper do Next) ou quando o caminho da URL não
+bate com nenhuma rota.
+
+```tsx
+// app/not-found.tsx
+import Link from "next/link";
+export default function NotFound() {
+  return (
+    <div>
+      <h2>Página não encontrada</h2>
+      <Link href="/">Voltar pra home</Link>
+    </div>
+  );
+}
+```
+
+**Route groups: `(nome)` organiza sem virar rota.** Pastas entre
+parênteses são "pastas lógicas" - elas agrupam rotas sem adicionar
+segmento à URL. O uso mais comum: layouts compartilhados por um
+subconjunto de rotas.
+
+```text
+app/
+├── (marketing)/
+│   ├── layout.tsx         →  layout só pras rotas públicas
+│   ├── about/page.tsx     →  /about  (NÃO /marketing/about)
+│   └── pricing/page.tsx   →  /pricing
+├── (app)/
+│   ├── layout.tsx         →  layout só pras rotas autenticadas
+│   └── dashboard/page.tsx →  /dashboard
+└── layout.tsx             →  layout raiz
+```
+
+Resultado: `/about` e `/dashboard` existem como rotas, mas
+compartilham layouts diferentes (marketing vs app). Sem route group,
+você teria `app/marketing/about/page.tsx` e a URL seria
+`/marketing/about` - o que normalmente não é o que você quer.
+
+**Rotas dinâmicas: `[slug]`, `[...catchAll]`, `[[...opcional]]`.**
+
+```tsx
+// app/posts/[slug]/page.tsx
+// params é { slug: string }
+export default function PostPage({ params }: { params: { slug: string } }) {
+  return <h1>Post: {params.slug}</h1>;
+}
+
+// app/docs/[...path]/page.tsx
+// Captura TUDO: /docs/a/b/c → params = { path: ["a", "b", "c"] }
+export default function DocsPage({ params }: { params: { path: string[] } }) {
+  return <h1>Docs: {params.path.join("/")}</h1>;
+}
+
+// app/shop/[[...slug]]/page.tsx
+// Opcional: /shop, /shop/a, /shop/a/b → todos válidos
+```
+
+No Next 15+, `params` é uma **Promise** (assíncrono) - você dá
+`await` antes de usar. Veremos isso na prática em
+`data-fetching-server`.
+
+## Aprofundamento 🟡
+
+**Layouts aninhados (cada rota pode ter seu layout por cima).** Você
+pode ter layouts em qualquer nível da árvore. Eles compõem - o pai
+envolve o filho.
+
+```text
+app/
+├── layout.tsx            → <html>, <body>, Header global
+├── (app)/
+│   └── layout.tsx        → Sidebar, auth check
+├── (app)/dashboard/
+│   └── layout.tsx        → breadcrumb, tabs do dashboard
+└── (app)/dashboard/
+    └── settings/
+        └── layout.tsx    → sub-tabs de settings
+```
+
+Cada `layout.tsx` recebe `children` e renderiza o que quiser
+**em volta** do `children`. O React hidrata todos na ordem do mais
+externo pro mais interno.
+
+**Metadata API: `export const metadata` ou `generateMetadata`.** Pra
+definir `<title>`, `<meta>`, OpenGraph, etc. de cada rota, sem mexer
+em `<head>`.
+
+```tsx
+// app/posts/[slug]/page.tsx
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await fetchPost(slug);
+  return {
+    title: post.title,
+    description: post.excerpt,
+    openGraph: { title: post.title, images: [post.cover] },
+  };
+}
+
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await fetchPost(slug);
+  return <article>{post.content}</article>;
+}
+```
+
+Sem `generateMetadata`, o Next usa o que estiver no `layout` pai
+(ou nada). **Server Component** pode exportar metadata - não precisa
+de `'use client'`.
+
+**`template.tsx` re-renderiza entre navegações.** Diferente de
+`layout.tsx` (que persiste), `template.tsx` remonta a cada
+navegação. Útil pra resetar state de animação, ou pra forçar
+re-fetch. **Uso raro** - em 95% dos casos, `layout.tsx` é o que você
+quer.
+
+**Quando o `loading.tsx` NÃO funciona (e usar `<Suspense>` manual).**
+O `loading.tsx` envolve o `page.tsx` inteiro. Se só uma parte da
+página é lenta (uma sidebar, um widget), o usuário vê a página
+inteira com a parte lenta em branco - não vê o `loading.tsx` porque
+a página já está pendurada na parte lenta.
+
+Solução: `<Suspense>` cirúrgico em volta do pedaço lento.
+
+```tsx
+// app/posts/page.tsx
+import { Suspense } from "react";
+
+export default function PostsPage() {
+  return (
+    <div>
+      <h1>Posts</h1>
+      <Suspense fallback={<PostsSkeleton />}>
+        {/* Async Server Component: carrega devagar */}
+        <PostsList />
+      </Suspense>
+      <Footer /> {/* renderiza instantâneo */}
+    </div>
+  );
+}
+```
+
+Veremos isso a fundo em `streaming-ssr`. Por ora,记住: `loading.tsx`
+é o fallback da rota inteira; `<Suspense>` é pra isolar uma parte.
+
+**`route.ts` (route handlers) - APIs no App Router.** Pra criar um
+endpoint HTTP, você exporta funções nomeadas (`GET`, `POST`, etc.) de
+um arquivo `route.ts`. Substitui o diretório `pages/api/` do Pages
+Router.
+
+```tsx
+// app/api/posts/route.ts
+export async function GET() {
+  const posts = await fetchPosts();
+  return Response.json(posts);
+}
+```
+
+Você não precisa disso pra Server Actions (que é o caminho moderno
+pra mutations). Veremos no nó `server-actions` quando usar cada.
+
+## Pra quem quer ir além 🔴
+
+**Parallel routes: `@slot` em paralelo.** Sintaxe avançada pra
+renderizar múltiplas "páginas" independentes na mesma URL. Ex:
+`@team` e `@analytics` em `/dashboard` renderizam lado a lado, cada
+uma com seu próprio `loading.tsx` e `error.tsx`. Útil pra dashboard
+complexo, raro em app média.
+
+```tsx
+// app/dashboard/
+// ├── @team/page.tsx
+// ├── @analytics/page.tsx
+// ├── layout.tsx  (recebe { children, team, analytics })
+// └── page.tsx
+```
+
+**Intercepting routes: `(.)photo/[id]`.** Mostra uma rota
+"por cima" da atual (modal que tem URL compartilhável), e cair pra
+rota real se você der refresh. Complexo, mas poderoso pra modais
+deep-linkable. **Mencione só pra saber que existe.**
+
+**`generateStaticParams` pra pré-renderizar rotas dinâmicas.** Em
+vez de `app/posts/[slug]/page.tsx` ser SSR por demanda, você pré-renderiza
+as slugs conhecidas em build time (SSG/ISR).
+
+```tsx
+// app/posts/[slug]/page.tsx
+export async function generateStaticParams() {
+  const posts = await fetchAllPosts();
+  return posts.map((p) => ({ slug: p.slug }));
+}
+```
+
+Combina com o `revalidate` do `data-fetching` (próximo nó da
+trilha).
+
+**Leitura recomendada:**
+
+- [Next.js: Defining Routes (oficial)](https://nextjs.org/docs/app/building-your-application/routing/defining-routes) - a referência canônica, com diagrama de árvore de pastas.
+- [Next.js: Layouts and Pages (oficial)](https://nextjs.org/docs/app/building-your-application/routing/pages-and-layouts) - quando cada arquivo especial roda.
+- [Lee Robinson: App Router mental model (vídeo, 6 min)](https://www.youtube.com/watch?v=gSSsEri25bY) - o resumo que eu queria ter visto antes de aprender isso na marra.
+
+> Dica: o App Router é cheio de convenção. A primeira vez parece
+> exagero ("preciso de 4 arquivos pra uma rota?"). Depois de 2-3
+> rotas, vira automático. O ganho real é o **layout aninhado** - o
+> Pages Router nunca teve isso bem, e é o que destrava apps com
+> chrome complexo (sidebar por seção, auth por área, modais que
+> lembram do estado).
+
+No próximo nó, vamos ver **a fronteira `'use client'`** - o que muda
+quando um componente vira client, e como combinar com os server
+components que você acabou de aprender a estruturar.
+
+<Quiz
+  question="Qual é a função do arquivo `app/dashboard/loading.tsx`?"
+  options={[
+    {
+      text: "É o componente que renderiza ANTES do `page.tsx` terminar de carregar dados, como fallback automático de Suspense",
+      correct: true,
+    },
+    {
+      text: "É a barra de progresso global que aparece em todas as navegações",
+      correct: false,
+      explanation:
+        "A barra global seria um componente dentro do layout raiz, não um arquivo de convenção. O loading.tsx é por rota: envolve só o page.tsx da pasta em que mora.",
+    },
+    {
+      text: "É um estado de loading que o componente da página ativa via useState",
+      correct: false,
+      explanation:
+        "Não tem hook, não tem state. É um arquivo de convenção: o Next automaticamente envolve o page.tsx em <Suspense fallback={<Loading />}> pra você. Zero código manual.",
+    },
+  ]}
+/>
