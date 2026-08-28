@@ -26,6 +26,45 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   `build-contributors.mjs --check` - se o `contributors.json` commitado
   estiver desatualizado, o job falha.
 
+## [1.21.0] - 2026-08-28
+
+### Adicionado
+
+- ⚡ **Trilha Next.js e Meta-frameworks** (`roadmaps/nextjs`, 10 nós):
+  o salto de "dev que monta SPA" pra "dev que entrega app production-grade
+  com SSR, SEO e data layer moderna". Usa Next.js como referência
+  canônica (maior ecossistema, melhor doc, implementação mais completa
+  de RSC), mas os conceitos se aplicam a outros meta-frameworks React
+  (Remix, React Router v7, TanStack Start). Pré-requisito: trilha
+  `frontend` (especialmente `react`, `state-hooks`, `rotas`) e noções
+  de TypeScript. Os 10 nós: `ts-no-react` (tipos que salvam a sua
+  vida em React), `meta-frameworks-por-que` (SPA, SSR, RSC e quando
+  cada um), `app-router-mental-model` (layouts, pages, route groups,
+  loading/error/not-found), `rsc-fundamentos` (Server vs Client
+  Components, a fronteira), `composicao-rsc` (server-only e client
+  islands), `data-fetching-server` (cache, revalidação, Suspense),
+  `server-actions` (mutations sem API route, revalidatePath/Tag),
+  `streaming-ssr` (streaming SSR e Suspense boundaries), `middleware-e-auth`
+  (middleware e Auth.js v5) e `projeto-final` (app full-stack com auth,
+  CRUD, ISR e deploy). **Interatividade: 9 quizzes formativos, 4
+  checkpoints validados, 5 diagramas Mermaid**. Decisões editoriais em
+  `roadmaps/nextjs/meta/editorial-decisions.md`. Trilha escrita por
+  **Luciano dii Souza** ([@lucianodiisouza](https://github.com/lucianodiisouza))
+  - resolve a sub-issue #42 da meta-issue #41 (Bootcamp Frontend 2026).
+- 🆕 **Selo "novo"** na trilha Next.js e Meta-frameworks: campo
+  `published: "2026-08-28"` no `roadmaps/nextjs/roadmap.json` ativa o
+  `<NewBadge>` no `TrilhaCard` (janela de 30 dias, avaliada no client).
+- 🔎 **Projeto Auditoria de SEO, AEO e GEO** (`projects/auditoria-seo-aeo-geo`):
+  praticar a trilha `seo-aeo-geo` auditando uma página real nas três
+  camadas (SEO técnico, resposta direta em featured snippets, citação por
+  IA generativa) e aplicando pelo menos uma melhoria verificável em cada
+  uma. Estimativa: 1 fim de semana. Dificuldade: intermediário.
+  Pré-requisito: trilha `seo-aeo-geo`. Projeto escrito por
+  **Breno Alvim** ([@obrenoalvim](https://github.com/obrenoalvim)).
+- 🆕 **Selo "novo"** no projeto acima: campo `published: "2026-08-28"`
+  no frontmatter ativa o `<NewBadge>` (janela de 30 dias, avaliada no
+  client).
+
 ## [1.20.0] - 2026-08-26
 
 ### Adicionado

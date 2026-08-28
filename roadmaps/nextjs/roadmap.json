@@ -2,6 +2,7 @@
   "slug": "nextjs",
   "title": "Next.js e Meta-frameworks",
   "description": "Trilha de meta-frameworks React (Next.js como referência canônica) cobrindo App Router, React Server Components, Server Actions, streaming SSR, middleware, autenticação e deploy. Vai do porquê até construir uma aplicação full-stack production-grade com SSR, SEO e data layer moderna.",
+  "published": "2026-08-28",
   "difficulty": "intermediario",
   "skills": [
     "nextjs",
