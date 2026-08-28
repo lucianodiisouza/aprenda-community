@@ -1,0 +1,95 @@
+{
+  "slug": "nextjs",
+  "title": "Next.js e Meta-frameworks",
+  "description": "Trilha de meta-frameworks React (Next.js como referência canônica) cobrindo App Router, React Server Components, Server Actions, streaming SSR, middleware, autenticação e deploy. Vai do porquê até construir uma aplicação full-stack production-grade com SSR, SEO e data layer moderna.",
+  "difficulty": "intermediario",
+  "skills": [
+    "nextjs",
+    "react",
+    "rsc",
+    "ssr",
+    "server-actions",
+    "meta-frameworks",
+    "typescript",
+    "middleware",
+    "auth"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ts-no-react",
+      "title": "TS no React: tipos que salvam a sua vida",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["meta-frameworks-por-que"]
+    },
+    {
+      "id": "meta-frameworks-por-que",
+      "title": "Por que um Meta-Framework: SPA, SSR e RSC",
+      "type": "topic",
+      "recommended": true,
+      "children": ["app-router-mental-model"]
+    },
+    {
+      "id": "app-router-mental-model",
+      "title": "App Router: Layouts, Pages, Route Groups",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rsc-fundamentos"]
+    },
+    {
+      "id": "rsc-fundamentos",
+      "title": "Server vs Client Components: a fronteira",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["composicao-rsc"]
+    },
+    {
+      "id": "composicao-rsc",
+      "title": "Composição com RSC: server-only e client islands",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["data-fetching-server"]
+    },
+    {
+      "id": "data-fetching-server",
+      "title": "Data Fetching no Server: cache, revalidação, Suspense",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["server-actions"]
+    },
+    {
+      "id": "server-actions",
+      "title": "Server Actions: mutations sem API route",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["streaming-ssr"]
+    },
+    {
+      "id": "streaming-ssr",
+      "title": "Streaming SSR e Suspense Boundaries",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["middleware-e-auth"]
+    },
+    {
+      "id": "middleware-e-auth",
+      "title": "Middleware e Autenticação em Next.js",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: app full-stack com auth, CRUD, ISR e deploy",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

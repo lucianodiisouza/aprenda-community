@@ -1,0 +1,395 @@
+---
+id: ts-no-react
+title: "TS no React: tipos que salvam a sua vida"
+resources:
+  - title: "React TypeScript Cheatsheet (oficial, comunidade)"
+    url: https://react-typescript-cheatsheet.netlify.app/
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript Handbook: Generics"
+    url: https://www.typescriptlang.org/docs/handbook/2/generics.html
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript: Discriminated Unions"
+    url: https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions
+    type: doc
+    lang: en
+    free: true
+---
+
+A trilha de Next.js que vem a partir deste nó usa **TypeScript em tudo**.
+Não é decoração: em RSC e Server Actions, o tipo do prop é o que impede
+você de passar um dado que não pode ser serializado, ou de marcar como
+`client` algo que precisa ser `server`. Quem pula essa parte acaba brigando
+com o compilador lá na frente, sem entender por quê.
+
+Este nó é um **reforço focado em React** — assume que você já viu TS
+básico (tipos primitivos, arrays, objetos, funções). Se isso não é
+verdade, pare aqui e vá fazer a trilha `typescript` antes.
+
+## O essencial 🟢
+
+**Por que tipos importam em React.** Em código de aplicação, a maior parte
+dos bugs que o TypeScript pega é "eu passei o tipo errado de prop". Não é
+exceção, é regra. Quando você tipa bem, o editor completa pra você, o
+`refactor` acha todos os usos, e o `eslint` reclama antes do `runtime`.
+
+```tsx
+// Componente mal tipado: aceita qualquer coisa, o editor não ajuda.
+function Botao(props) {
+  return <button onClick={props.onClick}>{props.label}</button>;
+}
+
+// Componente bem tipado: o editor sabe o formato, autocompleta, valida.
+type BotaoProps = {
+  label: string;
+  onClick: () => void;
+  variant?: "primary" | "secondary";
+};
+
+function Botao({ label, onClick, variant = "primary" }: BotaoProps) {
+  return (
+    <button onClick={onClick} className={`btn btn-${variant}`}>
+      {label}
+    </button>
+  );
+}
+```
+
+**`ReactNode` vs `ReactElement` vs `JSX.Element`.** A diferença é chata
+mas você vai esbarrar nela. Resumo prático:
+
+- **`ReactNode`** é o mais abrangente: aceita `string`, `number`,
+  `null`, `undefined`, `boolean`, `ReactElement`, array de `ReactNode`,
+  portal, fragment. Use como tipo de `children` em 90% dos casos.
+- **`ReactElement`** é só "um elemento React criado por `createElement`
+  ou JSX" — não aceita string, número, nem `null`. Use quando você
+  **garante** que children é um elemento (ex: slot que espera um único
+  componente).
+- **`JSX.Element`** é o tipo que o JSX produz — é sinônimo de
+  `ReactElement` na prática, mas o uso do `JSX.Element` está caindo
+  em desuso em favor de `ReactElement`.
+
+```tsx
+type CardProps = {
+  // Aceita qualquer coisa renderizável - texto, número, elemento, array, null
+  children: React.ReactNode;
+  // Garante que o ícone é um único elemento React (não string, não array)
+  icon: React.ReactElement;
+};
+```
+
+**`ComponentProps<typeof X>` estende props nativas.** Em vez de redeclarar
+`onClick`, `disabled`, `type` etc. à mão, herde do componente HTML
+correspondente. Funciona pra qualquer tag/componente que aceite a prop
+`className`.
+
+```tsx
+// Reaproveita TODAS as props de um <button> HTML.
+type BotaoProps = React.ComponentProps<"button"> & {
+  variant?: "primary" | "secondary";
+};
+
+function Botao({ variant = "primary", className, ...rest }: BotaoProps) {
+  return (
+    <button
+      className={`btn btn-${variant} ${className ?? ""}`}
+      {...rest}
+    />
+  );
+}
+```
+
+O ganho: `Botao` passa a aceitar `onClick`, `disabled`, `type`, `aria-*`,
+`data-*` automaticamente — sem digitar nada além do que é específico dele.
+
+**Generics em componentes: `<T>` no JSX.** Quando o componente é
+genérico sobre um tipo de dado (lista, tabela, seletor), você usa
+`<T,>` no nome da função. A vírgula diferencia de JSX (`<T>` parece
+`<T>` que é tag HTML, `<T,>` é genérico).
+
+```tsx
+// Lista genérica: o tipo do item vem do prop `items`, e `renderItem`
+// recebe esse mesmo tipo de volta. Sem `any`, sem `unknown`+.
+type ListProps<T> = {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+  keyExtractor: (item: T) => string;
+};
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={keyExtractor(item)}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Uso: TypeScript infere T = { id: string; nome: string } a partir de `items`.
+<List
+  items={[{ id: "1", nome: "Ana" }, { id: "2", nome: "Bruno" }]}
+  renderItem={(p) => <span>{p.nome}</span>} // p é tipado, autocomplete funciona
+  keyExtractor={(p) => p.id}
+/>
+```
+
+**Discriminated unions para variants.** O padrão mais elegante pra
+componente com "estados". Você define um tipo por estado, e o TypeScript
+narrowing faz o resto.
+
+```tsx
+type ButtonProps =
+  | { variant: "primary"; onClick: () => void }
+  | { variant: "link"; href: string; external?: boolean }
+  | { variant: "submit"; form: string };
+
+function Button(props: ButtonProps) {
+  // Aqui, dentro de cada branch, o TypeScript sabe o formato exato.
+  if (props.variant === "link") {
+    return <a href={props.href}>{props.children}</a>;
+  }
+  if (props.variant === "submit") {
+    return <button type="submit" form={props.form}>{props.children}</button>;
+  }
+  return <button onClick={props.onClick}>{props.children}</button>;
+}
+```
+
+Se você esquecer um caso (ex: `variant === "link"`), o TypeScript
+reclama de "nem todo caminho retorna". É a forma mais segura de
+componente polimórfico.
+
+**`as` vs `satisfies`: use `satisfies`, quase sempre.** Os dois parecem
+similares, mas o `as` é um "mentira pro compilador" (força o tipo) e o
+`satisfies` é uma "verificação sem perder o tipo original".
+
+```tsx
+type Tema = { cor: string; tamanho: number };
+
+// `as Tema` - perdi a info das chaves literais ("primary").
+const config1 = {
+  primary: { cor: "azul", tamanho: 14 },
+} as Tema;
+// config1.primary é Tema, não { cor: string; tamanho: number } literal.
+
+// `satisfies Tema` - confere o formato, MAS mantém o tipo original.
+const config2 = {
+  primary: { cor: "azul", tamanho: 14 },
+} satisfies Tema;
+// config2.primary é { cor: string; tamanho: number } - autocomplete
+// das chaves literais funciona.
+
+config2.primay; // ❌ erro de digitação - TS pega
+config2.primary; // ✅ ok
+```
+
+Regra: `satisfies` é o padrão moderno. Use `as` **só** quando você
+sabe mais que o TypeScript (ex: narrowing manual depois de checar
+manualmente).
+
+## Aprofundamento 🟡
+
+**Branded types para design tokens.** Em sistemas de design, você quer
+que `cor` e `número` não sejam intercambiáveis. `branded type` é um
+"tipo nominal" — o TS obriga a converter explicitamente.
+
+```tsx
+// "Marca" o tipo com uma tag invisível. Impossível atribuir um número
+// cru onde se espera Pixels.
+type Pixels = number & { readonly __brand: "Pixels" };
+type Color = string & { readonly __brand: "Color" };
+
+const padding: Pixels = 16 as Pixels; // precisa do "as" explícito
+const bg: Color = "#fff" as Color;
+
+// Função só aceita Pixels, não número cru. Erro se passar `10` direto.
+function boxShadow(x: Pixels, y: Pixels, blur: Pixels) {
+  return `${x}px ${y}px ${blur}px rgba(0,0,0,0.1)`;
+}
+
+boxShadow(10, 10, 20); // ❌ number não é Pixels
+boxShadow(padding, padding, 20 as Pixels); // ✅
+```
+
+Em design systems grandes, isso evita `theme.color.primary` virar
+`theme.spacing.primary` por engano.
+
+**`forwardRef` e `useImperativeHandle` tipados.** Quando um componente
+expõe um ref com métodos próprios, você tipa a handle:
+
+```tsx
+type ListaHandle = {
+  scrollToTop: () => void;
+  focus: (index: number) => void;
+};
+
+const Lista = forwardRef<ListaHandle, { items: string[] }>(
+  function Lista({ items }, ref) {
+    useImperativeHandle(ref, () => ({
+      scrollToTop: () => window.scrollTo(0, 0),
+      focus: (i: number) => document.getElementById(items[i])?.focus(),
+    }));
+    return <ul>{items.map((x) => <li key={x}>{x}</li>)}</ul>;
+  }
+);
+
+// No pai:
+const ref = useRef<ListaHandle>(null);
+ref.current?.scrollToTop(); // tipado, autocomplete funciona
+```
+
+Padrão importante em componentes de UI library (Radix, shadcn). Em RSC,
+a maior parte do `forwardRef` desaparece — Server Components não
+aceitam ref.
+
+**Module augmentation (declarar tipos de SVGs, env vars).** Quando
+você importa SVG como componente no Next (`import Logo from "./logo.svg"`),
+o TS não sabe o tipo. Augmentation resolve:
+
+```tsx
+// types/svg.d.ts
+declare module "*.svg" {
+  import type { FC, SVGProps } from "react";
+  const ReactComponent: FC<SVGProps<SVGSVGElement>>;
+  export default ReactComponent;
+}
+
+// types/env.d.ts
+declare namespace NodeJS {
+  interface ProcessEnv {
+    NEXT_PUBLIC_API_URL: string;
+    DATABASE_URL: string; // só no server
+  }
+}
+
+// Agora process.env.DATABASE_URL é string, não string | undefined.
+```
+
+Sem isso, todo `process.env.X` vira `string | undefined` e o código
+vira `process.env.X!` (non-null assertion) por todo lado — um lugar
+onde o runtime quebra se a env não existir.
+
+**Tipos de `children` em RSC.** Em Next, `children` pode ser um Server
+Component (renderizado no servidor) ou um Client Component (renderizado
+no client). O tipo é o mesmo (`ReactNode`), mas o que você **pode
+fazer** com o que está dentro é diferente. Veremos isso a fundo no nó
+`composicao-rsc` — por ora, saiba que `ReactNode` cobre os dois casos
+e você não precisa se preocupar com isso no tipo.
+
+## Pra quem quer ir além 🔴
+
+**Template literal types para classnames condicionais.** TS 4.1+ permite
+criar tipos a partir de strings:
+
+```tsx
+type Spacing = "xs" | "sm" | "md" | "lg" | "xl";
+type SpacingClass = `p-${Spacing}` | `m-${Spacing}`;
+// "p-xs" | "p-sm" | "p-md" | "p-lg" | "p-xl"
+// | "m-xs" | "m-sm" | ... | "m-xl"
+
+function Box({ p, m }: { p?: SpacingClass; m?: SpacingClass }) {
+  return <div className={[p, m].filter(Boolean).join(" ")} />;
+}
+```
+
+Útil pra criar APIs de componentes "à prova de typo".
+
+**Inferência avançada com `infer`.** Permite extrair tipos de outros
+tipos. O caso de uso mais comum: extrair o tipo de retorno de uma
+função ou o tipo de um array.
+
+```tsx
+type ReturnTypeOf<T> = T extends (...args: any[]) => infer R ? R : never;
+
+type Item = ReturnTypeOf<typeof getUser>;
+// Se getUser retorna Promise<User>, Item = Promise<User>.
+```
+
+**`as const` para narrowing literal.** Adicionar `as const` transforma
+um array/objeto em tupla com tipos literais:
+
+```tsx
+const cores = ["vermelho", "verde", "azul"] as const;
+type Cor = typeof cores[number]; // "vermelho" | "verde" | "azul"
+```
+
+Muito usado pra derivar tipos de arrays de configuração.
+
+**Leitura recomendada:**
+
+- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/) — referência viva, atualizada pela comunidade.
+- [TypeScript Handbook: Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html) — a fonte canônica.
+- _Total TypeScript_ (Matt Pocock, pago) — curso profundo pra quem quer dominar a linguagem.
+
+> Dica: a melhor hora pra tipar é **enquanto você escreve**, não
+> depois. Se você deixar `any` ou `as` "só pra compilar" e for
+> resolver depois, você não resolve. Use `satisfies` por padrão, e
+> deixe o TS te guiar — quando ele reclamar, quase sempre ele está
+> certo.
+
+No próximo nó, vamos começar a entender **por que existe um
+meta-framework** — o salto de SPA pra SSR e depois pra RSC.
+
+<Checkpoint
+  challenge="Implemente um componente de lista genérica. A função `filtrarUsuarios(usuarios, termo)` recebe um array de usuários e um termo de busca, e retorna apenas os usuários cujo nome inclui o termo (case-insensitive). Use tipos explícitos em tudo - sem `any`."
+  starterCode={`type Usuario = {
+  id: string;
+  nome: string;
+  email: string;
+};
+
+function filtrarUsuarios(
+  usuarios: Usuario[],
+  termo: string
+): Usuario[] {
+  // Implemente o filtro case-insensitive.
+  // Retorna array vazio se não achar ninguém.
+  return [];
+}
+
+console.log(JSON.stringify(filtrarUsuarios(
+  [
+    { id: "1", nome: "Ana Silva", email: "ana@x.com" },
+    { id: "2", nome: "Bruno Costa", email: "bruno@x.com" },
+    { id: "3", nome: "Carla Souza", email: "carla@x.com" },
+  ],
+  "bruno"
+))); // esperado: [{"id":"2","nome":"Bruno Costa","email":"bruno@x.com"}]
+
+console.log(JSON.stringify(filtrarUsuarios(
+  [
+    { id: "1", nome: "Ana Silva", email: "ana@x.com" },
+  ],
+  "xyz"
+))); // esperado: []`}
+expected='[{"id":"2","nome":"Bruno Costa","email":"bruno@x.com"}]
+[]'
+slug="nextjs"
+nodeId="ts-no-react"
+/>
+
+<Quiz
+  question="Qual tipo você usa para tipar `children` em um componente Card que aceita texto, número, elemento React, ou nada (null)?"
+  options={[
+    {
+      text: "React.ReactNode",
+      correct: true,
+    },
+    {
+      text: "React.ReactElement",
+      correct: false,
+      explanation:
+        "ReactElement é só 'um elemento React criado por JSX/createElement'. Não aceita string, número nem null. Se você tipar children como ReactElement, o uso `<Card>texto</Card>` quebra.",
+    },
+    {
+      text: "JSX.Element",
+      correct: false,
+      explanation:
+        "JSX.Element é sinônimo prático de ReactElement (o tipo que o JSX produz). Não aceita string/número/null. Está caindo em desuso em favor de ReactElement.",
+    },
+  ]}
+/>

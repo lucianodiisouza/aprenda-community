@@ -1,0 +1,364 @@
+---
+id: data-fetching-server
+title: "Data Fetching no Server: cache, revalidação, Suspense"
+resources:
+  - title: "Next.js: Data Fetching and Caching (oficial, canônico)"
+    url: https://nextjs.org/docs/app/building-your-application/data-fetching/fetching
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js: Caching in Next.js (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/caching
+    type: doc
+    lang: en
+    free: true
+  - title: "Lee Robinson: revalidateTag in 90 seconds"
+    url: https://www.youtube.com/watch?v=f4H74L8jQ5Y
+    type: video
+    lang: en
+    free: true
+---
+
+Em SPA, fetch é "faço no `useEffect`, guardo no state, rezo pra
+não ter loading infinito". Em Next com App Router, fetch é
+**declaração**: você diz "busca isso, cacheia por X segundos,
+marca com essa tag". O framework se vira. Este nó é sobre como
+controlar isso sem ficar perdido.
+
+## O essencial 🟢
+
+**Em Server Component, `await fetch(...)` funciona igual a código
+de backend.** Você chama a função, dá `await`, usa o resultado.
+Sem `useEffect`, sem `useState`, sem loading state.
+
+```tsx
+// app/posts/page.tsx (Server)
+export default async function PostsPage() {
+  const res = await fetch("https://api.example.com/posts");
+  const posts = await res.json();
+  return (
+    <ul>
+      {posts.map((p: { id: string; title: string }) => (
+        <li key={p.id}>{p.title}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+A primeira vista, parece o mesmo fetch que você já conhece. A
+diferença: o Next **intercepta o fetch** e adiciona cache.
+
+**O Next cacheia automaticamente o resultado de fetch entre
+requests (Data Cache).** Por padrão, `fetch` em Server Component
+é **cacheado indefinidamente** — a mesma URL é chamada uma vez,
+o resultado é guardado, e requests subsequentes usam o cache.
+
+```tsx
+// Cacheia pra sempre (default em Server Components, Next 15).
+const res = await fetch("https://api.example.com/posts");
+
+// Cacheia por 60 segundos e revalida depois.
+const res = await fetch("https://api.example.com/posts", {
+  next: { revalidate: 60 },
+});
+
+// Não cacheia (sempre busca de novo).
+const res = await fetch("https://api.example.com/posts", {
+  cache: "no-store",
+});
+```
+
+**`fetch(URL, { next: { revalidate: 60 } })` é ISR-like.** ISR
+(Incremental Static Regeneration) era o nome do Pages Router pra
+"revalida a cada X segundos". No App Router, você faz a mesma
+coisa com `revalidate`. O Next guarda o cache, serve o cache
+velho, e em background busca de novo. Usuário **nunca** espera.
+
+**`fetch(URL, { next: { tags: ['posts'] } })` é o que destrava
+mutations.** Você **marca** o cache com uma tag. Depois, em
+qualquer lugar (Server Action, Route Handler), você chama
+`revalidateTag('posts')` e **todo fetch com aquela tag é
+invalidado**.
+
+```tsx
+// app/posts/page.tsx
+const res = await fetch("https://api.example.com/posts", {
+  next: { tags: ["posts"] },
+});
+
+// app/posts/new/actions.ts (Server Action)
+"use server";
+import { revalidateTag } from "next/cache";
+
+export async function createPost(formData: FormData) {
+  await db.post.create({ data: { ... } });
+  revalidateTag("posts"); // invalida o cache marcado com "posts"
+  // Próxima renderização de PostsPage vai buscar de novo.
+}
+```
+
+**`revalidatePath('/posts')` invalida a rota inteira.** Mais
+agressivo que `revalidateTag`: invalida **tudo** associado àquela
+rota, independente de tag. Use quando você sabe que toda a rota
+muda (ex: mudança de layout, não de dado específico).
+
+```tsx
+import { revalidatePath, revalidateTag } from "next/cache";
+
+// Invalida só os fetches com tag "posts"
+revalidateTag("posts");
+
+// Invalida toda a rota /posts (incluindo layout, page, fetches)
+revalidatePath("/posts");
+
+// Invalida uma rota dinâmica
+revalidatePath(`/posts/${slug}`);
+```
+
+**`noStore()` (e `connection()`) para dados por usuário.** Por
+padrão, o Next **tenta cachear tudo**. Mas tem dados que são
+específicos do usuário (carrinho, dashboard pessoal) e não podem
+ser compartilhados. Pra desabilitar cache de toda a rota, use
+`noStore()` no server:
+
+```tsx
+// app/dashboard/page.tsx
+import { unstable_noStore as noStore } from "next/cache";
+
+export default async function DashboardPage() {
+  noStore(); // marca a rota como dinâmica
+  const userData = await fetchUserData(); // nunca cacheado
+  return <div>...</div>;
+}
+```
+
+`noStore` é "force-dynamic" granular. A rota inteira deixa de
+ser estática e vira SSR por demanda.
+
+**Acessar `cookies()` ou `headers()` também força dynamic.**
+O Next detecta que você depende de request-specific data e desliga
+o cache automaticamente:
+
+```tsx
+import { cookies } from "next/headers";
+
+export default async function Page() {
+  const cookieStore = await cookies(); // Next 15+: Promise
+  const session = cookieStore.get("session");
+  // Já marca a rota como dinâmica, sem precisar de noStore().
+  return <div>...</div>;
+}
+```
+
+## Aprofundamento 🟡
+
+**Os 4 caches do Next (mapa completo).** O Next tem 4 camadas de
+cache, e confundi-las é a maior fonte de bugs de "por que minha
+mudança não apareceu?".
+
+<Mermaid
+  chart={`flowchart TB
+    Request["Request do browser"] --> RouterCache{"Router Cache<br/>(client-side)"}
+    RouterCache -->|miss| FRC{"Full Route Cache<br/>(HTML+RSC estático)"}
+    FRC -->|miss| DataCache{"Data Cache<br/>(fetch responses)"}
+    DataCache -->|miss| Origin["Origin<br/>(DB, API, fs)"]
+    DataCache -.->|"revalidateTag<br/>revalidatePath"| FRC
+    FRC -.->|"revalidatePath"| RouterCache
+    RequestMem["Request Memoization<br/>(uma request HTTP)"] -.-> DataCache`}
+  caption="Os 4 caches do Next: Router Cache (client), Full Route Cache (HTML+RSC), Data Cache (fetch), Request Memoization (intra-request). Invalidação flui de baixo pra cima."
+/>
+
+1. **Request Memoization** (intra-request): mesma URL chamada
+   várias vezes na mesma renderização retorna o mesmo objeto
+   (sem refetch). Automático, sem config.
+
+2. **Data Cache** (cross-request, server-side): o resultado de
+   `fetch` é cacheado por padrão. `revalidate` ou `tags` controlam
+   expiração e invalidação. **Server-only.**
+
+3. **Full Route Cache** (cross-request, server-side): o HTML e
+   RSC payload renderizados são cacheados. Static rendering =
+   build time. Dynamic rendering = on demand.
+
+4. **Router Cache** (client-side, in-memory): o RSC payload de
+   rotas já visitadas fica na memória do client. Sobrevive a
+   navegação, perde em refresh. **É o que faz a navegação
+   "instantânea".**
+
+**Por que `fetch` foi escolhido (e não XHR, axios, etc.).** O
+Next **só cacheia `fetch` nativo do Node/browser**. Se você usar
+`axios`, `got`, `node-fetch` (versões antigas), `prisma.findMany`
+direto, etc., o Next **não tem como** cachear (não vê a chamada).
+Por isso a convenção é: use `fetch` pra HTTP, e use libs que
+**retornam o resultado via fetch internamente** ou expõem cache
+próprio.
+
+**`cache: 'force-cache'` vs default (mesma coisa em Next 15).**
+O default do `fetch` em Server Component é cachear. `force-cache`
+é explícito. Ambos se comportam igual. Use `default` por padrão,
+`force-cache` quando quiser deixar a intenção clara.
+
+**Quando NÃO confiar no cache do Next: dados por usuário.** Já
+mencionado: cookies, headers, searchParams específicos do user
+**desligam** o cache automaticamente. Se você tá vendo "dados do
+outro usuário" no seu dashboard, é porque você não tá lendo
+cookies/headers — adicione `await cookies()` (mesmo sem usar o
+valor) pra forçar dynamic.
+
+```tsx
+import { cookies } from "next/headers";
+
+export default async function DashboardPage() {
+  // Lendo cookie (mesmo que sem usar) força a rota a ser dinâmica.
+  await cookies();
+  const data = await fetchDashboardData();
+  return <div>{data.name}</div>;
+}
+```
+
+**`React.cache()` pra memoizar função pura entre requests no
+mesmo render.** Útil quando você tem uma função que faz query
+reutilizada por múltiplos componentes:
+
+```tsx
+// lib/posts.ts
+import { cache } from "react";
+import { db } from "./db";
+
+export const getPost = cache(async (slug: string) => {
+  return db.post.findUnique({ where: { slug } });
+});
+
+// app/posts/[slug]/page.tsx
+const post = await getPost(slug); // 1ª chamada - query real
+
+// app/posts/[slug]/Sidebar.tsx (também server)
+const samePost = await getPost(slug); // mesma chamada - cacheada no request
+```
+
+Sem `cache()`, os dois componentes fariam **2 queries** ao banco.
+Com `cache()`, fazem 1. (Request Memoization faz a mesma coisa
+pro `fetch`, mas não pra query direta de banco.)
+
+**`generateStaticParams` + `revalidate` = o "melhor dos dois
+mundos".** Pré-renderiza as rotas mais acessadas em build time,
+revalida em background:
+
+```tsx
+// app/posts/[slug]/page.tsx
+export async function generateStaticParams() {
+  const posts = await db.post.findMany({ where: { published: true } });
+  return posts.map((p) => ({ slug: p.slug }));
+}
+
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await fetchPost(slug);
+  return <article>{post.content}</article>;
+}
+```
+
+Rotas de `generateStaticParams` ficam em **SSG** (build time).
+A rota inteira (Full Route Cache) é estática. **`revalidateTag`
+na mutation invalida** quando você cria/edita/deleta.
+
+**`dynamicParams` controla slugs fora do `generateStaticParams`.**
+Default é `true` (slugs não-pré-renderizados são SSR por demanda).
+`false` faz eles retornarem 404.
+
+## Pra quem quer ir além 🔴
+
+**On-demand revalidation via webhook.** Plataformas tipo
+Contentful, Sanity, ou seu próprio backend mandam um webhook
+quando conteúdo muda. O handler chama `revalidateTag`:
+
+```tsx
+// app/api/revalidate/route.ts
+import { revalidateTag } from "next/cache";
+
+export async function POST(req: Request) {
+  const { tag, secret } = await req.json();
+  if (secret !== process.env.REVALIDATE_SECRET) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+  revalidateTag(tag);
+  return Response.json({ revalidated: true });
+}
+```
+
+O conteúdo do CMS atualiza → manda POST → Next invalida cache
+→ próxima renderização busca o novo conteúdo.
+
+**Time-based revalidation: como o ISR evoluiu.** No Pages
+Router, `revalidate: 60` revalidava a página inteira. No App
+Router, `revalidate` no `fetch` revalida **só aquele fetch**.
+Combinar `revalidate` em vários fetches dá controle fino.
+
+**Streaming + data fetching: cada `<Suspense>` libera quando
+sua data chega.** O Next renderiza o HTML em chunks. Cada
+`<Suspense>` libera quando o fetch dentro dele resolve. O
+browser recebe e renderiza progressivamente. Veremos a fundo
+no nó `streaming-ssr`.
+
+**Leitura recomendada:**
+
+- [Next.js: Caching in Next.js (oficial)](https://nextjs.org/docs/app/building-your-application/caching) — mapa completo dos 4 caches.
+- [Next.js: Data Fetching (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/fetching) — referência de fetch.
+- [Lee Robinson: revalidateTag em 90s](https://www.youtube.com/watch?v=f4H74L8jQ5Y) — o resumo curto que eu queria ter visto antes de aprender.
+
+> Dica: a primeira vez que você vê "minha mudança não apareceu",
+> 9 em 10 vezes é cache. Antes de debugar, faça `revalidateTag`
+> da tag certa, ou `revalidatePath` da rota, e veja se resolve.
+> Cache do Next é agressivo por design (performance), e por isso
+> é fonte de bugs pra quem vem de SPA.
+
+No próximo nó, vamos ver **Server Actions** — o caminho moderno
+pra mutations: `revalidateTag` pós-create/update/delete, validação
+server-side, e progressive enhancement (form funciona sem JS).
+
+<Checkpoint
+  challenge="Implemente fetch com tags e revalidação. A função `getUser(id)` deve fazer fetch com tag 'user-${id}' e `revalidate: 60`. A função `updateUser(id, data)` deve fazer POST (não precisa ser real) e chamar `revalidateTag('user-${id}')`."
+  starterCode={`async function getUser(id: string) {
+  // Implementar fetch com tag 'user-<id>' e revalidate: 60
+  // Retorna o JSON parseado
+  const res = await fetch("https://api.example.com/users/" + id);
+  return res.json();
+}
+
+async function updateUser(id: string, data: { name: string }) {
+  // POST pra https://api.example.com/users/<id> com body JSON
+  // Depois chamar revalidateTag('user-<id>')
+  return null;
+}
+
+// Demonstrar uso (não roda no Checkpoint real, mas é o padrão):
+// const user = await getUser("123");
+// await updateUser("123", { name: "Novo Nome" });
+// const userAtualizado = await getUser("123"); // agora sem cache`}
+expected=""
+slug="nextjs"
+nodeId="data-fetching-server"
+/>
+
+<Quiz
+  question="Qual a diferença entre `revalidateTag('posts')` e `revalidatePath('/posts')`?"
+  options={[
+    {
+      text: "revalidateTag invalida só os fetches com aquela tag; revalidatePath invalida toda a rota (incluindo layout e page)",
+      correct: true,
+    },
+    {
+      text: "São a mesma coisa, aliases um do outro",
+      correct: false,
+      explanation:
+        "São diferentes em escopo: revalidateTag é cirúrgico (só os fetches marcados com aquela tag), revalidatePath é amplo (toda a rota, incluindo layout e Full Route Cache).",
+    },
+    {
+      text: "revalidateTag invalida o cache do cliente; revalidatePath invalida o cache do servidor",
+      correct: false,
+      explanation:
+        "Ambos rodam no servidor. O cache do cliente (Router Cache) é controlado de outra forma (router.refresh() do next/navigation).",
+    },
+  ]}
+/>

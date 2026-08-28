@@ -1,0 +1,353 @@
+---
+id: rsc-fundamentos
+title: "Server vs Client Components: a fronteira"
+resources:
+  - title: "React: Server Components (oficial)"
+    url: https://react.dev/reference/rsc/server-components
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js: Server and Client Components (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns
+    type: doc
+    lang: en
+    free: true
+  - title: "Theo: 'use client' explicado em 5 minutos"
+    url: https://www.youtube.com/watch?v=9wiWzu_tDqM
+    type: video
+    lang: en
+    free: true
+---
+
+Esse é o nó que muda o modelo mental. Em React puro, todo componente
+roda no browser (depois de empacotado). Em Next App Router, **todo
+componente roda no servidor por padrão** — até você marcar o
+contrário. Essa inversão é o que destrava RSC, e é a fonte da
+maioria da confusão inicial.
+
+## O essencial 🟢
+
+**Por padrão, TUDO no App Router é Server Component.** Você não
+precisa fazer nada. `app/posts/page.tsx` é server, `components/Card.tsx`
+é server, `components/PostItem.tsx` é server. Eles rodam **no
+servidor**, geram HTML (e o "RSC payload" — veremos), e o resultado
+vai pro browser. O browser **nem sabe que esse código existiu**.
+
+```tsx
+// app/posts/page.tsx
+// Sem "use client" - SERVER COMPONENT.
+import { db } from "@/lib/db"; // importa do banco - server only
+import PostList from "./PostList";
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany(); // query real, no servidor
+  return (
+    <div>
+      <h1>Posts</h1>
+      <PostList posts={posts} />
+    </div>
+  );
+}
+```
+
+Esse código **nunca vai pro browser**. Nem a `import { db }` (que
+tem a connection string), nem a query, nem nada. O browser só recebe
+o HTML pronto e o RSC payload (um JSON com a árvore de componentes
+serializada).
+
+**A diretiva `'use client'` na primeira linha transforma em Client
+Component.** É a única forma de "abrir a fronteira" — tudo que
+dentro daquele arquivo (e nos arquivos que ele importa, transitivamente)
+passa a rodar no browser.
+
+```tsx
+// components/LikeButton.tsx
+"use client"; // primeira linha, sem nada antes
+
+import { useState } from "react";
+
+export default function LikeButton({ postId }: { postId: string }) {
+  const [liked, setLiked] = useState(false);
+  return (
+    <button onClick={() => setLiked(!liked)}>
+      {liked ? "❤️" : "🤍"}
+    </button>
+  );
+}
+```
+
+Esse código **vai pro bundle JS do browser**. O `useState` precisa de
+runtime React no browser, o `onClick` precisa de DOM.
+
+**Server Component: o que pode e o que não pode.**
+
+| ✅ Pode (Server)                              | ❌ Não pode (Server)                          |
+| --------------------------------------------- | -------------------------------------------- |
+| `async`/`await` no componente                 | `useState`, `useReducer`, `useEffect`        |
+| `import` de módulos server-only (DB, fs)      | Event handlers (`onClick`, `onChange`)       |
+| `fetch` direto (Node, sem CORS)               | Browser APIs (`window`, `document`, `localStorage`) |
+| `import` de Client Components                 | `import` de módulos client-only (Sentry browser, etc.) |
+| Acessar `cookies()`, `headers()` (Next helpers) |                                          |
+| Lê secrets de `process.env` (server-side)     |                                            |
+
+**Client Component: o que pode e o que não pode.**
+
+| ✅ Pode (Client)                              | ❌ Não pode (Client)                          |
+| --------------------------------------------- | -------------------------------------------- |
+| `useState`, `useEffect`, hooks                | `async` no nível do componente (componente em si não pode ser async) |
+| Event handlers                                | Acessar `fs`, banco de dados direto          |
+| Browser APIs                                  | Secrets (vão pro bundle)                     |
+| Importar Server Components **só como `children`** | Importar Server Components e renderizar dentro da lógica (`{condicao ? <ServerComp /> : ...}`) |
+| `useSearchParams`, `useRouter` (Next)         |                                            |
+
+**A fronteira é por arquivo, não por componente dentro do arquivo.**
+Você **não** pode marcar um componente dentro de um arquivo como
+client e outro como server. É o arquivo inteiro.
+
+```tsx
+// ❌ ERRADO - diretiva no meio do arquivo não funciona
+export function Server() { return <h1>server</h1>; }
+"use client"; // tarde demais - arquivo inteiro é tratado como server
+export function Client() { ... }
+```
+
+```tsx
+// ✅ CERTO - um arquivo, uma fronteira
+// Button.tsx
+"use client";
+export function Button() { ... } // client
+export function Icon() { return <span>X</span>; } // TAMBÉM client (mesmo arquivo)
+```
+
+Se você quer um server e um client no mesmo conceito, são **dois
+arquivos**.
+
+**"Server Component" não quer dizer "sem JS"** — quer dizer "JS roda
+no servidor". O server manda HTML pronto. O browser renderiza
+diretamente, sem precisar de JS do React pra aquela árvore. A
+única exceção: se houver Client Components **dentro** da árvore
+server, aí sim eles viram JS no browser.
+
+## Aprofundamento 🟡
+
+**Serialização: tudo que passa de Server pra Client vira JSON.**
+Quando um Server Component renderiza um Client Component, os
+`props` precisam ser **serializáveis** — React os transforma em
+"server snapshot" e os envia ao browser. O que **não** pode:
+
+- Funções (exceto Server Actions — que são serializáveis por design)
+- `Date` vira string (na real, é convertido, mas a data original
+  perde métodos). Use `string` ISO se precisar.
+- `Map`, `Set`, `BigInt` — idem, vira erro ou string
+- Instâncias de classe (vira `{}` ou erro)
+- `Symbol`
+
+```tsx
+// Server Component
+import LikeButton from "./LikeButton";
+import { db } from "@/lib/db";
+
+export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const post = await db.post.findUnique({ where: { id } });
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.createdAt.toString()}</p> {/* ⚠️ Date.toString() no server, não props */}
+      <LikeButton postId={post.id} createdAt={post.createdAt.toISOString()} />
+      {/* ✅ string ISO, serializável */}
+    </article>
+  );
+}
+```
+
+**"Marcar tudo como client" é o mesmo SPA de antes.** O erro
+clássico: adicionar `'use client'` no `layout.tsx` raiz "porque tem
+context/state". Pronto, você voltou pra SPA — o bundle é completo,
+tudo roda no browser, você perdeu o ganho de RSC.
+
+Estratégia: **server por padrão, `'use client'` só onde precisa de
+estado ou evento**. O que precisa de `'use client'`? Coisas como
+`useState`, `useEffect`, `onClick`, `useRouter`, `useSearchParams`,
+formulários interativos. **Não precisa**: o layout, a lista de posts,
+o card, o header estático.
+
+```tsx
+// app/posts/page.tsx - Server Component
+import { db } from "@/lib/db";
+import LikeButton from "@/components/LikeButton"; // <- client island
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany();
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          {post.title} <LikeButton postId={post.id} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`PostsPage` é server (faz query). `LikeButton` é client (tem state).
+A fronteira existe **só onde precisa**.
+
+**`import 'server-only'` (módulo que falha se importar em client).**
+Pacote `server-only` do React/Next: joga erro de build se o módulo
+for importado por um Client Component. Use em utilitários que
+acessam DB, secrets, ou fs.
+
+```tsx
+// lib/db.ts
+import "server-only"; // primeira linha
+import { PrismaClient } from "@prisma/client";
+export const db = new PrismaClient();
+```
+
+```tsx
+// components/UserCard.tsx
+"use client";
+import { db } from "@/lib/db"; // 💥 ERRO DE BUILD - server-only em client
+```
+
+Mesma coisa existe pra client: `import 'client-only'` no módulo que
+só faz sentido no browser (Sentry browser SDK, libs de localStorage).
+
+**Async server components: `async function Page() { const data = await ... }`.**
+Server Components podem ser `async`. Você faz `await` no nível do
+componente, e o React espera resolver pra renderizar.
+
+```tsx
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const post = await db.post.findUnique({ where: { slug } });
+  if (!post) notFound();
+  return <article>{post.content}</article>;
+}
+```
+
+No Next 15+, `params` e `searchParams` viraram **Promises** — você
+sempre dá `await`. Isso é uma mudança em relação a Next 14, e é
+fonte de bugs pra quem tá migrando.
+
+**`Suspense` em server (chunk que pode demorar).** Async server
+components podem ser envolvidos em `<Suspense>`. O Next/React
+renderiza o resto da árvore enquanto espera.
+
+```tsx
+import { Suspense } from "react";
+
+export default function Page() {
+  return (
+    <>
+      <Header /> {/* instantâneo */}
+      <Suspense fallback={<PostSkeleton />}>
+        <SlowPostList /> {/* async, pode demorar */}
+      </Suspense>
+      <Footer /> {/* renderiza sem esperar */}
+    </>
+  );
+}
+
+async function SlowPostList() {
+  const posts = await fetch("/api/slow").then((r) => r.json());
+  return <ul>{posts.map(...)}</ul>;
+}
+```
+
+O `Header` e `Footer` renderizam **antes** de `SlowPostList`
+resolver. Veremos isso a fundo em `streaming-ssr`.
+
+## Pra quem quer ir além 🔴
+
+**O que NÃO dá pra fazer em Server Component.** Resumo ampliado:
+
+- `onClick`, `onChange`, `onSubmit`, qualquer event handler
+- `useState`, `useReducer`, `useEffect`, `useRef` (com `.current` mutado)
+- `useContext` (Provider pode ser server, mas o `useContext` precisa rodar onde o hook é chamado)
+- `useSearchParams`, `usePathname`, `useRouter` do `next/navigation` (esses hooks são client-only)
+- Acessar `window`, `document`, `localStorage`, `sessionStorage`
+- Web APIs (`IntersectionObserver`, `ResizeObserver`) — `useEffect` resolve indiretamente
+
+**`use()` pra data fetching client-side (React 19, experimental).**
+Hook que "desempacota" Promise no client. Combinado com `<Suspense>`,
+faz fetching client-side parecer async/await. Em 2026, ainda
+experimental — a trilha usa `useEffect` + `fetch` por padrão.
+
+**Leitura recomendada:**
+
+- [React: Server Components (oficial, canônico)](https://react.dev/reference/rsc/server-components) — a referência.
+- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) — patterns oficiais de "como misturar server e client".
+- [Theo: 'use client' em 5 minutos](https://www.youtube.com/watch?v=9wiWzu_tDqM) — vídeo curto, direto ao ponto.
+
+> Dica: a primeira vez que você vê `'use client'`, parece que "é
+> tipo SPA mas dentro do Next". **Não é.** É o oposto: a maior
+> parte da árvore é server, e client é a exceção pontual. A regra
+> é: **se não precisa de hook ou evento, não marca como client**.
+> Se você tá marcando tudo como client, você tá escrevendo SPA com
+> sintaxe de Next — funciona, mas perde a vantagem toda.
+
+No próximo nó, vamos ver **padrões de composição** — como Server
+Components passam dados pra Client Components, como evitar o
+"prop drilling" de serialização, e onde mora cada tipo de dado
+quando os dois mundos se misturam.
+
+<Checkpoint
+  challenge="Refatore este Client Component para Server Component. O componente busca dados de um arquivo JSON local e renderiza uma lista. Não há eventos nem hooks - ele só lê dados."
+  starterCode={`"use client";
+import { useState, useEffect } from "react";
+
+type Post = { id: string; title: string };
+
+export default function PostsList() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/posts.json")
+      .then((r) => r.json())
+      .then((data: Post[]) => {
+        setPosts(data);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div>Carregando...</div>;
+
+  return (
+    <ul>
+      {posts.map((p) => (
+        <li key={p.id}>{p.title}</li>
+      ))}
+    </ul>
+  );
+}`}
+expected=""
+slug="nextjs"
+nodeId="rsc-fundamentos"
+/>
+
+<Quiz
+  question="Por padrão, todo componente em uma aplicação Next.js com App Router é:"
+  options={[
+    {
+      text: "Server Component, a menos que tenha a diretiva 'use client' no topo do arquivo",
+      correct: true,
+    },
+    {
+      text: "Client Component, a menos que tenha a diretiva 'use server' no topo do arquivo",
+      correct: false,
+      explanation:
+        "A diretiva 'use server' marca uma FUNÇÃO como Server Action, não um componente. Para marcar um componente como server, você não faz nada - é o default.",
+    },
+    {
+      text: "Ambos ao mesmo tempo, dependendo do contexto",
+      correct: false,
+      explanation:
+        "A fronteira é por arquivo, e exclusiva. Um arquivo é inteiro server ou inteiro client. O que muda é o que o arquivo pode fazer: server pode acessar DB, client pode usar hooks.",
+    },
+  ]}
+/>

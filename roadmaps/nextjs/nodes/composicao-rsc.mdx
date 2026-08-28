@@ -1,0 +1,434 @@
+---
+id: composicao-rsc
+title: "Composição com RSC: server-only e client islands"
+resources:
+  - title: "React: Composition Patterns (oficial)"
+    url: https://react.dev/learn/passing-props-to-a-component
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js: Patterns - Reusing Logic (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns
+    type: doc
+    lang: en
+    free: true
+---
+
+Você sabe que Server e Client Components coexistem. Sabe que
+Server manda HTML + RSC payload, Client vira JS no browser. Mas
+**como eles conversam**? Quem passa o quê pra quem? O que pode
+ser prop e o que não pode? Esse nó é o "missing manual" de
+composição — os padrões que se repetem em qualquer app real.
+
+## O essencial 🟢
+
+**Padrão 1: "Server wraps client" (o mais comum).** Server
+Component importa e renderiza Client Component, passando dados
+serializáveis como props.
+
+```tsx
+// app/posts/page.tsx (Server)
+import { db } from "@/lib/db";
+import LikeButton from "@/components/LikeButton"; // client island
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany();
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          {post.title}
+          <LikeButton postId={post.id} initialCount={post.likes} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Server faz o trabalho pesado (query), Client cuida do estado
+interativo (`useState` no `LikeButton`). Props que cruzam a
+fronteira: tipos primitivos, arrays, objetos plain — tudo
+serializável.
+
+**Padrão 2: "Client wraps server" (o contra-intuitivo).** Client
+Component recebe Server Component como `children` (ou `prop`) e
+renderiza. Isso permite layouts interativos com conteúdo
+server-rendered dentro.
+
+```tsx
+// components/Modal.tsx (Client)
+"use client";
+import { useState } from "react";
+
+export function Modal({ children, title }: {
+  children: React.ReactNode;
+  title: string;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Abrir {title}</button>
+      {open && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            {children}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// app/posts/page.tsx (Server)
+import { db } from "@/lib/db";
+import { Modal } from "@/components/Modal";
+import PostDetails from "./PostDetails"; // Server Component
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany();
+  return (
+    <div>
+      {posts.map((post) => (
+        <Modal key={post.id} title={post.title}>
+          <PostDetails postId={post.id} /> {/* server, renderiza dentro do modal */}
+        </Modal>
+      ))}
+    </div>
+  );
+}
+```
+
+`Modal` é client (tem `useState`, `onClick`). Mas o `children`
+que ele recebe é um Server Component (`PostDetails`), que roda
+no servidor. Quando o modal abre, o conteúdo do `PostDetails` já
+está renderizado (não precisa de fetch client-side).
+
+**Por que o segundo padrão é contra-intuitivo mas necessário.**
+Imagine o caso "antigo": você tinha um Client Component que
+renderiza uma `<Card>` com dados. Em SPA, o Client Component
+fazia `useEffect` + fetch. Em RSC, você não quer `useEffect` —
+quer o servidor renderizar. Mas a Card está dentro de um
+componente interativo (modal, accordion, tabs). Solução: o
+interativo (client) recebe o conteúdo (server) como `children`.
+**Client é a moldura, server é a pintura.**
+
+**"Client island"**: o pedaço da página que é interativo, o resto
+é server. A metáfora ajuda a visualizar:
+
+```text
+┌─────────────────────────────────────────┐  ← tudo isso é server
+│ Header (server)                         │
+│                                         │
+│ ┌─────────────┐  ┌──────────────────┐   │
+│ │ Filtro      │  │ Lista de posts   │   │  ← Lista é server
+│ │ (CLIENT     │  │ (server)         │   │
+│ │  ISLAND)    │  │                  │   │
+│ │  - state    │  │   ┌────────────┐ │   │
+│ │  - onChange │  │   │ LikeButton │ │   │  ← LikeButton é client island
+│ │             │  │   │ (CLIENT    │ │   │
+│ └─────────────┘  │   │  ISLAND)   │ │   │
+│                  │   └────────────┘ │   │
+│                  └──────────────────┘   │
+└─────────────────────────────────────────┘
+```
+
+Quanto menos ilhas, melhor: cada ilha vira JS no browser, e JS
+custa (download, parse, hidratação). Server-first = ilhas
+pequenas e cirúrgicas.
+
+## Aprofundamento 🟡
+
+**Quando a serialização quebra.** Repetindo do nó anterior, com
+exemplos práticos:
+
+```tsx
+// ❌ ERRO: Date vira string, perdendo métodos
+<ClientCard createdAt={new Date()} />
+// No client: createdAt é string ISO, não Date. createdAt.getMonth() quebra.
+
+// ✅ Solução 1: serializar antes
+<ClientCard createdAt={new Date().toISOString()} />
+// No client: createdAt é string ISO. Use new Date(createdAt) se precisar.
+
+// ✅ Solução 2: se o client precisa de Date, formate antes
+<ClientCard createdAtLabel={formatDate(new Date())} /> // string já formatada
+
+// ❌ ERRO: Map/Set não serializam
+<ClientThing counts={new Map([["a", 1]])} />
+
+// ✅ Solução: plain object
+<ClientThing counts={{ a: 1 }} />
+
+// ❌ ERRO: classe
+<ClientThing data={new MyClass()} />
+
+// ✅ Solução: plain object + reconstruir no client
+<ClientThing data={JSON.parse(JSON.stringify(myClassInstance))} />
+```
+
+**`useState` em client não persiste entre navegações.** Em SPA,
+quando você navega pra outra rota, o estado global persiste
+(Redux, Context). Em RSC, **a árvore de Client Components remonta
+quando a rota muda**. O `useState` reseta, `useEffect` re-roda.
+
+Persistência entre navegações:
+
+- **State global persistente** (auth, theme): use Client Component
+  no `layout.tsx` com Context, e mantenha o layout entre
+  navegações (o layout NÃO remonta).
+- **State de servidor** (dados do DB): use cache do Next (próximo
+  nó) ou TanStack Query.
+- **State de URL** (filtro, paginação): use `useSearchParams` —
+  o state vive na URL, não em memória.
+
+**Estado compartilhado entre client islands.** O caso "dois
+componentes client que precisam do mesmo state". Você **não**
+consegue compartilhar state entre dois Server Components (eles
+não têm hooks). Soluções:
+
+- **Lift state up**: o state vai pro Client Component pai mais
+  próximo. Se `LikeButton` e `ShareButton` precisam saber "o
+  usuário deu like", coloca os dois dentro de um `PostActions`
+  client que tem o state.
+- **Context Provider no layout**: state global (auth, theme)
+  mora num Client Component dentro do `layout.tsx`. O layout
+  não remonta, então o Context persiste.
+- **State em URL**: filtros, paginação, modal aberto — vive
+  na URL via `useSearchParams` + `useRouter`. Acessível,
+  compartilhável, sobrevive a refresh.
+
+```tsx
+// Provider no layout (Client Component)
+"use client";
+import { createContext, useContext, useState } from "react";
+
+type ThemeContext = { theme: "light" | "dark"; setTheme: (t: "light" | "dark") => void };
+const Ctx = createContext<ThemeContext | null>(null);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  return <Ctx.Provider value={{ theme, setTheme }}>{children}</Ctx.Provider>;
+}
+
+export function useTheme() {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error("useTheme must be inside ThemeProvider");
+  return ctx;
+}
+
+// app/layout.tsx (Server)
+import { ThemeProvider } from "./ThemeProvider";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="pt-BR">
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+**`<form action={serverAction}>`: progressive enhancement.** Em
+React 19/Next 15, formulários podem chamar Server Actions
+diretamente. **Funciona sem JavaScript no browser** — o form
+faz `POST` tradicional, o server processa, devolve HTML.
+
+```tsx
+// app/posts/new/page.tsx (Server)
+import { createPost } from "./actions";
+
+export default function NewPostPage() {
+  return (
+    <form action={createPost}>
+      <input name="title" required />
+      <textarea name="body" required />
+      <button type="submit">Criar</button>
+    </form>
+  );
+}
+
+// app/posts/new/actions.ts
+"use server";
+
+export async function createPost(formData: FormData) {
+  const title = formData.get("title") as string;
+  const body = formData.get("body") as string;
+  await db.post.create({ data: { title, body } });
+  revalidatePath("/posts");
+  redirect("/posts");
+}
+```
+
+Se o JS do Next falhar em carregar, o form **continua funcionando**
+— o `<form action>` vira POST normal. Veremos mais em
+`server-actions`.
+
+**`useFormStatus`, `useFormState` (React 19, Next 15):** estado
+do form sem `useState`. `useFormStatus` te dá `pending` (true
+enquanto a action roda). `useFormState` te dá o estado retornado
+pela action (erros, redirect).
+
+```tsx
+"use client";
+import { useFormStatus, useFormState } from "react-dom";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return <button type="submit" disabled={pending}>{pending ? "Enviando..." : "Enviar"}</button>;
+}
+
+const initialState = { error: null as string | null };
+function Form() {
+  const [state, formAction] = useFormState(createPost, initialState);
+  return (
+    <form action={formAction}>
+      <input name="title" required />
+      <SubmitButton />
+      {state.error && <p className="error">{state.error}</p>}
+    </form>
+  );
+}
+```
+
+Poupa boilerplate de `useState` + `useEffect` + `isLoading`.
+
+## Pra quem quer ir além 🔴
+
+**Lift state up em RSC.** Quando dois Client Components precisam
+compartilhar state, **não existe forma de subir o state pro
+Server Component pai** (server não tem state). Solução: criar
+um Client Component que envolve os dois, e subir o state pra
+dentro dele.
+
+```tsx
+// ❌ ERRADO: tentar compartilhar state entre dois clients
+// sem um pai comum client
+<LikeButton postId={post.id} />     // client
+<ShareButton postId={post.id} />    // client
+// Eles não se comunicam.
+
+// ✅ CERTO: envolver num client pai que tem o state
+<PostActions postId={post.id}>
+  <LikeButton />
+  <ShareButton />
+</PostActions>
+
+// PostActions.tsx (Client)
+"use client";
+export function PostActions({ postId, children }: { postId: string; children: React.ReactNode }) {
+  const [liked, setLiked] = useState(false);
+  return (
+    <LikedContext.Provider value={{ liked, setLiked }}>
+      {children}
+    </LikedContext.Provider>
+  );
+}
+```
+
+**Server Actions como prop (passar função do server pra client).**
+Server Actions são serializáveis por design — o Next transforma
+em token que o client invoca via POST. Você pode passar
+`action={serverAction}` como prop.
+
+```tsx
+// app/posts/page.tsx (Server)
+import { deletePost } from "./actions";
+import DeleteButton from "./DeleteButton";
+
+export default async function PostsPage() {
+  const posts = await db.post.findMany();
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>
+          {post.title}
+          <DeleteButton action={deletePost.bind(null, post.id)} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Cuidado: `bind` cria uma nova função a cada render, o que pode
+quebrar otimização. Use `useCallback` no client ou mova o bind
+pra um Server Component wrapper.
+
+**Module `server-only` vs `client-only`.** Reforço: o pacote
+`server-only` joga erro de build se o módulo for importado
+em client. `client-only` faz o oposto. Use em arquivos de
+utilitários críticos.
+
+**Patterns avançados: container/presentation em RSC.** O padrão
+clássico de arquitetura ("smart component busca, dumb renderiza")
+se aplica. Em RSC:
+
+- **Container (Server)**: busca dados, decide layout, passa
+  dados prontos pra presentation.
+- **Presentation (Client opcional)**: recebe dados, renderiza,
+  lida com interação.
+
+```tsx
+// PostListContainer.tsx (Server)
+export default async function PostListContainer() {
+  const posts = await fetchPosts();
+  return <PostListView posts={posts} />;
+}
+
+// PostListView.tsx (Client ou Server - depende se tem interação)
+"use client";
+export function PostListView({ posts }: { posts: Post[] }) {
+  const [filter, setFilter] = useState("");
+  const filtered = posts.filter(p => p.title.includes(filter));
+  return (
+    <>
+      <input value={filter} onChange={e => setFilter(e.target.value)} />
+      <ul>{filtered.map(p => <li key={p.id}>{p.title}</li>)}</ul>
+    </>
+  );
+}
+```
+
+Container faz o trabalho pesado (server). View lida com state
+local (client). O custo de cada um é óbvio pelo seu lugar.
+
+**Leitura recomendada:**
+
+- [React: Composition Patterns (oficial)](https://react.dev/learn/passing-props-to-a-component) — fundamentos.
+- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) — específico do Next.
+
+> Dica: o erro mais comum em RSC é "tentar fazer o client fazer
+> trabalho do server". Você vê `useEffect` + `fetch` num Client
+> Component, e a primeira pergunta deve ser: "isso pode ser
+> Server Component?". 9 em 10 vezes, pode. E quando vira server,
+> o bundle do browser encolhe, o SEO melhora, e o código fica
+> mais simples.
+
+No próximo nó, vamos ver **data fetching no server** — como
+`fetch` funciona com cache do Next, quando revalida, e como
+controlar tudo isso com `revalidatePath` e `revalidateTag`.
+
+<Quiz
+  question="Em qual cenário você PRECISA usar o padrão 'Client wraps server' (Client Component recebe Server Component como children)?"
+  options={[
+    {
+      text: "Quando você tem um componente interativo (modal, accordion, tabs) que precisa renderizar conteúdo que deve ser server-rendered (dados do DB, sem useEffect)",
+      correct: true,
+    },
+    {
+      text: "Sempre que você quiser usar 'use client' em alguma parte do componente",
+      correct: false,
+      explanation:
+        "Nem todo 'use client' precisa do padrão 'client wraps server'. O padrão 'server wraps client' (Server Component importa e renderiza Client) é mais comum. 'Client wraps server' é para o caso específico de moldura interativa + conteúdo server.",
+    },
+    {
+      text: "Apenas quando você precisa passar funções como props",
+      correct: false,
+      explanation:
+        "Funções comuns não podem ser props cross-fronteira (exceto Server Actions, que têm tratamento especial). Mas o padrão 'client wraps server' não é sobre funções - é sobre Server Component ser passado como children.",
+    },
+  ]}
+/>
