@@ -146,6 +146,41 @@
       ]
     },
     {
+      "github": "obrenoalvim",
+      "name": "Breno Alvim",
+      "avatar": "https://github.com/obrenoalvim.png",
+      "profile": "https://github.com/obrenoalvim",
+      "counts": {
+        "trilhas": 2,
+        "projetos": 1,
+        "bootcamps": 1,
+        "total": 4
+      },
+      "trilhas": [
+        {
+          "slug": "seo-aeo-geo",
+          "title": "SEO, AEO e GEO"
+        },
+        {
+          "slug": "sql-banco-de-dados",
+          "title": "SQL e Banco de Dados"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-seo-aeo-geo",
+          "title": "Auditoria de SEO, AEO e GEO"
+        }
+      ],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:sql-banco-de-dados"
+        }
+      ]
+    },
+    {
       "github": "rafa-coelho",
       "name": "Rafael Coelho",
       "avatar": "https://github.com/rafa-coelho.png",
@@ -177,36 +212,6 @@
         }
       ],
       "bootcamps": []
-    },
-    {
-      "github": "obrenoalvim",
-      "name": "Breno Alvim",
-      "avatar": "https://github.com/obrenoalvim.png",
-      "profile": "https://github.com/obrenoalvim",
-      "counts": {
-        "trilhas": 2,
-        "projetos": 0,
-        "bootcamps": 1,
-        "total": 3
-      },
-      "trilhas": [
-        {
-          "slug": "seo-aeo-geo",
-          "title": "SEO, AEO e GEO"
-        },
-        {
-          "slug": "sql-banco-de-dados",
-          "title": "SQL e Banco de Dados"
-        }
-      ],
-      "projetos": [],
-      "bootcamps": [
-        {
-          "slug": "desenvolvedor-backend",
-          "title": "Desenvolvedor Backend",
-          "via": "trilha:sql-banco-de-dados"
-        }
-      ]
     },
     {
       "github": "theneocarvalho",
