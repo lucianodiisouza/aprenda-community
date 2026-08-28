@@ -21,7 +21,7 @@ resources:
 
 Esse é o nó que muda o modelo mental. Em React puro, todo componente
 roda no browser (depois de empacotado). Em Next App Router, **todo
-componente roda no servidor por padrão** — até você marcar o
+componente roda no servidor por padrão** - até você marcar o
 contrário. Essa inversão é o que destrava RSC, e é a fonte da
 maioria da confusão inicial.
 
@@ -30,7 +30,7 @@ maioria da confusão inicial.
 **Por padrão, TUDO no App Router é Server Component.** Você não
 precisa fazer nada. `app/posts/page.tsx` é server, `components/Card.tsx`
 é server, `components/PostItem.tsx` é server. Eles rodam **no
-servidor**, geram HTML (e o "RSC payload" — veremos), e o resultado
+servidor**, geram HTML (e o "RSC payload" - veremos), e o resultado
 vai pro browser. O browser **nem sabe que esse código existiu**.
 
 ```tsx
@@ -56,7 +56,7 @@ o HTML pronto e o RSC payload (um JSON com a árvore de componentes
 serializada).
 
 **A diretiva `'use client'` na primeira linha transforma em Client
-Component.** É a única forma de "abrir a fronteira" — tudo que
+Component.** É a única forma de "abrir a fronteira" - tudo que
 dentro daquele arquivo (e nos arquivos que ele importa, transitivamente)
 passa a rodar no browser.
 
@@ -122,7 +122,7 @@ export function Icon() { return <span>X</span>; } // TAMBÉM client (mesmo arqui
 Se você quer um server e um client no mesmo conceito, são **dois
 arquivos**.
 
-**"Server Component" não quer dizer "sem JS"** — quer dizer "JS roda
+**"Server Component" não quer dizer "sem JS"** - quer dizer "JS roda
 no servidor". O server manda HTML pronto. O browser renderiza
 diretamente, sem precisar de JS do React pra aquela árvore. A
 única exceção: se houver Client Components **dentro** da árvore
@@ -132,13 +132,13 @@ server, aí sim eles viram JS no browser.
 
 **Serialização: tudo que passa de Server pra Client vira JSON.**
 Quando um Server Component renderiza um Client Component, os
-`props` precisam ser **serializáveis** — React os transforma em
+`props` precisam ser **serializáveis** - React os transforma em
 "server snapshot" e os envia ao browser. O que **não** pode:
 
-- Funções (exceto Server Actions — que são serializáveis por design)
+- Funções (exceto Server Actions - que são serializáveis por design)
 - `Date` vira string (na real, é convertido, mas a data original
   perde métodos). Use `string` ISO se precisar.
-- `Map`, `Set`, `BigInt` — idem, vira erro ou string
+- `Map`, `Set`, `BigInt` - idem, vira erro ou string
 - Instâncias de classe (vira `{}` ou erro)
 - `Symbol`
 
@@ -164,7 +164,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
 **"Marcar tudo como client" é o mesmo SPA de antes.** O erro
 clássico: adicionar `'use client'` no `layout.tsx` raiz "porque tem
-context/state". Pronto, você voltou pra SPA — o bundle é completo,
+context/state". Pronto, você voltou pra SPA - o bundle é completo,
 tudo roda no browser, você perdeu o ganho de RSC.
 
 Estratégia: **server por padrão, `'use client'` só onde precisa de
@@ -216,7 +216,7 @@ import { db } from "@/lib/db"; // 💥 ERRO DE BUILD - server-only em client
 Mesma coisa existe pra client: `import 'client-only'` no módulo que
 só faz sentido no browser (Sentry browser SDK, libs de localStorage).
 
-**Async server components: `async function Page() { const data = await ... }`.**
+**Async Server Components: `async function Page() { const data = await ... }`.**
 Server Components podem ser `async`. Você faz `await` no nível do
 componente, e o React espera resolver pra renderizar.
 
@@ -229,7 +229,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 }
 ```
 
-No Next 15+, `params` e `searchParams` viraram **Promises** — você
+No Next 15+, `params` e `searchParams` viraram **Promises** - você
 sempre dá `await`. Isso é uma mudança em relação a Next 14, e é
 fonte de bugs pra quem tá migrando.
 
@@ -270,27 +270,27 @@ resolver. Veremos isso a fundo em `streaming-ssr`.
 - `useContext` (Provider pode ser server, mas o `useContext` precisa rodar onde o hook é chamado)
 - `useSearchParams`, `usePathname`, `useRouter` do `next/navigation` (esses hooks são client-only)
 - Acessar `window`, `document`, `localStorage`, `sessionStorage`
-- Web APIs (`IntersectionObserver`, `ResizeObserver`) — `useEffect` resolve indiretamente
+- Web APIs (`IntersectionObserver`, `ResizeObserver`) - `useEffect` resolve indiretamente
 
 **`use()` pra data fetching client-side (React 19, experimental).**
 Hook que "desempacota" Promise no client. Combinado com `<Suspense>`,
 faz fetching client-side parecer async/await. Em 2026, ainda
-experimental — a trilha usa `useEffect` + `fetch` por padrão.
+experimental - a trilha usa `useEffect` + `fetch` por padrão.
 
 **Leitura recomendada:**
 
-- [React: Server Components (oficial, canônico)](https://react.dev/reference/rsc/server-components) — a referência.
-- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) — patterns oficiais de "como misturar server e client".
-- [Theo: 'use client' em 5 minutos](https://www.youtube.com/watch?v=9wiWzu_tDqM) — vídeo curto, direto ao ponto.
+- [React: Server Components (oficial, canônico)](https://react.dev/reference/rsc/server-components) - a referência.
+- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) - patterns oficiais de "como misturar server e client".
+- [Theo: 'use client' em 5 minutos](https://www.youtube.com/watch?v=9wiWzu_tDqM) - vídeo curto, direto ao ponto.
 
 > Dica: a primeira vez que você vê `'use client'`, parece que "é
 > tipo SPA mas dentro do Next". **Não é.** É o oposto: a maior
 > parte da árvore é server, e client é a exceção pontual. A regra
 > é: **se não precisa de hook ou evento, não marca como client**.
 > Se você tá marcando tudo como client, você tá escrevendo SPA com
-> sintaxe de Next — funciona, mas perde a vantagem toda.
+> sintaxe de Next - funciona, mas perde a vantagem toda.
 
-No próximo nó, vamos ver **padrões de composição** — como Server
+No próximo nó, vamos ver **padrões de composição** - como Server
 Components passam dados pra Client Components, como evitar o
 "prop drilling" de serialização, e onde mora cada tipo de dado
 quando os dois mundos se misturam.
@@ -341,7 +341,7 @@ nodeId="rsc-fundamentos"
       text: "Client Component, a menos que tenha a diretiva 'use server' no topo do arquivo",
       correct: false,
       explanation:
-        "A diretiva 'use server' marca uma FUNÇÃO como Server Action, não um componente. Para marcar um componente como server, você não faz nada - é o default.",
+        "A diretiva 'use server' marca uma FUNÇÃO como Server Action, não um componente. Para marcar um componente como server, você não faz nada - é o padrão.",
     },
     {
       text: "Ambos ao mesmo tempo, dependendo do contexto",

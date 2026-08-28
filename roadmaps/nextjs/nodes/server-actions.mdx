@@ -79,7 +79,7 @@ API separado.
 **Chamada de form: `<form action={myAction}>` funciona sem JS.**
 O framework injeta um handler que faz POST direto. Se o JS
 estiver desligado ou falhar em carregar, o form **continua
-funcionando** — vira form HTML tradicional.
+funcionando** - vira form HTML tradicional.
 
 ```tsx
 // app/posts/new/page.tsx (Server)
@@ -195,7 +195,7 @@ export async function deletePost(id: string) {
 ```
 
 **`revalidatePath` / `revalidateTag` dentro da action.** A
-mutation muda o dado — o cache do Next precisa ser invalidado
+mutation muda o dado - o cache do Next precisa ser invalidado
 senão a UI mostra dado velho. **Padrão: revalide no final da
 action, depois de `db.X.create/update/delete`.**
 
@@ -233,7 +233,7 @@ export async function createPost(formData: FormData) {
 
 **Otimistic updates: `useOptimistic` mostra a mudança antes do
 server confirmar.** Padrão útil pra "dar like", "marcar como
-lido", "adicionar ao carrinho" — coisas onde o usuário espera
+lido", "adicionar ao carrinho" - coisas onde o usuário espera
 resposta instantânea.
 
 ```tsx
@@ -294,18 +294,18 @@ export function Form() {
 }
 ```
 
-A action recebe `(prevState, formData)` — o estado anterior
+A action recebe `(prevState, formData)` - o estado anterior
 fica disponível pra encadear (ex: contadores, lista de erros
 acumulados).
 
 **Segurança: action é pública, validar sempre; rate limiting;
-CSRF.** Server Actions são **endpoints HTTP públicos** — qualquer
+CSRF.** Server Actions são **endpoints HTTP públicos** - qualquer
 um pode mandar POST com os argumentos certos. Valide **toda**
 entrada, sempre. Trate como se fosse uma API route.
 
 CSRF: o Next lida com isso automaticamente (token de origem
 embutido na action, validado no server). Mas **rate limiting
-não é automático** — você precisa adicionar (Upstash, Cloudflare,
+não é automático** - você precisa adicionar (Upstash, Cloudflare,
 etc.) se a action for sensível.
 
 **Server Action com argumentos validados (não FormData).** Você
@@ -359,14 +359,14 @@ Ele lê o status do form pai.
 não substituem 100% das APIs. Casos onde API route é melhor:
 
 - **Cliente que não é browser** (mobile, CLI, webhook de
-  terceiro) — eles não conseguem chamar Server Action
+  terceiro) - eles não conseguem chamar Server Action
   diretamente.
-- **Streaming response** (SSE, WebSocket establishment) — Server
+- **Streaming response** (SSE, WebSocket establishment) - Server
   Action retorna uma única resposta.
-- **Versionamento explícito** — API routes têm URL estável
+- **Versionamento explícito** - API routes têm URL estável
   (`/api/v1/posts`), Server Actions são chamadas por hash de
   função.
-- **Documentação OpenAPI/Swagger** — APIs públicas com
+- **Documentação OpenAPI/Swagger** - APIs públicas com
   documentação gerada.
 
 **Composição: action que chama outra action.** Funciona, mas
@@ -394,18 +394,18 @@ Ou no client: `const deleteThis = deletePost.bind(null, postId)`.
 
 **Leitura recomendada:**
 
-- [Next.js: Server Actions and Mutations (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) — referência canônica, com exemplos progressivos.
-- [React 19: useOptimistic (oficial)](https://react.dev/reference/react/useOptimistic) — o hook de optimistic update.
-- [Theo: Server Actions em 15 min](https://www.youtube.com/watch?v=OduKx1c5yUM) — overview visual.
+- [Next.js: Server Actions and Mutations (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - referência canônica, com exemplos progressivos.
+- [React 19: useOptimistic (oficial)](https://react.dev/reference/react/useOptimistic) - o hook de optimistic update.
+- [Theo: Server Actions em 15 min](https://www.youtube.com/watch?v=OduKx1c5yUM) - overview visual.
 
 > Dica: a primeira vez que você usa Server Action, vai parecer
 > mágica. "Como assim, sem API route?". Lembre: **a action é um
-> endpoint HTTP** — você pode até chamar via cURL
+> endpoint HTTP** - dá pra chamar via cURL
 > (`curl -X POST https://app.com/... -d "title=X"`). O Next gera
 > o cliente pra você, mas por baixo é HTTP. Trate como tal:
 > valide, autentique, limite.
 
-No próximo nó, vamos ver **streaming SSR** — como o Next manda
+No próximo nó, vamos ver **streaming SSR** - como o Next manda
 HTML em chunks, `<Suspense>` libera cada pedaço quando fica
 pronto, e como isso muda o "loading" que o usuário vê.
 

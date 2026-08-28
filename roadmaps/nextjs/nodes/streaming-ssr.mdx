@@ -55,7 +55,7 @@ antes de baixar inteiro.**
 
 **`loading.tsx`: Next automaticamente envolve `page.tsx` em
 Suspense com esse fallback.** É a forma mais fácil de ativar
-streaming — basta criar o arquivo.
+streaming - basta criar o arquivo.
 
 ```tsx
 // app/posts/loading.tsx
@@ -241,7 +241,7 @@ export default function Page() {
 
 **Quando streaming NÃO ajuda: a parte crítica é lenta (TTFB
 continua alto).** Se o header em si depende de um fetch lento
-(ex: dados do user logado), **o TTFB continua alto** — o
+(ex: dados do user logado), **o TTFB continua alto** - o
 streaming não ajuda. A solução: **não dependa de fetch no
 header**, ou faça o header client-side (Client Component com
 `useEffect` próprio).
@@ -309,7 +309,7 @@ export function CommentsSection({ postId }: { postId: string }) {
 }
 ```
 
-Em 2026, ainda experimental — cuidado com uso em produção. A
+Em 2026, ainda experimental - cuidado com uso em produção. A
 trilha usa o caminho "padrão" (Server Component com `await fetch`).
 
 **Partial pre-rendering (PPR): experimental no Next 15.** Mistura
@@ -340,9 +340,9 @@ Status: experimental em Next 15.x, em produção só com cuidado.
 
 **Leitura recomendada:**
 
-- [Next.js: Loading UI and Streaming (oficial)](https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming) — referência canônica, com diagramas de timing.
-- [Next.js: Error Handling (oficial)](https://nextjs.org/docs/app/building-your-application/routing/error-handling) — error boundaries, global-error, when each.
-- Vídeo: Dan Abramov — "Suspense" no React 18 (vale ver pra
+- [Next.js: Loading UI and Streaming (oficial)](https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming) - referência canônica, com diagramas de timing.
+- [Next.js: Error Handling (oficial)](https://nextjs.org/docs/app/building-your-application/routing/error-handling) - error boundaries, global-error, when each.
+- Vídeo: Dan Abramov - "Suspense" no React 18 (vale ver pra
   entender a intuição original).
 
 > Dica: a primeira vez que você implementa streaming de verdade,
@@ -350,11 +350,11 @@ Status: experimental em Next 15.x, em produção só com cuidado.
 > prática: **se a página tem fetch lento que afeta o conteúdo
 > principal, envolva em Suspense ou use loading.tsx**. Se o fetch
 > é só pra um widget secundário, deixe ele sem Suspense e o
-> widget aparece depois. Streaming é ferramenta — use onde
+> widget aparece depois. Streaming é ferramenta - use onde
 > agrega, não em todo lugar.
 
 No próximo nó, vamos fechar o ciclo de produção com **middleware
-e autenticação** — onde mora o "porteiro" da sua app (rotas
+e autenticação** - onde mora o "porteiro" da sua app (rotas
 protegidas, redirects, auth com Auth.js).
 
 <Quiz

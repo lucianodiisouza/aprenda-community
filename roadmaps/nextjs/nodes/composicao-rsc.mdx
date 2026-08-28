@@ -18,7 +18,7 @@ Você sabe que Server e Client Components coexistem. Sabe que
 Server manda HTML + RSC payload, Client vira JS no browser. Mas
 **como eles conversam**? Quem passa o quê pra quem? O que pode
 ser prop e o que não pode? Esse nó é o "missing manual" de
-composição — os padrões que se repetem em qualquer app real.
+composição - os padrões que se repetem em qualquer app real.
 
 ## O essencial 🟢
 
@@ -48,12 +48,12 @@ export default async function PostsPage() {
 
 Server faz o trabalho pesado (query), Client cuida do estado
 interativo (`useState` no `LikeButton`). Props que cruzam a
-fronteira: tipos primitivos, arrays, objetos plain — tudo
+fronteira: tipos primitivos, arrays, objetos plain - tudo
 serializável.
 
 **Padrão 2: "Client wraps server" (o contra-intuitivo).** Client
 Component recebe Server Component como `children` (ou `prop`) e
-renderiza. Isso permite layouts interativos com conteúdo
+renderiza. Isso destrava layouts interativos com conteúdo
 server-rendered dentro.
 
 ```tsx
@@ -107,7 +107,7 @@ está renderizado (não precisa de fetch client-side).
 **Por que o segundo padrão é contra-intuitivo mas necessário.**
 Imagine o caso "antigo": você tinha um Client Component que
 renderiza uma `<Card>` com dados. Em SPA, o Client Component
-fazia `useEffect` + fetch. Em RSC, você não quer `useEffect` —
+fazia `useEffect` + fetch. Em RSC, você não quer isso.
 quer o servidor renderizar. Mas a Card está dentro de um
 componente interativo (modal, accordion, tabs). Solução: o
 interativo (client) recebe o conteúdo (server) como `children`.
@@ -179,7 +179,7 @@ Persistência entre navegações:
   navegações (o layout NÃO remonta).
 - **State de servidor** (dados do DB): use cache do Next (próximo
   nó) ou TanStack Query.
-- **State de URL** (filtro, paginação): use `useSearchParams` —
+- **State de URL** (filtro, paginação): use `useSearchParams`.
   o state vive na URL, não em memória.
 
 **Estado compartilhado entre client islands.** O caso "dois
@@ -194,7 +194,7 @@ não têm hooks). Soluções:
 - **Context Provider no layout**: state global (auth, theme)
   mora num Client Component dentro do `layout.tsx`. O layout
   não remonta, então o Context persiste.
-- **State em URL**: filtros, paginação, modal aberto — vive
+- **State em URL**: filtros, paginação, modal aberto - vive
   na URL via `useSearchParams` + `useRouter`. Acessível,
   compartilhável, sobrevive a refresh.
 
@@ -233,7 +233,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 **`<form action={serverAction}>`: progressive enhancement.** Em
 React 19/Next 15, formulários podem chamar Server Actions
-diretamente. **Funciona sem JavaScript no browser** — o form
+diretamente. **Funciona sem JavaScript no browser** - o form
 faz `POST` tradicional, o server processa, devolve HTML.
 
 ```tsx
@@ -262,8 +262,8 @@ export async function createPost(formData: FormData) {
 }
 ```
 
-Se o JS do Next falhar em carregar, o form **continua funcionando**
-— o `<form action>` vira POST normal. Veremos mais em
+Se o JS do Next falhar em carregar, o form **continua funcionando**.
+O `<form action>` vira POST normal. Veremos mais em
 `server-actions`.
 
 **`useFormStatus`, `useFormState` (React 19, Next 15):** estado
@@ -329,7 +329,7 @@ export function PostActions({ postId, children }: { postId: string; children: Re
 ```
 
 **Server Actions como prop (passar função do server pra client).**
-Server Actions são serializáveis por design — o Next transforma
+Server Actions são serializáveis por design - o Next transforma
 em token que o client invoca via POST. Você pode passar
 `action={serverAction}` como prop.
 
@@ -397,8 +397,8 @@ local (client). O custo de cada um é óbvio pelo seu lugar.
 
 **Leitura recomendada:**
 
-- [React: Composition Patterns (oficial)](https://react.dev/learn/passing-props-to-a-component) — fundamentos.
-- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) — específico do Next.
+- [React: Composition Patterns (oficial)](https://react.dev/learn/passing-props-to-a-component) - fundamentos.
+- [Next.js: Composition Patterns (oficial)](https://nextjs.org/docs/app/building-your-application/rendering/composition-patterns) - específico do Next.
 
 > Dica: o erro mais comum em RSC é "tentar fazer o client fazer
 > trabalho do server". Você vê `useEffect` + `fetch` num Client
@@ -407,7 +407,7 @@ local (client). O custo de cada um é óbvio pelo seu lugar.
 > o bundle do browser encolhe, o SEO melhora, e o código fica
 > mais simples.
 
-No próximo nó, vamos ver **data fetching no server** — como
+No próximo nó, vamos ver **data fetching no server** - como
 `fetch` funciona com cache do Next, quando revalida, e como
 controlar tudo isso com `revalidatePath` e `revalidateTag`.
 

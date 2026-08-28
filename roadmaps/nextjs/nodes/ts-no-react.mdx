@@ -25,7 +25,7 @@ você de passar um dado que não pode ser serializado, ou de marcar como
 `client` algo que precisa ser `server`. Quem pula essa parte acaba brigando
 com o compilador lá na frente, sem entender por quê.
 
-Este nó é um **reforço focado em React** — assume que você já viu TS
+Este nó é um **reforço focado em React** - assume que você já viu TS
 básico (tipos primitivos, arrays, objetos, funções). Se isso não é
 verdade, pare aqui e vá fazer a trilha `typescript` antes.
 
@@ -61,14 +61,14 @@ function Botao({ label, onClick, variant = "primary" }: BotaoProps) {
 **`ReactNode` vs `ReactElement` vs `JSX.Element`.** A diferença é chata
 mas você vai esbarrar nela. Resumo prático:
 
-- **`ReactNode`** é o mais abrangente: aceita `string`, `number`,
+- **`ReactNode`:** o mais abrangente. Aceita `string`, `number`,
   `null`, `undefined`, `boolean`, `ReactElement`, array de `ReactNode`,
   portal, fragment. Use como tipo de `children` em 90% dos casos.
-- **`ReactElement`** é só "um elemento React criado por `createElement`
-  ou JSX" — não aceita string, número, nem `null`. Use quando você
+- **`ReactElement`:** "um elemento React criado por `createElement`
+  ou JSX". Não aceita string, número, nem `null`. Use quando você
   **garante** que children é um elemento (ex: slot que espera um único
   componente).
-- **`JSX.Element`** é o tipo que o JSX produz — é sinônimo de
+- **`JSX.Element`:** o tipo que o JSX produz. É sinônimo de
   `ReactElement` na prática, mas o uso do `JSX.Element` está caindo
   em desuso em favor de `ReactElement`.
 
@@ -103,7 +103,7 @@ function Botao({ variant = "primary", className, ...rest }: BotaoProps) {
 ```
 
 O ganho: `Botao` passa a aceitar `onClick`, `disabled`, `type`, `aria-*`,
-`data-*` automaticamente — sem digitar nada além do que é específico dele.
+`data-*` automaticamente - sem digitar nada além do que é específico dele.
 
 **Generics em componentes: `<T>` no JSX.** Quando o componente é
 genérico sobre um tipo de dado (lista, tabela, seletor), você usa
@@ -195,7 +195,7 @@ manualmente).
 
 **Branded types para design tokens.** Em sistemas de design, você quer
 que `cor` e `número` não sejam intercambiáveis. `branded type` é um
-"tipo nominal" — o TS obriga a converter explicitamente.
+"tipo nominal" - o TS obriga a converter explicitamente.
 
 ```tsx
 // "Marca" o tipo com uma tag invisível. Impossível atribuir um número
@@ -243,7 +243,7 @@ ref.current?.scrollToTop(); // tipado, autocomplete funciona
 ```
 
 Padrão importante em componentes de UI library (Radix, shadcn). Em RSC,
-a maior parte do `forwardRef` desaparece — Server Components não
+a maior parte do `forwardRef` desaparece - Server Components não
 aceitam ref.
 
 **Module augmentation (declarar tipos de SVGs, env vars).** Quando
@@ -270,19 +270,19 @@ declare namespace NodeJS {
 ```
 
 Sem isso, todo `process.env.X` vira `string | undefined` e o código
-vira `process.env.X!` (non-null assertion) por todo lado — um lugar
+vira `process.env.X!` (non-null assertion) por todo lado - um lugar
 onde o runtime quebra se a env não existir.
 
 **Tipos de `children` em RSC.** Em Next, `children` pode ser um Server
 Component (renderizado no servidor) ou um Client Component (renderizado
 no client). O tipo é o mesmo (`ReactNode`), mas o que você **pode
 fazer** com o que está dentro é diferente. Veremos isso a fundo no nó
-`composicao-rsc` — por ora, saiba que `ReactNode` cobre os dois casos
+`composicao-rsc` - por ora, saiba que `ReactNode` cobre os dois casos
 e você não precisa se preocupar com isso no tipo.
 
 ## Pra quem quer ir além 🔴
 
-**Template literal types para classnames condicionais.** TS 4.1+ permite
+**Template literal types para classnames condicionais.** TS 4.1+ consegue
 criar tipos a partir de strings:
 
 ```tsx
@@ -298,7 +298,7 @@ function Box({ p, m }: { p?: SpacingClass; m?: SpacingClass }) {
 
 Útil pra criar APIs de componentes "à prova de typo".
 
-**Inferência avançada com `infer`.** Permite extrair tipos de outros
+**Inferência avançada com `infer`.** Extrai tipos de outros
 tipos. O caso de uso mais comum: extrair o tipo de retorno de uma
 função ou o tipo de um array.
 
@@ -321,18 +321,18 @@ Muito usado pra derivar tipos de arrays de configuração.
 
 **Leitura recomendada:**
 
-- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/) — referência viva, atualizada pela comunidade.
-- [TypeScript Handbook: Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html) — a fonte canônica.
-- _Total TypeScript_ (Matt Pocock, pago) — curso profundo pra quem quer dominar a linguagem.
+- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/) - referência viva, atualizada pela comunidade.
+- [TypeScript Handbook: Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html) - a fonte canônica.
+- _Total TypeScript_ (Matt Pocock, pago) - curso profundo pra quem quer dominar a linguagem.
 
 > Dica: a melhor hora pra tipar é **enquanto você escreve**, não
 > depois. Se você deixar `any` ou `as` "só pra compilar" e for
 > resolver depois, você não resolve. Use `satisfies` por padrão, e
-> deixe o TS te guiar — quando ele reclamar, quase sempre ele está
+> deixe o TS te guiar - quando ele reclamar, quase sempre ele está
 > certo.
 
 No próximo nó, vamos começar a entender **por que existe um
-meta-framework** — o salto de SPA pra SSR e depois pra RSC.
+meta-framework** - o salto de SPA pra SSR e depois pra RSC.
 
 <Checkpoint
   challenge="Implemente um componente de lista genérica. A função `filtrarUsuarios(usuarios, termo)` recebe um array de usuários e um termo de busca, e retorna apenas os usuários cujo nome inclui o termo (case-insensitive). Use tipos explícitos em tudo - sem `any`."

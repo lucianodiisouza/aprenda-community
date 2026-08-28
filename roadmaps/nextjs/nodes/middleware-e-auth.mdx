@@ -29,7 +29,7 @@ os dois.
 
 ## O essencial 🟢
 
-**`middleware.ts` na raiz do projeto (ou em `src/`) — roda ANTES
+**`middleware.ts` na raiz do projeto (ou em `src/`) - roda ANTES
 de cada request.** É o primeiro código que vê a request, antes
 do routing, antes de page.tsx. Casos de uso típicos: redirect de
 não-logado, geo-redirect, headers de segurança, A/B test, rate
@@ -203,7 +203,7 @@ Auth.js e o NextAuth v4 foi renomeado. Mudanças principais:
 Migração: não é trivial. Se você tá começando projeto novo,
 use v5. Se tá em projeto v4, [guia de migração](https://authjs.dev/getting-started/migrating-to-v5).
 
-**`auth()` helper em server components.** Pra ler a sessão
+**`auth()` helper em Server Components.** Pra ler a sessão
 dentro de Server Component, use `auth()`:
 
 ```tsx
@@ -252,7 +252,7 @@ Em Auth.js v5 (Next 15), o hook é `useSession` de
 raiz (ver docs).
 
 **Middleware de auth: verificar JWT no cookie, redirecionar
-pra /login.** O caso de uso mais importante — proteger rotas:
+pra /login.** O caso de uso mais importante - proteger rotas:
 
 ```tsx
 // middleware.ts
@@ -316,7 +316,7 @@ valida em cada request. O Next também tem proteção própria
 único por action que precisa bater com o token.
 
 Na prática: você não precisa fazer nada. A proteção é
-automática. Mas saiba que **existe** — é parte do motivo de
+automática. Mas saiba que **existe** - é parte do motivo de
 actions serem seguras por default.
 
 **Logout: `signOut()` client + invalidação server.** Em
@@ -427,9 +427,9 @@ com Auth.js é a escolha.
 
 **Leitura recomendada:**
 
-- [Next.js: Middleware (oficial)](https://nextjs.org/docs/app/building-your-application/routing/middleware) — referência com exemplos progressivos.
-- [Auth.js: Getting Started](https://authjs.dev/getting-started) — setup canônico, com v5 docs.
-- [Lee Robinson: Authentication in Next 15](https://www.youtube.com/watch?v=eh89eirVOmw) — overview de 15min.
+- [Next.js: Middleware (oficial)](https://nextjs.org/docs/app/building-your-application/routing/middleware) - referência com exemplos progressivos.
+- [Auth.js: Getting Started](https://authjs.dev/getting-started) - setup canônico, com v5 docs.
+- [Lee Robinson: Authentication in Next 15](https://www.youtube.com/watch?v=eh89eirVOmw) - overview de 15min.
 
 > Dica: a primeira vez que você vê "middleware é Edge Runtime, não
 > dá pra usar Prisma", parece um bug. É uma escolha de arquitetura:

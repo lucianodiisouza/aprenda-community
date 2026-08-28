@@ -9,13 +9,13 @@ com cache, Server Actions, streaming, e deploy em produção. A
 ideia é fazer o ciclo completo: código local → CI verde → URL
 pública.
 
-Esse projeto não segue o esqueleto de 3 camadas dos outros nós
-— é um brief de projeto, no estilo de `projects/<slug>.mdx` do
+Esse projeto não segue o esqueleto de 3 camadas dos outros nós.
+É um brief de projeto, no estilo de `projects/<slug>.mdx` do
 aprenda-community. Lê até o fim antes de começar.
 
 ## O que você vai construir
 
-Um app de **blog com posts** (ou tasks, anotações, links — o
+Um app de **blog com posts** (ou tasks, anotações, links - o
 domínio é seu, mas o esqueleto é blog). Cada user logado pode
 **criar, listar, ver, editar e deletar** os próprios posts. A
 home mostra os posts públicos com **streaming** (cada post
@@ -83,7 +83,7 @@ UI/UX:
   "Tentar de novo".
 - [ ] Metadata API: `generateMetadata` em `/posts/[slug]`
   com title, description, openGraph.
-- [ ] `<Mermaid>` ou diagrama **não é necessário** — mas
+- [ ] `<Mermaid>` ou diagrama **não é necessário** - mas
   adicione um `<Figure>` com screenshot da app rodando no
   README do projeto (opcional).
 
@@ -149,7 +149,7 @@ Se você terminou o mínimo e quer ir além:
   `{ slug: string }`. Esquecer o `await params` resulta em
   "params is a Promise" no console.
 - **Confundir `revalidateTag` com `revalidatePath`.** Comece
-  usando `revalidatePath('/')` em todo lugar — funciona, só é
+  usando `revalidatePath('/')` em todo lugar - funciona, só é
   menos cirúrgico. Refine pra `revalidateTag('posts')` quando
   sentir necessidade.
 - **Esquecer o `await cookies()` pra forçar dynamic.** Se você
@@ -180,13 +180,13 @@ Se você terminou o mínimo e quer ir além:
 
 **Leituras que ajudam durante o projeto:**
 
-- [Next.js: Deploying to Vercel](https://nextjs.org/docs/app/building-your-application/deploying) — o caminho mais rápido pra deploy.
-- [Auth.js: Database sessions](https://authjs.dev/getting-started/adapters/prisma) — setup do adapter Prisma.
-- [Prisma: Quickstart](https://www.prisma.io/docs/getting-started/quickstart) — se você nunca usou Prisma.
+- [Next.js: Deploying to Vercel](https://nextjs.org/docs/app/building-your-application/deploying) - o caminho mais rápido pra deploy.
+- [Auth.js: Database sessions](https://authjs.dev/getting-started/adapters/prisma) - setup do adapter Prisma.
+- [Prisma: Quickstart](https://www.prisma.io/docs/getting-started/quickstart) - se você nunca usou Prisma.
 
 > O projeto final é onde a trilha vira "sua". As escolhas de
 > domínio (blog vs tasks vs links), de banco (SQLite vs
 > Postgres), de deploy (Vercel vs Cloudflare vs self-hosted)
-> são todas suas. O esqueleto dado é o **caminho feliz** —
+> são todas suas. O esqueleto dado é o **caminho feliz**,
 > desvie quando precisar, e anote as decisões no
 > `editorial-decisions.md` da trilha.

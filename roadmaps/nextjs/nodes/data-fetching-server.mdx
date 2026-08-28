@@ -51,7 +51,7 @@ diferença: o Next **intercepta o fetch** e adiciona cache.
 
 **O Next cacheia automaticamente o resultado de fetch entre
 requests (Data Cache).** Por padrão, `fetch` em Server Component
-é **cacheado indefinidamente** — a mesma URL é chamada uma vez,
+é **cacheado indefinidamente** - a mesma URL é chamada uma vez,
 o resultado é guardado, e requests subsequentes usam o cache.
 
 ```tsx
@@ -203,7 +203,7 @@ O default do `fetch` em Server Component é cachear. `force-cache`
 mencionado: cookies, headers, searchParams específicos do user
 **desligam** o cache automaticamente. Se você tá vendo "dados do
 outro usuário" no seu dashboard, é porque você não tá lendo
-cookies/headers — adicione `await cookies()` (mesmo sem usar o
+cookies/headers - adicione `await cookies()` (mesmo sem usar o
 valor) pra forçar dynamic.
 
 ```tsx
@@ -303,9 +303,9 @@ no nó `streaming-ssr`.
 
 **Leitura recomendada:**
 
-- [Next.js: Caching in Next.js (oficial)](https://nextjs.org/docs/app/building-your-application/caching) — mapa completo dos 4 caches.
-- [Next.js: Data Fetching (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/fetching) — referência de fetch.
-- [Lee Robinson: revalidateTag em 90s](https://www.youtube.com/watch?v=f4H74L8jQ5Y) — o resumo curto que eu queria ter visto antes de aprender.
+- [Next.js: Caching in Next.js (oficial)](https://nextjs.org/docs/app/building-your-application/caching) - mapa completo dos 4 caches.
+- [Next.js: Data Fetching (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/fetching) - referência de fetch.
+- [Lee Robinson: revalidateTag em 90s](https://www.youtube.com/watch?v=f4H74L8jQ5Y) - o resumo curto que eu queria ter visto antes de aprender.
 
 > Dica: a primeira vez que você vê "minha mudança não apareceu",
 > 9 em 10 vezes é cache. Antes de debugar, faça `revalidateTag`
@@ -313,7 +313,7 @@ no nó `streaming-ssr`.
 > Cache do Next é agressivo por design (performance), e por isso
 > é fonte de bugs pra quem vem de SPA.
 
-No próximo nó, vamos ver **Server Actions** — o caminho moderno
+No próximo nó, vamos ver **Server Actions** - o caminho moderno
 pra mutations: `revalidateTag` pós-create/update/delete, validação
 server-side, e progressive enhancement (form funciona sem JS).
 
