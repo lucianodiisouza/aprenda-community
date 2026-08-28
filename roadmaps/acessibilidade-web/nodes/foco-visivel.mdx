@@ -1,0 +1,131 @@
+---
+id: foco-visivel
+title: "Foco Visível: Nunca Esconda Onde a Pessoa Está"
+resources:
+  - title: "Focus Visible - WCAG 2.2"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Pseudo-classe :focus-visible"
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:focus-visible
+    type: doc
+    lang: en
+    free: true
+---
+
+Quem navega com teclado precisa enxergar qual controle receberá a próxima ação.
+Um bom indicador não depende apenas de uma mudança sutil de cor.
+
+```css
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+```
+
+Em um botão azul-escuro, o contorno amarelo cria contraste com o controle e com o
+fundo próximo. Teste em todos os temas e estados, não apenas no botão padrão.
+
+### Não apague o foco sem substituir
+
+```css
+/* evite */
+*:focus {
+  outline: none;
+}
+```
+
+Se o estilo padrão não combina com o design, crie outro **tão visível quanto**.
+Nunca remova primeiro para "resolver depois"; esse depois costuma não chegar.
+
+### `:focus-visible` reduz ruído visual
+
+Ele permite mostrar um indicador quando o navegador entende que ele é necessário,
+especialmente em navegação por teclado. `:focus` continua útil quando o próprio
+componente precisa reagir a qualquer tipo de foco.
+
+```css
+/* Destaca o grupo quando qualquer campo interno recebe foco. */
+.campo:focus-within {
+  border-color: #2563eb;
+}
+```
+
+### O foco também não pode ficar escondido
+
+Headers fixos, barras de cookies e containers com `overflow` podem cobrir o elemento
+focado. Além de testar a navegação real, reserve espaço ao rolar até âncoras:
+
+```css
+:target,
+[tabindex="-1"] {
+  scroll-margin-block-start: 5rem;
+}
+```
+
+- **Indicador visível** mostra onde a interação está.
+- **`outline: none`** sem substituto cria uma barreira.
+- **`:focus-visible`** ajuda a diferenciar foco de teclado e outros casos.
+- **Foco não encoberto** mantém o controle inteiro ou parcialmente visível.
+
+> Dica: percorra a tela inteira com Tab. Se em algum momento você precisar adivinhar onde está, o foco não está bom o suficiente.
+
+### Compare visualmente
+
+No checkpoint abaixo, o botão começa sem um estilo de foco próprio. Adicione um
+contorno que continue claro sobre o fundo escuro e use `outline-offset` para
+separá-lo da borda.
+
+No próximo nó, vamos aplicar semântica e foco a uma parte cheia de detalhes: **formulários**.
+
+<VisualCheckpoint
+  challenge="Crie um foco visível no botão com outline de pelo menos 3px e outline-offset de pelo menos 2px."
+  starterHtml={`<button type="button">Salvar alterações</button>`}
+  starterCss={`body { background: #111827; padding: 2rem; }
+button {
+  padding: 0.75rem 1rem;
+  color: white;
+  background: #1d4ed8;
+  border: 0;
+}
+
+button:focus-visible {
+  /* adicione o indicador aqui */
+}`}
+  assert={`
+    const rules = [...root.ownerDocument.styleSheets]
+      .flatMap(sheet => [...sheet.cssRules]);
+    const rule = rules.find(item =>
+      item.selectorText?.includes('button:focus-visible')
+    );
+    const width = parseFloat(rule?.style.outlineWidth || '0');
+    const offset = parseFloat(rule?.style.outlineOffset || '0');
+    return {
+      pass: width >= 3 && offset >= 2 && rule?.style.outlineStyle !== 'none',
+      message: 'O botão precisa de outline visível com 3px ou mais e offset de 2px ou mais.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="foco-visivel"
+/>
+
+<Quiz
+  question="Qual é uma boa forma de tratar o foco visível?"
+  options={[
+    {
+      text: "Criar um indicador de foco claro quando o estilo padrão não serve",
+      correct: true,
+    },
+    {
+      text: "Aplicar outline: none em todos os elementos focáveis",
+      correct: false,
+      explanation: "Isso remove o sinal de localização de quem navega por teclado.",
+    },
+    {
+      text: "Usar só efeito de hover, porque foco e mouse são equivalentes",
+      correct: false,
+      explanation: "Hover depende do ponteiro. Foco precisa funcionar para teclado e outras entradas.",
+    },
+  ]}
+/>

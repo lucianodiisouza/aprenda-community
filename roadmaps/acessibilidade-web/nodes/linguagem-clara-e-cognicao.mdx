@@ -1,0 +1,116 @@
+---
+id: linguagem-clara-e-cognicao
+title: "Linguagem Clara e Cognição: Menos Esforço para Entender"
+resources:
+  - title: "Acessibilidade cognitiva no W3C"
+    url: https://www.w3.org/WAI/cognitive/
+    type: doc
+    lang: en
+    free: true
+  - title: "Conteúdo claro e compreensível - W3C"
+    url: https://www.w3.org/WAI/WCAG2/supplemental/objectives/o3-clear-content/
+    type: doc
+    lang: en
+    free: true
+  - title: "Acessibilidade cognitiva - MDN"
+    url: https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Cognitive_accessibility
+    type: doc
+    lang: en
+    free: true
+---
+
+Acessibilidade também é conseguir entender o que a interface está pedindo. Uma
+página pode funcionar por teclado, ter bom contraste e ainda exigir memória,
+interpretação ou atenção demais.
+
+```txt
+Ruim:   Seu cadastro encontra-se pendente de regularização cadastral.
+Melhor: Seu cadastro ainda não foi concluído.
+        Revise seu CPF e envie o documento pendente.
+```
+
+### Escreva para a ação
+
+Use frases diretas, verbos claros e nomes consistentes para a mesma coisa. Se a
+tela chama algo de "pedido", não troque para "solicitação" no botão seguinte.
+
+```html
+<p id="ajuda-cpf">Digite apenas números, sem pontos ou traços.</p>
+<button type="submit">Enviar cadastro</button>
+```
+
+O texto não precisa ser frio. Ele só precisa deixar evidente o que vai acontecer.
+
+### Reduza memória e repetição
+
+Não peça que a pessoa lembre dados que a própria interface já sabe. Preserve
+informações digitadas, permita copiar e colar, aceite gerenciadores de senha e
+evite pedir o mesmo dado duas vezes na mesma sessão.
+
+```html
+<label for="codigo">Código recebido por e-mail</label>
+<input
+  id="codigo"
+  name="codigo"
+  inputmode="numeric"
+  autocomplete="one-time-code"
+/>
+```
+
+Esse cuidado reduz erro, cansaço e bloqueios em fluxos como login, compra e
+recuperação de conta.
+
+### Mostre onde a pessoa está
+
+Em processos com etapas, deixe o progresso explícito e mantenha a ordem previsível.
+
+```html
+<nav aria-label="Etapas do cadastro">
+  <ol>
+    <li>Conta</li>
+    <li aria-current="step">Documentos</li>
+    <li>Revisão</li>
+  </ol>
+</nav>
+```
+
+`aria-current="step"` comunica a etapa atual para tecnologias assistivas. O mesmo
+padrão visual e textual ajuda quem volta depois, usa leitor de tela ou precisa
+confirmar se está no lugar certo.
+
+- **Linguagem clara** reduz interpretação desnecessária.
+- **Consistência** evita reaprender a interface a cada tela.
+- **Menos memória exigida** torna tarefas longas mais recuperáveis.
+- **Progresso visível** ajuda a pessoa a se orientar.
+
+> Dica: releia a tela perguntando "o que eu faço agora?". Se a resposta depende
+> de adivinhar, o texto ou o fluxo ainda precisa melhorar.
+
+### Teste a compreensão do fluxo
+
+Peça para alguém explicar, em voz alta, qual é a próxima ação sem clicar em nada.
+Depois recarregue a página, volte uma etapa e tente continuar sem perder dados.
+Barreiras cognitivas aparecem quando a pessoa entende cada campo isolado, mas se
+perde na tarefa completa.
+
+No próximo nó, vamos olhar para uma barreira mais visual: **cor e contraste**.
+
+<Quiz
+  question="Qual decisão reduz carga cognitiva em um fluxo de cadastro?"
+  options={[
+    {
+      text: "Usar linguagem direta, preservar dados e mostrar a etapa atual",
+      correct: true,
+    },
+    {
+      text: "Trocar todos os textos por ícones para deixar a tela mais curta",
+      correct: false,
+      explanation: "Ícones sem texto podem exigir interpretação extra e não resolvem orientação sozinhos.",
+    },
+    {
+      text: "Obrigar a pessoa a preencher tudo novamente quando há erro",
+      correct: false,
+      explanation: "Isso aumenta esforço, memória exigida e chance de abandono.",
+    },
+  ]}
+/>

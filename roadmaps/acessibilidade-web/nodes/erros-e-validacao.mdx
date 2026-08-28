@@ -1,0 +1,118 @@
+---
+id: erros-e-validacao
+title: "Erros e Validação: Como Explicar o que Precisa ser Corrigido"
+resources:
+  - title: "Validação de entrada em formulários"
+    url: https://www.w3.org/WAI/tutorials/forms/validation/
+    type: doc
+    lang: en
+    free: true
+  - title: "Notificações em formulários"
+    url: https://www.w3.org/WAI/tutorials/forms/notifications/
+    type: doc
+    lang: en
+    free: true
+---
+
+Pintar um campo de vermelho não explica o problema. Uma boa validação diz **o que
+aconteceu, onde aconteceu e como corrigir**, sem apagar o que já foi digitado.
+
+```html
+<div class="campo-com-erro">
+  <label for="cpf">CPF</label>
+  <input
+    id="cpf"
+    name="cpf"
+    value="123"
+    aria-invalid="true"
+    aria-describedby="ajuda-cpf erro-cpf"
+  />
+  <p id="ajuda-cpf">Digite apenas números.</p>
+  <p id="erro-cpf"><strong>Erro:</strong> o CPF precisa ter 11 números.</p>
+</div>
+```
+
+### A mensagem precisa ser específica
+
+Evite "campo inválido". Prefira algo acionável, como "Digite uma data no formato DD/MM/AAAA".
+
+### Associe erro e campo
+
+`aria-describedby` permite apresentar ajuda e erro junto do campo.
+`aria-invalid="true"` comunica que o valor atual não passou na validação. Adicione
+esses atributos quando o erro existir; não marque todos os campos como inválidos
+antes da primeira tentativa.
+
+### Ajude a pessoa a encontrar os erros
+
+Em formulários longos, um resumo no topo pode listar os problemas e apontar para
+cada campo:
+
+```html
+<div id="resumo-erros" role="alert" tabindex="-1">
+  <h2>Não foi possível criar a conta</h2>
+  <ul>
+    <li><a href="#cpf">CPF precisa ter 11 números</a></li>
+    <li><a href="#email">Informe um e-mail válido</a></li>
+  </ul>
+</div>
+```
+
+Depois do envio inválido, mova o foco para o resumo. Ao ativar um link, a pessoa
+chega ao campo e encontra a mensagem associada.
+
+```js
+const resumo = document.querySelector('#resumo-erros');
+
+if (!formulario.checkValidity()) {
+  resumo.hidden = false;
+  resumo.focus();
+}
+```
+
+<Mermaid
+  chart={`flowchart TD
+    E["Pessoa envia"] --> V["Validar campos"]
+    V -->|"válido"| S["Concluir ação"]
+    V -->|"inválido"| R["Exibir resumo e mensagens"]
+    R --> F["Foco no resumo"]
+    F --> C["Link leva ao campo"]
+    C --> E`}
+  caption="Fluxo de erro recuperável: informar, levar ao campo, preservar o valor e permitir nova tentativa."
+/>
+
+- **Mensagem específica** explica o próximo passo.
+- **Associação programática** conecta o erro ao campo certo.
+- **Não dependa só de cor** para indicar problema.
+- **Preserve os dados** para a pessoa corrigir apenas o necessário.
+
+> Dica: valide sem apagar o que a pessoa já digitou. Corrigir um dado é melhor do que preencher tudo de novo.
+
+### Teste como uma pessoa corrigiria
+
+Envie o formulário vazio, escute o anúncio, use os links do resumo e corrija um
+campo por vez. Confirme que a mensagem some quando o valor fica válido e que o foco
+não salta sem motivo a cada tecla digitada.
+
+No próximo nó, vamos ampliar essa ideia: textos, fluxos e decisões também precisam
+ser fáceis de entender.
+
+<Quiz
+  question="Como uma mensagem de erro fica mais acessível?"
+  options={[
+    {
+      text: "Ela é específica, acionável e associada ao campo certo",
+      correct: true,
+    },
+    {
+      text: "Ela aparece apenas em vermelho, perto do campo",
+      correct: false,
+      explanation: "Cor sozinha pode passar despercebida. A mensagem precisa ser textual e associada.",
+    },
+    {
+      text: "Ela apaga o valor inválido para forçar uma nova tentativa",
+      correct: false,
+      explanation: "Apagar o que a pessoa digitou aumenta esforço e frustração.",
+    },
+  ]}
+/>

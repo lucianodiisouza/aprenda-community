@@ -1,0 +1,119 @@
+---
+id: ferramentas-de-teste
+title: "Ferramentas de Teste: Softwares, Extensões e CI"
+resources:
+  - title: "Ferramentas de avaliação de acessibilidade"
+    url: https://www.w3.org/WAI/test-evaluate/tools/list/
+    type: doc
+    lang: en
+    free: true
+  - title: "axe-core - motor de testes automatizados"
+    url: https://github.com/dequelabs/axe-core
+    type: doc
+    lang: en
+    free: true
+  - title: "Accessibility Insights for Web"
+    url: https://accessibilityinsights.io/docs/web/overview/
+    type: doc
+    lang: en
+    free: true
+---
+
+Ferramenta de teste não é um juiz final: é uma lanterna. Cada software ilumina um
+tipo de problema e deixa outros para revisão humana, leitor de tela e teste da
+tarefa real.
+
+```txt
+WAVE                    -> revisão visual de uma página no navegador
+Lighthouse              -> auditoria rápida no DevTools, CLI ou relatório
+axe DevTools            -> inspeção com regras, severidade e sugestões
+Accessibility Insights  -> FastPass e avaliação guiada por requisito
+axe-core + Playwright   -> testes automatizados de fluxos e componentes
+Pa11y / Pa11y CI        -> varredura de URLs em linha de comando e CI
+NVDA, VoiceOver, TalkBack -> conferir como a interface é anunciada
+```
+
+### Extensões ajudam durante o desenvolvimento
+
+Use **WAVE**, **axe DevTools** ou **Accessibility Insights** enquanto mexe na tela.
+Elas mostram problemas perto do elemento afetado: `label` ausente, heading pulado,
+contraste insuficiente, ARIA inválido ou controle sem nome acessível.
+
+O melhor uso é investigar uma página específica depois de uma mudança. Corrija,
+rode de novo e confirme se o problema desapareceu sem criar outro.
+
+### Lighthouse dá uma fotografia rápida
+
+Lighthouse é útil para uma triagem inicial, principalmente porque já fica no
+Chrome DevTools e também pode rodar por CLI. Use o relatório para descobrir
+falhas comuns, mas não trate a pontuação como aprovação de acessibilidade.
+
+```bash
+npx lighthouse http://localhost:5173 --only-categories=accessibility
+```
+
+Um score alto não garante que o fluxo por teclado faz sentido, que o texto
+alternativo está correto ou que a mensagem de erro ajuda de verdade.
+
+### CI pega regressão repetível
+
+Quando a aplicação já tem testes automatizados, integre um motor como **axe-core**
+em testes de componente ou E2E. Assim, um botão sem nome ou um `aria-*` inválido
+pode falhar no pull request antes de chegar em produção.
+
+```js
+import AxeBuilder from '@axe-core/playwright';
+
+test('checkout não tem violações automáticas conhecidas', async ({ page }) => {
+  await page.goto('/checkout');
+  const results = await new AxeBuilder({ page }).analyze();
+
+  expect(results.violations).toEqual([]);
+});
+```
+
+Para sites publicados ou páginas estáticas, **Pa11y CI** pode percorrer uma lista
+de URLs e gerar falha no pipeline quando encontrar problemas configurados.
+
+```bash
+npx pa11y-ci --sitemap https://exemplo.com/sitemap.xml
+```
+
+### Leitor de tela continua sendo indispensável
+
+NVDA, VoiceOver, TalkBack e leitores semelhantes não substituem ferramentas
+automáticas; eles respondem outra pergunta: "a experiência anunciada faz sentido?".
+Use para conferir nomes, ordem, estados, mensagens dinâmicas e fluxo de foco.
+
+- **Extensão de navegador** é boa para investigar uma tela em construção.
+- **Lighthouse** ajuda na triagem e na comunicação de achados simples.
+- **axe-core** automatiza regras conhecidas dentro dos testes.
+- **Pa11y CI** monitora páginas por URL em linha de comando.
+- **Leitor de tela** valida a experiência que a automação não entende sozinha.
+
+> Dica: escolha uma ferramenta por pergunta. "O que quebrou nesta tela?" pede
+> extensão. "O PR introduziu regressão?" pede CI. "A tarefa é compreensível?"
+> pede teste manual.
+
+No último nó, vamos juntar ferramentas, teclado, zoom e leitor de tela em um
+roteiro de **auditoria prática**.
+
+<Quiz
+  question="Qual é um bom uso de axe-core ou Pa11y em uma equipe?"
+  options={[
+    {
+      text: "Rodar verificações automáticas em PR ou CI para pegar regressões comuns",
+      correct: true,
+    },
+    {
+      text: "Substituir completamente teste com teclado e leitor de tela",
+      correct: false,
+      explanation: "Automação ajuda muito, mas não entende todos os fluxos e significados.",
+    },
+    {
+      text: "Aprovar a acessibilidade apenas quando o score do Lighthouse for 100",
+      correct: false,
+      explanation: "Score é triagem, não garantia de uso real.",
+    },
+  ]}
+/>

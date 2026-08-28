@@ -1,0 +1,140 @@
+---
+id: cor-e-contraste
+title: "Cor e Contraste: Informação que Não Depende Só da Cor"
+resources:
+  - title: "Contraste mínimo - WCAG 2.2"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Uso de cor - WCAG 2.2"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Texto cinza-claro em fundo branco pode parecer elegante em uma tela e desaparecer
+em outra. Contraste é uma relação entre **primeiro plano e fundo**, não uma
+propriedade isolada da cor do texto.
+
+```txt
+cinza #6b7280 sobre branco #ffffff: 4.83:1  -> passa para texto normal
+cinza #9ca3af sobre branco #ffffff: 2.54:1  -> não passa para texto normal
+```
+
+No nível AA da WCAG, a referência é **4.5:1 para texto normal** e **3:1 para texto
+grande**, dentro das condições definidas pelo critério. Componentes e indicadores
+visuais importantes, como borda de campo e foco, também precisam ser distinguíveis.
+
+```css
+/* Evite uma combinação fraca. */
+.ajuda-fraca {
+  color: #9ca3af;
+  background: #ffffff;
+}
+
+/* Uma opção com contraste melhor. */
+.ajuda-legivel {
+  color: #4b5563;
+  background: #ffffff;
+}
+```
+
+### Cor não pode carregar a informação sozinha
+
+Evite instruções como "campos em vermelho têm erro". Combine cor com texto, ícone, borda ou outra pista perceptível.
+
+```html
+<label for="cep">CEP</label>
+<input id="cep" aria-invalid="true" aria-describedby="erro-cep" />
+<p id="erro-cep"><span aria-hidden="true">!</span> CEP deve ter 8 números.</p>
+```
+
+Agora há quatro pistas: texto específico, estado `aria-invalid`, símbolo e estilo
+visual. Mesmo sem perceber o vermelho, a pessoa entende o problema.
+
+### Estados também precisam aparecer
+
+Foco, erro, selecionado e desabilitado devem continuar distinguíveis sem depender
+de uma diferença mínima de tonalidade:
+
+```css
+.aba[aria-selected="true"] {
+  color: #111827;
+  background: #facc15;
+  border-bottom: 4px solid currentColor;
+  font-weight: 700;
+}
+```
+
+A borda e o peso reforçam o estado selecionado. A cor continua ajudando, mas não
+carrega a informação sozinha.
+
+- **Contraste** precisa ser suficiente para leitura.
+- **Cor sozinha** não deve transmitir informação essencial.
+- **Estados visuais** precisam ter pistas perceptíveis.
+
+### Verifique com ferramenta e com contexto
+
+Use o seletor de cores do DevTools ou um contrast checker para medir a combinação
+real. Depois confira também hover, foco, erro, tema escuro e conteúdo sobre imagens.
+Uma variável de design correta pode falhar quando aplicada sobre outro fundo.
+
+> Dica: verifique contraste durante o design, não só na auditoria final.
+
+No próximo nó, vamos testar o que acontece quando a pessoa **amplia a página ou prefere menos movimento**.
+
+<VisualCheckpoint
+  challenge="Ajuste a cor do texto para alcançar contraste mínimo de 4.5:1 sobre o fundo branco."
+  starterHtml={`<p class="aviso">Sua sessão termina em 5 minutos.</p>`}
+  starterCss={`.aviso {
+  color: #9ca3af;
+  background: #ffffff;
+  padding: 1rem;
+}`}
+  assert={`
+    const element = root.querySelector('.aviso');
+    const style = getComputedStyle(element);
+    const rgb = value => (value.match(/\d+(?:\.\d+)?/g) || []).slice(0, 3).map(Number);
+    const luminance = value => {
+      const channels = rgb(value).map(channel => {
+        const normalized = channel / 255;
+        return normalized <= 0.03928
+          ? normalized / 12.92
+          : Math.pow((normalized + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    };
+    const foreground = luminance(style.color);
+    const background = luminance(style.backgroundColor);
+    const ratio = (Math.max(foreground, background) + 0.05) /
+      (Math.min(foreground, background) + 0.05);
+    return {
+      pass: ratio >= 4.5,
+      message: 'O contraste calculado é ' + ratio.toFixed(2) + ':1; alcance pelo menos 4.5:1.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="cor-e-contraste"
+/>
+
+<Quiz
+  question="Qual ajuste evita depender só da cor para indicar erro?"
+  options={[
+    {
+      text: "Combinar cor com texto, ícone, borda ou outra pista perceptível",
+      correct: true,
+    },
+    {
+      text: "Usar um vermelho mais saturado",
+      correct: false,
+      explanation: "Mais saturação ainda depende de percepção de cor e pode falhar para parte das pessoas.",
+    },
+    {
+      text: "Mostrar a explicação apenas em tooltip no hover",
+      correct: false,
+      explanation: "Hover não atende bem teclado, toque e várias tecnologias assistivas.",
+    },
+  ]}
+/>

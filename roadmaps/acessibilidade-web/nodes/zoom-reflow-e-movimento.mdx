@@ -1,0 +1,133 @@
+---
+id: zoom-reflow-e-movimento
+title: "Zoom, Reflow e Movimento: Respeitando Preferências"
+resources:
+  - title: "Reflow - WCAG 2.2"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/reflow.html
+    type: doc
+    lang: en
+    free: true
+  - title: "prefers-reduced-motion"
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion
+    type: doc
+    lang: en
+    free: true
+  - title: "prefers-color-scheme (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/CSS/@media/prefers-color-scheme
+    type: doc
+    lang: pt
+    free: true
+---
+
+A pessoa pode aumentar o zoom, usar fonte maior ou abrir a página lado a lado com
+outro aplicativo. O layout precisa se reorganizar sem esconder conteúdo nem
+transformar cada linha em uma rolagem horizontal.
+
+```css
+.container {
+  width: min(100% - 2rem, 70rem);
+  margin-inline: auto;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: 1rem;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+```
+
+### Reflow deixa o conteúdo se adaptar
+
+Layouts flexíveis ajudam texto e controles a caberem em uma área menor sem perda de
+informação. No exemplo, os cards passam de várias colunas para uma coluna quando
+falta espaço; nenhum texto é cortado.
+
+### Texto precisa crescer sem perder conteúdo
+
+Evite dimensões que só funcionam com uma quantidade exata de texto:
+
+### Alturas rígidas podem cortar conteúdo
+
+```css
+/* Cuidado: corta a descrição quando o texto aumenta. */
+.card {
+  height: 180px;
+  overflow: hidden;
+}
+
+/* Prefira permitir crescimento. */
+.card {
+  min-height: 180px;
+}
+```
+
+Unidades relativas como `rem`, `%` e `ch` ajudam, mas não garantem acessibilidade
+sozinhas. O teste real é aumentar texto e zoom e verificar se a tarefa continua
+possível.
+
+### Movimento também é uma preferência
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+Reduzir movimento não significa remover feedback. Uma barra de progresso pode
+atualizar sem deslizar; um modal pode aparecer sem zoom ou giro. Preserve o estado
+final e a compreensão da ação.
+
+### Evite rolagem presa e conteúdo fixo demais
+
+`height: 100vh`, painéis internos roláveis e cabeçalhos fixos podem deixar ações
+fora da tela quando o teclado virtual aparece ou o zoom aumenta. Prefira
+`min-height`, fluxo normal e poucas regiões de rolagem.
+
+- **Zoom e reflow** precisam preservar conteúdo e funcionalidade.
+- **Tamanhos rígidos** podem quebrar quando fonte ou zoom aumentam.
+- **`prefers-reduced-motion`** respeita a preferência de reduzir animações.
+- **Fluxo normal** permite que a página cresça conforme conteúdo e fonte.
+
+### Matriz prática de teste
+
+| Situação | O que conferir |
+| --- | --- |
+| Zoom `200%` | Texto não sobrepõe controles e ações continuam visíveis. |
+| Viewport com `320 CSS px` | Conteúdo comum reflui sem rolagem em duas direções. |
+| Fonte maior no navegador | Cards e botões crescem sem cortar palavras. |
+| Movimento reduzido no sistema | Animações intensas são removidas ou simplificadas. |
+
+> Dica: teste com zoom alto **e** viewport estreita. Você encontra problemas que
+> dificilmente aparecem olhando só o desktop em 100%.
+
+No próximo nó, vamos conhecer ARIA — e por que ela deve entrar **depois** do HTML nativo, não antes.
+
+<Quiz
+  question="Qual sinal mostra problema de reflow ao testar zoom alto?"
+  options={[
+    {
+      text: "Conteúdo cortado ou rolagem horizontal para ler uma linha comum",
+      correct: true,
+    },
+    {
+      text: "O layout muda de posição para caber melhor",
+      correct: false,
+      explanation: "Reorganizar o layout é esperado. O problema é perder conteúdo ou função.",
+    },
+    {
+      text: "Imagens flexíveis ficam menores dentro da área disponível",
+      correct: false,
+      explanation: "Imagens responsivas ajudam o conteúdo a caber sem quebrar a leitura.",
+    },
+  ]}
+/>

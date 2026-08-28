@@ -1,0 +1,159 @@
+---
+id: testes-e-auditoria
+title: "Testes de Acessibilidade: Da Tarefa ao Relatório"
+resources:
+  - title: "Easy Checks - revisão inicial de acessibilidade"
+    url: https://www.w3.org/WAI/test-evaluate/preliminary/
+    type: doc
+    lang: en
+    free: true
+  - title: "Visão geral sobre avaliação de acessibilidade"
+    url: https://www.w3.org/WAI/test-evaluate/
+    type: doc
+    lang: en
+    free: true
+  - title: "Como usar leitor de tela para testar (YouTube, em inglês)"
+    url: https://www.youtube.com/watch?v=dEbl5jvL2_Q
+    type: video
+    lang: en
+    free: true
+---
+
+Nenhuma ferramenta automática prova sozinha que uma interface é acessível. Depois
+de conhecer os principais softwares de apoio, use automação junto com testes que
+exercitam uma tarefa real do começo ao fim.
+
+```txt
+Tarefa escolhida: criar uma conta
+1. concluir apenas com teclado
+2. repetir com zoom de 200%
+3. conferir nomes e mensagens com leitor de tela
+4. executar ferramenta automática
+5. registrar barreira, impacto e correção
+```
+
+<Mermaid
+  chart={`flowchart TD
+    T["Escolher tarefa real"] --> K["Teclado"]
+    K --> Z["Zoom e reflow"]
+    Z --> S["Leitor de tela"]
+    S --> A["Automação"]
+    A --> R["Corrigir e repetir"]
+    R --> K`}
+  caption="A auditoria é um ciclo: executar a tarefa, encontrar barreiras, corrigir e testar novamente."
+/>
+
+### Comece pelo teclado
+
+Use `Tab`, `Shift + Tab`, `Enter`, `Espaço` e `Escape`. Confira se você alcança os
+controles, entende a ordem, sempre enxerga o foco e consegue sair de componentes.
+
+```txt
+[ ] A ação principal recebe foco
+[ ] A ordem acompanha a tela
+[ ] Menus e modais abrem e fecham
+[ ] Não existe keyboard trap
+[ ] O foco não fica atrás de conteúdo fixo
+```
+
+### Depois force situações diferentes
+
+Aumente o zoom, reduza a largura da janela e ative preferências como redução de
+movimento. Não procure apenas beleza: tente concluir a mesma tarefa e observe perda
+de conteúdo, sobreposição e rolagem em duas direções.
+
+### Faça um primeiro teste com leitor de tela
+
+Você não precisa dominar todos os atalhos para verificar o básico. Comece com:
+
+1. navegar por headings e landmarks;
+2. listar links e conferir se seus nomes fazem sentido isoladamente;
+3. percorrer campos e escutar label, ajuda, obrigatoriedade e erro;
+4. executar uma atualização dinâmica e confirmar o anúncio;
+5. abrir e fechar um diálogo acompanhando o foco.
+
+### Use automação para o que ela faz bem
+
+Lighthouse, axe e ferramentas semelhantes encontram vários problemas de contraste,
+marcação e ARIA. Elas não sabem, porém, se o texto alternativo descreve a informação
+certa ou se o fluxo **faz sentido para uma pessoa**.
+
+Uma equipe pode colocar automação em três momentos:
+
+```txt
+durante o código  -> lint e testes de componente
+no pull request   -> auditoria automatizada e E2E
+antes da entrega  -> roteiro manual e teste com pessoas
+```
+
+### Registre achados de forma acionável
+
+Evite "a tela não é acessível". Um bom relatório permite reproduzir e priorizar:
+
+```txt
+Barreira: botão de fechar modal não recebe foco.
+Onde: checkout > selecionar endereço.
+Como reproduzir: abrir modal e pressionar Tab três vezes.
+Impacto: pessoa navega para controles escondidos atrás do modal.
+Correção esperada: manter foco no diálogo e retornar ao gatilho ao fechar.
+Severidade: alta, porque bloqueia a conclusão da compra por teclado.
+```
+
+- **Teste manual** encontra problemas de interação e compreensão.
+- **Leitor de tela** mostra como a semântica chega a outra forma de navegação.
+- **Automação** acelera verificações repetíveis, mas não substitui julgamento humano.
+- **Teste cedo** custa menos do que corrigir toda a interface no fim.
+- **Teste com pessoas** encontra estratégias e barreiras que checklists não antecipam.
+
+> Dica: transforme esse roteiro em parte do seu checklist de PR. Acessibilidade melhora quando vira hábito, não evento especial.
+
+Você terminou a trilha. O próximo passo é escolher um fluxo real do seu projeto,
+executar este roteiro e registrar o antes e depois. Acessibilidade melhora quando o
+teste acompanha cada mudança, não apenas quando a tela parece "pronta".
+
+<VisualCheckpoint
+  challenge="Corrija o formulário: use heading, label associado, campo de e-mail e botão nativo com foco visível."
+  starterHtml={`<div class="titulo">Criar conta</div>
+<span>E-mail</span>
+<input>
+<div class="botao">Cadastrar</div>`}
+  starterCss={`body { font-family: sans-serif; }
+.botao { display: inline-block; padding: 0.75rem; background: #14532d; color: white; }
+/* adicione também um foco visível ao botão */`}
+  assert={`
+    const heading = root.querySelector('h1, h2');
+    const input = root.querySelector('input[type="email"]');
+    const label = root.querySelector('label');
+    const button = root.querySelector('button');
+    const labelMatches = !!input?.id && label?.htmlFor === input.id;
+    const rules = [...root.ownerDocument.styleSheets]
+      .flatMap(sheet => [...sheet.cssRules]);
+    const focusRule = rules.find(rule => rule.selectorText?.includes('button:focus'));
+    return {
+      pass: !!heading && !!button && labelMatches && !!focusRule,
+      message: 'Use heading, label com for/id, input type="email", button e uma regra de foco.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="testes-e-auditoria"
+/>
+
+<Quiz
+  question="Por que ferramenta automática não basta para aprovar acessibilidade?"
+  options={[
+    {
+      text: "Porque ela não entende sozinha se o fluxo faz sentido para uma pessoa",
+      correct: true,
+    },
+    {
+      text: "Porque automação não encontra nenhum problema útil",
+      correct: false,
+      explanation: "Automação encontra muitos problemas repetíveis, só não cobre tudo.",
+    },
+    {
+      text: "Porque leitor de tela substitui teste de teclado e revisão visual",
+      correct: false,
+      explanation: "Leitor de tela é uma camada importante, mas precisa ser combinado com outros testes.",
+    },
+  ]}
+/>

@@ -1,0 +1,107 @@
+---
+id: introducao-acessibilidade
+title: "Acessibilidade Web: Por que Isso Faz Parte do Desenvolvimento"
+resources:
+  - title: "Introdução à acessibilidade web"
+    url: https://www.w3.org/WAI/fundamentals/accessibility-intro/
+    type: doc
+    lang: en
+    free: true
+  - title: "Princípios de acessibilidade"
+    url: https://www.w3.org/WAI/fundamentals/accessibility-principles/
+    type: doc
+    lang: en
+    free: true
+  - title: "O que é acessibilidade? (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/Accessibility
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um elemento pode parecer perfeito na tela e ainda ser impossível de usar de outro jeito.
+Acessibilidade começa quando você deixa de perguntar só **"está bonito?"** e
+passa a perguntar **"dá para perceber, entender e operar?"**.
+
+```html
+<!-- Parece um botão para quem usa mouse, mas não se comporta como um -->
+<div class="botao" onclick="comprar()">Finalizar compra</div>
+
+<!-- A solução já traz semântica, foco e teclado -->
+<button type="button" onclick="comprar()">Finalizar compra</button>
+```
+
+No primeiro caso, alguém pode enxergar o controle e clicar com o mouse. Porém,
+quem usa `Tab` talvez nem consiga chegar nele; um leitor de tela pode anunciá-lo
+apenas como texto. O problema não está na pessoa: está na **barreira criada pela
+interface**.
+
+<Mermaid
+  chart={`flowchart LR
+    M["Mouse"] --> T["Finalizar compra"]
+    K["Teclado"] --> T
+    S["Leitor de tela"] --> T
+    V["Controle por voz"] --> T
+    T --> R["Mesmo resultado"]`}
+  caption="Uma interface acessível permite concluir a mesma tarefa usando diferentes formas de interação."
+/>
+
+### A mesma barreira aparece em contextos diferentes
+
+A decisão de colocar legenda em um vídeo, por exemplo, ajuda situações bem
+distintas:
+
+- **Permanente**: uma pessoa com deficiência auditiva acompanha as falas pela legenda.
+- **Temporária**: alguém com dor de ouvido evita usar o áudio.
+- **Situacional**: uma pessoa no ônibus que esqueceu os fones.
+- **Contextual**: em uma sala silenciosa, o áudio precisa ficar desligado.
+
+Isso não significa que todas as pessoas usam a interface do mesmo jeito. Significa
+que a tarefa principal não deve depender de uma única forma de ver, ouvir ou mover.
+
+### Tecnologias assistivas usam o que o código comunica
+
+Leitores de tela, ampliação, controle por voz e dispositivos de entrada alternativos
+dependem das informações que o HTML, CSS e o JavaScript fornecem. Um botão nativo
+com o texto "Finalizar compra" oferece, de uma vez:
+
+- um **nome**: "Finalizar compra";
+- uma **função**: botão;
+- uma forma de **receber foco**;
+- ativação por **mouse, toque e teclado**.
+
+### Teste prático de 60 segundos
+
+1. Abra uma página que você desenvolveu.
+2. Tire a mão do mouse e pressione `Tab` até chegar à ação principal.
+3. Confirme se existe um indicador visível de foco.
+4. Pressione `Enter` ou `Espaço` e veja se a ação funciona.
+5. Aumente o zoom para `200%` e confira se o conteúdo continua utilizável.
+
+Se uma etapa falhar, você encontrou uma barreira concreta para investigar.
+
+> Dica: trate acessibilidade como responsividade ou segurança: uma qualidade do
+> produto desde o começo, não uma correção no fim.
+
+No próximo nó, vamos conhecer a referência que organiza boa parte desse trabalho:
+**WCAG e os princípios POUR**.
+
+<Quiz
+  question="Qual decisão cria uma barreira de acessibilidade no exemplo do botão falso?"
+  options={[
+    {
+      text: "Usar uma div clicável sem semântica e comportamento de teclado",
+      correct: true,
+    },
+    {
+      text: "Perguntar se a interface dá para usar",
+      correct: false,
+      explanation: "Essa pergunta ajuda a encontrar barreiras; ela não cria a barreira.",
+    },
+    {
+      text: "Testar a página em mais de uma situação de uso",
+      correct: false,
+      explanation: "Testar em contextos diferentes aumenta a chance de perceber problemas reais.",
+    }
+  ]}
+/>
