@@ -3,6 +3,7 @@
   "title": "Acessibilidade Web: Interfaces para todas as pessoas",
   "description": "Trilha para quem quer construir páginas e aplicações que funcionem para mais pessoas. Cobre fundamentos de acessibilidade, WCAG, HTML semântico, teclado, foco, formulários, linguagem clara, contraste, ARIA, conteúdo dinâmico, multimídia, ferramentas de teste, auditoria e quizzes formativos ao longo da jornada. Pré-requisitos recomendados: HTML e CSS básicos.",
   "difficulty": "iniciante",
+  "published": "2026-08-29",
   "skills": [
     "acessibilidade",
     "wcag",
