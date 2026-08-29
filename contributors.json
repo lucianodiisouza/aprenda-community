@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 23,
+        "trilhas": 24,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 36
+        "total": 37
       },
       "trilhas": [
         {
@@ -69,6 +69,10 @@
         {
           "slug": "kubernetes",
           "title": "Kubernetes"
+        },
+        {
+          "slug": "motion",
+          "title": "Motion: animacao JS declarativa, View Transitions, Rive e a11y"
         },
         {
           "slug": "nextjs",

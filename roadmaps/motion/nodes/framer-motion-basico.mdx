@@ -1,0 +1,576 @@
+---
+id: framer-motion-basico
+title: "Motion basico: motion, AnimatePresence, variants, transitions"
+resources:
+  - title: "Motion - Quick start (oficial, EN)"
+    url: https://motion.dev/docs/quick-start
+    lang: en
+    type: doc
+    free: true
+  - title: "Motion - AnimatePresence (oficial, EN)"
+    url: https://motion.dev/docs/react-animate-presence
+    lang: en
+    type: doc
+    free: true
+  - title: "Sam Selikoff - Framer Motion tips (video, EN)"
+    url: https://www.youtube.com/watch?v=zS8OnRpUKr8
+    lang: en
+    type: video
+    free: true
+---
+
+A escolha ja foi feita (no 1): Motion pra
+animacoes stateful. Agora vamos abrir o
+**minimo viável** da API: como fazer um
+elemento aparecer com animacao, sumir com
+exit animation, e orquestrar estados
+nominados com `variants`. Esses 4 conceitos -
+`motion.div`, `AnimatePresence`, `variants`,
+`transition` - cobrem 80% dos casos reais.
+
+Se voce entende `motion.div` + `AnimatePresence`
++ `initial` + `animate` + `exit` + `variants`,
+voce consegue resolver a maioria dos modais,
+toasts, cards que aparecem, e page transitions
+que uma landing page ou dashboard precisa.
+
+## O essencial 🟢
+
+**Setup em 2 linhas.** Instala o pacote oficial
+e importa. Em 2026, o pacote se chama `motion`
+(antes `framer-motion`):
+
+```bash
+pnpm add motion
+```
+
+```tsx
+import { motion } from "motion/react";
+```
+
+**`motion.<element>` - a porta de entrada.** Qualquer
+HTML element vira um componente Motion: `motion.div`,
+`motion.button`, `motion.section`, `motion.h1`, etc.
+Recebe props de animacao alem das props HTML normais:
+
+```tsx
+// Substitui <div> por <motion.div> e ganha props de animacao
+<motion.div
+  initial={{ opacity: 0, y: 20 }}    // estado inicial (mount)
+  animate={{ opacity: 1, y: 0 }}     // estado final (apos mount)
+  transition={{ duration: 0.3, ease: "easeOut" }}
+>
+  Conteudo
+</motion.div>
+```
+
+Ao montar, Motion interpola de `initial` (opacity 0,
+y 20) pra `animate` (opacity 1, y 0) em 300ms com
+ease-out. Sem CSS, sem keyframes, sem state.
+**Declarativo puro**.
+
+**`initial` vs `animate` - o ciclo de vida basico.**
+O Motion tem 3 props principais pro ciclo de vida
+de mount:
+
+- **`initial`** - estado em que o elemento comeca
+  (antes da animacao rodar). Sem `initial`, o
+  elemento ja comeca no `animate` (sem animacao).
+- **`animate`** - estado final, pra onde a animacao
+  vai. O Motion interpola de `initial` pra `animate`.
+- **`exit`** - estado em que o elemento sai (quando
+  ele e removido do DOM). Funciona dentro de
+  `AnimatePresence` (visto abaixo).
+
+```tsx
+// Mount com fade in
+<motion.div
+  initial={{ opacity: 0 }}     // comeca invisivel
+  animate={{ opacity: 1 }}      // fade pra visivel
+  transition={{ duration: 0.5 }}
+/>
+
+// Mount + exit com fade
+<AnimatePresence>
+  {isOpen && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}     // fade out ao sair
+      transition={{ duration: 0.3 }}
+    >
+      Conteudo
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+**`AnimatePresence` - mount/unmount animado.** O
+truque que CSS nao consegue: `AnimatePresence`
+fica "observando" os filhos. Quando um filho e
+**removido do React tree** (condicional vira
+`false`, item removido de lista), o AnimatePresence
+mantem ele no DOM ate a animacao `exit` terminar.
+
+```tsx
+import { AnimatePresence, motion } from "motion/react";
+
+function ToastList({ toasts }: { toasts: Toast[] }) {
+  return (
+    <AnimatePresence>
+      {toasts.map((toast) => (
+        <motion.div
+          key={toast.id}      // <-- ESSENCIAL: key unica
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 100 }}
+        >
+          {toast.message}
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  );
+}
+```
+
+A `key` e **obrigatoria** - e como o AnimatePresence
+sabe que "esse item era A, agora e B, entao
+anima A saindo e B entrando". Sem `key`, o React
+reutilizaria o mesmo elemento e a exit animation
+nunca rodaria.
+
+**`variants` - estados nomeados.** Em vez de
+animar valores crus (`opacity: 1`), voce nomeia
+estados e define o que cada um significa:
+
+```tsx
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+<motion.li
+  variants={itemVariants}
+  initial="hidden"
+  animate="visible"
+/>
+```
+
+A vantagem aparece quando voce tem **varios
+elementos sincronizados** - passa `variants` no
+pai e os filhos herdam o estado por nome:
+
+```tsx
+const listVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      when: "beforeChildren",  // pai anima antes dos filhos
+      staggerChildren: 0.1,   // cada filho comeca 100ms depois
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+<motion.ul variants={listVariants} initial="hidden" animate="visible">
+  {items.map((item) => (
+    <motion.li key={item.id} variants={itemVariants}>
+      {item.name}
+    </motion.li>
+  ))}
+</motion.ul>
+```
+
+Resultado: lista fade in, items aparecem um por
+um com 100ms de delay entre eles. Sem `variants`
++ `staggerChildren`, voce teria que usar delays
+manuais.
+
+**`transition` - o como.** A prop `transition`
+define **como** a animacao acontece:
+
+```tsx
+<motion.div
+  initial={{ opacity: 0, scale: 0.5 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{
+    duration: 0.6,           // duracao em segundos (default: 0.3)
+    ease: "easeOut",         // curva de easing
+    delay: 0.2,              // delay antes de comecar
+    type: "spring",          // "tween" (default) ou "spring"
+    stiffness: 200,          // spring: quao rapido (default 100)
+    damping: 15,             // spring: quanto "oscila" (default 10)
+    mass: 1,                 // spring: peso (default 1)
+  }}
+/>
+```
+
+**`type: "tween"`** e a duracao fixa com easing
+(igual CSS `transition`). **`type: "spring"`** e
+fisica simulada (mola) - passa do alvo, volta,
+repousa. Spring da sensacao "viva" e organica;
+tween da sensacao "mecanica" e previsivel.
+
+**A escolha default de Motion e `spring`** -
+e o que faz botoes "pularem" e cards "pousarem".
+Se voce quer comportamento previsivel
+(loading bars, progress), use `tween`.
+
+**`whileHover`, `whileTap`, `whileFocus` -
+gestures built-in.** Sem voce escrever
+`onMouseEnter`/`onMouseLeave`/`onMouseDown`,
+Motion tem states prontos:
+
+```tsx
+<motion.button
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  whileFocus={{ outline: "2px solid blue" }}
+  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+>
+  Salvar
+</motion.button>
+```
+
+Ao passar o mouse, scale 1.05. Ao clicar, 0.95.
+Foco, outline azul. Spring para "snap" no
+estado. Tres linhas, comportamento rico.
+
+**Initial com `false` - skip da animacao de mount.**
+Quando voce quer **re-animar** mas nao animar
+no primeiro mount:
+
+```tsx
+<motion.div
+  initial={false}            // nao anima no mount
+  animate={isOpen ? "open" : "closed"}
+  variants={{
+    open: { opacity: 1, height: "auto" },
+    closed: { opacity: 0, height: 0 },
+  }}
+/>
+```
+
+Comum em: accordion (primeira renderizacao nao
+tem animacao, mas trocar de state sim), tabs
+(primeira tab ativa sem animar).
+
+**`layout` prop - FLIP animation automatica.**
+Cobertemos a fundo no no 3, mas a base:
+
+```tsx
+<motion.div layout>  // FLIP automatico
+  Conteudo
+</motion.div>
+```
+
+Quando o conteudo ou o tamanho do `<motion.div>`
+muda, Motion calcula a posicao antiga vs nova
+e anima a transicao. Sem `layout`, voce ve
+"pular" - com `layout`, ve "deslizar".
+
+**`MotionConfig` - config global.** Pra aplicar
+configuracoes a TODOS os `motion.*` da arvore:
+
+```tsx
+import { MotionConfig } from "motion/react";
+
+<MotionConfig
+  reducedMotion="user"           // respeita prefers-reduced-motion
+  transition={{ duration: 0.3 }}  // duracao default pra todos
+>
+  <App />
+</MotionConfig>
+```
+
+`reducedMotion="user"` (visto no no 1) faz
+Motion automaticamente simplificar animacoes
+quando o usuario prefere reduced motion. Vale
+colocar na raiz da app.
+
+## Aprofundamento 🟡
+
+**`onAnimationStart`, `onAnimationComplete` -
+hooks de lifecycle.** Pra reagir a animacoes
+(rodar JS, analytics, mudar state):
+
+```tsx
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  onAnimationStart={(definition) => {
+    // definition.type = "opacity" | "translateX" | etc
+    console.log("animacao comecou:", definition.type);
+  }}
+  onAnimationComplete={(definition) => {
+    // rodar callback apos animacao
+    setShowTooltip(false);
+  }}
+>
+  Conteudo
+</motion.div>
+```
+
+**`useAnimate` - controle imperativo.** Em vez de
+declarar animacoes via props, voce pode controlar
+via `useAnimate()`:
+
+```tsx
+import { useAnimate } from "motion/react";
+
+function MyComponent() {
+  const [scope, animate] = useAnimate();
+
+  async function handleClick() {
+    // Sequencia de animacoes imperativas
+    await animate(scope.current, { scale: 0.9 });
+    await animate(scope.current, { scale: 1 });
+  }
+
+  return <div ref={scope} onClick={handleClick}>Click</div>;
+}
+```
+
+`scope` e a ref do container; `animate(scope, ...)`
+anima tudo dentro. O `await` destrava sequenciar
+animacoes ("pisca, depois anima"). Mais verboso
+que o declarativo, mas util pra fluxos
+complexos (loading sequence, multi-step).
+
+**`LayoutGroup` - coordena layout animations entre
+componentes separados.** Quando dois elementos
+em locais diferentes da arvore compartilham um
+"layout ID", Motion sabe que sao o mesmo item
+movendo:
+
+```tsx
+<LayoutGroup>
+  <motion.div layoutId="card-1">Pequeno</motion.div>  {/* lista */}
+  {/* ... quando clicado, abre um modal: */}
+  {isOpen && (
+    <motion.div layoutId="card-1">Grande</motion.div>  {/* modal */}
+  )}
+</LayoutGroup>
+```
+
+Ao trocar entre lista e modal, Motion faz o FLIP
+animation: o card "cresce" da posicao da lista
+pra posicao do modal. Sem LayoutGroup, voce
+veria o card sumir e o modal aparecer
+separadamente.
+
+**`useMotionValue` e `useTransform` - valores
+animaveis sem re-render.** Pra animacoes que
+precisam rodar a 60fps sem re-render do React
+(useScroll, useMotionValue com gestures):
+
+```tsx
+import { motion, useMotionValue, useTransform } from "motion/react";
+
+function ScrollProgress() {
+  const scrollX = useScroll().scrollX;  // 0-100%
+  const opacity = useTransform(scrollX, [0, 50, 100], [1, 0.5, 0]);
+
+  return <motion.div style={{ opacity }} />;
+}
+```
+
+`scrollX` e `useMotionValue` - atualiza fora do
+React (sem re-render). `useTransform` mapeia
+"valor de entrada" pra "valor de saida" com
+interpolacao. Cobertemos a fundo no no 3.
+
+**`AnimatePresence` com `mode="wait"`.** Quando
+um componente sai e outro entra ao mesmo tempo
+(ex: tabs), pode dar conflito visual. `mode="wait"`
+garante que o exit animation termina antes do
+enter comecar:
+
+```tsx
+<AnimatePresence mode="wait">
+  {activeTab === "home" && (
+    <motion.div key="home" initial={{ opacity: 0 }} exit={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      Home content
+    </motion.div>
+  )}
+  {activeTab === "about" && (
+    <motion.div key="about" initial={{ opacity: 0 }} exit={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      About content
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+Sem `mode="wait"`, ao trocar de tab, o conteudo
+"home" anima saindo e o "about" anima entrando
+ao mesmo tempo (visual caotico). Com `mode="wait"`,
+o "home" sai primeiro, depois o "about" entra.
+
+**Performance: por que Motion nao re-renderiza a cada
+frame.** O React renderiza o componente 1x (com
+`initial` + `animate` como props). O Motion
+interpola os valores via `requestAnimationFrame`,
+mutando `style.transform` direto no DOM. Sem
+re-render a cada frame, o React fica livre. Por
+isso Motion e tao eficiente (mesmo JS, nao
+causa bottleneck do React).
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Motion foi renomeado de Framer Motion
+em 2024.** A empresa **Framer** (que fazia
+ferramenta de design) e a lib **Motion** (que
+fazia animacao) eram empresas separadas. Em 2024,
+as duas viraram uma empresa so (motion.dev), e
+a lib foi renomeada pra **Motion** (perdendo o
+"Framer" do nome). O time de design foi
+descontinuado, e a lib focou 100% em
+programacao.
+
+O impacto pratico:
+
+- Pacote mudou de `framer-motion` pra `motion`.
+- Import mudou de `framer-motion` pra `motion/react`.
+- API ficou identica (Motion 11+ = Framer Motion
+  11+).
+- A `motion` (sem `/react`) e a versao core pra
+  vanilla JS / outros frameworks.
+
+Se voce ver codigo antigo com `import { motion } from "framer-motion"`, ele ainda funciona (alias), mas em codigo novo use `motion/react`.
+
+**`layout` vs `layoutId` - a diferenca.** `layout`
+e pra animar **o proprio componente** quando ele
+muda de tamanho/posicao. `layoutId` e pra
+compartilhar o "layout" entre **componentes
+diferentes** (a foto de uma lista "vira" o
+hero de um modal). O `layoutId` requer
+`LayoutGroup` (ou implicitamente via mesmo
+`layoutId` em componentes dentro do mesmo
+AnimatePresence).
+
+**Custom variants com `transition` por estado.**
+Cada variant pode ter sua propria `transition`:
+
+```tsx
+const variants = {
+  hidden: { opacity: 0, transition: { duration: 0.2 } },
+  visible: { opacity: 1, transition: { duration: 0.5 } },
+};
+```
+
+Assim "hidden" anima rapido (0.2s) e "visible"
+anima devagar (0.5s) - "saida rapida, entrada
+suave". Pattern comum em modais.
+
+**`useInView` - triggerar animacao quando
+elemento entra na viewport.** Combinar Motion
+com IntersectionObserver:
+
+```tsx
+import { motion, useInView } from "motion/react";
+import { useRef } from "react";
+
+function FadeInOnScroll({ children }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 50 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+```
+
+`once: true` faz a animacao rodar so uma vez
+(nao volta a sumir quando o elemento sai da
+viewport). Comum em landing pages - secoes
+"aparecem" conforme o usuario rola.
+
+**Leitura recomendada:**
+
+- [Motion - Quick Start](https://motion.dev/docs/quick-start) - a doc oficial, 5 min hands-on.
+- [Motion - AnimatePresence](https://motion.dev/docs/react-animate-presence) - o conceito-chave de mount/unmount animado.
+- [Sam Selikoff - Framer Motion tips](https://www.youtube.com/watch?v=zS8OnRpUKr8) - patterns praticos de quem usa Motion em producao.
+
+> Dica: o erro mais comum no comeco e
+> **esquecer a `key` no `<AnimatePresence>`**.
+> Sem key, o React acha que o item e o mesmo,
+> faz update em vez de unmount+mount, e a
+> exit animation nunca roda. Resultado:
+> "Motion nao funciona, dev removeu a lib".
+> Regra: **toda lista animada tem `key` unica
+> em cada item**.
+
+No proximo no, vamos ver **padroes de animacao**:
+`layout` (FLIP), gestures (`whileDrag`,
+`whileHover`), drag com constraints, e
+scroll-linked animations.
+
+<Checkpoint
+  challenge="Implemente a função `montarVariants(estados)` que recebe um objeto com estados nomeados (cada um é um objeto CSS-like) e retorna um objeto `variants` do Motion no formato { [nome]: { propriedade: valor, transition: {...} }. Adicione a cada variant um `transition` default de `{ duration: 0.3, ease: 'easeOut' }` se o estado nao tiver uma transition propria."
+  starterCode={`// Implemente montarVariants(estados) que recebe:
+// {
+//   hidden: { opacity: 0, y: 20 },
+//   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+// }
+//
+// E retorna variants no formato do Motion:
+// {
+//   hidden: { opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeOut' } },
+//   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+// }
+//
+// - Se o estado ja tem 'transition', mantenha (nao sobrescreva com o default).
+// - Se nao tem, adicione o default { duration: 0.3, ease: 'easeOut' }.
+// - Mantenha as outras propriedades do estado (opacity, y, x, scale, etc).
+function montarVariants(estados) {
+  return {};
+}
+
+const _estados = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
+
+const _v = montarVariants(_estados);
+console.log(JSON.stringify(_v.hidden));
+console.log(JSON.stringify(_v.visible));`}
+expected='{"opacity":0,"y":20,"transition":{"duration":0.3,"ease":"easeOut"}}
+{"opacity":1,"y":0,"transition":{"duration":0.5}}'
+slug="motion"
+nodeId="framer-motion-basico"
+/>
+
+<Quiz
+  question="Qual a diferenca pratica entre 'type: tween' e 'type: spring' no Motion?"
+  options={[
+    {
+      text: "Tween e duracao fixa com easing (igual CSS transition). Spring e simulacao de mola que passa do alvo, volta e repousa - sensacao organica vs mecanica.",
+      correct: true,
+      explanation:
+        "Tween: voce define duracao + easing, a animacao vai de A pra B no tempo exato. Mecanica, previsivel - bom pra loading bars, progress, transicoes de estado. Spring: simula fisica, 'passa do alvo, volta, repousa' - sensacao de mola, organica. Default do Motion. Bom pra UI que quer parecer 'viva' (botao que 'pula' ao clicar, card que 'pousa' ao entrar).",
+    },
+    {
+      text: "Sao a mesma coisa com nomes diferentes - Motion normaliza internamente.",
+      correct: false,
+      explanation:
+        "Nao. Tween e interpolacao matematica (igual CSS). Spring e simulacao de mola (fisica). Resultado visual diferente: tween tem easing previsivel (acelera/desacelera), spring tem overshoot (passa do alvo, volta). Use tween pra UI previsivel, spring pra UI 'viva'.",
+    },
+    {
+      text: "Tween e mais rapido, spring e mais lento - escolha por performance.",
+      correct: false,
+      explanation:
+        "Performance nao e o criterio. Tween e spring tem performance similar (ambos rodam via requestAnimationFrame, sem re-render do React). A escolha e estetica: tween para UI mecanica/previsivel, spring para UI organica/viva. Performance nao entra na decisao.",
+    },
+  ]}
+/>

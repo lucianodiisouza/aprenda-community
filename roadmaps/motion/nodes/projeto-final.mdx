@@ -1,0 +1,376 @@
+---
+id: projeto-final
+title: "Projeto final: landing page com animacoes intencionais e a11y desde o design"
+---
+
+Hora de unir tudo. Voce vai construir uma
+**landing page real** (3-5 secoes) com 4
+animacoes **intencionais** - hero fade-in,
+theme toggle com View Transitions, card com
+`layoutId` (shared element), parallax de
+scroll com `useScroll`/`useTransform` - todas
+funcionando **com e sem `prefers-reduced-motion`**.
+E' o ciclo completo: planeja o que animar
+(decide o que e essencial vs dispensavel),
+implementa, testa em modo reduced, ajusta,
+publica.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos outros
+nos. E' um brief de projeto, no estilo de
+`projects/<slug>.mdx` do aprenda-community. Le
+ate o fim antes de comecar.
+
+## O que voce vai construir
+
+Uma **landing page** (4-6 secoes) com:
+
+- **Hero com fade-in + slide-up** - aparece
+  no mount, 1x so.
+- **Theme toggle (light/dark) com View
+  Transitions** - click no botao, cross-fade
+  global de tema.
+- **Card de feature com `layoutId`** - 4
+  cards na grid, click expande pra modal com
+  shared element transition.
+- **Progress bar de scroll** - `useScroll` +
+  barra fixa no topo.
+- **Parallax sutil** em 1 secao (1-2
+  camadas).
+
+Stack obrigatoria:
+
+- React 18+ + TypeScript 5+.
+- Vite (template `react-ts`).
+- Tailwind ou CSS modules (escolha sua).
+- `motion` (ex-Framer Motion).
+- Sem libs de UI pre-feitas (componentes seus,
+  com excecao de utility headless como Radix
+  se precisar pra a11y de dialog/menu).
+- `prefers-reduced-motion` respeitado em
+  TUDO.
+
+## Objetivo
+
+- Consolidar Motion + View Transitions +
+  scroll-linked + a11y num projeto real.
+- Praticar a decisao "o que animar" - nao
+  tudo, so o que **agrega valor** (motion
+  purposeful, nao motion for decoration).
+- Ver o ciclo **reduced vs normal** funcionando
+  lado a lado: com `prefers-reduced-motion:
+  no-preference`, animacoes rodam; com
+  `reduce`, viram instantaneas ou somem.
+- Entregar uma landing page que **funciona
+  pra 100% dos usuarios**, incluindo os
+  5-15% com sensibilidade a movimento.
+
+## Requisitos (minimo)
+
+Setup inicial:
+
+- [ ] `pnpm create vite@landing-page -- --template react-ts`.
+- [ ] `pnpm add motion`.
+- [ ] Estrutura:
+  - `src/App.tsx` (raiz com `MotionConfig`).
+  - `src/components/Hero.tsx` (fade-in).
+  - `src/components/ThemeToggle.tsx` (View
+    Transitions).
+  - `src/components/FeatureGrid.tsx`
+    (4 cards).
+  - `src/components/FeatureModal.tsx` (modal
+    com `layoutId`).
+  - `src/components/ScrollProgress.tsx`
+    (`useScroll`).
+  - `src/components/ParallaxSection.tsx`
+    (`useTransform`).
+  - `src/hooks/useReducedMotionSafe.ts` (helper
+    custom se precisar de logica alem do
+    MotionConfig).
+
+App raiz:
+
+- [ ] `<MotionConfig reducedMotion="user">`
+  envolvendo TUDO. NAO confiar em cada
+  componente saber.
+- [ ] Estrutura semantica: `<header>`,
+  `<main>`, `<footer>`, `<nav>` quando
+  aplicavel.
+- [ ] Lighthouse a11y score >= 95 (sem animacao
+  ativa).
+- [ ] Sem erros no console (React DevTools +
+  axe DevTools).
+
+Hero (`Hero.tsx`):
+
+- [ ] Fade-in + slide-up no mount (1x so, nao
+  em cada scroll).
+- [ ] Duracao 0.4-0.6s, `ease: "easeOut"`.
+- [ ] Em reduced: `y: 0` desde o inicio,
+  `duration: 0`.
+- [ ] Heading principal + subtitulo + CTA.
+
+Theme toggle (`ThemeToggle.tsx`):
+
+- [ ] Botao com `aria-label="Alternar tema"`.
+- [ ] Click chama `document.startViewTransition`
+  se disponivel; senao, aplica direto.
+- [ ] `view-transition-name: theme-bg` no
+  `<body>` pra cross-fade coordenado.
+- [ ] Persiste escolha em `localStorage`.
+- [ ] Em reduced: toggle funciona mas SEM
+  View Transition (aplicacao direta).
+
+Feature grid (`FeatureGrid.tsx`):
+
+- [ ] 4 cards (titulo, descricao, icone SVG).
+- [ ] Hover: scale 1.02 (ou nada em reduced).
+- [ ] Click: abre modal.
+
+Feature modal (`FeatureModal.tsx`):
+
+- [ ] Renderizado condicionalmente.
+- [ ] `AnimatePresence` em volta.
+- [ ] Card clicado tem `layoutId="card-{id}"`.
+- [ ] Modal tambem tem `layoutId="card-{id}"`
+  (mesmo ID).
+- [ ] Click fora ou ESC fecha.
+- [ ] Focus trap basico (ou use Radix Dialog
+  se preferir).
+- [ ] `aria-modal="true"`, `role="dialog"`.
+- [ ] Em reduced: modal aparece/some sem
+  animacao (duration 0).
+
+Scroll progress (`ScrollProgress.tsx`):
+
+- [ ] Barra fixa no topo (4px altura).
+- [ ] `useScroll()` retorna `scrollYProgress`.
+- [ ] `style={{ scaleX: scrollYProgress,
+  transformOrigin: "left" }}`.
+- [ ] Em reduced: esconde a barra (nao
+  agrega valor, e' puramente decorativa).
+
+Parallax (`ParallaxSection.tsx`):
+
+- [ ] 1 secao com 2 camadas (foreground +
+  background).
+- [ ] `useTransform` com ranges diferentes
+  (foreground move menos que background).
+- [ ] Em reduced: camadas em `y: 0`, sem
+  parallax.
+
+## Decisoes de design (motion purposeful)
+
+**Nao anime tudo.** A pergunta antes de cada
+animacao: "se eu remover essa animacao, o
+usuario ainda entende a UI?" Se sim, ela e'
+**dispensavel** e deve ser simplificada em
+reduced mode. Se nao, ela e' **essencial** e
+roda sempre.
+
+Classifique cada animacao do projeto:
+
+- **Motion-essential (sempre roda):**
+  theme toggle (precisa de feedback visual),
+  modal mount (precisa de "abrir/fechar"),
+  card hover (feedback de "clicavel").
+- **Motion-simplified (vira simples em
+  reduce):** parallax (vira static), scroll
+  progress (some em reduce).
+- **Motion-disabled (nao roda em reduce):**
+  hero fade-in (vira instant), card hover
+  scale (vira sem scale).
+
+Anote essa classificacao no
+`editorial-decisions.md` da trilha.
+
+## Desafios extras (stretch goals)
+
+Se voce terminou o minimo e quer ir alem:
+
+- [ ] **Page transition com Next.js** - refazer
+  o projeto com App Router, usando
+  `<ViewTransition>` do Next.
+- [ ] **AnimatePresence com mode="popLayout"**
+  - em vez de mode="wait" (default), usar
+  popLayout pra ter o "out" animation e o
+  "in" animation acontecendo simultaneamente
+  com layout shift automatico.
+- [ ] **Loading custom com Rive** - integrar
+  um loading spinner feito em Rive, com
+  state machine "loading" / "success" /
+  "error".
+- [ ] **Teste automatizado de a11y com
+  Playwright + axe-core** - garantir que
+  cada secao passa axe sem violacoes
+  (e que o modo reduced nao introduz novas).
+- [ ] **Storybook com stories de cada
+  animacao** - cada componente vira uma
+  story com controles de `prefers-reduced-motion`
+  e `isDark` (integra com trilha
+  storybook-design-systems).
+- [ ] **Refactor pra Motion 12 patterns
+  modernos** - usar `useAnimate` no lugar de
+  props declarativas em 1-2 casos.
+- [ ] **`viewport` no `whileInView`** -
+  ao inves de animar no mount, animar quando
+  a secao entra no viewport (`whileInView` +
+  `viewport={{ once: true }}`).
+- [ ] **Mascote interativo com Rive** -
+  adicionar 1 mascote com 3 estados (idle,
+  hover, click), controlado pelos
+  `setBoolean` da state machine.
+- [ ] **Comparar bundle size com e sem
+  Motion** - `pnpm build` com e sem `motion`
+  instalado, ver o overhead real.
+- [ ] **Lighthouse em mobile** - testar
+  performance em throttling 3G + CPU 4x
+  slowdown, ajustar se Motion estiver
+  custando LCP/INP.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Setup sem animacao primeiro** -
+   `App.tsx` com a estrutura, secoes
+   posicionadas, sem Motion. Garanta que
+   funciona e faz sentido.
+2. **MotionConfig na raiz** - adicione
+   `<MotionConfig reducedMotion="user">`
+   ANTES de qualquer animacao. Isso ja da
+   80% da a11y gratis.
+3. **Hero fade-in** - a animacao mais simples,
+   comeca por ela pra aprender o basico.
+4. **Scroll progress** - segunda mais simples,
+   linear, sem gestos.
+5. **Theme toggle com View Transitions** -
+   requer pensar em fallback de browser.
+6. **Feature grid + modal com `layoutId`** -
+   o pico de complexidade (shared element
+   entre 2 arvores).
+7. **Parallax** - ultima, mais sutil.
+8. **Teste em reduced mode** - ative reduce
+   no OS, navegue, ajuste o que ficou
+   estranho.
+
+**Armadilhas comuns:**
+
+- **Animar em mount sem `useInView`** - secoes
+  abaixo da dobra "animam" no load invisivel,
+  desperdicando. Use `whileInView` ou
+  `useInView` pra trigger.
+- **View Transitions com 2+ elementos com
+  mesmo `view-transition-name`** - browser
+  ignora. Garanta que so UM elemento com cada
+  nome esta visivel por vez.
+- **Esquecer fallback do `startViewTransition`**
+  - em Firefox 2026 quebra. Sempre faca:
+  `if (document.startViewTransition) {...} else
+  { apply(); }`.
+- **`prefers-reduced-motion` no OS, nao no
+  app** - nao adicione "botao de ativar
+  reduced motion". A preferencia vem do OS
+  (que tem 1 unica config que afeta todos os
+  apps). Botao no app confunde.
+- **AnimatePresence sem `key` unica** -
+  sem `key`, exit animation nao roda. Ja
+  vimos isso no no 2.
+- **Drag sem `dragConstraints`** - elemento
+  arrastado sai da tela. Sempre passe
+  constraints numericas ou ref.
+- **Parallax com 5+ camadas** - vira lag
+  perceptivel. 2-3 camadas e' o maximo
+  confortavel.
+- **Lottie/Rive sem lazy load** - bundle
+  inicial explode. Use `lazy` + `Suspense`
+  pra carregar so quando o componente
+  monta.
+- **Nao testar em mobile** - gesture de
+  drag e scroll funcionam diferente. Teste
+  no DevTools mobile emulator + num device
+  real se possivel.
+
+**Como validar que terminou:**
+
+- [ ] `pnpm dev` + abrir no browser + ver
+  todas as animacoes funcionando.
+- [ ] Ativar `prefers-reduced-motion` no OS
+  + recarregar + verificar que todas as
+  animacoes estao simplificadas ou removidas.
+- [ ] Lighthouse a11y score >= 95.
+- [ ] `pnpm build` sem warning de bundle
+  size absurdo (>500KB gzipped sinal de
+  problema).
+- [ ] Tab pelo site inteiro - foco visivel em
+  tudo, ordem logica.
+- [ ] Tab no modal - focus trap funciona,
+  ESC fecha.
+- [ ] axe DevTools sem violacoes critical/serious.
+- [ ] Testar em Chrome, Firefox (com fallback
+  de View Transitions), e Safari.
+- [ ] Testar em mobile via DevTools (responsive
+  mode).
+
+**Leituras que ajudam durante o projeto:**
+
+- [Motion - MotionConfig](https://motion.dev/docs/react-motion-config) - doc oficial do MotionConfig, com tabela de valores.
+- [MDN - View Transitions](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) - a referencia completa da API.
+- [WCAG 2.3.3](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions) - o criterio de "animacao dispensavel", pra referencia.
+
+> O projeto final e' onde a trilha vira
+> "sua". As escolhas de **o que animar** (e
+> o que nao), de **quando simplificar em
+> reduced mode**, de **quando usar View
+> Transitions vs Motion**, de **quando
+> integrar Rive/Lottie**, sao todas suas.
+> O esqueleto dado e' o **caminho feliz**,
+> desvie quando precisar e anote as
+> decisoes no `editorial-decisions.md` da
+> trilha.
+
+<Checkpoint
+  challenge="Implemente a função `filtrarAnimacoesPorPreferencia(features, prefersReduced)` que recebe uma lista de features (cada uma com `name` e `category: 'transform' | 'opacity' | 'color' | 'view-transition'`) e um boolean prefersReduced. Quando prefersReduced = true, retorne apenas as features cujas categories NAO sao 'transform' (ou seja, 'opacity', 'color', 'view-transition' continuam). Quando prefersReduced = false, retorne todas. O retorno e' um array de objetos { name, category }."
+  starterCode={`// Implemente filtrarAnimacoesPorPreferencia(features, prefersReduced):
+//
+// Input: (features, prefersReduced: boolean)
+// features: [{ name: 'hero-fade', category: 'opacity' }, ...]
+//
+// Output: array de { name, category }
+//
+// - Se prefersReduced === false: retorna todos os features.
+// - Se prefersReduced === true: retorna apenas os de category
+//   diferente de 'transform'. Ou seja, 'opacity', 'color' e
+//   'view-transition' passam; so 'transform' cai fora.
+function filtrarAnimacoesPorPreferencia(features, prefersReduced) {
+  return [];
+}
+
+const _f1 = filtrarAnimacoesPorPreferencia(
+  [
+    { name: "hero-fade", category: "opacity" },
+    { name: "card-scale", category: "transform" },
+    { name: "parallax", category: "transform" },
+    { name: "theme-vt", category: "view-transition" },
+  ],
+  true,
+);
+console.log(JSON.stringify(_f1));
+
+const _f2 = filtrarAnimacoesPorPreferencia(
+  [
+    { name: "hero-fade", category: "opacity" },
+    { name: "card-scale", category: "transform" },
+  ],
+  false,
+);
+console.log(JSON.stringify(_f2));
+
+const _f3 = filtrarAnimacoesPorPreferencia([], true);
+console.log(JSON.stringify(_f3));`}
+  expected='[{"name":"hero-fade","category":"opacity"},{"name":"theme-vt","category":"view-transition"}]
+[{"name":"hero-fade","category":"opacity"},{"name":"card-scale","category":"transform"}]
+[]'
+  slug="motion"
+  nodeId="projeto-final"
+/>
