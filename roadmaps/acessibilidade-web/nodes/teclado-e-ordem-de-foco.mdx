@@ -1,0 +1,116 @@
+---
+id: teclado-e-ordem-de-foco
+title: "Teclado: Tab, Ordem de Foco e tabindex"
+resources:
+  - title: "Acessibilidade por teclado"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Ordem de foco"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Um teste rápido revela muita coisa: **consigo concluir a tarefa sem tocar no mouse?**
+Não basta alcançar os controles; a ordem precisa acompanhar a tarefa.
+
+```txt
+Tab         -> próximo controle
+Shift + Tab -> controle anterior
+Enter       -> ativa links e vários controles
+Espaço      -> ativa botões e alguns widgets
+Escape      -> fecha menus, popovers e diálogos quando esperado
+```
+
+### A ordem normalmente segue o DOM
+
+```html
+<form>
+  <label for="nome">Nome</label>
+  <input id="nome" name="nome" />
+
+  <label for="email">E-mail</label>
+  <input id="email" name="email" type="email" />
+
+  <button type="submit">Criar conta</button>
+</form>
+```
+
+O foco deve seguir `Nome → E-mail → Criar conta`, a mesma ordem visual e lógica.
+Se Grid ou Flexbox reorganizar visualmente os elementos, o DOM não muda junto:
+
+<Mermaid
+  chart={`flowchart LR
+    N["1. Nome"] --> E["2. E-mail"]
+    E --> B["3. Criar conta"]
+    B --> L["4. Entrar em conta existente"]`}
+  caption="A sequência de foco deve acompanhar a leitura e a ordem visual da tarefa."
+/>
+
+```css
+/* Cuidado: mudar só a ordem visual pode separar visão e teclado. */
+.botao-principal {
+  order: -1;
+}
+```
+
+Prefira corrigir a ordem no HTML. Use reordenação visual apenas quando ela não
+altera o significado nem a sequência de interação.
+
+### Use `tabindex` com cuidado
+
+```html
+<section id="resultado" tabindex="-1">
+  <h2>Resultado da busca</h2>
+</section>
+```
+
+O `tabindex="-1"` permite mover o foco para o resultado via JavaScript sem colocar a
+seção na sequência normal de `Tab`. Já o `tabindex="0"` deve ser reservado a um
+componente que realmente precisa entrar na ordem. Evite valores positivos como
+`tabindex="5"`: eles criam uma sequência paralela difícil de prever e manter.
+
+### Componentes personalizados precisam de contrato de teclado
+
+Um menu que abre no clique também precisa abrir pela tecla esperada, permitir
+navegação entre itens e fechar com `Escape`. Se você não quer implementar e testar
+esse contrato, procure primeiro um elemento nativo como `button`, `details` ou
+`dialog`.
+
+- **Teclado** precisa alcançar toda ação essencial.
+- **Ordem do DOM** deve acompanhar a ordem lógica da interface.
+- **`tabindex="0"` e `-1`** resolvem casos específicos; valores positivos quase sempre atrapalham.
+- **Keyboard trap** acontece quando a pessoa entra numa região e não consegue sair de forma esperada.
+
+### Roteiro prático
+
+1. Recarregue a página e guarde o mouse.
+2. Use `Tab` e `Shift + Tab` do início ao fim.
+3. Anote controles pulados, foco fora de ordem ou elementos invisíveis focados.
+4. Abra menus e diálogos; use `Escape` e confirme que consegue sair.
+5. Conclua a principal tarefa da tela apenas com teclado.
+
+No próximo nó, vamos cuidar do sinal que mostra **onde o foco está agora**.
+
+<Quiz
+  question="Por que valores positivos de tabindex quase sempre atrapalham?"
+  options={[
+    {
+      text: "Porque criam uma ordem paralela de foco difícil de prever e manter",
+      correct: true,
+    },
+    {
+      text: "Porque removem o elemento da navegação por teclado",
+      correct: false,
+      explanation: "Quem remove da ordem natural é tabindex negativo; positivo muda a ordem.",
+    },
+    {
+      text: "Porque melhoram leitores de tela, mas prejudicam usuários de mouse",
+      correct: false,
+      explanation: "O problema principal é a ordem artificial de foco para quem navega por teclado.",
+    },
+  ]}
+/>

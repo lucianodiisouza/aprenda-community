@@ -1,0 +1,131 @@
+---
+id: html-semantico
+title: "HTML Semântico e a Árvore de Acessibilidade"
+resources:
+  - title: "HTML: uma boa base para acessibilidade"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Core/Accessibility/HTML
+    type: doc
+    lang: pt
+    free: true
+  - title: "Semântica no HTML"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/Semantics
+    type: doc
+    lang: pt
+    free: true
+  - title: "Referência de elementos HTML (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Reference/Elements
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando o navegador encontra HTML semântico, ele já entende muita coisa sem você
+explicar manualmente. Compare duas versões visualmente parecidas de uma ação:
+
+```html
+<!-- Barreira: parece botão, mas continua sendo uma div -->
+<div class="botao" onclick="salvar()">Salvar alterações</div>
+
+<!-- Solução: o elemento já representa a ação -->
+<button type="button" onclick="salvar()">Salvar alterações</button>
+```
+
+Com CSS, os dois podem ficar iguais. Para o navegador e para tecnologias
+assistivas, não são iguais:
+
+```txt
+div:    texto "Salvar alterações"
+button: botão "Salvar alterações", focável, ativável por teclado
+```
+
+<Mermaid
+  chart={`flowchart LR
+    H["HTML semântico"] --> D["DOM visual"]
+    H --> A["Árvore de acessibilidade"]
+    A --> N["Nome: Salvar alterações"]
+    A --> F["Função: botão"]
+    A --> E["Estado: habilitado"]`}
+  caption="O HTML alimenta tanto a renderização visual quanto a árvore usada por tecnologias assistivas."
+/>
+
+### Semântica é significado e comportamento
+
+Compare:
+
+```html
+<header>
+  <a href="/">Loja Horizonte</a>
+</header>
+<nav aria-label="Principal">
+  <a href="/produtos">Produtos</a>
+</nav>
+<main>
+  <h1>Ofertas da semana</h1>
+  <article>
+    <h2>Cafeteira compacta</h2>
+    <button type="button">Adicionar ao carrinho</button>
+  </article>
+</main>
+<footer>Atendimento: ajuda@loja.test</footer>
+```
+
+Essas tags não servem apenas para organizar CSS. Elas descrevem regiões, títulos,
+conteúdo independente, navegação e ações. Isso permite navegar por landmarks,
+listar headings ou encontrar todos os botões sem percorrer palavra por palavra.
+
+- **HTML semântico** comunica o papel do conteúdo.
+- **Elementos nativos** já incluem comportamentos esperados.
+- **Árvore de acessibilidade** expõe nome, função, valor e estado.
+- **CSS** pode mudar a aparência sem trocar o significado do elemento.
+
+### Inspecione o resultado
+
+No DevTools do navegador, abra a aba **Accessibility** e selecione o botão.
+Confira se aparecem um nome como "Adicionar ao carrinho" e a função `button`.
+Depois troque o elemento por uma `div` e compare o que desaparece.
+
+> Dica: antes de criar um componente com `div` e vários atributos, pergunte:
+> **já existe um elemento HTML que faz isso?**
+
+No próximo nó, vamos organizar a página para que ela tenha um mapa claro com
+**headings, landmarks e skip link**.
+
+<VisualCheckpoint
+  challenge="Troque a div clicável por um botão nativo com o texto Salvar perfil."
+  starterHtml={`<div class="acao">Salvar perfil</div>`}
+  starterCss={`.acao {
+  padding: 0.75rem 1rem;
+  background: #14532d;
+  color: white;
+  border: 0;
+}`}
+  assert={`
+    const button = root.querySelector('button');
+    return {
+      pass: !!button && button.textContent.trim() === 'Salvar perfil',
+      message: 'Use um <button> nativo com o nome visível Salvar perfil.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="html-semantico"
+/>
+
+<Quiz
+  question="Por que preferir um button nativo a uma div clicável?"
+  options={[
+    {
+      text: "Porque button sempre recebe o estilo visual correto sem CSS",
+      correct: false,
+      explanation: "Estilo é trabalho do CSS. A vantagem aqui é semântica e comportamento nativo.",
+    },
+    {
+      text: "Porque ele já traz função, foco e comportamento esperado de teclado",
+      correct: true,
+    },
+    {
+      text: "Porque elementos nativos dispensam qualquer teste de acessibilidade",
+      correct: false,
+      explanation: "Eles ajudam muito, mas o fluxo final ainda precisa ser testado.",
+    },
+  ]}
+/>

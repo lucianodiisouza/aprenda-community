@@ -1,0 +1,132 @@
+---
+id: imagens-e-alt
+title: "Imagens e Texto Alternativo: Escrevendo um Bom alt"
+resources:
+  - title: "Tutorial de imagens acessíveis"
+    url: https://www.w3.org/WAI/tutorials/images/
+    type: doc
+    lang: en
+    free: true
+  - title: "Elemento img"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/img
+    type: doc
+    lang: pt
+    free: true
+---
+
+O `alt` não existe para descrever cada pixel. Ele entrega **a informação ou a
+função que a imagem cumpre naquele contexto**. A mesma foto pode precisar de textos
+diferentes em páginas diferentes.
+
+```html
+<img
+  src="grafico-vendas.png"
+  alt="Vendas subiram de 80 mil para 120 mil reais entre janeiro e março"
+/>
+```
+
+### Imagem informativa: descreva o que importa
+
+Descreva a informação necessária para entender o conteúdo. Em uma página de produto,
+por exemplo, detalhes visuais que influenciam a compra são relevantes:
+
+```html
+<img
+  src="mochila-verde.jpg"
+  alt="Mochila verde-oliva com dois bolsos frontais e alças acolchoadas"
+/>
+```
+
+Se o parágrafo ao redor já comunica os números do gráfico, o `alt` pode ser curto
+e apontar para a explicação, evitando repetição palavra por palavra.
+
+### Imagem decorativa
+
+```html
+<img src="divisor-floral.svg" alt="" />
+```
+
+`alt=""` diz à tecnologia assistiva que aquela imagem não acrescenta conteúdo.
+Não remova o atributo: sem `alt`, alguns leitores podem anunciar o nome do arquivo.
+
+### Imagem funcional
+
+Se a imagem está dentro de um link ou botão, o texto alternativo precisa comunicar **a ação**:
+
+```html
+<a href="/inicio">
+  <img src="logo.svg" alt="Página inicial da Loja Exemplo" />
+</a>
+```
+
+Se o link já possui texto visível, a imagem pode ser decorativa para não duplicar
+o nome:
+
+```html
+<a href="/carrinho">
+  <img src="icone-carrinho.svg" alt="" />
+  Ver carrinho
+</a>
+```
+
+### Imagem complexa precisa de explicação equivalente
+
+Diagramas e gráficos podem precisar de um resumo no `alt` e dos dados no texto:
+
+```html
+<figure>
+  <img
+    src="grafico-vendas.png"
+    alt="Gráfico de vendas mensais; tendência de alta entre janeiro e março"
+  />
+  <figcaption>
+    Janeiro: R$ 80 mil; fevereiro: R$ 95 mil; março: R$ 120 mil.
+  </figcaption>
+</figure>
+```
+
+<Mermaid
+  chart={`flowchart TD
+    I["A imagem acrescenta informação?"] -->|"não"| D["alt vazio"]
+    I -->|"sim"| F["Ela executa uma ação?"]
+    F -->|"sim"| A["Descreva ação ou destino"]
+    F -->|"não"| C["É complexa?"]
+    C -->|"não"| B["Descreva informação relevante"]
+    C -->|"sim"| L["alt curto mais explicação longa"]`}
+  caption="Fluxo de decisão para escolher entre alt vazio, descrição funcional, informativa ou explicação longa."
+/>
+
+- **Informativa**: descreva a informação relevante.
+- **Decorativa**: use `alt=""`.
+- **Funcional**: descreva o destino ou a ação, não só a aparência.
+- **Complexa**: forneça os dados ou uma explicação equivalente perto da imagem.
+
+> Dica: "imagem de..." quase nunca é necessário; o leitor de tela já anuncia que é uma imagem.
+
+### Pratique com três perguntas
+
+Para cada imagem da sua página, pergunte: "se ela não carregar, o que a pessoa
+perde?", "o texto ao redor já entrega isso?" e "a imagem é o único nome de uma
+ação?". As respostas orientam o `alt` melhor do que uma descrição genérica.
+
+No próximo nó, vamos aplicar a mesma ideia de estrutura a **tabelas de dados**.
+
+<Quiz
+  question="Quando faz sentido usar alt vazio em uma imagem?"
+  options={[
+    {
+      text: "Quando a imagem é decorativa e não acrescenta informação",
+      correct: true,
+    },
+    {
+      text: "Quando a imagem mostra o produto principal da página",
+      correct: false,
+      explanation: "Se a imagem informa algo necessário, o texto alternativo precisa comunicar essa informação.",
+    },
+    {
+      text: "Quando a imagem funciona como o único conteúdo de um botão",
+      correct: false,
+      explanation: "Nesse caso, o texto alternativo deve comunicar a ação ou o destino.",
+    },
+  ]}
+/>

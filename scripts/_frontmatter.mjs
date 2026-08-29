@@ -38,7 +38,7 @@ export function parseFrontmatter(content) {
   const end = content.indexOf("\n---", after);
   if (end === -1) return null;
   const block = content.slice(after, end);
-  const lines = block.split(/\r?\n/);
+  const lines = block.split("\n").map((line) => line.endsWith("\r") ? line.slice(0, -1) : line);
 
   const out = {};
   let i = 0;

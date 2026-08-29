@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/build-contributors.mjs",
-  "count": 5,
+  "count": 6,
   "contributors": [
     {
       "github": "lucianodiisouza",
@@ -213,6 +213,31 @@
         {
           "slug": "processador-de-planilhas",
           "title": "Processador de Planilhas"
+        }
+      ],
+      "bootcamps": []
+    },
+    {
+      "github": "brunofhorn",
+      "name": "Bruno Fernandes Horn",
+      "avatar": "https://github.com/brunofhorn.png",
+      "profile": "https://github.com/brunofhorn",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 1,
+        "bootcamps": 0,
+        "total": 2
+      },
+      "trilhas": [
+        {
+          "slug": "acessibilidade-web",
+          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-de-acessibilidade-web",
+          "title": "Auditoria de Acessibilidade Web"
         }
       ],
       "bootcamps": []

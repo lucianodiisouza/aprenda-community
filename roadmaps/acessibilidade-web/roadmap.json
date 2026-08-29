@@ -1,0 +1,201 @@
+{
+  "slug": "acessibilidade-web",
+  "title": "Acessibilidade Web: Interfaces para todas as pessoas",
+  "description": "Trilha para quem quer construir páginas e aplicações que funcionem para mais pessoas. Cobre fundamentos de acessibilidade, WCAG, HTML semântico, teclado, foco, formulários, linguagem clara, contraste, ARIA, conteúdo dinâmico, multimídia, ferramentas de teste, auditoria e quizzes formativos ao longo da jornada. Pré-requisitos recomendados: HTML e CSS básicos.",
+  "difficulty": "iniciante",
+  "skills": [
+    "acessibilidade",
+    "wcag",
+    "html-semantico",
+    "teclado",
+    "formularios",
+    "aria",
+    "testes"
+  ],
+  "creators": [
+    {
+      "name": "Bruno Fernandes Horn",
+      "github": "brunofhorn"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-acessibilidade",
+      "title": "Por que faz parte do desenvolvimento",
+      "type": "topic",
+      "recommended": true,
+      "children": [
+        "wcag-e-pour"
+      ]
+    },
+    {
+      "id": "wcag-e-pour",
+      "title": "WCAG e POUR",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "html-semantico"
+      ]
+    },
+    {
+      "id": "html-semantico",
+      "title": "HTML Semântico",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "estrutura-headings-landmarks"
+      ]
+    },
+    {
+      "id": "estrutura-headings-landmarks",
+      "title": "Estrutura da Página",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "imagens-e-alt"
+      ]
+    },
+    {
+      "id": "imagens-e-alt",
+      "title": "Imagens e Texto Alternativo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "tabelas-acessiveis"
+      ]
+    },
+    {
+      "id": "tabelas-acessiveis",
+      "title": "Tabelas Acessíveis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "links-e-botoes"
+      ]
+    },
+    {
+      "id": "links-e-botoes",
+      "title": "Links e Botões",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "teclado-e-ordem-de-foco"
+      ]
+    },
+    {
+      "id": "teclado-e-ordem-de-foco",
+      "title": "Teclado",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "foco-visivel"
+      ]
+    },
+    {
+      "id": "foco-visivel",
+      "title": "Foco Visível",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "formularios-acessiveis"
+      ]
+    },
+    {
+      "id": "formularios-acessiveis",
+      "title": "Formulários Acessíveis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "erros-e-validacao"
+      ]
+    },
+    {
+      "id": "erros-e-validacao",
+      "title": "Erros e Validação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "linguagem-clara-e-cognicao"
+      ]
+    },
+    {
+      "id": "linguagem-clara-e-cognicao",
+      "title": "Linguagem Clara e Cognição",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "cor-e-contraste"
+      ]
+    },
+    {
+      "id": "cor-e-contraste",
+      "title": "Cor e Contraste",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "zoom-reflow-e-movimento"
+      ]
+    },
+    {
+      "id": "zoom-reflow-e-movimento",
+      "title": "Zoom, Reflow e Movimento",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "aria-fundamentos"
+      ]
+    },
+    {
+      "id": "aria-fundamentos",
+      "title": "ARIA",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "conteudo-dinamico"
+      ]
+    },
+    {
+      "id": "conteudo-dinamico",
+      "title": "Conteúdo Dinâmico",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "dialogos-acessiveis"
+      ]
+    },
+    {
+      "id": "dialogos-acessiveis",
+      "title": "Diálogos Acessíveis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "multimidia-acessivel"
+      ]
+    },
+    {
+      "id": "multimidia-acessivel",
+      "title": "Multimídia Acessível",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "ferramentas-de-teste"
+      ]
+    },
+    {
+      "id": "ferramentas-de-teste",
+      "title": "Ferramentas de Teste",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "testes-e-auditoria"
+      ]
+    },
+    {
+      "id": "testes-e-auditoria",
+      "title": "Testes de Acessibilidade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

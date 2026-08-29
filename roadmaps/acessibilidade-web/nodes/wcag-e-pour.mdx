@@ -1,0 +1,115 @@
+---
+id: wcag-e-pour
+title: "WCAG e POUR: O Mapa da Acessibilidade"
+resources:
+  - title: "Visão geral da WCAG 2"
+    url: https://www.w3.org/WAI/standards-guidelines/wcag/
+    type: doc
+    lang: en
+    free: true
+  - title: "Princípios de acessibilidade"
+    url: https://www.w3.org/WAI/fundamentals/accessibility-principles/
+    type: doc
+    lang: en
+    free: true
+---
+
+A WCAG reúne critérios testáveis para reduzir barreiras na web. Antes de decorar
+números, vale guardar o modelo mental que organiza tudo: **POUR**.
+
+A sigla POUR significa: Perceptível (Perceivable), Operável (Operable), Compreensível (Understandable) e Robusto (Robust).
+
+Imagine o checkout de uma loja. A pessoa precisa entender o preço, preencher os
+dados e confirmar o pedido. Os quatro princípios fazem perguntas diferentes sobre
+esse mesmo fluxo:
+
+| Princípio | Pergunta prática | Exemplo no checkout |
+| --- | --- | --- |
+| **Perceptível** | Consigo receber a informação? | O erro tem texto, não apenas borda vermelha. |
+| **Operável** | Consigo executar a ação? | É possível concluir tudo com teclado. |
+| **Compreensível** | Entendo o que fazer? | O formato esperado aparece antes do erro. |
+| **Robusto** | O código comunica corretamente? | `label`, `input` e `button` chegam à árvore de acessibilidade. |
+
+### Os quatro princípios
+
+- **Perceptível**: ofereça texto alternativo, contraste e alternativas para áudio.
+- **Operável**: permite teclado, foco visível, tempo suficiente e saída de modais.
+- **Compreensível**: use instruções claras, navegação previsível e erros acionáveis.
+- **Robusto**: escreva HTML válido e exponha nome, função e estado corretamente.
+
+<Mermaid
+  chart={`flowchart TB
+    I["Interface acessível"] --> P["Perceptível: receber"]
+    I --> O["Operável: interagir"]
+    I --> C["Compreensível: entender"]
+    I --> R["Robusto: interpretar"]
+    P --> X["Pessoa conclui a tarefa"]
+    O --> X
+    C --> X
+    R --> X`}
+  caption="POUR não é uma sequência: os quatro princípios precisam sustentar a mesma tarefa."
+/>
+
+### Um exemplo passando pelos quatro princípios
+
+```html
+<label for="email">E-mail para receber o comprovante</label>
+<p id="ajuda-email">Exemplo: nome@empresa.com</p>
+<input
+  id="email"
+  name="email"
+  type="email"
+  autocomplete="email"
+  aria-describedby="ajuda-email"
+  required
+/>
+<button type="submit">Confirmar pedido</button>
+```
+
+O label e a ajuda tornam o campo perceptível e compreensível. Os elementos nativos
+são operáveis por teclado e robustos para tecnologias assistivas. Um único trecho
+pode apoiar mais de um princípio ao mesmo tempo.
+
+### E os níveis A, AA e AAA?
+
+Os critérios são classificados por nível. **A** cobre barreiras fundamentais;
+**AA** adiciona critérios importantes adotados como referência por muitos projetos;
+**AAA** é mais exigente e nem sempre é possível para todo tipo de conteúdo.
+
+Na prática, uma equipe pode transformar critérios em histórias verificáveis:
+
+- "Como cliente, consigo finalizar a compra usando apenas teclado."
+- "Ao errar o CEP, recebo uma mensagem textual associada ao campo."
+- "Com zoom de 200%, não perco ações nem conteúdo."
+
+### Faça uma revisão POUR
+
+Escolha uma tarefa da sua aplicação, como entrar na conta. Para cada letra, escreva
+uma pergunta e execute o teste. Se você não consegue demonstrar o resultado, ainda
+há algo para investigar.
+
+> Dica: não trate WCAG como uma pontuação. A pergunta mais útil é: **qual
+> barreira este critério evita e como eu provo que a tarefa funciona?**
+
+No próximo nó, vamos começar pela ferramenta que resolve muita acessibilidade antes
+de qualquer atributo especial: **HTML semântico**.
+
+<Quiz
+  question="O que os princípios POUR ajudam a lembrar?"
+  options={[
+    {
+      text: "Que a interface precisa ser percebida, operada, compreendida e interpretada de forma robusta",
+      correct: true,
+    },
+    {
+      text: "Que acessibilidade é principalmente uma lista de cores permitidas",
+      correct: false,
+      explanation: "Contraste importa, mas POUR cobre percepção, operação, compreensão e robustez.",
+    },
+    {
+      text: "Que basta atingir AAA para qualquer produto estar perfeito",
+      correct: false,
+      explanation: "WCAG orienta decisões, mas acessibilidade também depende do contexto e do uso real.",
+    },
+  ]}
+/>

@@ -1,0 +1,115 @@
+---
+id: tabelas-acessiveis
+title: "Tabelas Acessíveis: Cabeçalhos, Escopo e Legenda"
+resources:
+  - title: "Tutorial de tabelas acessíveis"
+    url: https://www.w3.org/WAI/tutorials/tables/
+    type: doc
+    lang: en
+    free: true
+  - title: "Elemento table (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/table
+    type: doc
+    lang: pt
+    free: true
+---
+
+Tabela é ótima quando existe relação entre linhas e colunas. Com a marcação certa,
+a pessoa descobre **qual cabeçalho pertence a cada valor**, mesmo sem enxergar a
+posição visual da célula.
+
+```html
+<table>
+  <caption>Vendas por trimestre</caption>
+  <thead>
+    <tr>
+      <th scope="col">Produto</th>
+      <th scope="col">1º trimestre</th>
+      <th scope="col">2º trimestre</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">Plano Básico</th>
+      <td>120</td>
+      <td>148</td>
+    </tr>
+    <tr>
+      <th scope="row">Plano Pro</th>
+      <td>64</td>
+      <td>91</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+- **`caption`** explica sobre o que é a tabela.
+- **`th`** identifica uma célula como cabeçalho.
+- **`scope`** informa se o cabeçalho vale para uma linha ou coluna.
+
+Ao chegar ao valor `91`, um leitor de tela pode associá-lo a **Plano Pro** e
+**2º trimestre**. Negrito sozinho não criaria essa relação programática.
+
+### Mantenha a tabela utilizável em telas estreitas
+
+Não apague colunas importantes para "caber". Quando os dados realmente precisam
+continuar tabulares, permita rolagem na região e dê a ela um nome:
+
+```html
+<div class="tabela-scroll" role="region" aria-label="Vendas por trimestre" tabindex="0">
+  <table>...</table>
+</div>
+```
+
+```css
+.tabela-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+```
+
+O `tabindex="0"` torna a região rolável alcançável por teclado. Use-o aqui porque
+há uma interação concreta; não o espalhe por containers comuns.
+
+### Não use tabela para montar layout
+
+```html
+<!-- evite usar tabela só para posicionar blocos -->
+<table>
+  <tr><td>Menu</td><td>Conteúdo</td></tr>
+</table>
+```
+
+Para layout, use CSS Grid ou Flexbox. Tabela comunica **dados relacionados** e será
+interpretada dessa forma.
+
+### Checklist prático
+
+- Leia apenas o `caption`: ele explica o propósito da tabela?
+- Clique em uma célula de dado no DevTools e confira seus cabeçalhos associados.
+- Navegue pela região rolável usando teclado em uma viewport estreita.
+- Para tabelas com cabeçalhos em vários níveis, consulte o tutorial W3C e use
+  associações explícitas; não tente resolver uma estrutura complexa só com CSS.
+
+No próximo nó, vamos separar dois controles que muita interface mistura:
+**links e botões**.
+
+<Quiz
+  question="Qual combinação ajuda uma tabela de dados a ser entendida por tecnologia assistiva?"
+  options={[
+    {
+      text: "caption, th e scope usados para explicar dados, cabeçalhos e relações",
+      correct: true,
+    },
+    {
+      text: "Usar table para montar colunas de layout",
+      correct: false,
+      explanation: "Tabela comunica dados tabulares; usar para layout passa a semântica errada.",
+    },
+    {
+      text: "Deixar os cabeçalhos apenas em negrito",
+      correct: false,
+      explanation: "Negrito é visual. th e scope comunicam a relação de forma programática.",
+    },
+  ]}
+/>

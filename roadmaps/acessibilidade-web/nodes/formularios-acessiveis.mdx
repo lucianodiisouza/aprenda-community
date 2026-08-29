@@ -1,0 +1,147 @@
+---
+id: formularios-acessiveis
+title: "Formulários Acessíveis: label, fieldset e Instruções"
+resources:
+  - title: "Tutorial de labels em formulários"
+    url: https://www.w3.org/WAI/tutorials/forms/labels/
+    type: doc
+    lang: en
+    free: true
+  - title: "Agrupando controles de formulário"
+    url: https://www.w3.org/WAI/tutorials/forms/grouping/
+    type: doc
+    lang: en
+    free: true
+  - title: "Seu primeiro formulário (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn/Forms/Your_first_form
+    type: doc
+    lang: pt
+    free: true
+---
+
+Placeholder não substitui label. O campo precisa continuar identificável **antes,
+durante e depois** da digitação. Veja uma parte completa de um cadastro:
+
+```html
+<form>
+  <p>Campos marcados com * são obrigatórios.</p>
+
+  <label for="nome">Nome completo *</label>
+  <input id="nome" name="nome" autocomplete="name" required />
+
+  <label for="email">E-mail *</label>
+  <p id="ajuda-email">Usaremos este endereço para enviar o comprovante.</p>
+  <input
+    id="email"
+    name="email"
+    type="email"
+    autocomplete="email"
+    aria-describedby="ajuda-email"
+    required
+  />
+
+  <button type="submit">Criar conta</button>
+</form>
+```
+
+### Associe `label` e campo
+
+`for="email"` aponta para `id="email"`. Essa relação cria o nome do campo para
+tecnologias assistivas e também aumenta a área clicável do rótulo. Clique no texto
+"E-mail" para confirmar: o cursor deve ir para o input.
+
+Um placeholder pode mostrar um exemplo, mas desaparece durante a digitação e costuma
+ter contraste menor. Use-o apenas como complemento:
+
+```html
+<label for="telefone">Telefone</label>
+<input id="telefone" name="telefone" autocomplete="tel" placeholder="(11) 99999-9999" />
+```
+
+### Agrupe escolhas relacionadas
+
+```html
+<fieldset>
+  <legend>Como prefere receber o contato?</legend>
+  <label><input type="radio" name="contato" value="email" /> E-mail</label>
+  <label><input type="radio" name="contato" value="sms" /> SMS</label>
+</fieldset>
+```
+
+`fieldset` e `legend` dão contexto ao conjunto, não apenas a cada opção isolada. Ao
+navegar entre os radios, a pessoa recebe a pergunta e a opção atual.
+
+### Dê instruções antes do erro
+
+Se existe formato obrigatório, explique antes da pessoa enviar:
+
+```html
+<label for="senha">Senha</label>
+<p id="regras-senha">Use pelo menos 12 caracteres.</p>
+<input
+  id="senha"
+  name="senha"
+  type="password"
+  autocomplete="new-password"
+  aria-describedby="regras-senha"
+/>
+```
+
+- **`label`** identifica o campo.
+- **`fieldset` + `legend`** agrupam controles relacionados.
+- **Instruções** precisam estar disponíveis antes da validação.
+- **`autocomplete`** ajuda o navegador a preencher dados conhecidos.
+
+Tokens como `name`, `email`, `tel`, `postal-code`, `current-password` e
+`new-password` informam a finalidade do dado. Isso reduz digitação e pode ajudar
+pessoas com dificuldades motoras ou cognitivas.
+
+### Teste o formulário antes de validar dados
+
+1. Clique em cada label e confira se o campo correspondente recebe foco.
+2. Navegue com `Tab` e veja se a ordem acompanha o formulário.
+3. Use um leitor de tela ou o painel de acessibilidade para conferir nome, tipo,
+   obrigatoriedade e descrição de cada campo.
+4. Aplique zoom de `200%` e confirme que label, ajuda e input continuam próximos.
+
+No próximo nó, vamos ver como transformar um erro em uma orientação que a pessoa consiga **entender e corrigir**.
+
+<VisualCheckpoint
+  challenge="Associe o label E-mail ao campo e conecte a instrução usando aria-describedby."
+  starterHtml={`<label>E-mail</label>
+<p id="ajuda-email">Exemplo: nome@empresa.com</p>
+<input type="email">`}
+  starterCss={`label, input, p { display: block; margin-block: 0.5rem; }
+input { padding: 0.5rem; }`}
+  assert={`
+    const input = root.querySelector('input');
+    const label = root.querySelector('label');
+    const labelMatches = input?.id && label?.htmlFor === input.id;
+    return {
+      pass: !!labelMatches && input.getAttribute('aria-describedby') === 'ajuda-email',
+      message: 'Use for/id para o label e aria-describedby="ajuda-email" no input.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="formularios-acessiveis"
+/>
+
+<Quiz
+  question="O que label for associado ao id do input resolve?"
+  options={[
+    {
+      text: "Cria um nome programático para o campo e melhora a área clicável",
+      correct: true,
+    },
+    {
+      text: "Valida automaticamente se o dado digitado está correto",
+      correct: false,
+      explanation: "Validação é outra camada. O label identifica o campo.",
+    },
+    {
+      text: "Substitui instruções, mensagens de ajuda e erros",
+      correct: false,
+      explanation: "O label nomeia o campo; instruções e erros ainda precisam ser comunicados.",
+    },
+  ]}
+/>
