@@ -6,6 +6,81 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+### Adicionado
+
+- 👥 **Índice de contribuidores** (`contributors.json` + `scripts/build-contributors.mjs`):
+  agrega os `creators` espalhados por trilhas, projetos e bootcamps num
+  único índice chaveado pelo handle do GitHub - a chave que também liga o
+  criador ao perfil público. É o contrato estável que a app consome pra
+  exaltar quem contribui (fileira de avatares na home, section de
+  contribuições no perfil público, badge de contribuidor). Um bootcamp
+  também credita quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`).
+  Cada entrada já traz `avatar`, `profile`, `counts` e as listas de
+  trilhas/projetos/bootcamps, ordenadas por total de contribuições.
+
+### Alterado
+
+- ✅ **`validate.mjs` agora exige `github` (e `name`) em todo `creators`**,
+  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa some
+  do índice de contribuidores. O CI de validação também roda
+  `build-contributors.mjs --check` - se o `contributors.json` commitado
+  estiver desatualizado, o job falha.
+
+## [1.21.0] - 2026-08-28
+
+### Adicionado
+
+- ⚡ **Trilha Next.js e Meta-frameworks** (`roadmaps/nextjs`, 10 nós):
+  o salto de "dev que monta SPA" pra "dev que entrega app production-grade
+  com SSR, SEO e data layer moderna". Usa Next.js como referência
+  canônica (maior ecossistema, melhor doc, implementação mais completa
+  de RSC), mas os conceitos se aplicam a outros meta-frameworks React
+  (Remix, React Router v7, TanStack Start). Pré-requisito: trilha
+  `frontend` (especialmente `react`, `state-hooks`, `rotas`) e noções
+  de TypeScript. Os 10 nós: `ts-no-react` (tipos que salvam a sua
+  vida em React), `meta-frameworks-por-que` (SPA, SSR, RSC e quando
+  cada um), `app-router-mental-model` (layouts, pages, route groups,
+  loading/error/not-found), `rsc-fundamentos` (Server vs Client
+  Components, a fronteira), `composicao-rsc` (server-only e client
+  islands), `data-fetching-server` (cache, revalidação, Suspense),
+  `server-actions` (mutations sem API route, revalidatePath/Tag),
+  `streaming-ssr` (streaming SSR e Suspense boundaries), `middleware-e-auth`
+  (middleware e Auth.js v5) e `projeto-final` (app full-stack com auth,
+  CRUD, ISR e deploy). **Interatividade: 9 quizzes formativos, 4
+  checkpoints validados, 5 diagramas Mermaid**. Decisões editoriais em
+  `roadmaps/nextjs/meta/editorial-decisions.md`. Trilha escrita por
+  **Luciano dii Souza** ([@lucianodiisouza](https://github.com/lucianodiisouza))
+  - resolve a sub-issue #42 da meta-issue #41 (Bootcamp Frontend 2026).
+- 🆕 **Selo "novo"** na trilha Next.js e Meta-frameworks: campo
+  `published: "2026-08-28"` no `roadmaps/nextjs/roadmap.json` ativa o
+  `<NewBadge>` no `TrilhaCard` (janela de 30 dias, avaliada no client).
+- 🔎 **Projeto Auditoria de SEO, AEO e GEO** (`projects/auditoria-seo-aeo-geo`):
+  praticar a trilha `seo-aeo-geo` auditando uma página real nas três
+  camadas (SEO técnico, resposta direta em featured snippets, citação por
+  IA generativa) e aplicando pelo menos uma melhoria verificável em cada
+  uma. Estimativa: 1 fim de semana. Dificuldade: intermediário.
+  Pré-requisito: trilha `seo-aeo-geo`. Projeto escrito por
+  **Breno Alvim** ([@obrenoalvim](https://github.com/obrenoalvim)).
+- 🆕 **Selo "novo"** no projeto acima: campo `published: "2026-08-28"`
+  no frontmatter ativa o `<NewBadge>` (janela de 30 dias, avaliada no
+  client).
+
+## [1.20.0] - 2026-08-26
+
+### Adicionado
+
+- 🐰 **Três projetos de mensageria** (`projects/`), praticando a trilha
+  RabbitMQ e Mensageria: `central-de-notificacoes` (roteamento por
+  `topic` decidindo quem avisa por e-mail, push ou SMS),
+  `fila-de-atendimento` (senha de atendimento com prioridade, uma fila
+  de verdade em vez de tabela no banco) e `processador-de-planilhas`
+  (upload de CSV grande que responde na hora e processa por trás, com
+  retry, dead letter queue e relatório de erros linha a linha). Todos
+  `intermediario`.
+- 🆕 **Selo "novo"** nos três projetos acima: campo
+  `published: "2026-08-26"` no frontmatter ativa o `<NewBadge>`
+  (janela de 30 dias, avaliada no client).
+
 ## [1.19.0] - 2026-08-26
 
 ### Adicionado

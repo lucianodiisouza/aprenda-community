@@ -1,0 +1,380 @@
+---
+id: streaming-ssr
+title: "Streaming SSR e Suspense Boundaries"
+resources:
+  - title: "Next.js: Loading UI and Streaming (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming
+    type: doc
+    lang: en
+    free: true
+  - title: "Next.js: Error Handling (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/routing/error-handling
+    type: doc
+    lang: en
+    free: true
+---
+
+Imagine que seu feed demora 2 segundos pra carregar os posts,
+mas o header e o footer são instantâneos. No SSR clássico, o
+usuário **espera 2s vendo tela em branco** e depois vê tudo de
+uma vez. No **streaming SSR**, o usuário **vê o header
+instantaneamente**, o skeleton do feed aparece, e os posts vão
+chegando conforme carregam. Mesma página, UX radicalmente
+diferente.
+
+## O essencial 🟢
+
+**SSR tradicional: servidor espera TUDO terminar, manda HTML
+pronto, browser renderiza.** O tempo até o primeiro byte (TTFB)
+é dominado pela parte mais lenta da página. Se um fetch demora
+2s, **toda a página** espera 2s.
+
+**Streaming SSR: servidor manda o que tem pronto, vai enchendo o
+resto conforme termina.** O TTFB cai pra o tempo da parte mais
+rápida. O browser vai renderizando chunks conforme chegam. **É
+o mesmo modelo do YouTube carregando vídeo: começa a tocar
+antes de baixar inteiro.**
+
+<Mermaid
+  chart={`gantt
+    title Timeline: SSR tradicional vs Streaming SSR
+    dateFormat X
+    axisFormat %s
+    section SSR tradicional
+    Server processa tudo (2s)           :a1, 0, 2000
+    Browser recebe HTML pronto          :a2, 2000, 200
+    section Streaming SSR
+    Server envia header (0.1s)         :b1, 0, 100
+    Server envia skeleton (0.2s)        :b2, 100, 100
+    Server envia posts (1.7s)           :b3, 200, 1700
+    Browser renderiza header (0.1s)     :b4, 100, 100
+    Browser renderiza skeleton (0.1s)   :b5, 200, 100
+    Browser renderiza posts (0.1s)      :b6, 1900, 100`}
+  caption="SSR tradicional: usuário espera 2s vendo tela em branco. Streaming: usuário vê conteúdo em 100ms, e o resto chega aos poucos."
+/>
+
+**`loading.tsx`: Next automaticamente envolve `page.tsx` em
+Suspense com esse fallback.** É a forma mais fácil de ativar
+streaming - basta criar o arquivo.
+
+```tsx
+// app/posts/loading.tsx
+export default function Loading() {
+  return <div className="post-skeleton">Carregando posts...</div>;
+}
+
+// app/posts/page.tsx (Server, async)
+export default async function PostsPage() {
+  const posts = await db.post.findMany(); // pode demorar
+  return (
+    <ul>
+      {posts.map((p) => <li key={p.id}>{p.title}</li>)}
+    </ul>
+  );
+}
+```
+
+Enquanto `PostsPage` está esperando o DB, o usuário vê
+`Loading`. O resto da árvore (header, sidebar) renderiza
+instantaneamente.
+
+**`<Suspense fallback={...}>`: boundary manual pra isolar uma
+parte lenta.** Quando só um pedaço da página é lento (uma
+sidebar, um widget de feed), o `loading.tsx` é exagero (afinal
+a página inteira não está lenta). Solução: `<Suspense>`
+cirúrgico.
+
+```tsx
+// app/posts/page.tsx
+import { Suspense } from "react";
+
+export default function PostsPage() {
+  return (
+    <div>
+      <h1>Posts</h1>
+      <Suspense fallback={<PostsSkeleton />}>
+        <PostsList /> {/* async, lento */}
+      </Suspense>
+      <NewsletterWidget /> {/* rápido, renderiza sem esperar */}
+    </div>
+  );
+}
+
+async function PostsList() {
+  const posts = await db.post.findMany();
+  return <ul>{posts.map(...)}</ul>;
+}
+```
+
+`NewsletterWidget` (rápido) renderiza instantaneamente. `PostsList`
+(lento) mostra skeleton até resolver. Usuário vê página **com
+conteúdo** em vez de tela em branco.
+
+**`loading.tsx` vs `<Suspense>`: o primeiro é por rota, o
+segundo é por componente.** Regra de bolso:
+
+- **`loading.tsx`**: quer fallback pra **rota inteira** (página
+  carregando do zero, é legítimo mostrar skeleton da página).
+- **`<Suspense>`**: quer fallback **cirúrgico** (uma parte da
+  página é lenta, mas o resto está pronto).
+
+**Por que isso é melhor que "tudo de uma vez": TTFB cai, FCP
+melhora, UX menos travada.** Métricas Core Web Vitals (LCP, FCP,
+TTFB) melhoram visivelmente quando streaming é aplicado
+corretamente. O usuário **sente** que a app é mais rápida mesmo
+que o tempo total de carregamento seja o mesmo.
+
+## Aprofundamento 🟡
+
+**Como o streaming funciona por baixo.** O Next usa **HTTP/1.1
+chunked transfer encoding** (ou HTTP/2 streams). O servidor
+começa a mandar a resposta sem definir `Content-Length`, e cada
+chunk é um pedaço do HTML. O browser renderiza cada chunk
+conforme chega. React 18+ suporta isso nativamente via
+`renderToPipeableStream`.
+
+```tsx
+// Anatomia da resposta (simplificada):
+HTTP/1.1 200 OK
+Content-Type: text/html
+Transfer-Encoding: chunked
+
+<!-- chunk 1: header, sidebar, skeleton do feed -->
+<html>
+  <body>
+    <header>...</header>
+    <main>
+      <h1>Posts</h1>
+      <div class="skeleton">Carregando...</div>
+    </main>
+
+<!-- chunk 2: posts reais chegam -->
+<script>self.__next_f.push([1, ...posts data...])</script>
+<ul>
+  <li>Post 1</li>
+  <li>Post 2</li>
+</ul>
+
+<!-- chunk 3: footer -->
+<footer>...</footer>
+  </body>
+</html>
+```
+
+(Na real, é mais complexo com o RSC payload inline, mas a ideia
+é essa.)
+
+**`error.tsx` no App Router: error boundary da rota.** Se um
+`page.tsx` (ou descendente) lançar erro, o Next mostra o
+`error.tsx` **no lugar da página**. O resto da árvore (layout)
+sobrevive.
+
+```tsx
+// app/posts/error.tsx
+"use client"; // precisa de Client (onClick)
+
+import { useEffect } from "react";
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div>
+      <h2>Algo deu errado ao carregar os posts.</h2>
+      <button onClick={() => reset()}>Tentar de novo</button>
+    </div>
+  );
+}
+```
+
+`reset()` re-renderiza a rota, refazendo os fetches. O
+`error.digest` é um hash do erro que você pode logar (Sentry)
+pra correlacionar com logs do server.
+
+**`global-error.tsx` pra erros fatais (layout raiz falhou).**
+Raramente usado. Erro no layout raiz **derruba a app inteira**,
+e o `error.tsx` não consegue capturar (porque é renderizado
+dentro do layout). Solução: `global-error.tsx` no nível da app,
+com seu próprio `<html>` e `<body>`.
+
+```tsx
+// app/global-error.tsx
+"use client";
+export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <html>
+      <body>
+        <h2>Erro fatal</h2>
+        <button onClick={() => reset()}>Tentar de novo</button>
+      </body>
+    </html>
+  );
+}
+```
+
+**Erros em streaming: boundary cobre o que já renderizou +
+substitui o que falhou.** Se um `<Suspense>` falha depois de
+outro já ter renderizado, o usuário vê o conteúdo renderizado +
+o erro na parte que falhou. Nada de "tudo some".
+
+```tsx
+export default function Page() {
+  return (
+    <>
+      <Header /> {/* renderiza */}
+      <Suspense fallback={<Loading />}>
+        <PostsList /> {/* se falhar, mostra error.tsx ou <ErrorBoundary> */}
+      </Suspense>
+      <Footer /> {/* renderiza mesmo se PostsList falhar */}
+    </>
+  );
+}
+```
+
+**Quando streaming NÃO ajuda: a parte crítica é lenta (TTFB
+continua alto).** Se o header em si depende de um fetch lento
+(ex: dados do user logado), **o TTFB continua alto** - o
+streaming não ajuda. A solução: **não dependa de fetch no
+header**, ou faça o header client-side (Client Component com
+`useEffect` próprio).
+
+**`useSearchParams`, `usePathname` em Client Component: o que
+força client rendering.** Hooks do `next/navigation` exigem
+Client Component. Quando você os usa, o componente (e
+descendentes?) vira client. Se o componente é pequeno (um
+breadcrumb), não tem custo. Se é um wrapper de página inteira,
+você tá revertendo RSC.
+
+**Skeleton vs spinner vs nada: como escolher.** Princípio: o
+**shape** do skeleton deve bater com o conteúdo final. Evita
+layout shift, dá sensação de progresso.
+
+```tsx
+// ❌ RUIM: spinner genérico
+<Suspense fallback={<Spinner />}>
+  <PostsList />
+</Suspense>
+
+// ✅ BOM: skeleton com a forma da lista final
+<Suspense fallback={
+  <ul>
+    {Array.from({ length: 5 }).map((_, i) => (
+      <li key={i} className="skeleton-row" />
+    ))}
+  </ul>
+}>
+  <PostsList />
+</Suspense>
+```
+
+Mostrar "shape, não loading" é regra geral de UX (mesmo
+conceito do Facebook, LinkedIn, Twitter: você vê boxes cinzas
+no lugar do conteúdo, e quando o conteúdo chega, ele "encaixa").
+
+## Pra quem quer ir além 🔴
+
+**HTTP/2 push, preload, prefetch (complementos).** O Next usa
+esses mecanismos pra antecipar recursos. `<link rel="preload">`
+carrega JS crítico antes do HTML terminar de parsear.
+`router.prefetch()` (em Client Component) carrega a RSC payload
+da próxima rota antes do user clicar.
+
+**React 19 `use()` pra data fetching client-side (com
+Suspense).** Hook que "desempacota" Promise no client:
+
+```tsx
+"use client";
+import { use, Suspense } from "react";
+
+function Comments({ commentsPromise }: { commentsPromise: Promise<Comment[]> }) {
+  const comments = use(commentsPromise); // "await" client-side
+  return <ul>{comments.map(c => <li key={c.id}>{c.text}</li>)}</ul>;
+}
+
+export function CommentsSection({ postId }: { postId: string }) {
+  const commentsPromise = fetch(`/api/posts/${postId}/comments`).then(r => r.json());
+  return (
+    <Suspense fallback={<CommentsSkeleton />}>
+      <Comments commentsPromise={commentsPromise} />
+    </Suspense>
+  );
+}
+```
+
+Em 2026, ainda experimental - cuidado com uso em produção. A
+trilha usa o caminho "padrão" (Server Component com `await fetch`).
+
+**Partial pre-rendering (PPR): experimental no Next 15.** Mistura
+SSG estático + streaming dinâmico na mesma rota. O Next pré-renderiza
+a parte estática em build, e streamina a parte dinâmica em runtime.
+Combinado com `<Suspense>`, dá o melhor dos dois mundos.
+
+```tsx
+// next.config.js
+experimental: { ppr: "incremental" }
+
+// app/page.tsx
+export const experimental_ppr = true;
+
+export default function Page() {
+  return (
+    <>
+      <StaticHeader /> {/* pré-renderizado */}
+      <Suspense fallback={<Skeleton />}>
+        <DynamicContent /> {/* streaming */}
+      </Suspense>
+    </>
+  );
+}
+```
+
+Status: experimental em Next 15.x, em produção só com cuidado.
+
+**Leitura recomendada:**
+
+- [Next.js: Loading UI and Streaming (oficial)](https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming) - referência canônica, com diagramas de timing.
+- [Next.js: Error Handling (oficial)](https://nextjs.org/docs/app/building-your-application/routing/error-handling) - error boundaries, global-error, when each.
+- Vídeo: Dan Abramov - "Suspense" no React 18 (vale ver pra
+  entender a intuição original).
+
+> Dica: a primeira vez que você implementa streaming de verdade,
+> a sensação é "isso é legal mas não sei quando aplicar". Regra
+> prática: **se a página tem fetch lento que afeta o conteúdo
+> principal, envolva em Suspense ou use loading.tsx**. Se o fetch
+> é só pra um widget secundário, deixe ele sem Suspense e o
+> widget aparece depois. Streaming é ferramenta - use onde
+> agrega, não em todo lugar.
+
+No próximo nó, vamos fechar o ciclo de produção com **middleware
+e autenticação** - onde mora o "porteiro" da sua app (rotas
+protegidas, redirects, auth com Auth.js).
+
+<Quiz
+  question="Quando você prefere `<Suspense fallback={<X />}>` em vez de `loading.tsx` para streaming SSR?"
+  options={[
+    {
+      text: "Quando só uma parte da página é lenta e o resto pode renderizar instantaneamente",
+      correct: true,
+    },
+    {
+      text: "Sempre, em qualquer página que tenha fetch assíncrono",
+      correct: false,
+      explanation:
+        "loading.tsx é mais simples para o caso 'toda a rota é lenta'. Suspense manual é para o caso cirúrgico: 'só esse pedaço é lento, o resto está pronto'.",
+    },
+    {
+      text: "Apenas quando você precisa mostrar um spinner animado",
+      correct: false,
+      explanation:
+        "Suspense não é sobre tipo de loading (spinner vs skeleton) - é sobre ESCOPO. Qualquer um dos dois pode ser usado em loading.tsx ou <Suspense>. A diferença é se a boundary cobre a rota inteira ou só um pedaço.",
+    },
+  ]}
+/>

@@ -33,6 +33,31 @@ const err = (msg) => {
 const ok = (msg) => console.log(`✅ ${msg}`);
 
 /**
+ * Valida um array `creators`. O `github` é a chave que liga o criador ao índice
+ * de contribuidores (contributors.json) e ao perfil público - sem ele, a pessoa
+ * some da agregação. Por isso é obrigatório em cada entrada.
+ */
+function checkCreators(creators, where) {
+  if (creators === undefined) return;
+  if (!Array.isArray(creators)) {
+    err(`  ${where}: "creators" deve ser uma lista`);
+    return;
+  }
+  creators.forEach((c, i) => {
+    if (typeof c !== "object" || c === null) {
+      err(`  ${where}: creators[${i}] deve ser um objeto { name, github }`);
+      return;
+    }
+    if (!c.github || typeof c.github !== "string") {
+      err(`  ${where}: creators[${i}] sem "github" (obrigatório - é a chave do contribuidor)`);
+    }
+    if (!c.name || typeof c.name !== "string") {
+      err(`  ${where}: creators[${i}] sem "name"`);
+    }
+  });
+}
+
+/**
  * Extrai o id do vídeo de uma URL do YouTube (watch, youtu.be, embed, shorts,
  * incluindo o domínio youtube-nocookie.com). Retorna null se não reconhecer.
  * Espelha `youTubeId` do schema do app (packages/content/src/schema.ts).
@@ -123,6 +148,8 @@ async function validateRoadmap(slug) {
       }
     }
   }
+
+  checkCreators(roadmap.creators, `roadmaps/${slug}/roadmap.json`);
 
   if (!Array.isArray(roadmap.nodes) || roadmap.nodes.length === 0) {
     err(`  roadmap.json: "nodes" deve ser um array não-vazio`);
@@ -257,9 +284,7 @@ async function validateProject(slug, knownRoadmapSlugs) {
       }
     }
   }
-  if (fm.creators !== undefined && !Array.isArray(fm.creators)) {
-    err(`  ${relative(ROOT, path)}: frontmatter "creators" deve ser uma lista`);
-  }
+  checkCreators(fm.creators, relative(ROOT, path));
   ok(`  Projeto "${fm.title || slug}" validou estrutura.`);
 }
 
@@ -299,6 +324,7 @@ async function validateBootcamp(slug, knownRoadmapSlugs, knownProjectSlugs) {
   if (!["iniciante", "intermediario", "avancado"].includes(bc.difficulty)) {
     err(`  bootcamp.json: difficulty deve ser iniciante|intermediario|avancado (recebido: ${bc.difficulty})`);
   }
+  checkCreators(bc.creators, `bootcamps/${slug}/bootcamp.json`);
   if (!Array.isArray(bc.modules) || bc.modules.length === 0) {
     err(`  bootcamp.json: "modules" deve ser um array não-vazio`);
     return;

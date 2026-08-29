@@ -1,0 +1,179 @@
+/* Fontes do site (mesmas do academy): Plus Jakarta Sans (sans),
+   JetBrains Mono (mono), Archivo (display). */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   Tokens de tema - copiados 1:1 do academy (apps/web/app/globals.css).
+   Tema claro calmo; tema escuro (Dracula/neon) é o padrão do produto.
+   ========================================================================== */
+:root {
+  --radius: 0.625rem;
+
+  --background: #fbfbfd;
+  --foreground: #1b1c26;
+  --card: #ffffff;
+  --card-foreground: #1b1c26;
+  --popover: #ffffff;
+  --popover-foreground: #1b1c26;
+  --primary: #6d4bd8;
+  --primary-foreground: #ffffff;
+  --secondary: #f1eff8;
+  --secondary-foreground: #2b2340;
+  --muted: #f3f2f7;
+  --muted-foreground: #6b6a80;
+  --accent: #f1eff8;
+  --accent-foreground: #6d4bd8;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e7e6ef;
+  --input: #e7e6ef;
+  --ring: #6d4bd8;
+
+  --brand-green: #50fa7b;
+  --brand-purple: #bd93f9;
+  --brand-pink: #ff79c6;
+  --brand-cyan: #8be9fd;
+  --brand-orange: #ffb86c;
+  --brand-yellow: #f1fa8c;
+}
+
+.dark {
+  --background: #131320;
+  --foreground: #f8f8f2;
+  --card: #191a28;
+  --card-foreground: #f8f8f2;
+  --popover: #191a28;
+  --popover-foreground: #f8f8f2;
+  --primary: #bd93f9;
+  --primary-foreground: #11121a;
+  --secondary: #2b2c44;
+  --secondary-foreground: #f8f8f2;
+  --muted: #21222c;
+  --muted-foreground: #9aa0c4;
+  --accent: #2b2c44;
+  --accent-foreground: #f8f8f2;
+  --destructive: #ff5555;
+  --destructive-foreground: #11121a;
+  --border: #2b2c44;
+  --input: #2b2c44;
+  --ring: #50fa7b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-green: var(--brand-green);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-pink: var(--brand-pink);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-yellow: var(--brand-yellow);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Archivo", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  a:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* Realce de código: paleta Dracula pra casar com o tema. rehype-highlight
+   adiciona as classes `hljs`. */
+.hljs {
+  color: #f8f8f2;
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: #6272a4;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-section,
+.hljs-link {
+  color: #ff79c6;
+}
+.hljs-string,
+.hljs-title,
+.hljs-name,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: #f1fa8c;
+}
+.hljs-number,
+.hljs-meta,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal.hljs-number {
+  color: #bd93f9;
+}
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-title.class_ {
+  color: #8be9fd;
+}
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: #50fa7b;
+}
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-regexp {
+  color: #ff79c6;
+}
+.hljs-attr,
+.hljs-params {
+  color: #ffb86c;
+}
+.hljs-emphasis {
+  font-style: italic;
+}
+.hljs-strong {
+  font-weight: 700;
+}

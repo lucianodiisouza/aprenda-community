@@ -1,0 +1,229 @@
+---
+id: meta-frameworks-por-que
+title: "Por que um Meta-Framework: SPA, SSR e RSC"
+resources:
+  - title: "Next.js Docs (oficial, 'What is Next.js?')"
+    url: https://nextjs.org/docs#what-is-nextjs
+    type: doc
+    lang: en
+    free: true
+  - title: "React Server Components RFC (oficial, canônico)"
+    url: https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md
+    type: doc
+    lang: en
+    free: true
+  - title: "Theo: React Server Components explained (visual)"
+    url: https://www.youtube.com/watch?v=QC4u6lntHhg
+    type: video
+    lang: en
+    free: true
+---
+
+Você terminou `frontend`. Sabe React, sabe rotas no browser, sabe
+fetch, sabe formulário. Sua app funciona. Mas quando você coloca em
+produção, aparece um conjunto novo de problemas: **SEO ruim, primeira
+pintura lenta, dados sensíveis indo pro bundle JS, lighthouse
+vergonhoso**. Nenhum desses é culpa do React. É culpa do modelo.
+
+A maioria esbarra na mesma decisão: **devo continuar com SPA pura, ou
+usar um framework que renderiza no servidor**? E quando descobre
+**React Server Components (RSC)**, aparece uma terceira via que não
+existia antes. Este nó é o mapa mental que você precisa antes de
+mergulhar nos próximos.
+
+## O essencial 🟢
+
+**O que é um "meta-framework".** É um framework construído **em cima**
+de outro framework. No nosso caso, Next.js (e Remix, TanStack Start)
+são meta-frameworks React: eles tomam decisões que o React puro deixa
+em aberto - como rotear, como buscar dados, como renderizar no
+servidor. Você escreve "página de posts" e o framework decide se isso
+é HTML estático, SSR, ou client-rendered.
+
+**Três modelos de renderização, lado a lado:**
+
+| Modelo            | Quem renderiza HTML? | Quem roda JS? | Bundle JS no browser? |
+| ----------------- | -------------------- | ------------- | --------------------- |
+| **SPA** (React puro) | Browser (vazio, depois hidrata) | Browser | Tudo, sempre |
+| **SSR clássico** (Next Pages, Remix antigo) | Servidor (HTML pronto) | Browser (hidrata) | Tudo (bundle completo) |
+| **RSC** (Next App Router, React Router v7) | Servidor (chunk por chunk) | Browser só onde precisa | **Só Client Components** |
+
+**SPA (Single-Page Application).** O servidor manda um HTML vazio + um
+`bundle.js` gigante. O browser baixa o bundle, executa, e o React
+"desenha" a página. **Vantagem**: navegação instantânea depois do
+carregamento inicial, app store-like. **Desvantagem**: primeiro
+carregamento é lento (bundle), SEO precisa de workaround (prerender),
+**todo o JS vai pro browser** (código de admin, de cálculo de imposto,
+de query do banco - tudo).
+
+**SSR clássico (Server-Side Rendering).** O servidor roda o React, monta
+o HTML, manda pronto. O browser recebe HTML visível de cara, depois
+baixa o JS e "hidrata" (transforma HTML estático em React vivo). Vantagem:
+**SEO e first paint excelentes**. Desvantagem: o servidor **renderiza
+tudo** toda vez (custo), o bundle JS ainda é completo (hidratação), e
+você paga duas vezes: render no servidor + render no client.
+
+**RSC (React Server Components).** O servidor renderiza **só os
+componentes que são server**. Esses viram um formato especial (RSC
+payload) que o browser **intercala com os Client Components** que ele
+mesmo roda. O resultado: o servidor manda o HTML + JS **só do que
+precisa de JS**. Vantagem: bundle mínimo, servidor faz o trabalho
+pesado (DB, fetch, cálculo), código sensível nunca vai pro browser.
+Desvantagem: curva de aprendizado (a fronteira `'use client'` é nova),
+nem tudo cabe no modelo (ver `composicao-rsc`).
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph "SPA"
+      direction TB
+      S1["Servidor: HTML vazio + bundle.js gigante"]
+      S2["Browser: executa bundle, React desenha tudo"]
+      S1 --> S2
+    end
+    subgraph "SSR clássico"
+      direction TB
+      R1["Servidor: React monta HTML pronto"]
+      R2["Browser: recebe HTML, baixa bundle, hidrata tudo"]
+      R3["Custo: render 2x, bundle completo"]
+      R1 --> R2 --> R3
+    end
+    subgraph "RSC"
+      direction TB
+      C1["Servidor: renderiza só Server Components"]
+      C2["Servidor: manda HTML + RSC payload + JS mínimo"]
+      C3["Browser: server já visível, só client islands hidratam"]
+      C1 --> C2 --> C3
+    end`}
+  caption="Três modelos: SPA manda tudo como JS, SSR renderiza 2x (servidor + hidratação), RSC manda só o que precisa de JS."
+/>
+
+**Quando cada um vence.** Regra de bolso:
+
+- **SPA**: app interno (dashboard, admin, CRM), SEO não importa,
+  primeira pintura não importa (o usuário vai usar muito a app), você
+  precisa de real-time pesado (chat, collaborative editing). É onde
+  SPA clássica ainda brilha.
+- **SSR**: blog, e-commerce, conteúdo público, SEO crítico, e você
+  está em um framework que já tem SSR (Next, Remix). Em 2026, **RSC
+  é o caminho moderno**, mas SSR clássico ainda funciona e está em
+  muito código em produção.
+- **RSC**: qualquer app React que vai pra público, especialmente
+  com fetch de dados por página, conteúdo misto (server + interativo
+  pontual), e onde SEO/performance importam. É o **default do Next 13+
+  com App Router**.
+
+**A pegadinha:** RSC não substitui 100% dos casos. Real-time pesado
+(WebSocket pra chat colaborativo), apps que dependem de estado
+client-first (editor gráfico tipo Figma), ou apps mobile que são na
+verdade webview (Capacitor, React Native Web) podem se virar melhor
+com SPA ou SSR.
+
+## Aprofundamento 🟡
+
+**Custo de servidor (RSC precisa de runtime Node/Edge; SPA é
+CDN-friendly).** SPA, depois do `build`, é HTML + JS estático - você
+joga numa CDN (Cloudflare, Vercel Edge, S3 + CloudFront) e pronto.
+**RSC precisa de um servidor que rode código** (Node.js, Bun, ou Edge
+Runtime). Isso muda o modelo de deploy e o custo: CDN é centavos por
+GB, servidor é centavos por hora de CPU.
+
+Na prática, em apps pequenas/médias, a diferença é desprezível
+(planos de Vercel/Netlify cobrem bem). Em apps grandes, o **custo
+marginal de RSC é maior que o de SPA estática** - mas o ganho de
+performance e DX compensa na maioria dos casos.
+
+**Hidratação: o que é, por que RSC reduz.** Quando o browser recebe
+HTML pronto (SSR), ele tem que "acordar" esse HTML - conectar
+eventos, inicializar state, rodar `useEffect`. Isso é **hidratação**, e
+é caro: o React no browser percorre a árvore inteira, reconstrói o
+virtual DOM, e liga os handlers. Em páginas grandes, é o gargalo.
+
+RSC **elimina a hidratação dos Server Components** - eles já estão
+"vivos" no servidor, mandaram o resultado pronto, e o browser só
+hidrata as **client islands**. Quanto mais server, menos hidratação,
+mais rápido.
+
+**Streaming: o servidor começa a mandar antes de terminar tudo.** RSC
+ativa o **streaming SSR**: o servidor manda o HTML em chunks, e o
+browser vai renderizando conforme chega. Combinado com `<Suspense>`,
+você vê o header instantâneo, depois o skeleton do feed, e os posts
+chegam aos poucos. Veremos isso a fundo no nó `streaming-ssr`.
+
+**Quando RSC NÃO é a resposta.** Casos onde RSC complica mais que
+ajuda:
+
+- **Real-time pesado**: chat, edição colaborativa, jogos - o
+  estado vive no browser, o servidor é só relay. SPA pura é mais
+  simples. (Em RSC, dá pra fazer, mas a fronteira complica.)
+- **Apps que dependem muito de `window`/`document` no render**:
+  raro, mas se você tem componente que lê `localStorage` no
+  primeiro render, vira Client Component e a vantagem some.
+- **Apps com SEO zero e UX tudo-em-um-tela** (ex: Trello): o
+  usuário entra e fica - primeiro carregamento importa menos que
+  a fluidez da interação.
+
+Nesses casos, SPA clássica (ou SSR com hidratação completa) pode ser
+mais simples.
+
+## Pra quem quer ir além 🔴
+
+**História em uma linha.** PHP renderizava HTML no servidor (2000).
+React popularizou SPA (2013). Next popularizou SSR pra React (2016).
+React 18 introduziu Server Components estáveis (2023). Next 13 adotou
+RSC como modelo padrão (2022, GA em 2023). Cada salto foi
+"mover trabalho de um lugar pra outro" - sempre tem trade-off.
+
+**Comparativo: Next.js vs Remix vs TanStack Start vs Astro.**
+
+- **Next.js**: o canônico. Maior ecossistema, melhor DX com
+  Vercel, mais maduro em RSC.
+- **Remix** (agora React Router v7): foco em web fundamentals
+  (forms, progressive enhancement), acabou de fundir com React
+  Router. Tem modelo próprio de "loader/action" que lembra
+  Server Actions.
+- **TanStack Start**: experimental até 2025, ainda em beta. Foco
+  em type-safety ponta a ponta com TanStack Router.
+- **Astro**: **não é meta-framework React** - é multi-framework
+  com "ilhas" de React. Bom pra sites com pouco JS, mas não pra
+  apps React-first.
+
+Pra esta trilha, focamos em **Next.js** como referência. Os conceitos
+(RSC, server data fetching, actions) se aplicam aos outros com
+adaptações de sintaxe.
+
+**RFC: React Server Components (canônico, longo).** Vale ler pelo
+menos a primeira metade se você quer entender o "porquê" do modelo.
+[github.com/reactjs/rfcs/blob/main/text/0188-server-components.md](https://github.com/reactjs/rfcs/blob/main/text/0188-server-components.md).
+É a fonte original de tudo que vem nos próximos nós.
+
+> Dica: quando alguém te perguntar "qual a diferença de SPA pra
+> Next?", a resposta curta é: **SPA renderiza no browser, Next
+> renderiza no servidor e manda pronto**. A versão longa é este nó.
+> Quando perguntarem "RSC vs SSR?", a resposta curta é: **RSC não
+> hidrata o que é server, manda JS mínimo pro browser**. A versão
+> longa é o próximo nó (`rsc-fundamentos`).
+
+No próximo nó, vamos abrir o **App Router** do Next - a estrutura de
+pastas e conventions que transformam essa teoria em código real.
+
+<Quiz
+  question="Em qual modelo de renderização o browser baixa o menor bundle JavaScript possível?"
+  options={[
+    {
+      text: "SPA - porque o servidor manda só o essencial",
+      correct: false,
+      explanation:
+        "É o contrário: SPA manda o bundle INTEIRO (todo o React, todo o código da app, todas as rotas). O bundle é o que o browser executa pra desenhar a página.",
+    },
+    {
+      text: "RSC - porque só Client Components viram JS no browser",
+      correct: true,
+    },
+    {
+      text: "SSR clássico - porque o HTML pronto já é visível",
+      correct: false,
+      explanation:
+        "SSR clássico manda HTML pronto (bom pra first paint), mas o bundle JS é completo: o browser ainda precisa hidratar TUDO. A hidratação do SSR custa o mesmo que a render inicial da SPA.",
+    },
+  ]}
+/>

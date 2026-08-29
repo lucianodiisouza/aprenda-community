@@ -1,0 +1,61 @@
+---
+slug: central-de-notificacoes
+title: "Central de Notificações"
+description: "Um serviço que recebe eventos do sistema e decide quem avisa por e-mail, push ou SMS — usando roteamento por topic."
+difficulty: intermediario
+published: "2026-08-26"
+skills:
+  - rabbitmq
+  - mensageria
+  - pub-sub
+  - arquitetura
+  - backend
+trilhas:
+  - rabbitmq-mensageria
+  - backend
+estimate: "1 semana"
+creators:
+  - name: "Rafael Coelho"
+    github: "rafa-coelho"
+---
+
+Todo sistema que cresce chega nesse ponto: pedido criado precisa mandar e-mail,
+pagamento recusado precisa mandar push, e ninguém quer um `if` gigante decidindo
+isso no meio do serviço de pedidos.
+
+## Objetivo
+
+Praticar **pub/sub e roteamento por padrão** — o arranjo que faz um sistema
+crescer sem virar espaguete. No fim você vai conseguir plugar um canal novo de
+notificação **sem tocar em quem publica o evento**.
+
+## Requisitos
+
+- [ ] Uma topic exchange recebendo eventos com routing key estruturada (ex.: `pedido.br.criado`)
+- [ ] Pelo menos três consumidores independentes: e-mail, push e um log de auditoria
+- [ ] Cada canal escuta só o que interessa a ele, via binding key com curinga
+- [ ] O canal de auditoria registra **todos** os eventos, sem exceção
+- [ ] Um endpoint que publica eventos, pra você conseguir testar
+- [ ] Preferências por usuário: quem desativou e-mail não recebe e-mail
+
+## Desafios extras
+
+- [ ] Plugue um quarto canal (SMS ou webhook) sem alterar uma linha do publicador
+- [ ] Agrupamento: em vez de 10 e-mails, um resumo a cada X minutos
+- [ ] Horário de silêncio — push não sai de madrugada, fica pra manhã seguinte
+- [ ] Painel com contagem de eventos por tipo, lido da fila de auditoria
+- [ ] Simule um canal fora do ar e garanta que os outros continuam entregando
+
+## Dicas
+
+- O desenho da routing key é **a** decisão do projeto. `dominio.regiao.evento`
+  do mais geral pro mais específico faz `pedido.#` pegar tudo de pedido. Chave
+  mal ordenada deixa o curinga inútil.
+- Lembre que `*` é exatamente uma palavra e `#` é zero ou mais. Se `pedido.*`
+  não está pegando `pedido.br.criado`, é isso.
+- **Uma fila por canal.** Se e-mail e push dividirem a mesma fila, cada evento
+  vai só pra um dos dois — vira work queue, e metade das notificações some. É o
+  erro clássico de quem está montando pub/sub pela primeira vez.
+- Preferência do usuário é filtro de **negócio**, não de roteamento. Tentar
+  resolver isso com binding key gera uma explosão de filas. Roteie por tipo de
+  evento e filtre por usuário dentro do consumidor.

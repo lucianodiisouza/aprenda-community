@@ -1,0 +1,484 @@
+---
+id: middleware-e-auth
+title: "Middleware e Autenticação em Next.js"
+resources:
+  - title: "Next.js: Middleware (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/routing/middleware
+    type: doc
+    lang: en
+    free: true
+  - title: "Auth.js (NextAuth v5): Getting Started"
+    url: https://authjs.dev/getting-started
+    type: doc
+    lang: en
+    free: true
+  - title: "Lee Robinson: Authentication in Next 15"
+    url: https://www.youtube.com/watch?v=eh89eirVOmw
+    type: video
+    lang: en
+    free: true
+---
+
+Você já tem o "como fazer coisas no Next": rotas, RSC, data
+fetching, actions. Mas antes de subir pra produção, falta uma
+peça: **quem pode acessar o quê**. Middleware é o porteiro que
+roda **antes** de cada request, decide se deixa passar, redireciona,
+ou reescreve. Auth.js (NextAuth v5) é a forma padrão de adicionar
+"login com Google/GitHub/etc." sem reinventar OAuth. Este nó une
+os dois.
+
+## O essencial 🟢
+
+**`middleware.ts` na raiz do projeto (ou em `src/`) - roda ANTES
+de cada request.** É o primeiro código que vê a request, antes
+do routing, antes de page.tsx. Casos de uso típicos: redirect de
+não-logado, geo-redirect, headers de segurança, A/B test, rate
+limiting.
+
+```tsx
+// middleware.ts (na raiz do projeto, ao lado de package.json)
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  // Lê cookies, headers, etc.
+  const session = request.cookies.get("session");
+
+  if (!session && request.nextUrl.pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
+}
+```
+
+Pra esse middleware funcionar, ele precisa ser **registrado**.
+Por padrão, sem `config.matcher`, ele roda em **todo request**
+(incluindo assets, imagens, etc.). Quase sempre você quer
+limitar:
+
+```tsx
+// middleware.ts
+export const config = {
+  // Roda em /dashboard/*, /admin/*, mas NÃO em /api, /_next, /favicon.ico
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
+};
+```
+
+**Casos de uso comuns do middleware:**
+
+- **Auth gate**: redireciona não-logado pra `/login` em rotas
+  protegidas.
+- **Geo-redirect**: se o IP é do Brasil, mostra versão pt-BR.
+- **Security headers**: injeta `X-Frame-Options`, `Content-Security-Policy`
+  em toda response.
+- **A/B test**: 50% dos users vão pra variante A, 50% pra B
+  (cookie estável).
+- **Subdomain routing**: `app.exemplo.com` → reescreve pra `/app/*`.
+- **Rate limiting**: conta requests por IP, bloqueia se passar
+  do limite.
+
+**Dentro do middleware: `NextResponse.next()`, `redirect()`,
+`rewrite()`.**
+
+```tsx
+// Deixa passar (com ou sem modificações)
+return NextResponse.next();
+
+// Redireciona (muda a URL no browser)
+return NextResponse.redirect(new URL("/login", request.url));
+
+// Reescreve (server processa outra rota, browser vê a original)
+return NextResponse.rewrite(new URL("/api/legacy/posts", request.url));
+```
+
+`redirect` muda o que o user vê (URL nova). `rewrite` mantém a
+URL mas processa outro recurso (bom pra A/B test, páginas
+legacy, etc.).
+
+**Limitação crítica: middleware roda em Edge Runtime.** Não dá
+pra usar Node APIs (`fs`, `path`, módulos que dependem de
+Node), nem rodar Prisma direto, nem bcrypt, nem nada que
+quebra em V8 isolate. O que **roda**: `fetch`, `Request`,
+`Response`, `cookies`, `headers` (do `next/server`),
+Web Crypto API.
+
+```tsx
+// ❌ NÃO funciona em middleware (precisa de Node)
+import bcrypt from "bcrypt";
+import { PrismaClient } from "@prisma/client";
+
+// ✅ Funciona (Edge Runtime)
+import { jwtVerify } from "jose"; // lib de JWT compatível com Edge
+const session = await jwtVerify(token, secret);
+```
+
+Essa limitação é a fonte de 90% da dor de cabeça com auth em
+Next: a verificação do JWT tem que usar lib que roda em Edge
+(jose), não jsonwebtoken (Node-only).
+
+**Auth.js (NextAuth v5): setup básico.** Auth.js é o wrapper
+padrão pra OAuth (Google, GitHub, Discord) e credenciais
+(email/senha). Instala:
+
+```bash
+pnpm add next-auth@beta
+```
+
+E configura em `auth.ts` (na raiz):
+
+```ts
+// auth.ts
+import NextAuth from "next-auth";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    }),
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+});
+```
+
+**Sessão: cookie httpOnly + JWT (ou DB session).** Por padrão,
+Auth.js v5 usa **JWT strategy**: o token fica num cookie
+httpOnly+secure+SameSite=Lax, e cada request o middleware
+verifica. Vantagem: stateless, sem lookup no DB. Desvantagem:
+revogar sessão é difícil (precisa esperar o token expirar).
+
+Pra revogação imediata, use **database session**: a sessão fica
+no DB, o cookie tem só o ID. `auth()` faz lookup no DB. Mais
+lento, mas revogável.
+
+**Callbacks: enriquecer sessão e JWT.** O callback `session`
+roda toda vez que `auth()` lê a sessão. Use pra adicionar
+campos customizados (role, organization_id, etc.):
+
+```ts
+// auth.ts
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers: [GitHub({ ... })],
+  callbacks: {
+    async session({ session, token }) {
+      // Adiciona campos do token na session
+      session.user.id = token.sub!;
+      session.user.role = token.role as string;
+      return session;
+    },
+    async jwt({ token, user }) {
+      // Na primeira vez (user existe), copia campos pro token
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
+    },
+  },
+});
+```
+
+O `token` é o JWT decodificado. `token.sub` é o user ID
+padrão do NextAuth. Você adiciona o que precisar.
+
+## Aprofundamento 🟡
+
+**Auth.js v5 vs v4: o que mudou.** Em 2025, o NextAuth virou
+Auth.js e o NextAuth v4 foi renomeado. Mudanças principais:
+
+- **Setup consolidado em `auth.ts`**: antes era `pages/api/auth/[...nextauth].ts`,
+  agora é um único arquivo de config que exporta helpers.
+- **Edge-compatible**: o middleware consegue usar `auth()` direto,
+  sem precisar replicar config.
+- **Melhor suporte a App Router**: v4 era "compatível", v5 é
+  "first-class".
+- **API mais limpa**: `signIn()`, `signOut()`, `auth()` em vez
+  de `useSession()` + provider.
+
+Migração: não é trivial. Se você tá começando projeto novo,
+use v5. Se tá em projeto v4, [guia de migração](https://authjs.dev/getting-started/migrating-to-v5).
+
+**`auth()` helper em Server Components.** Pra ler a sessão
+dentro de Server Component, use `auth()`:
+
+```tsx
+// app/dashboard/page.tsx (Server)
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
+export default async function DashboardPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  return <h1>Bem-vindo, {session.user.name}</h1>;
+}
+```
+
+`auth()` lê o cookie, valida o JWT, e retorna a sessão (com os
+campos que você adicionou nos callbacks). Se não autenticado,
+retorna `null` (e você decide o que fazer).
+
+**`useSession` em Client Components.** Pra client side:
+
+```tsx
+"use client";
+import { useSession, signOut } from "next-auth/react";
+
+export function UserMenu() {
+  const { data: session, status } = useSession();
+
+  if (status === "loading") return <div>Carregando...</div>;
+  if (!session) return <a href="/login">Entrar</a>;
+
+  return (
+    <div>
+      Olá, {session.user.name}
+      <button onClick={() => signOut()}>Sair</button>
+    </div>
+  );
+}
+```
+
+Em Auth.js v5 (Next 15), o hook é `useSession` de
+`next-auth/react`. O provider precisa estar no `layout.tsx`
+raiz (ver docs).
+
+**Middleware de auth: verificar JWT no cookie, redirecionar
+pra /login.** O caso de uso mais importante - proteger rotas:
+
+```tsx
+// middleware.ts
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard");
+
+  if (isOnDashboard && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+O middleware **wrapper com `auth()`** já tem acesso à sessão
+via `req.auth`. Sem o wrapper, você teria que decodificar o JWT
+na mão (com `jose`).
+
+**Proteger Server Action: ler session dentro da action.**
+Server Actions também são endpoints públicos. **Sempre cheque
+autenticação dentro da action:**
+
+```tsx
+"use server";
+import { auth } from "@/auth";
+
+export async function deletePost(id: string) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Não autorizado");
+  }
+
+  // Opcional: checar se o user é dono do post
+  const post = await db.post.findUnique({ where: { id } });
+  if (post?.authorId !== session.user.id) {
+    throw new Error("Não autorizado");
+  }
+
+  await db.post.delete({ where: { id } });
+  revalidatePath("/posts");
+}
+```
+
+A action é o **último checkpoint de segurança**. Middleware
+protege a UI, mas a action precisa se proteger de novo (cURL
+não passa pelo middleware do user, mas pode chamar a action
+direto).
+
+**CSRF: como o Next/Auth.js lida (token em cookie).** Auth.js
+adiciona automaticamente um token CSRF (em cookie httpOnly) e
+valida em cada request. O Next também tem proteção própria
+(verifica o `Origin` header). Em actions, o Next gera um ID
+único por action que precisa bater com o token.
+
+Na prática: você não precisa fazer nada. A proteção é
+automática. Mas saiba que **existe** - é parte do motivo de
+actions serem seguras por default.
+
+**Logout: `signOut()` client + invalidação server.** Em
+client:
+
+```tsx
+"use client";
+import { signOut } from "next-auth/react";
+
+export function LogoutButton() {
+  return <button onClick={() => signOut()}>Sair</button>;
+}
+```
+
+`signOut()` limpa o cookie e redireciona pra `/`. Em server:
+
+```ts
+import { signOut } from "@/auth";
+// Dentro de uma action
+await signOut({ redirectTo: "/" });
+```
+
+## Pra quem quer ir além 🔴
+
+**OAuth flow detalhado (PKCE, state, nonce).** O Auth.js
+abstrai tudo isso, mas entender o flow ajuda quando algo dá
+errado:
+
+1. User clica "Login com GitHub"
+2. Next redireciona pra `github.com/login/oauth/authorize`
+3. GitHub autentica, redireciona pra `/api/auth/callback/github?code=XXX`
+4. Next troca o code por access_token (server-to-server)
+5. Next busca profile do user via access_token
+6. Next cria/acha user no DB, gera JWT, seta cookie
+
+**PKCE** (Proof Key for Code Exchange) protege contra intercept
+do code. **state** (CSRF token) garante que o callback vem do
+flow iniciado pelo user. **nonce** (em OIDC) protege contra
+replay. Tudo isso o Auth.js faz por você.
+
+**JWT vs DB session (tradeoffs de segurança vs performance).**
+
+| Aspecto           | JWT                      | DB Session                |
+| ----------------- | ------------------------ | ------------------------- |
+| **Revogação**     | Difícil (esperar expirar) | Imediata                  |
+| **Performance**   | Sem lookup no DB         | 1 query por request       |
+| **Tamanho**       | ~1KB por cookie          | ~50B (ID opaco)           |
+| **Edge-friendly** | Sim (jose)               | Não (Prisma, etc.)        |
+| **Casos**         | App grande, stateless    | App sensível (banco, saúde) |
+
+**RBAC (role-based access control) com Auth.js callbacks.**
+Padrão pra "user, admin, superadmin":
+
+```ts
+// auth.ts
+callbacks: {
+  async jwt({ token, user }) {
+    if (user) {
+      token.role = (user as any).role ?? "user";
+    }
+    return token;
+  },
+  async session({ session, token }) {
+    if (session.user) {
+      (session.user as any).role = token.role;
+    }
+    return session;
+  },
+  async authorized({ request, auth }) {
+    // Bloqueia /admin/* sem role "admin"
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      return auth?.user && (auth.user as any).role === "admin";
+    }
+    return true;
+  },
+},
+```
+
+**Middleware avançado: rate limiting com Upstash.** Pra
+bloquear abuse:
+
+```tsx
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "10 s"),
+});
+
+export async function middleware(request: NextRequest) {
+  const ip = request.ip ?? "127.0.0.1";
+  const { success } = await ratelimit.limit(ip);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+  return NextResponse.next();
+}
+```
+
+**Quando usar Edge Auth (Clerk, Auth0 edge) vs self-hosted.**
+Soluções SaaS (Clerk, Auth0) cuidam de tudo: OAuth, MFA,
+session management, UI components. Vantagem: zero código de
+auth. Desvantagem: vendor lock-in, custo por MAU. Pra
+projetos novos que vão pra público rápido, vale considerar.
+Pra apps open-source ou com requisitos de privacidade, self-hosted
+com Auth.js é a escolha.
+
+**Leitura recomendada:**
+
+- [Next.js: Middleware (oficial)](https://nextjs.org/docs/app/building-your-application/routing/middleware) - referência com exemplos progressivos.
+- [Auth.js: Getting Started](https://authjs.dev/getting-started) - setup canônico, com v5 docs.
+- [Lee Robinson: Authentication in Next 15](https://www.youtube.com/watch?v=eh89eirVOmw) - overview de 15min.
+
+> Dica: a primeira vez que você vê "middleware é Edge Runtime, não
+> dá pra usar Prisma", parece um bug. É uma escolha de arquitetura:
+> middleware roda em **todo request**, em **todo CDN edge**,
+> então precisa ser leve. O que precisa de Node (Prisma, bcrypt)
+> vai pra **Server Action** ou **Route Handler**, que têm mais
+> recursos mas rodam só onde precisa.
+
+No próximo (e último) nó, vamos unir tudo em um **projeto final**:
+app full-stack com auth, CRUD, ISR, streaming, e deploy. A
+hora de ver a teoria virar produto.
+
+<Checkpoint
+  challenge="Implemente um middleware que protege rotas /dashboard/*. O middleware deve: 1) ler o cookie 'session' do request, 2) se o cookie não existir E a rota começa com /dashboard, redirecionar pra /login, 3) caso contrário, deixar passar."
+  starterCode={`import { NextResponse, type NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  // 1. Ler o cookie 'session'
+  // 2. Se não existir E a rota começa com /dashboard, redirecionar pra /login
+  // 3. Caso contrário, NextResponse.next()
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};`}
+expected=""
+slug="nextjs"
+nodeId="middleware-e-auth"
+/>
+
+<Quiz
+  question="Por que o middleware do Next.js não consegue usar `bcrypt` ou `prisma` diretamente?"
+  options={[
+    {
+      text: "Porque o middleware roda em Edge Runtime, que não tem acesso a Node APIs (fs, módulos Node-only)",
+      correct: true,
+    },
+    {
+      text: "Porque o Next.js bloqueia por segurança",
+      correct: false,
+      explanation:
+        "O Next não bloqueia por segurança - o que limita é o runtime (Edge vs Node). Middleware roda em Edge, que é V8 isolado sem Node APIs. bcrypt e Prisma dependem de módulos Node.",
+    },
+    {
+      text: "Porque o middleware só processa GET, e mutações precisam de POST",
+      correct: false,
+      explanation:
+        "Middleware processa qualquer método HTTP. A limitação é o runtime, não o método. Para coisas que precisam de Node, use Server Action ou Route Handler.",
+    },
+  ]}
+/>

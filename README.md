@@ -7,7 +7,7 @@
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
 [![Trilhas](https://img.shields.io/badge/trilhas-16-success.svg)](./roadmaps)
-[![Projetos](https://img.shields.io/badge/projetos-9-blue.svg)](./projects)
+[![Projetos](https://img.shields.io/badge/projetos-15-blue.svg)](./projects)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
 
@@ -170,6 +170,26 @@ passo. Se for editar texto, dê uma olhada no
 fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge → vira tag
 ```
 
+## 👀 Preview local (veja sua trilha renderizada)
+
+Antes de abrir o PR, dá pra ver sua trilha com o **mesmo visual do site**,
+rodando na sua máquina:
+
+```bash
+cd preview
+npm install
+npm run dev
+```
+
+Abra o endereço que o Vite mostrar (por padrão `http://localhost:5173`). O app
+lê `roadmaps/` **direto** - sem sync, sem o app principal, sem login - e
+recarrega sozinho quando você edita um `.mdx` ou o `roadmap.json`.
+
+É uma **prévia de conteúdo**: reproduz tema, fontes, tipografia, a árvore de nós,
+`Quiz` e `Mermaid`. Progresso, login e busca não estão aqui, e alguns componentes
+interativos aparecem como marcador. Detalhes em
+[`preview/README.md`](./preview/README.md).
+
 ## 📂 Estrutura do repositório
 
 ```
@@ -186,6 +206,8 @@ fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge 
 │   ├── node.mdx                  # esqueleto de um nó
 │   ├── project.mdx               # esqueleto de um projeto
 │   └── roadmap.json              # esqueleto de roadmap.json
+├── preview/
+│   └── ...                       # app local pra ver a trilha renderizada (Vite)
 ├── docs/
 │   └── style-guide.md            # como escrever (voz, tom, curadoria)
 ├── meta/
