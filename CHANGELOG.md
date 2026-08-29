@@ -6,25 +6,84 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.22.0] - 2026-08-29
+
 ### Adicionado
 
-- 👥 **Índice de contribuidores** (`contributors.json` + `scripts/build-contributors.mjs`):
-  agrega os `creators` espalhados por trilhas, projetos e bootcamps num
-  único índice chaveado pelo handle do GitHub - a chave que também liga o
-  criador ao perfil público. É o contrato estável que a app consome pra
-  exaltar quem contribui (fileira de avatares na home, section de
-  contribuições no perfil público, badge de contribuidor). Um bootcamp
-  também credita quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`).
-  Cada entrada já traz `avatar`, `profile`, `counts` e as listas de
+- 🅰️ **Trilha Angular** (`roadmaps/angular`, 24 nós): framework web
+  completo para construir SPAs com TypeScript, do CLI até SSR e deploy.
+  Posicionada como intermediária (assume HTML, CSS, JavaScript e
+  TypeScript básico). Os 24 nós: `introducao-angular`, `ambiente-cli`,
+  `workspace-config`, `typescript-para-angular`, `componentes-standalone`,
+  `ciclo-de-vida`, `inputs-outputs`, `templates-binding`, `diretivas-pipes`,
+  `estilos-componentes`, `servicos-di`, `roteamento`, `guards-interceptors`,
+  `formularios`, `http-client`, `rxjs`, `signals`, `estado-app`,
+  `angular-material-cdk` (opcional), `acessibilidade-i18n`, `pwa`
+  (opcional), `testes`, `performance-ssr` e `projeto-final` (dashboard
+  Angular com rotas, formulários, HTTP, Signals, RxJS e testes).
+  **Interatividade: 3 quizzes formativos, 1 diagrama Mermaid**. Decisões
+  editoriais em `roadmaps/angular/meta/editorial-decisions.md` (escopo,
+  ordem, nós opcionais e o que ficou de fora: Nx, monorepo avançado,
+  micro-frontends). Trilha escrita por **Lucas Pedro**
+  ([@LucasPedruo](https://github.com/LucasPedruo)).
+- ♿ **Trilha Acessibilidade Web** (`roadmaps/acessibilidade-web`,
+  20 nós): ensinar acessibilidade como parte normal do desenvolvimento
+  web, não como uma correção feita no fim do projeto. Posicionada como
+  iniciante (assume só HTML e CSS básicos). Referência normativa é a
+  WCAG 2.2, mas o objetivo é criar o modelo mental que evita barreiras
+  enquanto a interface é construída. Os 20 nós: `introducao-acessibilidade`
+  (barreiras e diferentes contextos de uso), `wcag-e-pour`,
+  `html-semantico`, `estrutura-headings-landmarks`, `imagens-e-alt`,
+  `tabelas-acessiveis`, `links-e-botoes`, `teclado-e-ordem-de-foco`,
+  `foco-visivel`, `formularios-acessiveis`, `erros-e-validacao`,
+  `linguagem-clara-e-cognicao`, `cor-e-contraste`, `zoom-reflow-e-movimento`,
+  `aria-fundamentos` (depois do HTML nativo), `conteudo-dinamico`
+  (aria-live, polite, assertive), `dialogos-acessiveis`,
+  `multimidia-acessivel` (legendas, transcrição, audiodescrição),
+  `ferramentas-de-teste` (WAVE, Lighthouse, axe DevTools, axe-core,
+  Pa11y, leitores de tela) e `testes-e-auditoria`. **Interatividade:
+  19 quizzes formativos, 12 diagramas Mermaid**. Decisões editoriais
+  em `roadmaps/acessibilidade-web/meta/editorial-decisions.md`. Trilha
+  escrita por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)) - resolve a issue #57.
+- 🆕 **Selo "novo"** nas trilhas Angular e Acessibilidade Web: campo
+  `published: "2026-08-29"` no `roadmap.json` ativa o `<NewBadge>` no
+  `TrilhaCard` (janela de 30 dias, avaliada no client).
+- 🔎 **Projeto Auditoria de Acessibilidade Web**
+  (`projects/auditoria-de-acessibilidade-web`): praticar a trilha de
+  Acessibilidade escolhendo um fluxo real ou fictício, corrigindo
+  barreiras de semântica, teclado, foco, formulários, contraste e
+  conteúdo dinâmico, e entregando um relatório com testes manuais
+  (leitor de tela ou painel de acessibilidade) e automatizados
+  (Lighthouse, WAVE, axe DevTools, axe-core, Pa11y). Pré-requisitos:
+  trilhas `acessibilidade-web`, `html` e `css-fundamentos`. Estimativa:
+  1 fim de semana. Escrito por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+- 👥 **Índice de contribuidores** (`contributors.json` +
+  `scripts/build-contributors.mjs`): agrega os `creators` espalhados
+  por trilhas, projetos e bootcamps num único índice chaveado pelo
+  handle do GitHub - a chave que também liga o criador ao perfil
+  público. É o contrato estável que a app consome pra exaltar quem
+  contribui (fileira de avatares na home, section de contribuições no
+  perfil público, badge de contribuidor). Um bootcamp também credita
+  quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`). Cada
+  entrada já traz `avatar`, `profile`, `counts` e as listas de
   trilhas/projetos/bootcamps, ordenadas por total de contribuições.
+  **6 contribuidores** na primeira release do índice: Luciano dii
+  Souza, Lucas Pedro, Breno Alvim, Bruno Fernandes Horn, Manoel
+  Carvalho, Rafael Coelho.
 
 ### Alterado
 
 - ✅ **`validate.mjs` agora exige `github` (e `name`) em todo `creators`**,
-  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa some
-  do índice de contribuidores. O CI de validação também roda
+  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa
+  some do índice de contribuidores. O CI de validação também roda
   `build-contributors.mjs --check` - se o `contributors.json` commitado
   estiver desatualizado, o job falha.
+- 📊 **Badges do `README.md`** atualizados: `trilhas-16` → `trilhas-25`
+  (entraram Angular e Acessibilidade Web), `projetos-15` → `projetos-17`
+  (entrou Auditoria de Acessibilidade Web). O badge estava congelado
+  desde a v1.20.0.
 
 ## [1.21.0] - 2026-08-28
 
