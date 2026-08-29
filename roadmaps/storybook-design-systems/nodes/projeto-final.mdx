@@ -1,0 +1,377 @@
+---
+id: projeto-final
+title: "Projeto final: lib de UI com 5+ componentes, tokens, Storybook publicado"
+---
+
+Hora de unir tudo. Você vai construir uma **lib
+de UI própria** (5+ componentes: Button, Input,
+Card, Badge, Modal), com tokens em Style
+Dictionary, theming light/dark, Storybook com
+autodocs + MDX, test runner + a11y addon,
+Changesets pra versionamento, e publicação
+automatica no npm via CI. É o ciclo completo
+de um design system: tokens, componentes,
+docs, testes, release.
+
+Esse projeto não segue o esqueleto de 3 camadas
+dos outros nós. É um brief de projeto, no estilo
+de `projects/<slug>.mdx` do aprenda-community. Lê
+até o fim antes de começar.
+
+## O que você vai construir
+
+Uma **lib de UI** chamada `@sua-org/ui` (ou nome
+que preferir) com:
+
+- **5+ componentes** - Button, Input, Card, Badge,
+  Modal (mínimo). Cada um com stories, args
+  ricos, e doc MDX.
+- **Tokens** - Style Dictionary com primitive
+  + semantic, export pra CSS variables, suporte
+  a light/dark via `data-theme`.
+- **Storybook** - CSF3 stories pra cada componente,
+  autodocs ligado, MDX pra páginas de overview
+  ("Introdução", "Tokens", "Padrões").
+- **Test runner + a11y** - `play` functions nos
+  componentes interativos, addon a11y com regras
+  WCAG 2 AA.
+- **Changesets** - workflow de release com PR
+  "Version Packages" + publish no GitHub Packages
+  (ou npm).
+- **CI** - GitHub Actions rodando lint, typecheck,
+  test runner, e (opcional) Chromatic.
+
+A escolha do "domínio" (lib de botão + form vs
+lib de cards + data display) é sua. O esqueleto
+dado é o **caminho feliz**, desvie quando
+precisar e anote as decisões no
+`editorial-decisions.md` da trilha.
+
+## Objetivo
+
+- Consolidar Storybook + CSF3 + autodocs + MDX
+  num projeto real.
+- Praticar tokens em **3 níveis** (primitive,
+  semantic, component) com Style Dictionary.
+- Ver theming (light/dark) funcionando via
+  `data-theme` em CSS variables.
+- Configurar test runner + a11y addon, com
+  1+ `play` function por componente interativo.
+- Publicar via Changesets + GitHub Actions.
+- Subir o Storybook publicado (Chromatic ou
+  self-host) e mostrar a badge.
+
+## Requisitos (mínimo)
+
+Setup inicial:
+
+- [ ] `pnpm create vite@latest minha-ui -- --template react-ts`
+  (Vite + React + TS).
+- [ ] `pnpm dlx storybook@latest init` - detecta
+  Vite, instala addons (a11y, docs, controls).
+- [ ] `pnpm add -D style-dictionary
+  @changesets/cli @storybook/test-runner
+  @testing-library/jest-dom @testing-library/user-event
+  vitest @vitest/coverage-v8 jsdom chromatic`.
+- [ ] Estrutura sugerida:
+  - `src/components/<Component>/<Component>.tsx`
+  - `src/components/<Component>/<Component>.stories.ts`
+  - `src/components/<Component>/index.ts`
+  - `src/tokens/{colors,spacing,typography}.json`
+  - `src/theme/ThemeProvider.tsx`
+  - `style-dictionary.config.js`
+  - `vitest.config.ts`, `vitest.setup.ts`
+  - `.storybook/{main,preview}.ts`
+  - `.changeset/config.json`
+  - `.github/workflows/{test,chromatic,changesets}.yml`
+
+Tokens (Style Dictionary):
+
+- [ ] `src/tokens/colors.json` com primitive
+  (blue/gray/success/error families).
+- [ ] `src/tokens/semantic.json` com semantic
+  (color-primary, color-bg, color-fg, etc).
+- [ ] `style-dictionary.config.js` com 2 platforms:
+  `css` (gera `dist/tokens.css`) e `js` (gera
+  `dist/tokens.js` com objeto).
+- [ ] `dist/tokens.css` exportado como
+  `@sua-org/ui/tokens.css` (via `exports` no
+  package.json).
+- [ ] Theming light/dark com `:root` e
+  `[data-theme="dark"]` no CSS gerado.
+
+Componentes (mínimo 5):
+
+- [ ] **Button** - variants (primary, secondary,
+  danger, ghost), size (sm, md, lg), loading,
+  disabled. CSS variables. `aria-busy` quando
+  loading.
+- [ ] **Input** - label, placeholder, error
+  message, disabled. `aria-invalid` quando
+  error. `aria-describedby` ligando help/error.
+- [ ] **Card** - compound component
+  (`<Card>`, `<Card.Header>`, `<Card.Body>`,
+  `<Card.Footer>`). Variants (elevated, outlined).
+- [ ] **Badge** - variants (neutral, success,
+  warning, danger). Size (sm, md).
+- [ ] **Modal** - slot pattern (`<Modal.Trigger>`,
+  `<Modal.Content>`, `<Modal.Title>`,
+  `<Modal.Description>`, `<Modal.Actions>`).
+  Focus trap, ESC fecha, ARIA correto.
+
+Storybook (CSF3 + autodocs + MDX):
+
+- [ ] Cada componente tem `*.stories.ts` com
+  CSF3, `tags: ["autodocs"]`, e `argTypes`
+  rico (com `description`).
+- [ ] Cada componente interativo (Button, Input,
+  Modal) tem pelo menos 1 story com
+  `play` function.
+- [ ] Pelo menos 1 página MDX (ex: `Intro.mdx`)
+  com overview da lib.
+- [ ] `preview.ts` com decorator global de
+  ThemeProvider.
+- [ ] Addon a11y configurado (WCAG 2 AA).
+
+Test runner + a11y:
+
+- [ ] `pnpm test-storybook` roda todas as
+  stories em browser real.
+- [ ] `play` function de Button verifica que
+  `onClick` é chamado ao clicar.
+- [ ] `play` function de Input verifica que
+  `onChange` é chamado ao digitar.
+- [ ] Addon a11y roda axe-core em cada story.
+  Build falha se violação `critical` ou
+  `serious` for detectada.
+
+Versionamento (Changesets):
+
+- [ ] `.changeset/config.json` com config
+  padrão (`fixed: []` pra uma package, ou
+  `["packages/*"]` se monorepo).
+- [ ] GitHub Action `changesets/action@v1`
+  configurada pra abrir Version PR.
+- [ ] Version PR bump versão em `package.json`,
+  atualiza `CHANGELOG.md`, e (com secret
+  configurado) publica no npm.
+- [ ] Documento `.changeset/README.md` explicando
+  o fluxo pro time.
+
+Build + publish:
+
+- [ ] `pnpm build` gera `dist/` com:
+  - `dist/index.js` (ESM + CJS via tsup ou
+    rollup).
+  - `dist/index.d.ts` (tipos TS).
+  - `dist/tokens.css` (output Style Dictionary).
+- [ ] `package.json` com `exports` field
+  apontando pro `dist/`.
+- [ ] `peerDependencies` corretas (react, react-dom).
+- [ ] `files` field listando `dist`, `README.md`,
+  `LICENSE`.
+- [ ] Workflow de publish no GitHub Actions
+  (manual trigger ou via Changesets).
+
+Documentação:
+
+- [ ] `README.md` da lib com:
+  - Instalação.
+  - Uso básico (1 exemplo de cada componente).
+  - "Customização de tema" (como sobrescrever
+    tokens).
+  - Links pra Storybook publicado.
+- [ ] `LICENSE` (MIT ou a da empresa).
+- [ ] `CHANGELOG.md` (gerado por Changesets).
+
+CI (GitHub Actions):
+
+- [ ] Workflow `test.yml`:
+  - lint + typecheck + vitest em paralelo
+    (rápido).
+  - test-storybook depois (browser real).
+- [ ] Workflow `chromatic.yml` (opcional, mas
+  recomendado):
+  - Publica Storybook no Chromatic.
+  - Comenta no PR com diff visual.
+- [ ] Workflow `changesets.yml`:
+  - Em push na main, roda `changeset version`
+    + cria PR.
+  - Em PR merge na main, roda `changeset publish`
+    (com secret).
+
+## Desafios extras (stretch goals)
+
+Se você terminou o mínimo e quer ir além:
+
+- [ ] **Compound component para Select / Combobox**
+  com Radix Primitives (lógica de a11y/keyboard
+  de graça).
+- [ ] **Theme provider com toggle de light/dark**
+  (botão que troca o tema, persistindo em
+  localStorage).
+- [ ] **Storybook publicado no Chromatic** com
+  badge no README (`[![Storybook](...)]()`).
+- [ ] **Codemod de migração** (com `jscodeshift`)
+  - ex: renomear `variant="primary"` em
+  `intent="primary"` automaticamente.
+- [ ] **Pre-release versioning** - `pnpm changeset
+  pre enter alpha` pra testar 2.0.0-alpha antes
+  do 2.0.0 final.
+- [ ] **Visual review com Chromatic** - PR com
+  mudança em `<Button>` mostra diff visual, time
+  revisa.
+- [ ] **i18n de strings** nos componentes (botão
+  de loading com texto traduzido).
+- [ ] **Publicação no GitHub Packages** (registry
+  privado) em vez de npm público.
+- [ ] **Storybook com Viewport add-on** pra
+  testar em mobile/tablet/desktop no dev.
+- [ ] **Tokens exportados como JS** (além de CSS) -
+  pra uso em React Native (sem CSS).
+- [ ] **Theme dark automático** baseado em
+  `prefers-color-scheme` (sem precisar de JS
+  para detectar).
+- [ ] **Play function avançada em Modal** -
+  simula ESC fecha, click outside fecha, focus
+  trap funciona.
+
+## Dicas
+
+**Por onde começar:**
+
+1. **Tokens primeiro** - `src/tokens/*.json` +
+   `style-dictionary.config.js` + `pnpm build`.
+   Sem tokens, nenhum componente consegue
+   consumir.
+2. **Button** - o primitive mais usado, ensina
+   o pattern (variants, sizes, states).
+3. **Storybook do Button** - stories CSF3, autodocs,
+   argTypes. Sem doc, ninguém descobre.
+4. **Mais componentes** (Input, Badge, Card) -
+   incrementais.
+5. **Modal** - composto, mais complexo, é o
+   último porque depende dos patterns.
+6. **Theming light/dark** - depois que os
+   componentes estão prontos, aplicar tema.
+7. **Test runner + a11y** - depois de cada
+   componente.
+8. **Changesets + CI** - final.
+
+**Armadilhas comuns:**
+
+- **Pular Style Dictionary e hardcodar tokens
+  no CSS** - parece mais simples, mas perde
+  geração automática pra iOS/Android, e
+  refatoração quebra.
+- **Não exportar tokens como CSS** - precisa
+  ser consumível por outros apps. `exports`
+  field no package.json resolve.
+- **Theme como prop em vez de Context** -
+  `<Button theme="dark">` em vez de
+  `data-theme="dark"` no root. Funciona mas
+  não escala (todo componente precisa saber
+  do tema).
+- **Versionar manualmente** - `npm version
+  major` na mão, sem Changesets. Funciona
+  pra uma release, falha em escala.
+- **Esquecer de bloquear `peerDependencies`**
+  - DS publica com `react@18` em dependencies,
+  consumidor tem 2 Reacts. App quebra.
+- **`exports` field errado** - consumidor
+  importa `@sua-org/ui` e recebe `undefined`.
+  Testar o build em um app externo antes
+  de publicar.
+- **Publicar Storybook com token sensível
+  no bundle** - tokens de API key, URL
+  interna, etc. Revisar `.npmignore` e
+  `files` field.
+- **Snapshot de DOM** - usar visual review
+  do Chromatic em vez. Snapshot de DOM é
+  frágil.
+- **Esquecer `aria-busy` em Button loading** -
+  leitor de tela não sabe que tá carregando.
+  Addon a11y pega.
+
+**Como validar que terminou:**
+
+- [ ] `pnpm build` roda sem erro.
+- [ ] `dist/index.js` + `dist/tokens.css`
+  existem e importam limpo num app externo
+  de teste.
+- [ ] `pnpm test-storybook` roda verde
+  (todas as stories, todos os testes de
+  a11y).
+- [ ] Adicionar changeset manualmente, push
+  na main, ver Version PR abrir e publicar
+  no npm (ou GitHub Packages).
+- [ ] `pnpm dlx storybook build` gera
+  Storybook estático, `pnpm dlx http-server
+  storybook-static` mostra localmente.
+- [ ] Instalação em app externo via
+  `pnpm add @sua-org/ui@1.0.0` funciona,
+  `import { Button } from "@sua-org/ui"`
+  renderiza corretamente.
+- [ ] Theme dark funciona: `document.documentElement.dataset.theme = "dark"`
+  muda os componentes automaticamente.
+
+**Leituras que ajudam durante o projeto:**
+
+- [Storybook - Publish Storybook](https://storybook.js.org/docs/sharing/publish-storybook) - workflow integrado.
+- [Style Dictionary - Quick start](https://styledictionary.com/getting-started/installation/) - setup em 5 min.
+- [Chromatic - Publish](https://www.chromatic.com/docs/publish) - publicar Storybook.
+
+> O projeto final é onde a trilha vira
+> "sua". As escolhas de ferramenta
+> (Style Dictionary vs Tokens Studio,
+> Chromatic vs Percy, Changesets vs
+> Lerna), de theming (data-theme vs class),
+> de composição (compound vs headless)
+> são todas suas. O esqueleto dado é o
+> **caminho feliz**, desvie quando precisar,
+> e anote as decisões no
+> `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `gerarPackageExports(entrypoints)` que recebe um array de entrypoints (ex: ['.', './tokens.css', './Card']) e retorna o objeto `exports` do package.json. Para o entrypoint '.' (main), retorna tipos/import/require padrão. Para os outros, retorna apenas `import` apontando para `./dist/<entrypoint>.js` (ou `.css` se terminar com .css). Garanta que o '.' sempre vem primeiro."
+  starterCode={`// Implemente gerarPackageExports(entrypoints) que recebe:
+// ['.', './tokens.css', './Card']
+//
+// E retorna o objeto `exports` do package.json:
+//
+// Para '.' (main):
+// {
+//   ".": {
+//     "types": "./dist/index.d.ts",
+//     "import": "./dist/index.js",
+//     "require": "./dist/index.cjs"
+//   }
+// }
+//
+// Para './tokens.css':
+// {
+//   "./tokens.css": "./dist/tokens.css"
+// }
+//
+// Para './Card' (subpath):
+// {
+//   "./Card": "./dist/Card.js"
+// }
+//
+// Garanta ordem: '.' primeiro.
+// Dica: remova o "./" inicial do entrypoint antes de concatenar
+// com "./dist".
+function gerarPackageExports(entrypoints) {
+  return {};
+}
+
+const _e1 = gerarPackageExports([".", "./tokens.css", "./Card"]);
+console.log(JSON.stringify(_e1, null, 0));
+
+const _e2 = gerarPackageExports(["./Card", ".", "./tokens.css"]);
+console.log(JSON.stringify(_e2, null, 0));`}
+expected='{".":{"types":"./dist/index.d.ts","import":"./dist/index.js","require":"./dist/index.cjs"},"./tokens.css":"./dist/tokens.css","./Card":"./dist/Card.js"}
+{".":{"types":"./dist/index.d.ts","import":"./dist/index.js","require":"./dist/index.cjs"},"./Card":"./dist/Card.js","./tokens.css":"./dist/tokens.css"}'
+slug="storybook-design-systems"
+nodeId="projeto-final"
+/>

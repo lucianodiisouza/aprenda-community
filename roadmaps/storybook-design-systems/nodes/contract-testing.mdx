@@ -1,0 +1,603 @@
+---
+id: contract-testing
+title: "Contract testing: Storybook test runner, addon a11y, Chromatic visual"
+resources:
+  - title: "Storybook - Test runner (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-tests/integrations/test-runner
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - Accessibility addon (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-tests/accessibility-testing
+    lang: en
+    type: doc
+    free: true
+  - title: "Chromatic - Visual testing (oficial, EN)"
+    url: https://www.chromatic.com/docs/test
+    lang: en
+    type: doc
+    free: true
+---
+
+Sua DS tem `<Button>`, `<Card>`, tokens, MDX,
+Changesets, e o consumidor instalou. Mas tem um
+buraco: **como você garante que o `<Button>`
+que você publicou é o mesmo `<Button>` que o
+consumidor está vendo**? Mudou o border e ninguém
+percebeu. Mudou a posição do ícone e o consumidor
+reclamou. O axe-core flagou um `aria-label`
+faltando e o PR passou sem review de a11y.
+
+O **"contrato"** de um componente é a combinação
+de:
+
+- **API** - props, eventos, tipos (coberto por TS).
+- **Comportamento** - interações, estados,
+  callbacks (coberto por testes - `play` function).
+- **Visual** - aparência em diferentes estados
+  (coberto por **visual regression** - Chromatic).
+- **Acessibilidade** - ARIA, foco, keyboard
+  (coberto por **axe** no Storybook).
+
+"Contract testing" no contexto de DS é **garantir
+esses 4 aspectos** automaticamente, em CI, pra
+cada PR. Não substitui testes de unidade (que
+são da DS - cobertos pela `testing-frontend`), mas
+complementa com foco em **componente isolado**
+vs **fluxo de usuário**.
+
+> **Nota sobre o nome:** "Contract testing" em
+> arquitetura de microsserviços significa outra
+> coisa (Pact - contrato HTTP entre serviços).
+> Aqui significa **"contrato da API do
+> componente"** (props + eventos + visual). A
+> trilha usa o nome da issue #46 mas explicita
+> o significado no editorial-decisions.
+
+## O essencial 🟢
+
+**Storybook test runner - testes das stories em
+browser real.** O `@storybook/test-runner` é
+Playwright embarcado (config zero) que roda
+**cada story como teste**:
+
+```bash
+pnpm add -D @storybook/test-runner
+```
+
+```json
+// package.json
+{
+  "scripts": {
+    "test-storybook": "test-storybook"
+  }
+}
+```
+
+```bash
+# Buildar Storybook primeiro
+pnpm storybook build
+
+# Rodar test-runner contra o build
+pnpm test-storybook
+```
+
+Sem mais config, ele:
+
+1. Sobe o Storybook estático (do `build`).
+2. Pra cada story em cada `*.stories.ts`:
+   - Renderiza.
+   - Roda a `play` function (se houver).
+   - Verifica que renderizou sem erro.
+3. Reporta falhas.
+
+A mágica é que **stories viram testes sem
+escrever teste separado**. Sua story
+"MyButton com loading" garante que a story
+renderiza, e se você adicionar `play: async
+({ canvasElement }) => { userEvent.click(...) }`,
+vira teste de interação **dentro** do Storybook.
+
+**`play` function - testes de interação.** A
+função `play` é executada pelo test runner
+(também manualmente, no "play" da story). Use
+pra simular usuário e verificar estado:
+
+```ts
+import { expect, fn, userEvent, within } from "@storybook/test";
+
+export const Clickable: Story = {
+  args: {
+    children: "Salvar",
+    onClick: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const botao = canvas.getByRole("button", { name: /salvar/i });
+
+    // Verifica estado inicial
+    expect(botao).toBeEnabled();
+
+    // Simula clique
+    await userEvent.click(botao);
+
+    // Verifica que onClick foi chamado
+    await expect(args.onClick).toHaveBeenCalledTimes(1);
+  },
+};
+```
+
+`@storybook/test` (vem com Storybook 8+) re-exporta
+`@testing-library/jest-dom` e `user-event`. Você
+pode usar **toda a API do Testing Library dentro
+de uma story** (visto na `testing-frontend`).
+
+**O test runner roda todas as stories.** Cada
+`export const X: Story` vira um teste. Story com
+`play` é teste de interação. Story sem `play`
+é teste de render (apenas verifica que renderiza
+sem erro).
+
+```ts
+// Esta story vira um teste "renders without crashing"
+export const Primary: Story = {
+  args: { variant: "primary", children: "Salvar" },
+};
+
+// Esta story vira um teste de clique + assertion
+export const Clickable: Story = {
+  args: { onClick: fn() },
+  play: async ({ canvasElement, args }) => {
+    // ...
+  },
+};
+```
+
+Em uma DS com 50 stories, são 50 testes
+"automáticos" sem escrever código de teste
+extra.
+
+**Addon a11y: axe-core em cada story.** O
+`@storybook/addon-a11y` adiciona um **painel
+de acessibilidade** que roda axe-core na story
+ativa. Você vê em tempo real se a story viola
+WCAG:
+
+```bash
+pnpm add -D @storybook/addon-a11y
+```
+
+```ts
+// .storybook/main.ts
+export default {
+  addons: [
+    "@storybook/addon-essentials",
+    "@storybook/addon-a11y",
+  ],
+};
+```
+
+Agora cada story mostra um painel "Accessibility"
+com:
+
+- Quantidade de violações por severidade.
+- Lista de regras violadas.
+- `aria-*` attributes esperados vs atuais.
+- "Highlight" dos elementos com problema.
+
+Em CI, o test runner também roda axe-core
+**automaticamente** em cada story (via
+addon-a11y). Story com `aria-invalid` faltando
+= teste falhando. **Sem código extra de teste**.
+
+```ts
+// Customizar regras do axe
+export const Primary: Story = {
+  parameters: {
+    a11y: {
+      // Aplica só regras WCAG 2 AA
+      config: {
+        rules: [
+          { id: "color-contrast", enabled: true },
+          { id: "label", enabled: true },
+        ],
+      },
+    },
+  },
+};
+```
+
+O **padrão recomendado** é: rodar **todas as
+regras WCAG 2 AA por default**, e marcar
+`disableRules` pontual com comentário explicando
+por quê.
+
+**Chromatic: visual regression do DS.** Chromatic
+é a ferramenta **hosted** de visual regression
+do time do Storybook. A cada PR, ele:
+
+1. Builda o Storybook.
+2. Tira screenshot de **cada story** em cada
+   viewport configurado.
+3. Compara com a baseline (aprovada em PR
+   anterior).
+4. Comenta no PR com o diff visual inline.
+5. Você aprova ou pede mudanças.
+
+```bash
+pnpm add -D chromatic
+```
+
+```json
+// package.json
+{
+  "scripts": {
+    "chromatic": "chromatic --project-token=<token>"
+  }
+}
+```
+
+```yaml
+# .github/workflows/chromatic.yml
+- uses: actions/checkout@v4
+  - uses: pnpm/action-setup@v4
+  - uses: actions/setup-node@v4
+    with: { node-version: 20, cache: pnpm }
+  - run: pnpm install --frozen-lockfile
+  - run: pnpm exec chromatic --project-token=${{ secrets.CHROMATIC_PROJECT_TOKEN }} --auto-accept-changes main
+```
+
+Cada PR recebe um **bot do Chromatic** que posta:
+
+```
+🟡 UI Test (12 stories, 3 viewports)
+
+12 stories, 3 viewports checked.
+1 change detected:
+  - Button.stories > Primary > Desktop
+    [View changes] [Approve] [Request changes]
+```
+
+Você clica em "View changes" e vê o diff visual
+(browser-like). **Aprovou? Merge. Rejeitou? DS
+atualiza a story (ou corrige o bug).**
+
+**Baseline visual e cross-browser.** A força do
+Chromatic:
+
+- **Baseline versionada** - cada PR aprovado vira
+  a nova baseline. Mudou a história = tem que
+  aprovar de novo.
+- **Multi-viewport** - testa em 3-4 viewports
+  (desktop, tablet, mobile).
+- **Multi-browser** - opcional, roda em
+  Chromium, Firefox, WebKit.
+- **Histórico** - cada PR tem um diff. Você
+  pode voltar e ver "quando essa cor mudou?"
+
+Em time de 5 devs, isso economiza **horas por
+PR** de "teste visual manual" - e pega mudanças
+que dev não vê (pixel-level em botão cinza vs
+preto).
+
+**O que Chromatic NÃO é.** Pra evitar confusão:
+
+- **Não substitui testes de comportamento** -
+  use o test runner pra isso.
+- **Não substitui testes E2E da app** - a
+  `testing-frontend` cobre isso.
+- **Não substitui review humano** - o
+  Chromatic mostra o diff, mas a decisão
+  ("essa mudança é boa?") é humana.
+
+Chromatic **captura** mudanças visuais. A
+**decisão** é do time.
+
+**Testes cross-browser no Storybook.** O
+`@storybook/test-runner` aceita config de
+Playwright (que tem cross-browser nativo):
+
+```ts
+// .storybook/test-runner.ts
+import { getStorybookConfig } from "@storybook/test-runner";
+
+export default {
+  ...getStorybookConfig(),
+  // Adiciona Playwright projects
+  playwright: {
+    projects: [
+      { name: "chromium", use: { browserName: "chromium" } },
+      { name: "firefox", use: { browserName: "firefox" } },
+      { name: "webkit", use: { browserName: "webkit" } },
+    ],
+  },
+};
+```
+
+Agora cada story roda em 3 browsers. Mais lento,
+mas pega bug específico de browser (Safari é
+notório pra isso).
+
+**Snapshot de DOM vs visual.** Em DS, **evite
+snapshot de DOM** (Jest/Vitest snapshot do HTML
+gerado). Razões:
+
+- Quebra a cada mudança estrutural irrelevante
+  (classe CSS, ordem de atributos).
+- Não pega mudança visual (cor mudou, classe
+  é a mesma).
+- É "theater" (time aceita tudo sem ler).
+
+Use **visual regression** (Chromatic) pra
+detectar mudança visual. Use **test runner
++ axe** pra detectar mudança de comportamento
+e a11y. Snapshot de DOM é redundante com os
+dois.
+
+## Aprofundamento 🟡
+
+**O "contrato" completo de um componente.** Pra
+cada componente, o contrato é:
+
+- **API (TypeScript)**:
+  - Props com tipo, descrição, default.
+  - Eventos (onClick, onChange, etc).
+  - Refs (forwardRef).
+  - Genéricos (para componente de list/select).
+- **Comportamento (test runner)**:
+  - Renderiza sem erro.
+  - Interação (play function) - clique, digitação,
+    navegação por teclado.
+  - Estados extremos (loading, disabled, error,
+    empty).
+  - Edge cases (texto muito longo, ícone sem
+    label, children null).
+- **Visual (Chromatic)**:
+  - Aparência em cada state.
+  - Aparência em cada viewport.
+  - Hover, focus, active, disabled (CSS state).
+  - Light/dark.
+- **Acessibilidade (addon a11y)**:
+  - ARIA correto.
+  - Keyboard navigation.
+  - Foco visível.
+  - Screen reader (axe + manual).
+
+Quanto mais desses você **automatiza em CI**,
+menos dependência de **review manual**. O
+"contrato" vira código, e PR que quebra o
+contrato é bloqueado.
+
+**Configurar Chromatic pra cross-browser.** Por
+default, Chromatic roda em **Chromium** (Chrome).
+Pra rodar em Firefox e WebKit (Safari):
+
+```bash
+pnpm exec chromatic --project-token=... --browsers=chromium,firefox,webkit
+```
+
+Custo: cada browser **dobra** o número de
+screenshots. Para DS pequeno (50 stories), é
+3-5x mais screenshots = 3-5x mais tempo. Em
+DS grande (200+ stories), é proibitivo.
+
+A regra: **Chromium only em CI rápido**, e
+**cross-browser em release/milestone** (manual
+ou via trigger diferente). Em time grande,
+publica uma **versão preview** cross-browser
+antes do release final.
+
+**Combinar test runner com CI do npm publish.**
+Em DS com Changesets + GitHub Actions:
+
+1. PR abre.
+2. CI roda:
+   - `pnpm lint`
+   - `pnpm typecheck`
+   - `pnpm test:run` (Vitest unit)
+   - `pnpm test-storybook` (test runner)
+   - `pnpm exec chromatic` (visual review)
+3. Se tudo verde, autor mergea.
+4. Versão PR (ou commit) gera CHANGELOG + bump
+   + publish no npm.
+
+O **test-storybook** é o equivalente em DS do
+que **vitest + axe + playwright** é em app.
+É a "rede de segurança" que pega regressão de
+componente antes de chegar ao consumidor.
+
+**`parameters.test` em stories.** Pra organizar
+quais stories rodam em que modo:
+
+```ts
+export const Experimental: Story = {
+  parameters: {
+    // Não roda no test runner (manual só)
+    test: { disable: true },
+  },
+};
+
+export const AllVariants: Story = {
+  // Roda em CI, mas com timeout maior (renderiza 10 buttons)
+  parameters: {
+    test: { timeout: 10000 },
+  },
+};
+```
+
+Útil pra "stories só pra visual review" (não
+viram teste) e stories lentas (timeout custom).
+
+**Snapshot de interação (play function +
+expect).** Pra testes mais ricos:
+
+```ts
+import { expect, userEvent, within, fn } from "@storybook/test";
+
+export const FormSubmission: Story = {
+  args: {
+    onSubmit: fn(),
+  },
+  render: () => <Form onSubmit={...} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+
+    // Preenche form
+    await userEvent.type(canvas.getByLabelText(/email/i), "ana@x.com");
+    await userEvent.type(canvas.getByLabelText(/senha/i), "12345678");
+
+    // Submete
+    await userEvent.click(canvas.getByRole("button", { name: /entrar/i }));
+
+    // Verifica callback
+    await expect(args.onSubmit).toHaveBeenCalledWith({
+      email: "ana@x.com",
+      senha: "12345678",
+    });
+  },
+};
+```
+
+A `play` function roda Playwright + Testing
+Library, com `await`. É a "rede de segurança"
+mais forte que existe: **simula o usuário, verifica
+resultado**. Tudo isso dentro de uma story.
+
+**Custom matcher pra a11y.** Pra ter regras
+de axe customizadas por componente:
+
+```ts
+// .storybook/preview.ts
+export default {
+  parameters: {
+    a11y: {
+      // Para componentes interativos: regras WCAG 2.1 AA
+      config: {
+        runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      },
+    },
+  },
+};
+```
+
+Sem customização, axe roda **todas as regras**
+(80+), incluindo algumas **experimentais**.
+Em DS, o padrão é WCAG 2.1 AA (o mínimo legal em
+muitos países). Mais restrito = menos ruído.
+
+**Chromatic + percy (comparação).** Chromatic
+é a recomendação default (time Storybook).
+Percy (BrowserStack) é alternativa com SDK
+similar. Comparação:
+
+- **Chromatic** - integrado com Storybook,
+  Turbopack/Vite/Webpack. Self-hostable opcional.
+  Pago (free tier limitado).
+- **Percy** - SDK pra várias plataformas
+  (Playwright, Cypress, Selenium). Cross-browser
+  real (não Chromium só). Pago.
+
+Em DS React, **Chromatic** é a escolha.
+A integração é nativa.
+
+## Pra quem quer ir além 🔴
+
+**Storybook test runner vs Vitest + Testing
+Library.** A `testing-frontend` cobre Vitest +
+Testing Library. O test runner do Storybook
+faz o **mesmo** mas **dentro do Storybook**.
+Quando usar um vs outro?
+
+- **Vitest + Testing Library** (sem Storybook) -
+  para componentes **internos** da app, que
+  não viram DS. Lógica de negócio, hooks
+  complexos, integração com API.
+- **Storybook test runner** (com Storybook) -
+  para componentes **da DS** (que viram DS).
+  Cobertura visual, a11y, cross-browser.
+
+Em DS, **o test runner é a escolha** - porque
+você já tem Storybook, e a story já é o
+"ambiente de teste" do componente.
+
+**`@storybook/test-runner` + `play` function =
+a "rede de segurança" do DS.** Em DS maduro, o
+test runner é **bloqueador de merge**. PR que:
+
+- Quebra render de uma story = fail.
+- Quebra play function = fail.
+- Adiciona violação de a11y = fail.
+- Muda visual sem aprovação Chromatic = block.
+
+O **custo**: test runner com 200 stories, 3
+browsers = 5-10 min de CI. Em DS grande, vale
+o investimento (pouca coisa escapa). Em DS
+pequeno (< 50 stories), 1-2 min, ainda vale.
+
+**Chromatic publish preview - workflow de review
+visual.** Em time com designer:
+
+1. Dev abre PR com mudança no `<Button>`.
+2. CI roda tests + Chromatic.
+3. Chromatic posta bot no PR com "1 change
+   detected".
+4. Designer revisa o diff visual, aprova ou
+   pede mudança.
+5. Dev mergeia.
+6. Chromatic atualiza baseline.
+
+Designer como reviewer de **PR visual** - sem
+o dev precisar tirar screenshot, anexar, pedir
+review. **Muda a cultura do time**: visual review
+é parte do PR, não "depois a gente vê".
+
+**`@storybook/blocks` pra doc rica em MDX.** Em
+DS, MDX usa `@storybook/blocks` (Canvas, Controls,
+ArgsTable) pra render interativo dentro da doc
+(visto no nó 5). O test runner pode ser
+configurado pra **rodar as stories referenciadas
+no MDX** - garante que o exemplo no MDX
+funciona.
+
+**Leitura recomendada:**
+
+- [Storybook - Test runner](https://storybook.js.org/docs/writing-tests/test-runner) - a doc oficial.
+- [Storybook - Accessibility addon](https://storybook.js.org/docs/writing-tests/accessibility-testing) - axe no Storybook.
+- [Chromatic - Visual testing](https://www.chromatic.com/docs/test) - o serviço hosted de visual review.
+
+> Dica: o erro mais comum no começo é
+> **pular test runner e Chromatic**
+> porque "testes de unidade cobrem". Não
+> cobrem. Unit test da DS testa a **função**
+> do componente (callback, render), não o
+> **visual** (cor mudou?) nem a **a11y**
+> (axe flagou?). Os 3 juntos (unit + test
+> runner + Chromatic) é a rede de segurança
+> completa.
+
+No próximo nó (e último), vamos **unir tudo no
+projeto final**: 5+ componentes com tokens,
+theming, Storybook, test runner + a11y, Changesets,
+e publicação no npm.
+
+<Quiz
+  question="Qual a relacao entre Storybook test runner e Chromatic visual review?"
+  options={[
+    {
+      text: "Test runner verifica comportamento (render, play function) e a11y. Chromatic verifica visual (pixel diff). Os dois juntos = rede de seguranca completa.",
+      correct: true,
+      explanation:
+        "Test runner roda cada story em browser real, executa play function, e roda axe-core via addon-a11y. Pega bug de logica (callback nao chamado) e a11y (aria faltando). Chromatic tira screenshot de cada story e compara com baseline - pega mudanca visual (cor, posicao, tamanho). Os dois sao complementares: test runner não pega pixel-level, Chromatic não pega logica. A rede de seguranca completa de DS tem os dois + unit test (Vitest).",
+    },
+      text: "São a mesma coisa - test runner e Chromatic fazem a mesma coisa de jeitos diferentes.",
+      correct: false,
+      explanation:
+        "Não. Test runner (Storybook test runner) roda cada story em browser real, executa play function, e roda axe-core - testa COMPORTAMENTO e A11Y. Chromatic tira screenshot e compara com baseline - testa VISUAL. São camadas diferentes: comportamento, a11y, visual. As 3 juntas (test runner + Chromatic + unit test) sao a cobertura completa de DS.",
+    },
+      text: "Chromatic substitui test runner - visual review pega tudo.",
+      correct: false,
+      explanation:
+        "Não. Chromatic pega mudanca visual (cor, layout, tamanho) mas NAO pega: callback nao chamado, aria-label faltando, focus trap quebrado, keyboard navigation errada. Esses sao comportamento/a11y, não visual. So visual review e' insuficiente - precisa do test runner tambem.",
+    },
+  ]}
+/>

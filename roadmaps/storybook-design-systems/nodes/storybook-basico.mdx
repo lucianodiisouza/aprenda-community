@@ -1,0 +1,641 @@
+---
+id: storybook-basico
+title: "Storybook basico: setup, stories, args, controls, decorators"
+resources:
+  - title: "Storybook - Getting Started (oficial, EN)"
+    url: https://storybook.js.org/docs/get-started/why-storybook
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - Writing Stories (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-stories
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - CSF3 (oficial, EN)"
+    url: https://storybook.js.org/docs/api/csf
+    lang: en
+    type: doc
+    free: true
+---
+
+Storybook é o **ambiente de desenvolvimento de
+componentes isolados**. Em vez de subir a app
+inteira pra ver se `<Button>` ficou certo, você
+roda o Storybook, vê o `<Button>` em todos os
+estados, com todos os props, em um navegador.
+É também o **catálogo** (quem vai consumir sabe
+o que existe), o **ambiente de teste** (visual
+regression, a11y), e a **documentação** viva.
+
+Em 2026, Storybook é o padrão de DS em React -
+mantido pela Chromatic, usado por Vercel, GitHub,
+Shopify, Linear. Este nó cobre o mínimo viável:
+setup, stories no formato **CSF3**, args, controls,
+decorators. O próximo nó entra em tokens e theming.
+
+## O essencial 🟢
+
+**Setup em 1 comando.** Em projeto com Vite/Next/
+CRA, o Storybook detecta o framework e configura
+sozinho:
+
+```bash
+pnpm dlx storybook@latest init
+# ou
+npx storybook@latest init
+```
+
+Ele vai:
+
+1. Detectar o framework (Vite, Next, CRA, Webpack).
+2. Instalar `@storybook/<framework>` e addons
+   essenciais (`a11y`, `docs`, `controls`).
+3. Criar `.storybook/main.ts` e
+   `.storybook/preview.ts`.
+4. Criar uma story de exemplo
+   (`src/stories/Button.stories.ts`).
+
+```bash
+pnpm storybook dev
+# ou
+pnpm storybook dev --port 6006
+```
+
+Abre `http://localhost:6006` - você vê a story
+de exemplo, com controles interativos (props que
+você muda no painel, Storybook re-renderiza).
+
+**A estrutura de arquivos.** A convenção:
+
+```text
+src/
+  components/
+    Button/
+      Button.tsx            # componente
+      Button.test.tsx       # testes (Vitest/Testing Library)
+      Button.stories.ts     # stories do Storybook
+      index.ts              # export
+```
+
+- `Button.stories.ts` (sem `.tsx` no nome, ou
+  `.stories.tsx` se usar JSX) - arquivo de story.
+  Convenção `.stories.ts` é a mais comum.
+- O Storybook descobre automaticamente qualquer
+  arquivo `*.stories.{ts,tsx}` em `src/`.
+
+**A história mais simples.** O formato **CSF3**
+(Component Story Format 3) é o padrão atual. É só
+um objeto que exporta `default` (metadados) e
+`Story` (cada story):
+
+```ts
+// Button.stories.ts
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
+
+const meta: Meta<typeof Button> = {
+  title: "Components/Button",
+  component: Button,
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["primary", "secondary", "danger"],
+    },
+    disabled: { control: "boolean" },
+    onClick: { action: "clicked" },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof Button>;
+
+export const Primary: Story = {
+  args: {
+    children: "Salvar",
+    variant: "primary",
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    children: "Cancelar",
+    variant: "secondary",
+  },
+};
+
+export const Danger: Story = {
+  args: {
+    children: "Deletar",
+    variant: "danger",
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    ...Primary.args,
+    disabled: true,
+  },
+};
+```
+
+Três peças:
+
+- **`meta`** - metadados do componente. `title` é
+  como aparece na sidebar. `component` é o React
+  component. `argTypes` configura os controles
+  no painel (select, boolean, color, range,
+  etc).
+- **`Story`** - tipo helper pra type-safety.
+  `StoryObj<typeof Button>` sabe que `args` é
+  compatível com as props do `Button`.
+- **`Story` exports** - cada export vira uma
+  história na sidebar. Você combina `args` pra
+  criar variações.
+
+**`args` vs `props` - a convenção.** `args` é
+"as props que essa story passa pro componente".
+Storybook pega o objeto `args` e passa como
+`<Component {...args} />`. **Não** é a mesma
+coisa que `props` no React (Storybook é o que
+escolhe o nome):
+
+```ts
+// args = "essas são as props dessa story"
+export const Primary: Story = {
+  args: { children: "Salvar", variant: "primary" },
+};
+// Equivale a:
+<Button variant="primary">Salvar</Button>
+```
+
+Vantagem: você muda `args` no painel e o
+componente re-renderiza ao vivo. É o "playground"
+do Storybook.
+
+**`argTypes` - configurando controles.** Sem
+`argTypes`, Storybook infere o tipo da prop e
+escolhe um controle default. Pra ter **controle
+melhor** (enum, range, descrição):
+
+```ts
+const meta: Meta<typeof Button> = {
+  // ...
+  argTypes: {
+    variant: {
+      control: "select",
+      options: ["primary", "secondary", "danger"],
+      description: "Variante visual do botão",
+      table: {
+        defaultValue: { summary: "primary" },
+      },
+    },
+    size: {
+      control: "inline-radio",
+      options: ["sm", "md", "lg"],
+    },
+    onClick: {
+      action: "clicked",  // vira log no painel Actions
+    },
+  },
+};
+```
+
+Tipos de controle comuns:
+
+- `control: "text"` - input de texto.
+- `control: "number"` - input numérico.
+- `control: "boolean"` - checkbox.
+- `control: "select"` - dropdown.
+- `control: "inline-radio"` - radio horizontal.
+- `control: "color"` - color picker.
+- `control: "object"` - editor de objeto (cuidado,
+  fica pesado).
+- `control: "date"` - date picker.
+
+`action: "clicked"` faz o `onClick` ser registrado
+no painel **Actions** (você vê "clicked" toda vez
+que clica no botão - ótimo pra debug de handlers).
+
+**`decorators` - envolvendo a story.** Pra
+componentes que precisam de **contexto**
+(ThemeProvider, Router, QueryClient):
+
+```ts
+import { Decorator } from "@storybook/react";
+import { ThemeProvider } from "../theme/ThemeProvider";
+
+const withTheme: Decorator = (Story) => (
+  <ThemeProvider theme="light">
+    <Story />
+  </ThemeProvider>
+);
+
+const meta: Meta<typeof Button> = {
+  // ...
+  decorators: [withTheme],
+};
+```
+
+Agora toda story roda dentro de `<ThemeProvider>`.
+Você pode ter múltiplos decorators (e até
+escolher por story).
+
+**`parameters` - configuração por nível.** Semelhante
+a decorators, mas pra config não-React:
+
+```ts
+const meta: Meta<typeof Button> = {
+  // ...
+  parameters: {
+    backgrounds: { default: "light" },
+    layout: "centered",  // "padded" | "fullscreen" | "centered"
+    docs: {
+      description: {
+        component: "Botão com 3 variants e estado disabled.",
+      },
+    },
+  },
+};
+```
+
+`layout: "centered"` é o mais comum - centraliza o
+componente na viewport. `backgrounds` muda o
+background (pra testar com fundo escuro). `docs`
+configura como a página de docs aparece (visto
+no nó 5).
+
+**Story de um componente composto.** Pra
+componentes que têm várias "configurações
+essenciais" (primary, secondary, etc), use
+`StoryObj` com `args` pra cada uma:
+
+```ts
+import { Card, CardHeader, CardBody, CardFooter } from "./Card";
+
+const meta: Meta<typeof Card> = {
+  title: "Components/Card",
+  component: Card,
+};
+
+export const Basic: Story = {
+  render: (args) => (
+    <Card {...args}>
+      <CardHeader>Título</CardHeader>
+      <CardBody>Conteúdo do card aqui.</CardBody>
+    </Card>
+  ),
+};
+
+export const WithFooter: Story = {
+  render: (args) => (
+    <Card {...args}>
+      <CardHeader>Título</CardHeader>
+      <CardBody>Conteúdo.</CardBody>
+      <CardFooter>
+        <Button>OK</Button>
+      </CardFooter>
+    </Card>
+  ),
+};
+```
+
+O `render` é útil quando a story precisa de JSX
+complexo (compound components, múltiplos elementos).
+Pra stories simples, `args` direto basta.
+
+**Decorator global em `.storybook/preview.ts`.**
+Pra decorators que **toda** story precisa (Theme,
+I18n, Router):
+
+```ts
+// .storybook/preview.ts
+import { Preview } from "@storybook/react";
+import { ThemeProvider } from "../src/theme/ThemeProvider";
+
+const preview: Preview = {
+  decorators: [
+    (Story) => (
+      <ThemeProvider>
+        <Story />
+      </ThemeProvider>
+    ),
+  ],
+  parameters: {
+    backgrounds: {
+      default: "light",
+      values: [
+        { name: "light", value: "#ffffff" },
+        { name: "dark", value: "#0a0a0a" },
+      ],
+    },
+  },
+};
+
+export default preview;
+```
+
+`parameters.backgrounds` global destrava trocar
+o fundo no painel (ícone de paint, topo da
+viewport) - útil pra testar com fundo escuro.
+
+**`args` global - valores default.** Pra evitar
+repetir o mesmo `variant` em toda story:
+
+```ts
+const meta: Meta<typeof Button> = {
+  // ...
+  args: {
+    children: "Click me",
+    variant: "primary",
+  },
+};
+
+export const Secondary: Story = {
+  args: { variant: "secondary" },  // só muda o que difere
+};
+```
+
+O `args` da story **sobrescreve** o `args` do
+meta. Tudo que você não sobrescrever, vem do
+default.
+
+## Aprofundamento 🟡
+
+**`play` function - interações automatizadas.** A
+função `play` é executada quando o usuário clica
+no botão "play" da story. Permite simular
+interações e verificar estado:
+
+```ts
+import { expect, fn, userEvent, within } from "@storybook/test";
+
+export const Clickable: Story = {
+  args: {
+    children: "Clique aqui",
+    onClick: fn(),  // mock spy
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const botao = canvas.getByRole("button", { name: /clique/i });
+
+    // Clica e verifica que onClick foi chamado
+    await userEvent.click(botao);
+    await expect(args.onClick).toHaveBeenCalledTimes(1);
+  },
+};
+```
+
+`@storybook/test` (que vem com o Storybook 8+)
+re-exporta `@testing-library/jest-dom` e
+`@testing-library/user-event`. Você pode escrever
+testes **dentro** de stories - o test runner
+roda automaticamente. Veremos isso a fundo no
+nó 7 (contract-testing).
+
+**Tags em stories.** Pra organizar stories
+(automatizar o que vira page de docs, o que
+aparece no test runner):
+
+```ts
+export const Primary: Story = {
+  tags: ["autodocs"],  // vira página de doc automática
+  args: { /* ... */ },
+};
+
+export const Experimental: Story = {
+  tags: ["autodocs", "experimental"],  // autodocs + marca especial
+  args: { /* ... */ },
+};
+```
+
+Tags comuns:
+
+- **`autodocs`** - gera página MDX automática
+  com props table e descrição.
+- **`dev`** - só aparece em modo dev, não vai
+  pro build publicado.
+- **`test`** - só roda no test runner, não
+  aparece no Storybook.
+- **`hidden`** - some da sidebar (mas pode ser
+  linkada por outras stories).
+
+**`play` + `test`: testes que rodam em CI.** O
+nó 7 (contract-testing) cobre isso a fundo.
+Resumo: o test runner do Storybook (`pnpm
+test-storybook`) roda todas as stories, executa
+as `play` functions, e falha se algo quebrar.
+É a "rede de segurança" do DS - qualquer mudança
+que quebra comportamento é pega em CI.
+
+**Comparação de variants em uma story.** Pra
+mostrar todos os variants lado a lado:
+
+```ts
+export const AllVariants: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: 8 }}>
+      <Button variant="primary">Salvar</Button>
+      <Button variant="secondary">Cancelar</Button>
+      <Button variant="danger">Deletar</Button>
+    </div>
+  ),
+};
+```
+
+Útil pra "overview" no topo da página de docs.
+Não substitui as stories individuais, mas dá
+uma visão rápida.
+
+**`MDX` pra stories (avançado).** Pra stories
+que precisam de **conteúdo rico** (Markdown +
+componentes), use `.stories.mdx`:
+
+```mdx
+import { Meta, Story } from "@storybook/blocks";
+import { Button } from "./Button";
+
+<Meta title="Components/Button" component={Button} />
+
+# Botão
+
+O botão tem 3 variants. Use primary pra ação
+principal, secondary pra ação de cancelamento,
+danger pra ação destrutiva.
+
+<Story name="Primary" args={{ variant: "primary", children: "Salvar" }} />
+
+## Boas práticas
+
+- Use primary **uma vez por tela**.
+- Use danger só pra ações destrutivas.
+- Evite `disabled` se a ação pode ser explicada
+  (melhor UX mostrar por que tá desabilitado).
+```
+
+MDX é útil pra "página de docs" rica, mas pra
+stories puras o `.stories.ts` é mais simples.
+Cobrimos a fundo no nó 5.
+
+**`chromatic` e visual regression (intro).** Pra
+pegar mudanças visuais não intencionais, o
+plugin Chromatic tira screenshots de cada story
+em cada commit e compara com baseline:
+
+```bash
+pnpm add -D chromatic
+pnpm exec chromatic --project-token=<seu-token>
+```
+
+Cada PR tem um link "🟢 UI Review" que mostra
+o diff visual. Você aprova ou pede mudanças.
+Detalhe a fundo no nó 7 (contract-testing).
+
+## Pra quem quer ir além 🔴
+
+**Storybook 8: o que mudou.** O Storybook 8 (lançado
+em 2024) consolidou o CSF3 como default, trocou
+o Webpack pelo Vite por default, e unificou os
+addons. Em 2026, é a versão padrão. O salto do 7
+pro 8 é grande (estrutura de arquivos mudou);
+saltar de 6 pra 8 também (vários addons foram
+descontinuados).
+
+**Por que CSF3 venceu CSF2.** O formato antigo
+(CSF2) era:
+
+```ts
+// CSF2 (legacy)
+export default { title: "Components/Button", component: Button };
+export const primary = () => <Button variant="primary">Salvar</Button>;
+```
+
+O problema: story é uma **função** (não dá pra
+ter metadata por story), o tipo é fraco, e a
+reutilização é verbosa. CSF3 (que vimos no essencial)
+faz stories serem **objetos com `args`** - o que
+habilita `argTypes`, controles, autodocs, e
+testing muito mais ergonômicos.
+
+**Histoire, Ladle, PatternLab: alternativas ao
+Storybook.** Em 2026, Storybook é o padrão em
+React, mas tem alternativas:
+
+- **Histoire** (Vue) - similar ao Storybook, mas
+  focado em Vue/Nuxt. Suporta Svelte.
+- **Ladle** - mais leve (sem Chrome headless,
+  mais rápido pra rodar), menos addons. Bom
+  pra DS pequeno.
+- **PatternLab** (PHP, antigo) - precursor do
+  Atomic Design. Ainda usado em empresas
+  grandes, mas em React é overkill.
+- **Docz** (descontinuado) - alternativa MDX-first,
+  mas o autor abandonou o projeto.
+
+Pra React, **Storybook** é a escolha. Outras só
+se você está em outro framework.
+
+**Storybook + Vite vs Next.js.** O Storybook 8+
+roda Vite por padrão. Em projeto Next, você tem
+2 opções:
+
+- **Usar Vite no Storybook** (default 8+) -
+  rápido, mas precisa `transpilePackages` pra
+  imports de Next.
+- **Forçar Webpack** no Storybook - mais lento,
+  mas compatível com Next nativamente.
+
+A maioria dos projetos com Next usa o default
+(Vite no Storybook) e adiciona o
+`transpilePackages: ['@sua-org/ui']` no
+`next.config.js`.
+
+**Leitura recomendada:**
+
+- [Storybook - Getting Started](https://storybook.js.org/docs/get-started/why-storybook) - 5 minutos, hands-on.
+- [Storybook - Writing Stories](https://storybook.js.org/docs/writing-stories) - o guia completo de CSF3.
+- [Storybook - CSF3](https://storybook.js.org/docs/api/csf) - a referência do formato.
+
+> Dica: o erro mais comum no começo é não
+> ter **uma story por estado importante**.
+> "Botão primary" é óbvio. "Botão primary
+> com loading" é importante. "Botão primary
+> com loading + disabled" é importante.
+> "Botão primary com loading + disabled +
+> ícone à esquerda + texto longo" é
+> importante também. Pense em cada prop
+> como uma **dimensão** e cubra os
+> **estados extremos** (combinações que
+> quebram layout).
+
+No próximo nó, vamos falar de **tokens e theming**:
+a base numérica que dá pra cada componente
+"consumir" sem hardcodar cor, espaço, e
+tipografia.
+
+<Checkpoint
+  challenge="Implemente a função `montarMeta(component, config)` que retorna o objeto `Meta` do Storybook (CSF3) a partir de um componente e uma config `{ title, argTypes }`. A função deve: (1) incluir o title, (2) o component, (3) propagar argTypes (4) usar 'Components/' como prefixo padrão do title se ele não começar com 'Components/' ou 'Forms/'."
+  starterCode={`// Componente fictício - em projeto real, vem do ./Button
+const Button = { name: "Button" };
+
+// argTypes fictício
+const _argTypes = {
+  variant: {
+    control: "select",
+    options: ["primary", "secondary"],
+  },
+  disabled: { control: "boolean" },
+};
+
+// Implemente montarMeta(component, config) que retorna:
+// { title, component, argTypes }
+// - title: config.title; se não começar com "Components/" nem "Forms/", prefixa com "Components/"
+// - component: o componente passado
+// - argTypes: config.argTypes
+function montarMeta(component, config) {
+  return { title: "", component, argTypes: {} };
+}
+
+const _m1 = montarMeta(Button, { title: "Components/Button", argTypes: _argTypes });
+console.log(JSON.stringify({ case: "ja_tem_prefixo", title: _m1.title }));
+
+const _m2 = montarMeta(Button, { title: "Button", argTypes: _argTypes });
+console.log(JSON.stringify({ case: "sem_prefixo", title: _m2.title }));
+
+const _m3 = montarMeta(Button, { title: "Forms/Input", argTypes: _argTypes });
+console.log(JSON.stringify({ case: "forms_prefixo", title: _m3.title }));
+
+const _m4 = montarMeta(Button, { title: "Card" });
+console.log(JSON.stringify({ case: "sem_argTypes", temArgTypes: !!_m4.argTypes }));`}
+expected='{"case":"ja_tem_prefixo","title":"Components/Button"}
+{"case":"sem_prefixo","title":"Components/Button"}
+{"case":"forms_prefixo","title":"Forms/Input"}
+{"case":"sem_argTypes","temArgTypes":true}'
+slug="storybook-design-systems"
+nodeId="storybook-basico"
+/>
+
+<Quiz
+  question="O que é o formato CSF3 do Storybook e qual a principal vantagem sobre o CSF2?"
+  options={[
+    {
+      text: "CSF3 define stories como objetos com `args` e `argTypes`, habilitando controles interativos e autodocs sem verbosidade.",
+      correct: true,
+      explanation:
+        "CSF2 definia story como função (export const primary = () => ...), o que impedia metadata por story, tinha tipo fraco e verbosidade alta. CSF3 usa objeto (export const Primary: Story = { args: {...} }), destrava argTypes (controles do painel), autodocs (página MDX automática) e test runner (play function). É o caminho padrão em Storybook 8+.",
+    },
+    {
+      text: "CSF3 é um novo framework React que substitui o Storybook antigo.",
+      correct: false,
+      explanation:
+        "Não. CSF3 é o **formato de story** dentro do Storybook, não um framework separado. Storybook 8+ usa CSF3 por default. Você ainda usa o mesmo pacote @storybook/react, só escreve stories no novo formato.",
+    },
+    {
+      text: "CSF3 é uma alternativa ao TypeScript para tipar componentes.",
+      correct: false,
+      explanation:
+        "Não - CSF3 é o **formato de story**, não tem nada a ver com TypeScript. Na verdade, CSF3 e TypeScript funcionam muito bem juntos: o tipo StoryObj<typeof Component> deriva o tipo dos args a partir das props do componente, type-safety automático.",
+    },
+  ]}
+/>
