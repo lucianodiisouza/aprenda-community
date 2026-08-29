@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 22,
+        "trilhas": 23,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 35
+        "total": 36
       },
       "trilhas": [
         {
@@ -85,6 +85,10 @@
         {
           "slug": "prompt-engineering",
           "title": "Prompt Engineering"
+        },
+        {
+          "slug": "storybook-design-systems",
+          "title": "Storybook & Design Systems: tokens, primitives, versionamento"
         },
         {
           "slug": "tanstack-query",

@@ -1,0 +1,587 @@
+---
+id: tokens-e-tema
+title: "Design tokens e theming: Style Dictionary, light/dark"
+resources:
+  - title: "Style Dictionary (oficial, EN)"
+    url: https://styledictionary.com/
+    lang: en
+    type: doc
+    free: true
+  - title: "Style Dictionary - Getting Started / Installation (oficial, EN)"
+    url: https://styledictionary.com/getting-started/installation/
+    lang: en
+    type: doc
+    free: true
+  - title: "W3C - Design Tokens Community Group (oficial, EN)"
+    url: https://www.w3.org/community/design-tokens/
+    lang: en
+    type: doc
+    free: true
+---
+
+No nó 1 você viu que DS tem **tokens** no núcleo.
+Neste nó vamos ver **como fazer na prática**:
+definir tokens em JSON, processar com **Style
+Dictionary** (ou similar), exportar pra CSS
+variables / iOS / Android, e ter **theming**
+(light/dark) sem reescrever componentes.
+
+Tokens são a **fonte da verdade numérica** do DS.
+Se você hardcodar `#2563EB` no `<Button>`, perdeu
+a chance de ter theming, de mudar a cor em 1
+lugar, e de ter consistência entre apps.
+
+## O essencial 🟢
+
+**O que é um design token.** Um design token é
+um **valor nomeado com propósito**. Exemplos:
+
+```text
+color-primary-500: #2563EB       (cor primária, shade médio)
+color-primary-600: #1E40AF       (mesma família, mais escuro)
+color-feedback-error: #DC2626     (vermelho de erro)
+spacing-1: 4px                   (espaço extra-pequeno)
+spacing-2: 8px                   (espaço pequeno)
+spacing-4: 16px                  (espaço médio)
+font-size-sm: 14px
+font-size-base: 16px
+font-size-lg: 18px
+radius-sm: 4px
+radius-md: 8px
+radius-lg: 12px
+shadow-sm: 0 1px 2px rgba(0,0,0,0.05)
+shadow-md: 0 4px 6px rgba(0,0,0,0.10)
+```
+
+A diferença pra uma constante CSS (`var(--blue)`)
+é que **token tem semântica + hierarquia**. Não
+é "este é o azul", é "este é o `color-primary-500`"
+- parte de uma família `primary`, com shade `500`
+(0-1000 escala, Material Design style).
+
+**A hierarquia de tokens.** A regra que separa
+DS maduro de DS caótico: **3 níveis**:
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph P["Primitive (valor puro)"]
+      P1["blue-500: #2563EB"]
+      P2["gray-100: #F3F4F6"]
+      P3["spacing-4: 16px"]
+    end
+    subgraph S["Semantic (proposito)"]
+      S1["color-primary: {blue-500}"]
+      S2["color-bg: {gray-100}"]
+      S3["spacing-md: {spacing-4}"]
+    end
+    subgraph C["Component (uso)"]
+      C1["button-bg: {color-primary}"]
+      C2["page-bg: {color-bg}"]
+      C3["card-padding: {spacing-md}"]
+    end
+    P1 --> S1
+    P2 --> S2
+    P3 --> S3
+    S1 --> C1
+    S2 --> C2
+    S3 --> C3`}
+  caption="Tres niveis de token: primitive (valor puro, ex: blue-500), semantic (proposito, ex: color-primary), component (uso especifico, ex: button-bg). Mudanca no primitive cascateia."
+/>
+
+- **Primitive (Tier 1)** - o valor cru. "blue-500
+  = #2563EB". Não tem significado semântico, é
+  só um valor que existe. Tipo: cor, espaço,
+  raio, tipografia.
+- **Semantic (Tier 2)** - o propósito. "color-primary
+  = blue-500". Aqui mora a decisão de design:
+  "a cor primária é azul". Componentes consomem
+  **semantic**, não primitive.
+- **Component (Tier 3)** - o uso específico.
+  "button-bg = color-primary". É o token de
+  componente, usado quando o componente tem
+  um estilo que não se encaixa em semantic geral.
+
+A regra: **componentes consomem semantic ou
+component, nunca primitive**. Se o `<Button>` usa
+`var(--blue-500)`, está pulando o semantic. Se
+amanhã o designer decidir que primary vira verde,
+você tem que mudar em cada componente. Com
+semantic, muda `color-primary` e todos os
+componentes seguem.
+
+**Style Dictionary: o processador de tokens.**
+Style Dictionary (mantido pela Amazon) é a
+ferramenta padrão pra processar tokens em
+múltiplos formatos:
+
+```bash
+pnpm add -D style-dictionary
+```
+
+```json
+// tokens/colors.json (primitive)
+{
+  "color": {
+    "blue": {
+      "500": { "value": "#2563EB", "type": "color" }
+    },
+    "gray": {
+      "100": { "value": "#F3F4F6", "type": "color" },
+      "900": { "value": "#111827", "type": "color" }
+    }
+  }
+}
+```
+
+```json
+// tokens/semantic.json (Tier 2)
+{
+  "color": {
+    "primary": { "value": "{color.blue.500}", "type": "color" },
+    "bg": { "value": "{color.gray.100}", "type": "color" },
+    "fg": { "value": "{color.gray.900}", "type": "color" }
+  }
+}
+```
+
+```js
+// style-dictionary.config.js
+export default {
+  source: ["tokens/**/*.json"],
+  platforms: {
+    css: {
+      transformGroup: "css",
+      buildPath: "dist/css/",
+      files: [
+        {
+          destination: "tokens.css",
+          format: "css/variables",
+        },
+      ],
+    },
+    js: {
+      transformGroup: "js",
+      buildPath: "dist/js/",
+      files: [
+        {
+          destination: "tokens.js",
+          format: "javascript/es6",
+        },
+      ],
+    },
+  },
+};
+```
+
+```bash
+pnpm style-dictionary build
+# Gera dist/css/tokens.css:
+# :root {
+#   --color-primary: #2563EB;
+#   --color-bg: #F3F4F6;
+#   --color-fg: #111827;
+# }
+# E dist/js/tokens.js com o mesmo em objeto.
+```
+
+O **pulo do gato** é o **`{color.blue.500}`** - é
+**referência** a outro token. O Style Dictionary
+resolve antes de gerar. Mude `blue-500` e **todos
+os semantic que referenciam** mudam junto.
+
+**Tokens no CSS: `var(--token)`.** O output do
+Style Dictionary vira CSS variables:
+
+```css
+/* dist/css/tokens.css (gerado) */
+:root {
+  --color-primary: #2563EB;
+  --color-bg: #F3F4F6;
+  --color-fg: #111827;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-4: 16px;
+  --radius-md: 8px;
+}
+```
+
+```css
+/* Componente */
+.button {
+  background: var(--color-primary);
+  color: white;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-md);
+}
+```
+
+**Theming com `data-theme`.** Pra ter **light e
+dark** sem reescrever componentes, a abordagem
+mais comum é sobrescrever as CSS variables por
+escopo:
+
+```css
+/* dist/css/tokens.css (gerado) */
+:root,
+[data-theme="light"] {
+  --color-bg: #FFFFFF;
+  --color-fg: #111827;
+}
+
+[data-theme="dark"] {
+  --color-bg: #0A0A0A;
+  --color-fg: #F3F4F6;
+}
+```
+
+```tsx
+// ThemeProvider.tsx
+function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+```
+
+Componente continua usando `var(--color-bg)` -
+o tema define qual valor ele resolve. Mudar de
+light pra dark = setar `data-theme="dark"` no
+`<html>`, sem reescrever componente.
+
+**Theming com `prefers-color-scheme`.** Pra
+detectar automaticamente o tema do sistema:
+
+```css
+:root {
+  --color-bg: #FFFFFF;
+  --color-fg: #111827;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0A0A0A;
+    --color-fg: #F3F4F6;
+  }
+}
+```
+
+`prefers-color-scheme` é a preferência do SO. Sem
+JS, sem toggle. O usuário tem que mudar nas
+preferências do SO pra alternar. É o caminho
+"automático" - combine com `data-theme` se quiser
+também override manual.
+
+**`data-theme` vs `class` strategy.** Duas
+abordagens comuns:
+
+- **`data-theme`** - `data-theme="dark"` no
+  `<html>`. Vantagem: padrão HTML, fácil de
+  inspecionar, fácil de estilizar. Recomendado
+  pelo time do Storybook.
+- **`class`** - `class="theme-dark"` no `<html>`.
+  Vantagem: encaixa bem com Tailwind (`dark:`
+  variant), Tailwind usa `class`. Desvantagem:
+  polui o className com info de tema.
+
+Em 2026, **a maioria usa `data-theme`** por
+padrão. Tailwind convive com `class="dark"` -
+escolha 1 e mantenha.
+
+**Tokens com TypeScript: `as const`.** Pra ter
+type-safety no uso dos tokens em JS:
+
+```ts
+// tokens.ts (gerado ou escrito à mão)
+export const tokens = {
+  color: {
+    primary: "#2563EB",
+    bg: "#FFFFFF",
+    fg: "#111827",
+  },
+  spacing: {
+    1: "4px",
+    2: "8px",
+    4: "16px",
+  },
+} as const;
+```
+
+```ts
+type Color = typeof tokens.color[keyof typeof tokens.color];
+// Color = "#2563EB" | "#FFFFFF" | "#111827"
+```
+
+Útil pra props de componente que só aceitam
+tokens conhecidos (não hex cru).
+
+## Aprofundamento 🟡
+
+**Tokens compondo: `color-primary-hover` via
+transform.** Style Dictionary tem **transforms**
+que computam tokens a partir de outros:
+
+```js
+// style-dictionary.config.js
+export default {
+  source: ["tokens/**/*.json"],
+  transforms: {
+    "color/hover": {
+      type: "color",
+      filter: (token) => token.attributes?.state === "hover",
+      transform: (token) => {
+        // Escurece 10%
+        return Color(token.value).darken(0.1).hex();
+      },
+    },
+  },
+  platforms: {
+    css: {
+      transforms: ["color/hover", "..."],
+      // ...
+    },
+  },
+};
+```
+
+```json
+// tokens/buttons.json
+{
+  "color": {
+    "primary": {
+      "default": { "value": "#2563EB" },
+      "hover": { "value": "{color.primary.default}", "attributes": { "state": "hover" } }
+    }
+  }
+}
+```
+
+Resultado:
+
+```css
+:root {
+  --color-primary-default: #2563EB;
+  --color-primary-hover: #1D4ED8; /* darken(0.1) de #2563EB */
+}
+```
+
+Útil pra gerar estados (`hover`, `active`,
+`disabled`, `focus`) a partir de um valor base.
+
+**Aliasing para múltiplos temas.** Pra ter light
+e dark, use **themes** do Style Dictionary:
+
+```js
+export default {
+  themes: [
+    {
+      name: "light",
+      // tokens específicos de light
+      color: {
+        bg: { value: "#FFFFFF" },
+        fg: { value: "#111827" },
+      },
+    },
+    {
+      name: "dark",
+      // tokens específicos de dark
+      color: {
+        bg: { value: "#0A0A0A" },
+        fg: { value: "#F3F4F6" },
+      },
+    },
+  ],
+  platforms: {
+    css: {
+      transformGroup: "css",
+      buildPath: "dist/css/",
+      files: [
+        {
+          destination: "tokens.css",
+          format: "css/variables",
+        },
+      ],
+    },
+  },
+};
+```
+
+Output gera `--color-bg-light` e `--color-bg-dark`
+separados, e você escolhe qual aplicar via
+`data-theme`.
+
+**Tokens e Tailwind v4.** Tailwind v4 (2024+)
+lê tokens diretamente de CSS variables:
+
+```css
+/* tokens.css */
+@theme {
+  --color-primary-500: #2563eb;
+  --color-primary-600: #1e40af;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+}
+```
+
+```html
+<div class="bg-primary-500 p-2">  <!-- usa --color-primary-500 -->
+```
+
+Tailwind **expõe** os tokens via `@theme inline` ou
+`@theme`. Você pode usar o output do Style
+Dictionary direto, sem redefinir no
+`tailwind.config.js`. Em 2026, é a forma mais
+limpa de integrar tokens com Tailwind.
+
+**Tokens para iOS/Android (multi-plataforma).**
+A força do Style Dictionary é exportar pra
+qualquer plataforma:
+
+```js
+platforms: {
+  ios: {
+    transformGroup: "ios-swift",
+    buildPath: "dist/ios/",
+    files: [{ destination: "Tokens.swift", format: "ios-swift/class.swift" }],
+  },
+  android: {
+    transformGroup: "android",
+    buildPath: "dist/android/",
+    files: [{ destination: "tokens.xml", format: "android/resources" }],
+  },
+}
+```
+
+Resultado: `Tokens.swift` (enum `Tokens.Colors.primary`)
+e `tokens.xml` (`<color name="primary">#FF2563EB</color>`).
+**Um JSON vira CSS + Swift + Kotlin + i18n + qualquer
+coisa**. É a "fonte da verdade única" em ação.
+
+**Sincronizando Figma → código.** A integração
+design ↔ código é o ponto mais delicado do DS.
+Três caminhos em 2026:
+
+- **Tokens Studio** (ex-Figma Tokens) - plugin
+  Figma que exporta pra Style Dictionary direto.
+- **Figma Variables + Style Dictionary** - exporta
+  Variables do Figma como JSON, processa com SD.
+- **Specify / Supernova** - ferramentas pagas de
+  design ops, com sync contínuo.
+
+O caminho "manual" (designer fala qual é o hex,
+dev escreve no JSON) é o que a maioria começa.
+Funciona até a primeira vez que esquece de
+atualizar.
+
+## Pra quem quer ir além 🔴
+
+**A história dos design tokens.** O termo
+"design tokens" foi cunhado pela **Salesforce**
+em 2014 (Jina Anne, no time de design systems).
+Antes, o conceito existia mas sem nome - era "CSS
+variables" ou "constants file". Salesforce precisava
+de um padrão que funcionasse em iOS, Android, e
+web (Lightning Design System) - daí o formato
+W3C Design Tokens Community Group (2020), que
+tentou padronizar. **Style Dictionary** (Amazon,
+2017) é a implementação mais usada do formato.
+Em 2026, o W3C draft ainda está em draft, mas a
+comunidade converge no formato Style Dictionary.
+
+**Por que 3 níveis (primitive / semantic /
+component).** A regra dos 3 níveis vem da
+experiência da **Salesforce** (2014-2018). O
+problema clássico: o DS tem só primitives, time
+usa direto (`var(--blue-500)`). Designer decide
+mudar a paleta - **centenas de referências
+quebram**. Solução: **indireção**. Semantic é a
+"indireção que dá pra refatorar". Component é
+a "exceção que confirma a regra" (alguns tokens
+são únicos de um componente - `button-shadow`
+não faz sentido em `color-shadow`).
+
+DS sem semantic = refatorar DS é achar/usar
+substituir em 50 lugares. DS com semantic =
+muda 1 linha no JSON, 50 lugares seguem.
+
+**Tokens como contrato entre design e código.** O
+ponto mais subestimado: **tokens são a
+especificação** do que o design tem. Se o Figma
+mostra "primary 500 = #2563EB" e o código tem
+`--color-primary: #2563EB`, **batem**. Se o
+Figma muda pra `#3B82F6` mas o código continua
+com `#2563EB`, **não batem** - alguém vai
+implementar do Figma e ficar diferente do código.
+O token é a **garantia de consistência** entre
+design e código. Sem ele, design e código divergem
+em 3 meses.
+
+**Theming: light/dark vs branded (white-label).**
+DS grande tem **vários temas** além de light/dark:
+- **White-label** - cada cliente tem sua cor primária
+  (banco X usa azul, banco Y usa vermelho).
+- **Acessibilidade** - tema de alto contraste pra
+  usuários com baixa visão.
+- **Seasonal** - tema de Natal, tema de Black
+  Friday, etc.
+
+O caminho de implementação é o mesmo (CSS
+variables por escopo), mas a **fonte de verdade**
+muda. Em white-label, o tema é **carregado por
+tenant** (vem do banco ou config). Em seasonal,
+é **definido em código** (data atual + regra).
+
+A trilha foca em **light/dark** porque é o caso
+mais comum. Os outros são variações.
+
+**Leitura recomendada:**
+
+- [Style Dictionary (oficial)](https://styledictionary.com/) - a doc oficial, com exemplos.
+- [Style Dictionary - Getting Started](https://styledictionary.com/getting-started/installation/) - setup em 5 min.
+- [W3C - Design Tokens Community Group](https://www.w3.org/community/design-tokens/) - o grupo que padroniza o formato de tokens.
+
+> Dica: o erro mais comum no começo é
+> **pular o semantic** e usar primitive
+> direto. "Vai poupar uma camada, mais
+> simples" - até o dia que o designer
+> muda a paleta e você tem 200 referências
+> pra atualizar. A regra é: **componente
+> consome semantic ou component, nunca
+> primitive**. Sempre.
+
+No próximo nó, vamos ver **composição**: como
+construir componentes compostos (compound
+components), slot patterns, e o caminho
+"headless primitives" (lógica sem estilo, controle
+total pro consumidor).
+
+<Quiz
+  question="Por que tokens tem 3 niveis (primitive, semantic, component) e nao sao direto primitive?"
+  options={[
+    {
+      text: "Porque semantic e a indirecao que destrava refatorar a paleta sem mexer em cada componente.",
+      correct: true,
+      explanation:
+        "Componente consome semantic. Quando o designer decide mudar primary de azul pra verde, muda `color-primary` no JSON e TODOS os componentes seguem. Sem semantic, componente consome `blue-500` direto, e a refatoracao e achar/usar/substituir em 50 lugares. O semantic e a camada de indirecao que torna DS refatoravel.",
+    },
+    {
+      text: "Porque primitive e muito lento pra renderizar - semantic compila pra CSS mais rapido.",
+      correct: false,
+      explanation:
+        "Não. Performance não é a razão. CSS variables resolvem em tempo de execução, não tem diferença mensurável entre primitive e semantic. A razão é **manutenibilidade** - ter um único ponto de mudança quando a decisão de design muda.",
+    },
+    {
+      text: "Porque 3 niveis e convencao do W3C - se nao seguir, os tokens nao funcionam.",
+      correct: false,
+      explanation:
+        "Não. O W3C Design Tokens tem um draft de padronização, mas não obriga 3 níveis. Você pode ter só primitive e funcionar (é assim que muitos DS começam). Os 3 níveis são uma **boa prática** que emerge da experiência, não uma exigência da spec.",
+    },
+  ]}
+/>

@@ -1,0 +1,612 @@
+---
+id: documentacao
+title: "Documentacao: MDX docs, autodocs, quando usar / quando nao usar"
+resources:
+  - title: "Storybook - Docs (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-docs
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - MDX (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-docs/mdx
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - Autodocs (oficial, EN)"
+    url: https://storybook.js.org/docs/writing-docs/autodocs
+    lang: en
+    type: doc
+    free: true
+---
+
+Você tem a `<Button>` com 3 variants, histórias
+de exemplo, e o Storybook rodando. Mas o
+**consumidor** (dev de outro time que vai usar
+`<Button>` no app dele) precisa de **mais do que
+"olhar as stories"**. Precisa de:
+- Descrição do componente (o que é, quando usar).
+- Props table (todas as props, tipos, default).
+- Exemplos de uso (do mais simples ao avançado).
+- Avisos de **quando NÃO usar** (e o que usar em
+  vez).
+- Acessibilidade (notas, links pra docs WCAG).
+
+Sem isso, o dev usa `<Button>` baseado no "vi no
+outro app" - e diverge em 3 meses. Este nó cobre
+como escrever docs **que devs realmente leem**.
+
+## O essencial 🟢
+
+**3 níveis de doc no Storybook.** Em 2026, o
+Storybook tem 3 caminhos pra documentação:
+
+1. **Autodocs** (gerado) - Storybook lê suas
+   stories, prop types, e comentários JSDoc/TSDoc
+   e gera uma página automaticamente. Zero
+   trabalho, cobertura razoável.
+2. **MDX** (manual) - você escreve Markdown +
+   componentes React. Controle total sobre
+   narrativa, exemplos custom, avisos.
+3. **Hybrid** - autodocs como base + MDX pra
+   seção "quando usar / quando não usar",
+   "acessibilidade", "exemplos avançados".
+
+**Autodocs: o caminho zero-trabalho.** Pra ter
+docs de qualquer componente, basta adicionar
+`tags: ['autodocs']` no meta:
+
+```ts
+// Button.stories.ts
+const meta: Meta<typeof Button> = {
+  title: "Components/Button",
+  component: Button,
+  tags: ["autodocs"], // ativa geração automática de docs
+  // ...
+};
+
+export default meta;
+```
+
+O Storybook gera uma página com:
+
+- **Title** do componente.
+- **Description** (de comentários JSDoc/TSDoc
+  acima do componente).
+- **Props table** (do tipo do componente, com
+  `description` em cada prop do `argTypes`).
+- **Stories** listadas (cada `export const X: Story`).
+- **Playground** interativo (todos os args com
+  controle).
+
+A qualidade da doc automática depende da
+qualidade do **tipo TypeScript** e do
+**`argTypes`**. Componente sem `argTypes` vira
+doc com props "string, optional" - inútil.
+Componente com `argTypes` rico vira doc decente
+"Variante: select [primary, secondary, danger],
+Description: Variante visual do botão".
+
+**TSDoc/JSDoc vira a doc.** O Storybook lê
+comentários `/** ... */` acima do componente
+e de cada prop:
+
+```tsx
+/**
+ * Botão com 3 variants e estado de loading.
+ *
+ * Use `primary` para a acao principal da tela (1 por tela),
+ * `secondary` para acoes secundarias, e `danger` para
+ * acoes destrutivas (deletar, remover).
+ */
+type ButtonProps = {
+  /** Variante visual do botão. Default: "primary". */
+  variant?: "primary" | "secondary" | "danger";
+
+  /** Se true, mostra spinner e desabilita. */
+  loading?: boolean;
+
+  /** Texto ou elemento React dentro do botão. */
+  children: React.ReactNode;
+};
+```
+
+O Storybook pega esses comentários e renderiza
+na autodocs. É o "escreve a doc 1x" - no próprio
+código, do lado da definição.
+
+**MDX: o caminho manual.** Pra ter **controle
+total** sobre a narrativa, use MDX. Cria
+`Button.stories.mdx` (não `.ts`):
+
+```mdx
+import { Meta, Story, Canvas, Controls } from "@storybook/blocks";
+import { Button } from "./Button";
+
+<Meta title="Components/Button" component={Button} />
+
+# Botão
+
+O botão é o gatilho de ação padrão da interface.
+Tem 3 variants e estado de loading.
+
+## Quando usar
+
+- Use `primary` para a **ação principal** da tela
+  (no máximo 1 por tela).
+- Use `secondary` para ações de **cancelamento**
+  ou navegação de retorno.
+- Use `danger` para ações **destrutivas** (deletar,
+  remover, cancelar pedido).
+
+## Quando NÃO usar
+
+- Para navegação (use `<Link>` em vez de `<Button>`).
+- Para toggles binários (use `<Switch>`).
+- Para seleção única em grupo (use `<RadioGroup>`).
+
+## Acessibilidade
+
+- O `<button>` semântico é usado (foco via Tab, ativação
+  via Enter/Space).
+- Estado de loading é comunicado via `aria-busy="true"`.
+- Texto é sempre presente (não use `<Button>` sem
+  children - leitor de tela não tem o que ler).
+
+## Exemplos
+
+### Primary
+
+<Canvas>
+  <Story name="Primary" args={{ variant: "primary", children: "Salvar" }} />
+</Canvas>
+
+### Danger com loading
+
+<Canvas>
+  <Story name="Loading" args={{ variant: "danger", loading: true, children: "Deletando..." }} />
+</Canvas>
+
+## Props
+
+<Controls />
+```
+
+Vantagens do MDX:
+
+- **Markdown completo** - headings, listas, links,
+  code blocks, tabelas.
+- **Componentes React** dentro da doc - você
+  pode importar e mostrar código executável.
+- **Componentes Storybook** - `<Canvas>`,
+  `<Controls>`, `<ArgsTable>`, `<Source>` pra
+  render interativo + código.
+- **Versão controlada** - você commita a doc
+  junto com o código, versiona junto.
+
+Desvantagem: **mais trabalho de manutenção**.
+Quando o componente muda, a doc precisa
+atualizar manualmente. Autodocs é "free", MDX é
+"pago mas vale".
+
+**A doc que devs realmente leem.** O erro mais
+comum é escrever doc que **lista o componente**
+em vez de **guiar o uso**. Compare:
+
+```mdx
+<!-- RUIM: doc que lista -->
+
+# Botão
+
+Props:
+- variant: "primary" | "secondary" | "danger"
+- loading: boolean
+- disabled: boolean
+- children: ReactNode
+
+<!-- BOM: doc que guia -->
+
+# Botão
+
+## Quando usar
+
+Você precisa de uma **ação clicável** que dispara
+algo no app.
+
+## Quando NÃO usar
+
+- **Navegação entre páginas**: use `<Link>`.
+- **Toggle on/off**: use `<Switch>`.
+- **Ação de perigo (deletar)**: use `<Button variant="danger">`,
+  mas confirme antes (Modal de confirmação).
+
+## Como escolher o variant
+
+- **`primary`** - 1 por tela. É a "próxima ação
+  que o user faz".
+- **`secondary`** - ações de cancelamento, "voltar".
+- **`danger`** - destrutivo (deletar, cancelar pedido).
+  Sempre com Modal de confirmação.
+
+## Acessibilidade
+
+- Botão sem texto visível precisa de `aria-label`
+  (ex: botão de ícone).
+- Loading é comunicado automaticamente via
+  `aria-busy="true"`.
+
+## Props
+
+<Controls />
+```
+
+A primeira é **referência** - devs consultam
+quando esqueceram. A segunda é **guia** - devs
+leem antes de usar. O DS serve os dois, mas a
+guia é o que economiza tempo de revisão e
+suporte.
+
+**ArgsTable, Source, Canvas, Controls - os
+componentes Storybook pra doc.** Os 4 mais
+usados em MDX:
+
+```mdx
+import { Canvas, Controls, ArgsTable, Source } from "@storybook/blocks";
+
+<Canvas>
+  {/* Renderiza a story interativa - dev pode mexer nos controles */}
+  <Story name="Primary" args={{ variant: "primary" }} />
+</Canvas>
+
+<Controls />
+{/* Props table interativa - dev pode ver tipos, descrições, default */}
+
+<ArgsTable of={Button} />
+{/* Equivalente ao Controls, mas aceita o component direto (não a story) */}
+
+<Source code={`<Button variant="danger">Deletar</Button>`} language="tsx" />
+{/* Mostra bloco de código (copy-paste friendly) */}
+```
+
+A diferença prática:
+
+- **`<Canvas>` + `<Controls>`** - interativo, dev
+  mexe nos args e vê em tempo real. Bom pra
+  "explorar o componente".
+- **`<ArgsTable>`** - tabela estática, escaneável.
+  Bom pra "ver todos os props de uma vez".
+- **`<Source>`** - bloco de código copy-paste.
+  Bom pra "como faço X? copie este snippet".
+
+Em doc real, use os 3: Canvas da story principal
+no topo, ArgsTable de props no meio, Source
+de exemplo copy-paste embaixo.
+
+**ArgsTable com `exclude` pra esconder props
+internos.** Às vezes o componente tem props que
+não fazem sentido documentar (handlers internos,
+refs):
+
+```mdx
+<ArgsTable of={Button} exclude={["onInternalStateChange", "ref"]} />
+```
+
+`exclude` esconde props do consumidor final.
+Útil pra props de infraestrutura.
+
+**Documentação de estados extremos.** A doc
+forte cobre **estados que o dev esquece**:
+
+- **Loading** - "mostra spinner, desabilita click".
+- **Disabled** - "use quando o user não pode
+  fazer a ação agora. Não esconda ações que o
+  user quer fazer - explique por que tá disabled".
+- **Error** - se o botão pode estar em estado de
+  erro (ex: submit falhou), documente.
+- **Empty** - se aceita lista (ex: dropdown
+  items), doc "lista vazia" (placeholder, ícone).
+
+Cada estado vira uma story. Quanto mais
+estados cobertos, menos surpresa pro consumidor.
+
+**`description` em `argTypes` vira doc.** Lembre:
+`description` que você coloca em `argTypes`
+aparece na autodocs. É "escreve a doc 1x" no
+código:
+
+```ts
+const meta: Meta<typeof Button> = {
+  argTypes: {
+    variant: {
+      description: "Variante visual. Default: primary.",
+      table: {
+        type: { summary: '"primary" | "secondary" | "danger"' },
+        defaultValue: { summary: "primary" },
+      },
+    },
+    loading: {
+      description: "Mostra spinner e desabilita enquanto carrega.",
+    },
+  },
+};
+```
+
+Output na autodocs:
+
+```
+variant: "primary" | "secondary" | "danger"
+  Variante visual. Default: primary.
+  Default: primary
+```
+
+Sem `description` no `argTypes`, a autodocs mostra
+só o tipo (`variant: string`) - dev não sabe
+para que serve.
+
+## Aprofundamento 🟡
+
+**Estrutura recomendada de uma página de doc.**
+Seguindo a tradição de bons DS (Material UI,
+Radix, Chakra):
+
+1. **Title + descrição curta** (1-2 frases) -
+   "o que é".
+2. **Quando usar** (2-4 bullets) - casos
+   principais.
+3. **Quando NÃO usar** (2-4 bullets) - armadilhas
+   comuns e alternativas.
+4. **Exemplos** (Canvas das stories principais)
+   - 3-5 stories cobrindo o caminho feliz e
+   estados extremos.
+5. **Props** (Controls / ArgsTable) - referência.
+6. **Acessibilidade** - notas específicas do
+   componente (ARIA, foco, keyboard).
+7. **Customização** (se houver) - como sobrescrever
+   estilo, slotted content, slots disponíveis.
+8. **Links** (related components) - pra qual
+   componente ir se `<Button>` não for a
+   resposta.
+
+A ordem importa: dev júnior lê "quando usar"
+primeiro. Dev sênior pula pro "props". Dev de
+outro time vai direto pro "exemplos".
+
+**Doc como teste - "documentation as code".** Em
+2026, o time do Storybook está migrando pra
+"doc as code" - a doc vive no repo (MDX + TSDoc
++ argTypes), versionada com o código, e publicada
+automaticamente. Sem doc "separada" em Confluence
+ou Notion (que vira stale em 3 meses).
+
+O fluxo:
+
+1. Dev muda o componente + atualiza TSDoc/argTypes.
+2. PR abre, autodocs atualiza.
+3. Se MDX, dev atualiza o `.mdx` junto.
+4. Storybook publica (Chromatic) no merge.
+5. Consumidor vê a doc atualizada no site do DS.
+
+**Doc "preview" no PR.** Em DS grande, o PR
+mostra um preview do Storybook com a doc
+atualizada. Ferramentas:
+
+- **Chromatic** - publica Storybook em cada
+  PR, link na sidebar.
+- **Vercel/Netlify preview** - se o site do DS
+  é Next/Astro/Vite, cada PR tem URL preview.
+- **GitHub Action custom** - builda Storybook
+  estático, sobe como artifact, linka no PR.
+
+O importante: dev revisa **doc e código** no
+mesmo PR, não "código passa, doc fica pra depois".
+
+**Acessibilidade como seção de doc.** Toda página
+de doc de componente interativo deve ter uma
+seção "Accessibility" com:
+
+- **ARIA** - que papéis, propriedades, estados
+  são usados.
+- **Keyboard** - que teclas disparam o que.
+- **Focus** - como o foco se comporta
+  (visível, preso, etc).
+- **Screen reader** - o que o leitor anuncia.
+- **WCAG** - qual critério (2.1.1 Keyboard,
+  4.1.2 Name Role Value, etc).
+
+Exemplo pra `<Modal>`:
+
+```mdx
+## Acessibilidade
+
+- **ARIA**: `role="dialog"`, `aria-modal="true"`,
+  `aria-labelledby` aponta pro título.
+- **Keyboard**: ESC fecha, Tab navega entre
+  elementos internos, foco preso dentro do
+  modal.
+- **Focus**: foco vai pro primeiro elemento
+  interativo ao abrir; volta pro elemento que
+  abriu ao fechar.
+- **Screen reader**: anuncia "Dialog, [título do
+  modal]".
+- **WCAG**: 2.1.1 Keyboard, 2.4.3 Focus Order,
+  4.1.2 Name Role Value.
+```
+
+Padrão da indústria (Material UI, Radix) tem
+seção "Accessibility" padrão em todo componente
+interativo. Vale seguir.
+
+**MDX pra páginas de overview (não-componente).**
+Além de docs de componente, dá pra ter
+**páginas de overview**:
+
+- `/docs/intro` - "o que é este DS, como começar".
+- `/docs/tokens` - lista de todos os tokens
+  com exemplo.
+- `/docs/patterns` - padrões recorrentes
+  (forms, modals, navigation).
+- `/docs/contributing` - como contribuir com
+  PR pro DS.
+
+Essas páginas são **MDX** no Storybook
+(`.mdx` com `<Meta title="Docs/Intro" />`).
+Storybook renderiza elas na sidebar como docs
+"top-level".
+
+**Bloquear PR se autodocs não regenera.** Em
+DS com CI maduro, a autodocs é gerada em build
+e commitada no repo. Se o PR muda o componente
+mas não muda a autodocs gerada, o CI bloqueia.
+Garante que "doc sempre bate com código".
+
+A configuração:
+
+```ts
+// .storybook/main.ts
+export default {
+  docs: {
+    autodocs: "tag",
+  },
+};
+```
+
+Com `autodocs: "tag"`, você marca com
+`tags: ["autodocs"]` por story (vimos). Com
+`autodocs: "true"`, é gerado pra todo componente
+que tem stories.
+
+## Pra quem quer ir além 🔴
+
+**A doc do Material UI como referência.** O DS
+do Material UI (MUI) é considerado o "padrão de
+ouro" de doc em 2026. Cada componente tem:
+
+- Descrição curta + quando usar.
+- Tabs: "Examples", "API", "Customization".
+- Canvas interativo (estilo Storybook).
+- Props table com descrições.
+- CSS classes (pra customizar).
+- "Customization" - como sobrescrever estilo.
+- "Accessibility" - WCAG, ARIA, keyboard.
+- "Localization" - i18n das strings (ex: "Cancel").
+
+A doc é **MDX-like** mas em MD (Material UI não
+usa Storybook). A ideia é a mesma: narrativa +
+exemplos + referência. Vale clonar a estrutura
+pro seu DS.
+
+**i18n da doc.** DS grande tem doc em vários
+idiomas (en, pt-BR, es, ja, zh). O caminho:
+
+- **MDX por idioma** - `Button.stories.mdx`
+  (en) + `Button.stories.pt-BR.mdx` (PT-BR).
+  Verboso, mas controle total.
+- **i18n via Storybook addon** (`@storybook/addon-i18n`)
+  - o texto vem de um JSON de tradução, MDX
+  fica em 1 lugar.
+
+Em DS open source mantido pela comunidade, EN
+é o default e os outros são contribuição. Em DS
+interno de empresa, o idioma dominante do time
+ganha.
+
+**Storybook + Notion / Confluence como "single
+source of truth".** Algumas empresas publicam
+o Storybook **dentro** do Notion via embed.
+Vantagem: time acostumado com Notion não precisa
+abrir outra aba. Desvantagem: Storybook embed
+perde algumas features (parâmetros, navegação).
+A maioria das empresas usa Storybook standalone
++ link do Notion pra "guidelines" de marca.
+
+**Acessibilidade como blocker de merge.** Em
+DS maduro, o teste de a11y (addon a11y do
+Storybook, visto no nó 7) é **bloqueador de
+merge**. Mudou o componente? Mudou a a11y?
+Vai pro PR com a doc de a11y atualizada junto.
+Sem isso, a doc vira stale.
+
+**Leitura recomendada:**
+
+- [Storybook - Docs](https://storybook.js.org/docs/writing-docs) - o guia completo de doc.
+- [Storybook - MDX](https://storybook.js.org/docs/writing-docs/mdx) - MDX em detalhe.
+- [Storybook - Autodocs](https://storybook.js.org/docs/writing-docs/autodocs) - autodocs em detalhe.
+
+> Dica: o erro mais comum no começo é
+> **só ter autodocs e parar por aí**.
+> Autodocs é a "tabela de props" - é
+> referência, não guia. Quem usa
+> `<Button>` pela primeira vez precisa
+> de **contexto** ("quando usar", "quando
+> NÃO usar", "acessibilidade"). Esse
+> contexto mora no MDX, e é o que separa
+> DS utilizável de DS confuso.
+
+No próximo nó, vamos ver **versionamento**:
+Semver, Changesets, deprecation, e como publicar
+a lib no npm sem quebrar os apps que já usam.
+
+<Checkpoint
+  challenge="Implemente a função `gerarDocArgTypes(props)` que recebe um objeto de props (valores em string descrevendo o tipo) e retorna um objeto no formato do Storybook `argTypes`. Cada prop vira `{ control: 'text' }` por padrão. Props com valor 'boolean' viram `{ control: 'boolean' }`, 'number' vira `{ control: 'number' }`, e valores no formato 'a | b | c' viram `{ control: 'select', options: ['a', 'b', 'c'] }`."
+  starterCode={`// Implemente gerarDocArgTypes(props) que recebe:
+// {
+//   variant: "primary | secondary | danger",  // union de strings
+//   loading: "boolean",                        // boolean
+//   size: "number",                            // number
+//   children: "string",                        // string
+// }
+//
+// E retorna o formato de argTypes do Storybook:
+// - "a | b | c" (union): { control: 'select', options: ['a', 'b', 'c'] }
+// - "boolean": { control: 'boolean' }
+// - "number": { control: 'number' }
+// - "string": { control: 'text' }
+//
+// Dica: pra detectar union, procure por " | " no valor
+// e split pra extrair as opcoes (trim em cada).
+function gerarDocArgTypes(props) {
+  return {};
+}
+
+const _props = {
+  variant: "primary | secondary | danger",
+  loading: "boolean",
+  size: "number",
+  children: "string",
+};
+
+const _r = gerarDocArgTypes(_props);
+console.log(JSON.stringify({
+  variant_control: _r.variant?.control,
+  variant_options: _r.variant?.options,
+  loading_control: _r.loading?.control,
+  size_control: _r.size?.control,
+  children_control: _r.children?.control,
+}));`}
+expected='{"variant_control":"select","variant_options":["primary","secondary","danger"],"loading_control":"boolean","size_control":"number","children_control":"text"}'
+slug="storybook-design-systems"
+nodeId="documentacao"
+/>
+
+<Quiz
+  question="Qual a diferenca pratica entre autodocs e MDX no Storybook?"
+  options={[
+    {
+      text: "Autodocs e' gerado automaticamente do tipo do componente (TSDoc + argTypes) - referencia. MDX e' manual, com narrativa, quando usar / quando nao usar, a11y - guia.",
+      correct: true,
+      explanation:
+        "Autodocs gera pagina de props table a partir do tipo TypeScript + argTypes. Zero trabalho, mas e' só referencia - nao diz quando usar, quando nao usar, ou a11y. MDX e' manual - voce escreve a narrativa, exemplos, quando nao usar, etc. A doc forte usa os dois: autodocs como base, MDX pra contexto adicional (quando usar / quando nao usar / a11y).",
+    },
+    {
+      text: "Autodocs e' melhor - gera tudo sozinho, sem trabalho manual.",
+      correct: false,
+      explanation:
+        "Autodocs gera a **referencia** (props table) automaticamente, mas e' apenas isso - nao gera a narrativa, os exemplos de uso, a secao 'quando nao usar', ou a11y. So autodocs vira 'doc que lista' em vez de 'doc que guia'. Doc forte usa os dois juntos.",
+    },
+    {
+      text: "MDX e' melhor - controle total sobre a doc.",
+      correct: false,
+      explanation:
+        "MDX te da controle total, mas exige manutencao manual - cada mudanca no componente precisa atualizar o .mdx junto. Em DS grande, o custo de manter MDX 100% manual nao compensa. O equilibrio e' autodocs como base + MDX so onde a narrativa agrega (quando nao usar, a11y, exemplos avancados).",
+    },
+  ]}
+/>

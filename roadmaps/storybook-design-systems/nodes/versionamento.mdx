@@ -1,0 +1,670 @@
+---
+id: versionamento
+title: "Versionamento: Semver, Changesets, deprecation, publicacao"
+resources:
+  - title: "Semver.org (oficial, EN)"
+    url: https://semver.org/
+    lang: en
+    type: doc
+    free: true
+  - title: "Changesets (oficial, EN)"
+    url: https://github.com/changesets/changesets
+    lang: en
+    type: doc
+    free: true
+  - title: "Storybook - Publish Storybook (oficial, EN)"
+    url: https://storybook.js.org/docs/sharing/publish-storybook
+    lang: en
+    type: artigo
+    free: true
+---
+
+Sua DS tem `<Button>`, `<Card>`, tokens,
+Storybook, autodocs, MDX. Aí vem a pergunta
+**"como eu publico isso sem quebrar quem já
+usa?"**. Sem versionamento, o consumidor
+instala `@sua-org/ui@1.2.3` e, do nada, na
+próxima `pnpm install`, está com a versão
+`2.0.0` que mudou a API. App quebra. Confusão
+geral.
+
+DS grande em 2026 tem **3 práticas
+indissociáveis**: **Semver** (a regra do que
+conta como breaking), **Changesets** (a
+ferramenta que o time do Storybook mantém
+pra gerenciar isso), e **deprecation
+planejada** (avisar antes de quebrar). Este
+nó cobre os 3.
+
+## O essencial 🟢
+
+**Semver: a regra.** Semver (Semantic Versioning)
+define que toda versão é `MAJOR.MINOR.PATCH`:
+
+- **MAJOR** - quebra de compatibilidade. O
+  consumidor **precisa** mudar código.
+- **MINOR** - feature nova. O consumidor **não**
+  precisa mudar código (mas pode ganhar
+  feature nova).
+- **PATCH** - bugfix. O consumidor **não**
+  percebe diferença, só que o bug sumiu.
+
+Exemplos:
+
+- `1.0.0` → `1.0.1` - bugfix em `<Button>`.
+  App **não** muda.
+- `1.0.0` → `1.1.0` - novo `<Tabs>` no DS.
+  App **não** muda (a não ser que queira usar).
+- `1.0.0` → `2.0.0` - `<Button variant="primary">`
+  virou `<Button intent="primary">`. App
+  **precisa** mudar.
+
+A regra "MAJOR quando quebra" é o **núcleo**.
+Tudo o mais (Changesets, deprecation) é
+mecanismo pra garantir que essa regra é
+seguida.
+
+**O que conta como "quebra" em DS.** Em DS
+React, quebra é:
+
+- **Mudou tipo de prop** - `variant: "primary"`
+  virou `variant: 1` (type incompatível).
+- **Removeu prop** - `<Button secondary>` agora
+  é erro (prop removida).
+- **Mudou valor default** - `<Button>` sem
+  `variant` agora é `danger` em vez de `primary`
+  (default mudou).
+- **Mudou comportamento visível** - `<Button
+  loading>` agora gira spinner diferente
+  (UX mudou, código que esperava comportamento
+  A quebrou).
+- **Removeu componente** - `<LegacyButton>`
+  removido.
+- **Bump de peer dependency major** - React
+  19 só, app em React 18 quebra.
+- **Mudou API de Context** - `<CardContext>`
+  expõe `variant` agora, antes não expunha
+  (consumidor que usava `useContext` direto
+  quebrou).
+
+O que **NÃO** conta como quebra (é MINOR ou
+PATCH):
+
+- **Adicionou prop** - `<Button newProp={x}>`.
+- **Adicionou valor a union** - `variant` agora
+  aceita `"primary" | "secondary" | "danger" |
+  "warning"`. App que só usava `"primary"`
+  não muda. (Cuidado: em algumas linguagens
+  isso conta como quebra, em TS é seguro.)
+- **Adicionou componente** - novo `<Tabs>` no
+  DS.
+- **Bugfix visual** - spinner agora gira
+  consistentemente. Comportamento documentado
+  mudou, mas o "comportamento esperado" era
+  esse (era bug).
+- **Refatorou internamente** - sem mudar API.
+
+A regra prática: **se o consumidor precisa
+mudar código, é MAJOR. Se não, é MINOR ou
+PATCH**.
+
+**Changesets: a ferramenta padrão.** Changesets
+(mantido pelo time do Storybook, depois
+independente) é a ferramenta que o ecossistema
+React usa pra:
+
+1. **Coletar mudanças** - cada PR com mudança
+   adiciona um **changeset** (arquivo `.md`
+   com a descrição).
+2. **Gerar CHANGELOG** - na hora de release,
+   o Changesets agrupa os changesets e
+   escreve o CHANGELOG.
+3. **Bump de versão** - calcula a próxima versão
+   (MAJOR se algum changeset tem `major`, MINOR
+   se tem `minor`, PATCH se só tem `patch`).
+4. **Publicar** - roda `pnpm publish` (ou
+   `changesets publish` com NPM config).
+
+```bash
+pnpm add -D @changesets/cli
+pnpm changeset init
+```
+
+Cria `.changeset/config.json` com a config base.
+
+**O fluxo de um PR com Changeset.** Cada PR
+que muda comportamento do DS adiciona um
+changeset:
+
+```bash
+pnpm changeset
+# ? Which packages would you like to include?
+#   - @sua-org/ui
+# ? What kind of change is this?
+#   - patch (bugfix)
+#   - minor (feature)
+#   - major (breaking)
+# ? Summary of the change:
+#   > Button loading agora usa aria-busy corretamente
+```
+
+Cria `.changeset/cool-pumpkin-stand.md`:
+
+```md
+---
+"@sua-org/ui": minor
+---
+
+Button loading agora usa aria-busy corretamente.
+Antes mostrava o spinner sem anúncio ao leitor de
+tela.
+```
+
+Esse arquivo vai no PR junto com o código.
+Quando o PR é mergeado na main, o changeset é
+**consumido** na próxima release.
+
+**Release PR (ou "Version Packages").** Changesets
+tem uma action oficial que abre um **Version
+PR** automaticamente quando detecta changesets
+pendentes:
+
+```yaml
+# .github/workflows/changesets.yml
+- uses: changesets/action@v1
+  with:
+    publish: pnpm changeset publish
+    version: pnpm changeset version
+```
+
+Quando você mergeia PRs com changesets, essa
+action:
+
+1. Roda `changeset version` - agrupa changesets,
+   bump versão em `package.json`, atualiza
+   `CHANGELOG.md`.
+2. Faz commit "Version Packages" na main.
+3. Roda `changeset publish` - publica no npm.
+4. (Opcional) Abre um PR de "Version Packages"
+   que você revisa antes do merge.
+
+O resultado: o consumidor de `@sua-org/ui` sempre
+sabe **o que mudou entre versões** (CHANGELOG)
+e **se precisa atualizar código** (MAJOR vs
+MINOR).
+
+**Fluxo visualizado:**
+
+<Mermaid
+  chart={`flowchart LR
+    Dev["Dev faz PR<br/>com mudanca no DS"]
+    CS["Adiciona changeset<br/>(.changeset/*.md)"]
+    Review["PR review<br/>(codigo + changeset)"]
+    Merge["Merge na main"]
+    Version["Version PR / commit<br/>(changeset version)"]
+    Changelog["CHANGELOG.md atualizado<br/>package.json bumped"]
+    Publish["npm publish<br/>(changeset publish)"]
+    Consumer["Consumidor ve nova versao<br/>+ changelog no GitHub"]
+
+    Dev --> CS
+    CS --> Review
+    Review --> Merge
+    Merge --> Version
+    Version --> Changelog
+    Changelog --> Publish
+    Publish --> Consumer
+    Version -.se major.-> Deprecate["Migration guide<br/>+ aviso de breaking"]
+    Deprecate --> Consumer`}
+  caption="Fluxo de publicacao com Changesets: PR com changeset -> merge -> version PR agrupa changesets e bump versao -> publish no npm. Major bump gera migration guide pro consumidor."
+/>
+
+**Deprecation: avisar antes de quebrar.** A
+regra de ouro: **nunca quebre sem avisar com
+1 minor de antecedência**. O fluxo:
+
+1. **Minor N** - marca o componente como
+   deprecated, adiciona warning no console
+   quando usado. Continua funcionando.
+2. **Major N+1** - remove o componente. App
+   que não migrou quebra.
+
+```tsx
+// v1.5.0: marca como deprecated
+/**
+ * @deprecated Use `<Button variant="primary">` instead.
+ * Will be removed in v2.0.0.
+ */
+function PrimaryButton(props) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      "PrimaryButton is deprecated. Use <Button variant='primary'> instead. " +
+      "Will be removed in v2.0.0."
+    );
+  }
+  return <Button variant="primary" {...props} />;
+}
+
+// v2.0.0: remove
+// PrimaryButton nao existe mais. App que usava
+// precisa mudar pra <Button variant="primary">.
+```
+
+O aviso de deprecation no console é **a maior
+migração de DS que dá pra fazer**. Sem ele,
+o consumidor só descobre que quebrou quando
+faz `pnpm install` e o app explode.
+
+**CodigoMod pra migração automatizada.** Pra
+mudanças mecânicas grandes (ex: renomear
+`variant="primary"` em 50 lugares no app
+consumidor), forneça um **codemod** (script
+que reescreve o código automaticamente):
+
+```js
+// transforms/primary-to-button-variant.js
+module.exports = (file, api) => {
+  const j = api.jscodeshift;
+  const root = j(file.source);
+
+  // <PrimaryButton> -> <Button variant="primary">
+  root
+    .find(j.JSXElement, { openingElement: { name: { name: "PrimaryButton" } } })
+    .forEach((path) => {
+      path.value.openingElement.name = j.jsxIdentifier("Button");
+      path.value.openingElement.attributes = [
+        ...path.value.openingElement.attributes,
+        j.jsxAttribute(j.jsxIdentifier("variant"), j.stringLiteral("primary")),
+      ];
+      // ... (mesma coisa pro closingElement)
+    });
+
+  return root.toSource();
+};
+```
+
+```bash
+# Consumidor roda
+npx jscodeshift --transform @sua-org/codemods/primary-to-button-variant.js src/
+```
+
+Em DS grande, codemods são essenciais. Storybook
+mantém `@storybook/codemods` como exemplo (renomeia
+`storiesOf` → CSF3 automaticamente). Vale a
+pena se você tem **dezenas** de componentes
+migrando.
+
+**`peerDependencies` corretas.** A DS **não
+embute** React (é peer dep). Isso evita ter
+2 cópias de React no app do consumidor:
+
+```json
+{
+  "name": "@sua-org/ui",
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  }
+}
+```
+
+O consumidor **instala** React. A DS **usa** a
+React do consumidor. Bump de `peerDependencies`
+major (ex: React 17 → React 18 só) = **MAJOR**
+da DS.
+
+**Publicação no npm: `pnpm publish` ou
+`changesets publish`.** Em DS grande, use
+**Changesets Action** (vista acima) que automatiza
+publicar. Em DS pequeno, `pnpm publish` manual
+resolve:
+
+```bash
+pnpm build
+pnpm publish --access public
+```
+
+`--access public` é obrigatório pra pacotes
+com scope (`@sua-org/ui` é scoped). Sem isso,
+o npm tenta publicar como privado e falha.
+
+**O que entra no `.npmignore` (ou `files` no
+`package.json`).** Por default, o npm publica
+**tudo** da pasta. Pra evitar publicar
+`node_modules`, `.storybook`, `tests`, etc:
+
+```json
+{
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
+```
+
+`files` é a forma **positiva** (lista o que vai).
+Alternativa é `.npmignore` (lista o que **não**
+vai, tipo `.gitignore`). Use `files` - é mais
+explícito.
+
+**Tagueamento de versão no git.** Cada release
+é uma **tag** no git:
+
+```bash
+git tag v1.5.0
+git push --tags
+```
+
+O GitHub Actions (ou o Changesets Action) gera
+a tag automaticamente. Consumers podem referenciar
+versões específicas no npm (`"@sua-org/ui": "1.5.0"`
+em vez de `"^1.5.0"`).
+
+## Aprofundamento 🟡
+
+**`peerDependencies` vs `dependencies` vs
+`devDependencies`.** Resumo:
+
+- **`dependencies`** - o que **a DS usa** em runtime.
+  React, ReactDOM vão aqui **se você publica
+  como `react`**, mas como DS você usa peer.
+- **`peerDependencies`** - o que o **consumidor
+  tem que ter**. React, ReactDOM, e qualquer
+  outra lib que o consumidor já tem (TanStack
+  Query, Radix, etc).
+- **`devDependencies`** - o que **só você usa
+  pra desenvolver**. Storybook, Vitest, etc.
+  Não vai pro npm.
+
+A pegadinha: **`peerDependencies` não são
+instaladas automaticamente**. Se o consumidor
+não tem React, o npm avisa mas não instala. Em
+DS grande, use `peerDependenciesMeta` pra
+marcar como opcional:
+
+```json
+{
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": false }
+  }
+}
+```
+
+`optional: false` (default) significa "obrigatório
+- tem que ter". `optional: true` significa "se
+tiver, ok; se não, sem erro".
+
+**`exports` field no `package.json` (Node 12+).**
+Em vez de `main` e `types` separados, use o
+`exports` field que define o que cada path
+exporta:
+
+```json
+{
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  }
+}
+```
+
+Com `exports`, o consumidor faz:
+
+```ts
+import { Button } from "@sua-org/ui";  // ESM
+const { Button } = require("@sua-org/ui");  // CJS
+import "@sua-org/ui/styles.css";  // sub-export
+```
+
+Sem `exports`, o consumidor tem que adivinhar o
+path (`@sua-org/ui/dist/styles.css`).
+
+**Trusted publishing com OIDC (2024+).** Em vez
+de `NPM_TOKEN` secret, use **OIDC trust** entre
+GitHub e npm:
+
+```yaml
+# .github/workflows/publish.yml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+    registry-url: https://registry.npmjs.org
+- run: pnpm publish
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+Migre pra OIDC:
+
+1. No npm, em "Publishing access" → "Trusted
+   Publishers" → adicione o repo.
+2. Use `npm login` com OIDC em CI.
+3. Sem `NPM_TOKEN` secret, sem risco de leak.
+
+Em 2026, OIDC é o caminho padrão. O suporte está
+em todos os providers principais (npm, GitHub
+Packages, Cloudflare, etc).
+
+**Pre-release versioning (alpha, beta, rc).**
+Pra features em desenvolvimento, use **pre-release**:
+
+- `2.0.0-alpha.1` - alpha 1 da 2.0.
+- `2.0.0-beta.1` - beta 1.
+- `2.0.0-rc.0` - release candidate.
+- `2.0.0` - release final.
+
+Changesets suporta pre-release via config:
+
+```json
+{
+  "prettier": false,
+  "snapshot": {
+    "useCalculatedVersion": true
+  }
+}
+```
+
+Consumidor que quiser testar a 2.0 antes:
+
+```bash
+pnpm add @sua-org/ui@beta
+```
+
+`@beta`, `@alpha`, `@rc`, `@next` são tags
+do npm que o `pnpm add` entende. Útil pra "release
+candidate" antes do MAJOR final.
+
+**Cumulative vs single changesets.** Changesets
+suporta dois modos:
+
+- **Cumulative** (default) - cada changeset
+  descreve **uma mudança** (1 arquivo `.md` por
+  PR). O `changeset version` agrupa tudo na
+  release. Bom pra DS ativo.
+- **Snapshot** (use `changeset version --snapshot`)
+  - uma versão "snapshot" do repo, útil pra
+  preview em PR. Menos comum.
+
+**Versionado em monorepo (Nx, Turborepo).** Em
+DS com várias packages (`@sua-org/ui-core`,
+`@sua-org/ui-icons`, `@sua-org/ui-tokens`), use
+Changesets com **fixed** ou **independent** mode:
+
+```json
+// .changeset/config.json
+{
+  "fixed": [["@sua-org/ui-core", "@sua-org/ui-icons", "@sua-org/ui-tokens"]]
+}
+```
+
+`fixed` = todos bump juntos (1 versão shared).
+`independent` = cada package bump separado
+(mais flexível, mas mais confuso pro consumidor).
+
+## Pra quem quer ir além 🔴
+
+**História do Semver.** Criado por **Tom
+Preston-Werner** (co-fundador do GitHub) em 2011,
+publicado em semver.org. Resolveu um problema
+real: npm (na época) e outras comunidades não
+tinham um padrão de "o que é breaking". O
+documento tem 12 regras, mas as 3 que importam
+são MAJOR.MINOR.PATCH.
+
+A força do Semver é ser **uma especificação
+simples** que virou **convenção universal** na
+era do npm. Em 2026, é esperado que toda lib
+publicada siga Semver - consumidor que vê
+`MAJOR.0.0` sabe que vai ter que mudar código,
+e isso é informação valiosa.
+
+**Changesets vs Lerna vs Release Please.** Tem
+3 ferramentas de versionamento na era JS:
+
+- **Changesets** (Time Storybook, depois
+  independente) - baseado em PR com arquivo
+  `.changeset/*.md`. O mais popular em DS
+  React.
+- **Lerna** (Nrwl) - focado em monorepo,
+  gerencia várias packages. Mais antigo.
+  Changesets se integra com Lerna.
+- **Release Please** (Google) - baseado em
+  conventional commits. Automático, mas
+  opinativo sobre mensagem de commit.
+
+Em 2026, **Changesets é o padrão em DS React**.
+Lerna é mais usado em monorepo genérico
+(Nrwl Nx). Release Please é mais usado em
+projetos Google.
+
+**Por que `peerDependencies` é detalhe crítico.**
+O problema de **duas cópias de React** no
+mesmo bundle é real e quebra o app. Quando
+você tem `react@18` em `@sua-org/ui/Button.tsx`
+e `react@18.2` no `app/`, são instâncias
+diferentes, Context não compartilha estado,
+hooks não compartilham scheduling, e o app
+quebra de formas estranhas (Provider não
+atualiza, useEffect roda 2x, etc).
+
+`peerDependencies` força o **consumidor** a ter
+React, e a DS usa a do consumidor. Em
+projeto grande, isso é o que evita o inferno
+de "2 Reacts".
+
+**Lockfile e DS versionada em monorepo.** Em
+monorepo com Nx/Turborepo, a DS é uma package
+dentro. O consumidor (outro package no monorepo)
+pode referenciar via `workspace:*` (pnpm) ou
+`"version": "file:../ds"` (npm). Em CI, isso
+cria **acoplamento forte** - mudar a DS quebra
+todos os apps no monorepo. Em time grande,
+o ideal é a DS ser publicada no registry interno
+e os apps instalarem por versão - o lockfile
+de cada app trava a versão, e quebrar a DS
+fica opt-in (muda a versão, atualiza o app).
+
+**Leitura recomendada:**
+
+- [Semver.org](https://semver.org/) - a especificação oficial, 12 regras, leitura de 5 min.
+- [Changesets (oficial)](https://github.com/changesets/changesets) - a ferramenta padrão.
+- [Storybook - Publish Storybook](https://storybook.js.org/docs/sharing/publish-storybook) - workflow integrado com Storybook.
+
+> Dica: o erro mais comum no começo é
+> **não ter CHANGELOG**. "Mudei o
+> `<Button>` na 1.2.0 mas não escrevi o
+> que mudou". Consumidor instala a 1.2.0,
+> algo quebra, vai no GitHub pra ver
+> "o que mudou" - não tem. Frustração.
+> Com Changesets, o CHANGELOG é
+> **gerado** a partir dos changesets.
+> Você não esquece.
+
+No próximo nó, vamos falar de **contract testing**:
+Storybook test runner, addon a11y, Chromatic
+visual review - como garantir que o DS não
+quebra sem o consumidor perceber.
+
+<Checkpoint
+  challenge="Implemente a função `calcularProximoBump(changesets)` que recebe uma lista de changesets (cada um com `type: 'major' | 'minor' | 'patch'`) e retorna o tipo de bump da próxima versão. Regra Semver: se houver ALGUM 'major', retorna 'major'. Senão, se houver ALGUM 'minor', retorna 'minor'. Senão (só 'patch' ou vazio), retorna 'patch'."
+  starterCode={`// Implemente calcularProximoBump(changesets) que recebe:
+// [{ type: 'major' | 'minor' | 'patch' }, ...]
+//
+// E retorna o tipo de bump:
+// - 'major' se ALGUM changeset for 'major'
+// - 'minor' se (nenhum major mas) algum for 'minor'
+// - 'patch' caso contrario (vazio, ou so patch)
+//
+// Retorne 'patch' para lista vazia.
+function calcularProximoBump(changesets) {
+  return "patch";
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _c1 = calcularProximoBump([
+  { type: "patch" },
+  { type: "minor" },
+  { type: "patch" },
+]);
+console.log(JSON.stringify({ case: "minor_vence", bump: _c1 }));
+
+const _c2 = calcularProximoBump([
+  { type: "patch" },
+  { type: "major" },
+  { type: "minor" },
+]);
+console.log(JSON.stringify({ case: "major_vence", bump: _c2 }));
+
+const _c3 = calcularProximoBump([
+  { type: "patch" },
+  { type: "patch" },
+]);
+console.log(JSON.stringify({ case: "so_patches", bump: _c3 }));
+
+const _c4 = calcularProximoBump([]);
+console.log(JSON.stringify({ case: "vazio", bump: _c4 }));`}
+expected='{"case":"minor_vence","bump":"minor"}
+{"case":"major_vence","bump":"major"}
+{"case":"so_patches","bump":"patch"}
+{"case":"vazio","bump":"patch"}'
+slug="storybook-design-systems"
+nodeId="versionamento"
+/>
+
+<Quiz
+  question="Qual a regra do Semver que importa na prática pra quem mantém um DS?"
+  options={[
+    {
+      text: "MAJOR quando quebra (consumidor precisa mudar código), MINOR quando adiciona feature, PATCH quando conserta bug.",
+      correct: true,
+      explanation:
+        "É a essência. O consumidor usa MAJOR pra saber 'preciso mudar código?', MINOR pra saber 'tem algo novo?', PATCH pra saber 'tinha bug, sumiu'. Semver é uma convenção simples que destrava tomada de decisão no consumidor: bumpei MAJOR, leio CHANGELOG, planejo migration; bumpei MINOR, opcionalmente exploro; bumpei PATCH, ignoro.",
+    },
+    {
+      text: "Versionar é só numerar. Não importa o que cada numero significa.",
+      correct: false,
+      explanation:
+        "Não - o ponto do Semver é justamente dar SIGNIFICADO aos números. Sem semver, '1.2.0' é só um número. Com semver, '1.0.0' (MAJOR 0) significa 'API instavel, pode quebrar a qualquer momento', '1.0.0' (MAJOR 1) significa 'API estavel, breaking só em major bump'. O numero importa - é a informação que destrava o consumidor decidir 'posso atualizar?'.",
+    },
+    {
+      text: "Sempre bumpar MAJOR pra garantir compatibilidade.",
+      correct: false,
+      explanation:
+        "Não. Se você bump MAJOR a cada release, ninguém atualiza (cada bump pode quebrar). O ponto do Semver é que MINOR e PATCH não quebram - são 'atualização segura'. Se você sempre bumpar MAJOR, o consumidor trava na versão antiga porque atualizar é arriscado. O valor do Semver é justamente que MINOR e PATCH são 'safe to update'.",
+    },
+  ]}
+/>

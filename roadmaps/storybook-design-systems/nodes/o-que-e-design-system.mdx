@@ -1,0 +1,409 @@
+---
+id: o-que-e-design-system
+title: "O que e (e o que nao e) um design system"
+resources:
+  - title: "Brad Frost - Atomic Design (artigo, EN)"
+    url: https://bradfrost.com/blog/post/atomic-web-design/
+    lang: en
+    type: artigo
+    free: true
+  - title: "Storybook - Design integrations (oficial, EN)"
+    url: https://storybook.js.org/docs/sharing/design-integrations
+    lang: en
+    type: doc
+    free: true
+  - title: "Figma - Design systems 101 (artigo, EN)"
+    url: https://www.figma.com/reports/design-system-series/
+    lang: en
+    type: artigo
+    free: true
+---
+
+Você terminou `frontend`. Sabe usar `<Button>`, sabe
+estilizar, sabe o básico de CSS variables. Aí chega
+a hora de **criar o `<Button>` que 50 apps vão
+consumir** - e descobre que é outro jogo. Não é mais
+"como uso", é "como construo, documento, versiono,
+testo visualmente, e mantenho ao longo de anos".
+
+Esse salto é o que essa trilha cobre. E o primeiro
+passo é entender o que é (e o que não é) um
+**design system**.
+
+## O essencial 🟢
+
+**O que é um design system.** Um design system não é
+uma **biblioteca de componentes** (isso é o
+resultado). É um **sistema de decisões compartilhadas**
+sobre como UI é construída. O que ele é, na prática:
+
+- **Tokens** - decisões sobre cor, espaço, tipografia,
+  raio, sombra. "Azul primário é #2563EB" é um
+  token. "Espaçamento padrão é 4px (base 4)" é
+  um token.
+- **Componentes** - tokens compostos em peças
+  reutilizáveis (`<Button>`, `<Input>`, `<Card>`).
+  Cada componente **consome** tokens.
+- **Padrões** - como os componentes se compõem
+  entre si. "Form tem sempre Label + Input + Help
+  text" é um padrão. "Modal abre sobre overlay com
+  blur" é um padrão.
+- **Documentação** - como quem consome descobre o
+  que existe, o que cada componente faz, e quando
+  usar. Sem docs, o DS é uma caixa-preta.
+- **Governança** - quem decide que um token novo
+  entra, quem revisa um PR, quem aprova uma
+  breaking change. Sem governança, o DS vira
+  bagunça em 6 meses.
+
+A **tríade tokens / primitives / patterns** é o
+mínimo viável. O resto (docs, governança) é o que
+faz DS funcionar em produção.
+
+**O que NÃO é.** Confusões comuns que custam meses:
+
+- **DS não é "componentes prontos"** - shadcn, MUI,
+  Chakra vendem **componentes**. DS é o **processo
+  + decisões** por trás desses componentes. Você
+  pode ter DS sem ter componente próprio (copia
+  do shadcn, customiza, documenta as decisões).
+- **DS não é "framework UI"** - MUI é um framework
+  UI. O DS da sua empresa é o que customiza o MUI
+  (ou o que customiza Tailwind, ou o que define
+  tokens do zero). O framework é ferramenta; o
+  DS é o uso específico da ferramenta.
+- **DS não é "página de Figma bonita"** - Figma é
+  onde o design começa, mas DS vive no **código**.
+  Se o DS não tem repo, não tem tokens em código,
+  não tem CI, ele é uma intenção, não um sistema.
+- **DS não é "design system team"** - times grandes
+  têm equipe dedicada de DS. Times pequenos têm
+  1-2 devs dedicando 20% do tempo. DS funciona
+  mesmo sem time dedicado - o que importa é o
+  processo.
+- **DS não é "tudo no mesmo lugar"** - shadcn
+  popularizou "copie o código pro seu projeto, não
+  é dep". Isso é DS também - só que distribuído.
+  A decisão está no seu repo, não num npm central.
+
+**A tríade tokens / primitives / patterns - o
+núcleo.** A divisão vem do **Atomic Design** do
+Brad Frost (2013) e é o framework mental que a
+maioria dos DS usa:
+
+```text
+tokens (átomos abstratos)
+   ↓ consumido por
+primitives (átomos concretos)
+   ↓ composto em
+patterns (moléculas / organismos)
+   ↓ montado em
+templates (páginas)
+```
+
+- **Tokens** - "azul primário", "espaço-4", "raio-md".
+  Não são componentes. São **valores** com nome.
+  "Primary-500 = #2563EB" é token; `<Button
+  variant="primary">` que usa essa cor é primitive.
+- **Primitives** - componentes atômicos sem composição.
+  `<Button>`, `<Input>`, `<Badge>`, `<Icon>`.
+  Não têm "sub-partes" - são uma coisa só.
+- **Patterns** - componentes compostos de primitives
+  (e às vezes outros patterns). `<FormField>` =
+  `<Label>` + `<Input>` + `<HelpText>`. `<Card>` =
+  `<CardHeader>` + `<CardBody>` + `<CardFooter>`.
+  Esse é o compound component (visto a fundo no
+  nó 4).
+- **Templates** - layouts de página. Em DS, é raro
+  ter (a maioria dos apps tem layout próprio).
+  Mencionado pra completar a tríade.
+
+A distinção importa porque **muda o que você testa**:
+
+- **Tokens** - teste de valor (cor bate com hex
+  esperado).
+- **Primitives** - teste de comportamento
+  (botão chama onClick, input aceita texto).
+- **Patterns** - teste de composição (FormField
+  passa props do Label pro Input corretamente).
+
+**Quando vale construir DS próprio.** A pergunta
+que toda empresa enfrenta. O critério:
+
+- ✅ **Vale DS próprio** - 3+ apps consumindo os
+  mesmos componentes, 5+ devs usando, decisão de
+  brand/UX compartilhada que precisa ser
+  consistente.
+- ❌ **Não vale DS próprio** - 1-2 apps, equipe
+  pequena, sem designer dedicado, ou tempo curto.
+  Use shadcn + Tailwind, customize, e siga a vida.
+
+O "use shadcn" tem nuances:
+
+- **shadcn** dá componentes prontos **+** o código
+  pra customizar. Você pega `<Button>`, edita,
+  segue. É o caminho mais rápido pra ter "DS"
+  sem construir tudo.
+- **MUI / Chakra / Mantine** são libs de UI
+  prontas. Você usa `<Button>` como veio. É
+  "DS de terceiros" - decisões já foram tomadas.
+- **Radix / Headless UI / React Aria** dão a
+  **lógica** (acessibilidade, teclado, foco) sem
+  estilo. Você estiliza. É o caminho "headless".
+
+A regra: **só construa DS próprio quando
+compartilhar componentes entre apps é uma
+vantagem estratégica**. Se é "consistência
+visual", shadcn + customização resolve. Se é
+"experiência de marca única", DS próprio.
+
+**Anti-patterns comuns.** Construir DS é fácil;
+manter DS funcionando por anos é o difícil. Os
+erros que matam DS:
+
+- **Sem dono** - ninguém é responsável. PRs
+  ficam sem review. Decisões ficam sem
+  documentação. Em 6 meses, ninguém sabe o que
+  pode mudar e o que não pode.
+- **Sem docs** - o time usa `<Button variant="x">`
+  por copiar de outro app. Se você mudar `variant`
+  no DS, 10 apps quebram de surpresa.
+- **Sem versionamento** - "instalei a versão nova
+  e quebrou tudo" - porque não tem Semver nem
+  changelog.
+- **Sem testes visuais** - você muda o border do
+  `<Input>` e ninguém percebe. 1 semana depois,
+  cliente reclama.
+- **Componentes que tentam fazer tudo** - o
+  `<Button>` tem 47 props, 12 variants, 5 sizes,
+  e ninguém lembra o que cada um faz. O caminho
+  é **compor** (`<IconButton>`, `<LinkButton>`)
+  em vez de parametrizar.
+- **Fork do fork do fork** - app A usa DS v1,
+  app B usa DS v1.1 com patch local, app C usa
+  DS v2 com patch local. Sem versionamento
+  central, diverge em meses.
+
+Os próximos nós da trilha cobrem **como evitar
+cada um deles**.
+
+## Aprofundamento 🟡
+
+**Atomic Design: a história por trás.** Brad Frost
+publicou "Atomic Web Design" em 2013 (palestra no
+Future of Web Design, depois livro). A ideia
+veio da química: átomos se combinam em moléculas,
+moléculas em organismos, e assim por diante.
+Aplicado a web:
+
+- **Átomos** - HTML tags, cor, fonte, ícone.
+- **Moléculas** - componentes simples (botão,
+  input, label).
+- **Organismos** - componentes compostos (header
+  com logo + nav + search).
+- **Templates** - layouts de página com placeholders.
+- **Pages** - templates com conteúdo real.
+
+Em 2026, a comunidade usa o modelo **tokens /
+primitives / patterns** (que é essencialmente
+"átomos abstratos / átomos concretos / moléculas")
+porque é mais útil na prática. Mas o vocabulário
+"atomic" ainda aparece bastante (especialmente em
+posts de 2015-2020).
+
+A crítica comum ao Atomic Design: **a metáfora
+química é confusa**. "Onde termina a molécula e
+começa o organismo?" A resposta moderna é:
+"não importa, use o que o time entende". O
+importante é ter **3 níveis** (valor, componente
+atômico, componente composto) e **regras claras
+de onde cada coisa vive**.
+
+**Decision records e ADRs.** Em DS maduro, cada
+decisão de design tem um **documento** que
+explica o "porquê":
+
+> **ADR-007: Por que primary-500 é #2563EB?**
+>
+> Contexto: precisamos de um azul que funciona
+> em fundo branco E escuro, com contraste AA
+> em ambos.
+>
+> Decisão: azul-500 (#2563EB).
+>
+> Alternativas consideradas: azul-600 (#1E40AF)
+> - contraste maior mas muito escuro em light
+> mode; azul-400 (#60A5FA) - contraste
+> insuficiente em dark mode.
+>
+> Consequência: qualquer mudança nessa cor
+> precisa de PR com revisão de design.
+
+ADR (Architecture Decision Record) é o padrão.
+Em DS, é ainda mais importante porque a decisão
+afeta **múltiplos apps**. Sem ADR, o próximo
+designer olha o hex, acha "feio", e muda - sem
+saber que tinha motivo.
+
+**Componentes vs composições.** A decisão de
+**o que é primitive e o que é pattern** é
+recorrente. A regra prática:
+
+- **Se dá pra usar sem "sub-componentes"**,
+  é primitive. `<Button>` é uma coisa só.
+  `<Icon>` é uma coisa só.
+- **Se você **precisa** de "sub-componentes"
+  (Label dentro de Field, Header dentro de Card),
+  é pattern. Use compound component.
+
+`<Button>` com prop `icon` à esquerda:
+
+```tsx
+<Button iconLeft={<SaveIcon />}>Salvar</Button>
+```
+
+`<Button>` como primitive. Funciona pra 80% dos
+casos. Mas e quando você quer:
+
+```tsx
+<Button>
+  <SaveIcon />
+  <span>Salvar</span>
+</Button>
+```
+
+Isso já é uma "composição" - depende de como
+você estiliza. Se `<Button>` estiliza `:first-child`
+e `:last-child` com margin, funciona. Se não,
+você precisa de um compound `<Button>`:
+
+```tsx
+<Button>
+  <Button.Icon><SaveIcon /></Button.Icon>
+  <Button.Label>Salvar</Button.Label>
+</Button>
+```
+
+Mais flexível, mais verboso, mais coisa pra
+documentar. **Pattern** quando a flexibilidade
+vale o custo, **primitive** quando não vale.
+
+**DS distribuído vs centralizado.** O debate de
+2024+ é: DS deve ser um **npm package** que todos
+os apps instalam, ou deve ser **código copiado**
+(estilo shadcn) pra cada app?
+
+- **Centralizado (npm)** - versionamento claro,
+  1 lugar pra mudar, mas **custo de upgrade**
+  (cada app precisa atualizar) e **risco de
+  breaking change global**.
+- **Distribuído (shadcn-style)** - cada app tem
+  sua versão, customiza, mas **custo de
+  manutenção** (5 forks do Button pra manter).
+
+Em time pequeno (1-3 devs), shadcn + customização
+é o caminho. Em time grande (10+ apps, 50+
+devs), centralizado com versionamento Semver
+(nó 6) é o caminho. Em time médio, depende da
+cultura.
+
+**Tokens como contrato entre design e código.** O
+caminho moderno de DS começa no Figma (Variables
+ou Tokens Studio), passa por uma ferramenta
+intermediária (Style Dictionary, Tokens Studio
+sync, Specify), e vira CSS variables / iOS tokens
+/ Android XML. A **ferramenta intermediária** é a
+"fonte da verdade" - o Figma tem a **intenção**,
+o repo tem a **implementação**. Sem intermediário,
+design e código divergem em meses.
+
+A trilha cobre Style Dictionary (nó 3) porque é
+o padrão da indústria - o time do Amazon mantém,
+inúmeras empresas usam, suporta todos os formatos
+de destino.
+
+## Pra quem quer ir além 🔴
+
+**História em uma linha.** O termo "design system"
+ficou mainstream com o **Material Design** do
+Google (2014) e o **Human Interface Guidelines**
+da Apple. Antes, cada empresa tinha "guia de
+estilo" em PDF que ninguém lia. O **Brad Frost**
+formalizou o "Atomic Design" em 2013 e abriu a
+discussão sobre **componentes como blocos de
+construção**. O **Storybook** surgiu em 2016,
+tornou-se a ferramenta padrão de DS em React,
+e foi adotado por Vercel, GitHub, Shopify, etc.
+**Style Dictionary** (Amazon) virou o padrão
+de tokens em 2017. **Chromatic** (do time do
+Storybook) trouxe visual review pra DS em 2020.
+Em 2026, DS é processo maduro - com caveats
+sobre "centralizar vs distribuir" e "quem é o
+dono".
+
+**Design tokens como API entre apps.** O ponto
+mais subestimado: **tokens são a API de
+compatibilidade** entre apps. Se app A usa
+`primary-500` e app B usa `primary-500`, e o
+DS atualiza `primary-500` de `#2563EB` pra
+`#3B82F6`, os dois apps atualizam juntos (se
+versionados) ou divergem (se não versionados).
+**Sem versionamento, tokens viram "fonte de
+inconsistência"** - cada app fica com sua cor
+preferida porque ninguém sincroniza. É a maior
+fonte de drift em DS sem processo.
+
+**Storybook como "hub de DS".** Em 2026, Storybook
+não é só "catálogo de componentes" - é o
+**hub central** do DS: docs (MDX), exemplos
+(stories), testes (test runner), visual review
+(Chromatic), a11y (addon), e até composition
+(Chromatic). Tem time dedicado (Storybook team
+na Chromatic) mantendo a ferramenta. Vale
+conhecer os limites (lento em DS enorme,
+dependência de plugins) mas é a escolha
+default em 2026.
+
+**Leitura recomendada:**
+
+- [Brad Frost - Atomic Web Design](https://bradfrost.com/blog/post/atomic-web-design/) - o manifesto original, 2013.
+- [Storybook - Design integrations](https://storybook.js.org/docs/sharing/design-integrations) - visão geral do time do Storybook.
+- [Figma - Design systems 101](https://www.figma.com/reports/design-system-series/) - visão do lado do design.
+
+> Dica: o erro mais comum ao começar DS é
+> **construir antes de ter demanda**. Você
+> gasta 3 meses construindo 20 componentes
+> que ninguém usa, e quando alguém precisa
+> de um componente novo, está tudo acoplado
+> e a refatoração custa 3 meses. Comece
+> pequeno: 3-5 componentes que 2+ apps
+> precisam, itere, expanda quando a demanda
+> aparecer.
+
+No próximo nó, vamos abrir o **Storybook** de
+verdade: setup, stories, args, controls, e o
+ambiente que todo DS precisa.
+
+<Quiz
+  question="Qual a tríade mínima de um design system funcional em 2026?"
+  options={[
+    {
+      text: "Tokens (valores), primitives (componentes atomicos), patterns (composicoes). Doc e governanca vem junto.",
+      correct: true,
+      explanation:
+        "A tríade tokens / primitives / patterns é o núcleo de qualquer DS maduro. Tokens são valores nomeados (cor, espaço, tipo). Primitives são componentes atômicos (Button, Input, Badge). Patterns são compostos (FormField = Label + Input + HelpText). Docs e governança não são opcionais - sem eles, o DS vira bagunça em 6 meses.",
+    },
+    {
+      text: "Apenas componentes prontos (Button, Input, Modal) - o resto vem naturalmente.",
+      correct: false,
+      explanation:
+        "Não. Componentes sem tokens por baixo viram 47 props e 12 variants - ninguém sabe o que cada um faz. E sem docs, ninguém descobre o que existe. A tríade (tokens, primitives, patterns) é o mínimo que faz DS escalar.",
+    },
+    {
+      text: "Página de Figma bonita, component library no Storybook, e processo de review.",
+      correct: false,
+      explanation:
+        "Figma é onde design começa, mas DS vive no código. Sem tokens em código, sem Storybook com testes, sem versionamento, é só uma intenção bonita. A tríade é a estrutura mínima - o resto (Figma, Storybook, review) é a infraestrutura que suporta.",
+    },
+  ]}
+/>
