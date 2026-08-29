@@ -1,0 +1,571 @@
+---
+id: critical-rendering-path
+title: "Critical Rendering Path: HTML, CSS, JS, layout, paint, composite"
+resources:
+  - title: "web.dev - Critical Rendering Path (oficial, EN)"
+    url: https://web.dev/articles/critical-rendering-path
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Critical Rendering Path (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Defer non-critical CSS (oficial, EN)"
+    url: https://web.dev/articles/defer-non-critical-css
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce tem as 3 Core Web Vitals na cabeca.
+Agora a pergunta: **o que acontece entre o
+browser receber o HTML e a tela mostrar
+alguma coisa?** Esse "caminho" do HTML ate
+o pixel e' o **Critical Rendering Path
+(CRP)** - e' o "por que" atras de metricas
+como FCP (First Contentful Paint) e LCP.
+
+Se voce entende CRP, voce responde
+perguntas como: "por que meu `<script>` no
+`<head>` trava a pagina?", "por que CSS
+externo bloqueia render?", "qual a
+diferenca entre `defer` e `async`?". Sao
+perguntas classicas de entrevista frontend
+- e, mais importante, decisoes reais de
+arquitetura que aparecem em todo projeto.
+
+Se voce entende as 5 etapas do CRP (HTML →
+DOM, CSS → CSSOM, JS → DOM+CSSOM, Render
+Tree, Layout, Paint, Composite) + as 3
+formas de carregar recursos (`defer`/`async`/
+`preload`), voce otimiza LCP, FCP, e
+evita os 3 anti-patterns classicos (CSS
+bloqueante, JS no head, layout thrash).
+
+## O essencial 🟢
+
+**As 5 etapas do Critical Rendering Path.**
+Entre o browser receber o primeiro byte do
+HTML e o usuario ver o primeiro pixel,
+acontecem 5 etapas em sequencia:
+
+1. **HTML → DOM (Document Object Model).**
+   O browser faz parse do HTML tag por tag
+   e constroi a arvore de elementos. O DOM
+   e' uma representacao em memoria do HTML
+   que o JS pode manipular.
+
+2. **CSS → CSSOM (CSS Object Model).** O
+   browser faz parse de todos os CSS
+   (externo, inline, em `<style>`) e
+   constroi a arvore de estilos calculados.
+   O CSSOM e' "o que cada elemento deveria
+   parecer".
+
+3. **JS - pode modificar DOM e CSSOM.**
+   Quando o browser encontra um `<script>`,
+   ele **para** o parse, baixa o JS (se
+   externo), executa. O JS pode modificar
+   o DOM (criar elementos) e o CSSOM
+   (mudar classes). Por isso JS e' tao
+   perigoso no `<head>` - ele bloqueia o
+   resto do parse.
+
+4. **DOM + CSSOM → Render Tree.** O browser
+   combina DOM + CSSOM pra criar a
+   "Render Tree" - so os elementos visiveis
+   (descarta `<script>`, `<meta>`, elementos
+   com `display: none`), com estilos
+   calculados.
+
+5. **Render Tree → Layout → Paint →
+   Composite.**
+   - **Layout** (ou "reflow"): calcula
+     posicao e tamanho de cada elemento na
+     tela. Onde o quadrado fica, qual o
+     tamanho da fonte.
+   - **Paint**: desenha os pixels (cores,
+     sombras, bordas). Gera "camadas" de
+     pintura.
+   - **Composite**: combina as camadas em
+     ordem (z-index) e entrega pro GPU
+     renderizar na tela.
+
+O diagrama abaixo mostra como o caminho
+flui, e onde cada otimizacao atua:
+
+<Mermaid
+  chart={`flowchart LR
+    HTML[HTML<br/>bytes] --> DOM
+    CSS[CSS<br/>bytes] --> CSSOM
+    DOM[DOM<br/>arvore de elementos] --> RenderTree
+    CSSOM[CSSOM<br/>estilos calculados] --> RenderTree
+    JS[JS<br/>executa quando parser encontra<br/>script]
+    JS -->|modifica| DOM
+    JS -->|modifica| CSSOM
+    RenderTree[Render Tree<br/>so elementos visiveis] --> Layout
+    Layout[Layout<br/>posicao + tamanho] --> Paint
+    Paint[Paint<br/>pixels por camada] --> Composite
+    Composite[Composite<br/>camadas no GPU] --> Screen[Tela]`}
+  caption="Critical Rendering Path: 5 etapas do HTML ate a tela. JS e' o unico que pode quebrar o fluxo (pode modificar DOM e CSSOM, e bloqueia o parser ate executar). Layout e Paint sao os mais caros - o Composite e' o mais barato."
+/>
+
+**Por que JS no `<head>` trava a pagina.**
+Quando o browser encontra `<script
+src="app.js">` no `<head>`, ele:
+
+1. Para o parse do HTML.
+2. Baixa `app.js` (rede - 100ms-2s).
+3. Executa o JS (pode demorar).
+4. **So depois** continua parse do HTML.
+
+Se o JS demora 3s, o usuario ve uma tela
+branca por 3s. A pagina existe no servidor
+mas o browser nao renderizou nada ainda
+(porque o HTML nao foi parsed ate o fim).
+
+**`<script>` vs `<script defer>` vs `<script
+async>`.** Os 3 modificadores controlam
+quando o JS e' baixado e executado:
+
+| Modificador | Download         | Execucao             | Ordem             |
+| ----------- | ---------------- | -------------------- | ----------------- |
+| (nenhum)    | Bloqueia parse   | Imediato apos download | Ordem do HTML  |
+| `defer`     | Async (paralelo) | Apos HTML parsed     | Ordem do HTML     |
+| `async`     | Async (paralelo) | Imediato ao terminar download | Ordem de termino |
+| `type="module"` | Async (paralelo) | Apos HTML parsed (como defer) | Ordem do HTML |
+
+A regra pratica:
+
+- **Sem modificador (default):** **NUNCA use
+  pra JS grande**. Trava a pagina. So OK pra
+  scripts inline muito pequenos (analytics
+  inline de 1 linha).
+- **`defer`:** use pra **JS do app** (React,
+  Vue, Svelte bundle). Mantem ordem, executa
+  apos parse - **o mais seguro**.
+- **`async`:** use pra **JS independente**
+  (analytics, ads, widgets de terceiro que
+  nao dependem de ordem). Executa quando
+  baixar - pode ser antes do HTML terminar.
+- **`type="module"`:** use pra **ES modules
+  do app**. Ja vem com defer implicito.
+
+```html
+<head>
+  <!-- ERRADO: trava o parse -->
+  <script src="/app.js"></script>
+
+  <!-- CERTO: defer pra app bundle -->
+  <script src="/app.js" defer></script>
+
+  <!-- CERTO: async pra analytics -->
+  <script src="https://www.googletagmanager.com/gtag.js" async></script>
+
+  <!-- CERTO: ES module (defer implicito) -->
+  <script type="module" src="/app.js"></script>
+</head>
+```
+
+**Por que CSS no `<head>` bloqueia render
+(mas pode ser inline).** O browser **nao
+renderiza nada** ate ter o CSSOM pronto.
+Por isso: se voce tem `<link rel="stylesheet"
+href="styles.css">` no `<head>`, o browser
+para, baixa o CSS, constroi o CSSOM, e so
+ai renderiza. **CSS e' render-blocking por
+design** - sem ele, o browser nao saberia
+como pintar.
+
+A solucao para LCP rapido: **inline do
+"critical CSS"** (o CSS necessario pra
+pintar o conteudo acima da dobra) + `defer`
+do resto:
+
+```html
+<head>
+  <style>
+    /* critical CSS inline - so acima da dobra */
+    body { font-family: system-ui, sans-serif; margin: 0; }
+    .hero { background: #000; color: #fff; padding: 4rem; }
+  </style>
+
+  <!-- resto do CSS com preload + onload -->
+  <link rel="preload" href="/styles.css" as="style" onload="this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/styles.css"></noscript>
+</head>
+```
+
+O critical CSS (~5-15KB) pinta o conteudo
+imediato. O resto carrega em paralelo. O
+usuario ve a pagina rapido, o estilo
+"completo" chega depois.
+
+**`preload` vs `prefetch` vs `preconnect` -
+os 3 hints de performance.** Alem de `defer`
+e `async`, voce tem 3 hints pra dizer ao
+browser "prioriza isso":
+
+- **`<link rel="preload" href="..." as="image">`:**
+  diz "baixa isso **agora**, com alta
+  prioridade". Use pra **recursos do LCP**
+  (hero image, fonte custom principal).
+- **`<link rel="prefetch" href="...">`:** diz
+  "baixa isso **quando der** (idle time)".
+  Use pra **proxima pagina** (link que o
+  usuario provavelmente vai clicar).
+- **`<link rel="preconnect" href="...">`:**
+  diz "abre **conexao TCP/TLS** com esse
+  dominio". Use pra **CDN/terceiros**
+  (Cloudflare, fonts.googleapis.com).
+
+```html
+<head>
+  <!-- preload: hero image (LCP) -->
+  <link rel="preload" href="/hero.avif" as="image">
+
+  <!-- preconnect: Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <!-- prefetch: proxima pagina (link provavel) -->
+  <link rel="prefetch" href="/produtos">
+</head>
+```
+
+**O que e' "Layout Thrashing" (forcar layout
+repetidamente).** O erro classico de
+performance JS: ler e escrever geometria
+em loop, forcando o browser a recalcular
+layout a cada iteracao:
+
+```js
+// RUIM: le + escreve + le + escreve = reflow por iteracao
+const elements = document.querySelectorAll(".item");
+elements.forEach((el) => {
+  const height = el.offsetHeight;  // FORCA layout
+  el.style.height = height + 10 + "px";  // invalida layout
+});
+// 1000 items = 1000 layouts
+
+// BOM: le todos, escreve todos
+const heights = Array.from(elements).map((el) => el.offsetHeight);
+elements.forEach((el, i) => {
+  el.style.height = heights[i] + 10 + "px";
+});
+// 1000 items = 2 layouts (1 read, 1 write)
+```
+
+Em React, isso aparece como `useLayoutEffect`
+vs `useEffect` mal usados, ou reflow causado
+por `getBoundingClientRect()` em loop.
+Sempre que possivel, **separe read e write**
+- agrupe todas as leituras, depois todas as
+escritas.
+
+**As 3 propriedades que NAO causam reflow.**
+Pra animacoes, anime **so essas** - qualquer
+outra coisa vai forcar layout/paint a cada
+frame:
+
+- **`transform: translate()` / `scale()` /
+  `rotate()`** - **composite** apenas (GPU).
+- **`opacity`** - **paint** apenas.
+- **`filter: blur()` etc** - composite
+  (com caveat).
+
+`width`, `height`, `top`, `left`, `margin`,
+`padding` - **todos causam layout** (reflow).
+Use **so pra estado final da animacao, nao
+pra valores intermediarios**. Cobre mais
+em `motion` (a trilha anterior).
+
+## Aprofundamento 🟡
+
+**Critical CSS in practice: como extrair.**
+Ferramentas como `critters` (Node) e
+`penthouse` pegam o HTML + CSS, rodam o
+CSS em headless Chrome pra identificar
+quais regras sao usadas no above-the-fold,
+e extraem so essas:
+
+```bash
+pnpm add -D critters
+```
+
+```js
+// vite.config.ts
+import critters from "critters";
+
+export default {
+  plugins: [
+    {
+      name: "critical-css",
+      async transformIndexHtml(html) {
+        const crittersCss = new critters({ path: "/", publicPath: "/" });
+        return crittersCss.process(html);
+      },
+    },
+  ],
+};
+```
+
+Em 2026, com HTTP/2 + bundlers espertos, a
+maioria dos projetos nao precisa fazer isso
+manualmente. Mas pra landing pages
+criticas, **critical CSS ainda e' o
+caminho mais rapido pro first paint**.
+
+**`will-change: transform` - a "dica" pra
+GPU.** Quando voce sabe que um elemento
+vai ser animado, `will-change: transform`
+diz ao browser "promovo esse elemento pra
+camada GPU antecipadamente":
+
+```css
+.card:hover {
+  will-change: transform;
+  transform: scale(1.05);
+}
+```
+
+**Cuidado**: use com moderacao. Cada
+`will-change` cria uma camada GPU
+permanente. 50 cards com `will-change` =
+50 camadas = memoria alta. Use **so nos
+elementos que vao animar em seguida**
+(ideal: so durante o hover, nao
+permanentemente).
+
+**`content-visibility: auto` - o "lazy load
+de render".** Propriedade CSS nova (Chrome
+85+, Firefox 125+, Safari 18+) que faz o
+browser **pular o render de elementos fora
+da tela**:
+
+```css
+.section-below-fold {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;  /* altura estimada */
+}
+```
+
+Em uma landing page longa, isso da um boost
+monstro - secoes fora da tela nao gastam
+CPU/GPU. Cobre implicitamente com
+`contain-intrinsic-size` pra evitar CLS
+(quando o usuario rola ate a secao, ela
+"aparece" com tamanho estimado).
+
+**`font-display: swap` - a propriedade que
+evita FOIT.** Quando o browser ve
+`@font-face`, o comportamento default e'
+**FOIT (Flash of Invisible Text)** - texto
+invisivel ate a fonte custom carregar.
+`font-display: swap` troca pra **FOUT
+(Flash of Unstyled Text)** - mostra texto
+com a fonte do sistema **imediatamente**,
+e troca quando a custom carrega:
+
+```css
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter.woff2") format("woff2");
+  font-display: swap;  /* mostra fallback ate custom carregar */
+}
+```
+
+E' a diferenca entre "tela branca por 2s
+esperando fonte" e "tela com texto,
+reformata quando fonte chega". **Quase
+sempre `swap`**. Coberto a fundo em
+`imagens-e-fontes`.
+
+**Critical Rendering Path API: `PerformanceObserver`.**
+Pra medir onde o tempo vai, use as APIs
+nativas:
+
+```ts
+// Marca tempo de cada fase do CRP
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.log(`${entry.name}: ${entry.startTime.toFixed(0)}ms`);
+  }
+});
+observer.observe({ type: "paint", buffered: true });
+// First Paint (FP): 200ms
+// First Contentful Paint (FCP): 350ms
+```
+
+Pra **Long Tasks** (JS que bloqueia > 50ms):
+
+```ts
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.warn(`Long task: ${entry.duration.toFixed(0)}ms`);
+  }
+});
+observer.observe({ type: "longtask", buffered: true });
+```
+
+Cada long task = 1 frame de 60fps perdido.
+Em mobile, **3 long tasks de 200ms =
+600ms travado**, perceptivel como "lag".
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que o main thread existe e o que fazer
+quando ele trava.** O browser tem 1 main
+thread (CPU) que faz parse, JS, layout,
+paint. Se uma tarefa longa toma o thread,
+**tudo para**. 60fps = 16.7ms por frame.
+**Qualquer tarefa > 50ms vai causar
+perda de frame**. Solucao: Web Workers
+(JS em outra thread), `requestIdleCallback`
+(agendar pra idle time), `requestAnimationFrame`
+(sincronizar com o refresh do browser). Em
+2026, Web Workers e' mainstream (com
+`comlink` pra ergonomia).
+
+**Streaming HTML e a relacao com TTFB.** Em
+SSR (Next.js, etc), o servidor pode enviar
+o HTML em **chunks** (streaming). O browser
+comeca a parsear o primeiro chunk antes do
+segundo chegar. Isso reduz o **tempo ate o
+first byte** do usuario real - TTFB do
+"primeiro byte do primeiro chunk" e' quase
+zero, mesmo que o response completo demore
+mais. Cobre em `nextjs` (a trilha).
+
+**Critical Request Chains - o que o Lighthouse
+mostra.** Lighthouse tem uma secao "Critical
+Request Chains" que mostra **quais recursos
+bloqueiam o LCP**. Tipico: "styles.css
+bloqueia o hero image que e' o LCP". A
+solucao: inline do critical CSS, preload
+do hero image, `font-display: swap` na
+fonte usada no hero. Em 90% dos casos,
+otimizar a critical chain resolve LCP
+ruim sem precisar mexer no bundle.
+
+**`event-timing` e `fid`-to-`inp` migration.**
+Antes de 2024, FID media apenas a **primeira
+interacao**. INP mede **todas** as interacoes
+durante a vida da pagina. `event-timing`
+API expoe cada interacao com:
+- `processingStart` - quando o JS comecou a
+  processar o evento.
+- `processingEnd` - quando terminou.
+- A diferenca = INP dessa interacao.
+
+Util pra debugar "qual clique esta
+travando". Em prod, agrega todas as
+interacoes e reporta p98.
+
+**Por que `position: absolute` nao evita
+reflow no parent.** Mito comum: "tornar
+absolute evita reflow". Parcialmente verdade:
+o absolute em si **nao causa reflow do
+parent** (ele sai do fluxo). Mas se o
+absolute **muda de tamanho**, ainda causa
+reflow dos filhos. E o browser ainda
+precisa **pintar** o que mudou. Absolute
+ajuda em casos especificos, nao e' uma
+bala de prata.
+
+**Leitura recomendada:**
+
+- [web.dev - Critical Rendering Path](https://web.dev/articles/critical-rendering-path) - a referencia canonica do Google.
+- [MDN - Critical Rendering Path](https://developer.mozilla.org/en-US/docs/Web/Performance/Critical_rendering_path) - cobertura completa da MDN, com detalhes por etapa.
+- [web.dev - Defer non-critical CSS](https://web.dev/articles/defer-non-critical-css) - patterns praticos pra reduzir CSS bloqueante.
+
+> Dica: o erro mais comum em CRP e' **assumir
+> que "bundle pequeno = pagina rapida"**.
+> Bundle pequeno ajuda **INP** (menos JS pra
+> parse/exec). Mas LCP e' dominado por
+> **imagens, fontes, e CSS bloqueante** -
+> nada a ver com JS. Os 2 eixos (LCP via
+> CRP, INP via bundle) sao **separados**.
+> Otimize os 2.
+
+No proximo no, vamos **bundle analysis**:
+como Vite/Rollup dividem seu codigo em
+chunks, como configurar code splitting,
+tree shaking, dynamic imports, e como ler
+o bundle visualizer pra encontrar os
+"vilões" de tamanho.
+
+<Checkpoint
+  challenge="Implemente a função `recalcularOrdemExecucao(recursos)` que recebe um array de recursos de script (cada um com `url`, `tamanho`, `tipo: 'bloqueante' | 'defer' | 'async' | 'modulo'`) e retorna a ordem em que serao EXECUTADOS, do primeiro pro ultimo. Regras: 'bloqueante' executa na ordem do array (e bloqueia o parser); 'defer' executa apos todos os bloqueantes, na ordem do array; 'async' executa na ordem de download (que aqui e' a mesma ordem do array, mas SEMPRE antes dos defers); 'modulo' e' defer implicito, mesma regra de 'defer'."
+  starterCode={`// Implemente recalcularOrdemExecucao(recursos) que recebe:
+// [
+//   { url: '/jquery.js', tamanho: 90, tipo: 'bloqueante' },
+//   { url: '/analytics.js', tamanho: 5, tipo: 'async' },
+//   { url: '/app.js', tamanho: 200, tipo: 'defer' },
+//   { url: '/widget.js', tamanho: 30, tipo: 'modulo' },
+// ]
+//
+// E retorna a URL dos scripts NA ORDEM DE EXECUCAO:
+//
+// Regra de execucao:
+// 1. 'bloqueante' executa na ordem do array (e bloqueia o parser).
+// 2. 'async' executa na ordem do array (mas todos antes dos defers).
+// 3. 'defer' e 'modulo' executam DEPOIS, na ordem do array.
+//
+// Exemplo acima: ['/jquery.js', '/analytics.js', '/app.js', '/widget.js']
+// (jquery bloqueante, analytics async, app defer, widget modulo)
+function recalcularOrdemExecucao(recursos) {
+  return [];
+}
+
+const _r1 = recalcularOrdemExecucao([
+  { url: "/jquery.js", tamanho: 90, tipo: "bloqueante" },
+  { url: "/analytics.js", tamanho: 5, tipo: "async" },
+  { url: "/app.js", tamanho: 200, tipo: "defer" },
+  { url: "/widget.js", tamanho: 30, tipo: "modulo" },
+]);
+console.log(JSON.stringify(_r1));
+
+const _r2 = recalcularOrdemExecucao([
+  { url: "/a.js", tamanho: 10, tipo: "bloqueante" },
+  { url: "/b.js", tamanho: 20, tipo: "bloqueante" },
+]);
+console.log(JSON.stringify(_r2));
+
+const _r3 = recalcularOrdemExecucao([
+  { url: "/x.js", tamanho: 5, tipo: "defer" },
+  { url: "/y.js", tamanho: 8, tipo: "defer" },
+  { url: "/z.js", tamanho: 3, tipo: "async" },
+]);
+console.log(JSON.stringify(_r3));`}
+  expected='["/jquery.js","/analytics.js","/app.js","/widget.js"]
+["/a.js","/b.js"]
+["/z.js","/x.js","/y.js"]'
+  slug="performance-web"
+  nodeId="critical-rendering-path"
+/>
+
+<Quiz
+  question="Qual a diferenca pratica entre defer e async em uma tag script?"
+  options={[
+    {
+      text: "defer: download paralelo, execucao apos HTML parsed, mantem ordem do HTML. async: download paralelo, execucao imediata ao terminar download, ordem imprevisivel. Use defer pra app bundle, async pra scripts independentes.",
+      correct: true,
+      explanation:
+        "defer baixa em paralelo com o HTML e so executa apos o parse terminar, preservando a ordem do HTML (script 1 defer executa antes de script 2 defer). async baixa em paralelo e executa IMEDIATAMENTE quando o download termina - a ordem de execucao depende de qual baixou primeiro (util pra analytics/ads que nao dependem de ordem). Pra app bundle (React, Vue, Svelte), sempre defer pra garantir ordem e execucao pos-parse. Pra Google Analytics, async e' ok porque nao depende de nada.",
+    },
+    {
+      text: "Sao a mesma coisa - apenas nomes diferentes pra mesma funcionalidade.",
+      correct: false,
+      explanation:
+        "Nao. defer e async diferem em QUANDO executam. defer so executa apos o HTML parsed (mantem ordem). async executa IMEDIATAMENTE ao terminar download (ordem imprevisivel). Casos de uso diferentes. defer pra app bundle, async pra scripts independentes.",
+    },
+    {
+      text: "async e' mais rapido - sempre use async em vez de defer.",
+      correct: false,
+      explanation:
+        "async pode ate ser mais rapido, mas nao e' 'sempre melhor'. async quebra a ordem do HTML e pode executar antes do DOM estar pronto. Se seu script depende de outro script, async quebra. Pra Google Analytics (independente), async e' ok. Pra app bundle (depende de ordem), defer e' obrigatorio.",
+    },
+  ]}
+/>

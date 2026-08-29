@@ -1,0 +1,96 @@
+{
+  "slug": "performance-web",
+  "title": "Performance Web: Core Web Vitals, bundle, imagens, CDN e CI",
+  "description": "Trilha sobre performance web de ponta a ponta: Core Web Vitals (LCP/INP/CLS) com diagnostico via Lighthouse e web-vitals, Critical Rendering Path (DOM/CSSOM/Render Tree/Layout/Paint/Composite), bundle analysis com Vite/Rollup e code splitting, otimizacao de imagens (AVIF/WebP, srcset) e fonts (font-display, preload), estrategias de cache (Cache-Control, ETag, CDN edge) e automacao em CI (Lighthouse CI, size-limit, perf budgets). Foco no que o dev frontend controla: o que o browser recebe, como renderiza, e como garantir que nao regrida.",
+  "difficulty": "intermediario",
+  "skills": [
+    "performance",
+    "core-web-vitals",
+    "lcp",
+    "inp",
+    "cls",
+    "lighthouse",
+    "web-vitals",
+    "critical-rendering-path",
+    "v8",
+    "dom",
+    "cssom",
+    "layout",
+    "paint",
+    "composite",
+    "vite",
+    "rollup",
+    "bundle",
+    "code-splitting",
+    "tree-shaking",
+    "avif",
+    "webp",
+    "responsive-images",
+    "font-display",
+    "font-loading",
+    "cdn",
+    "cache-control",
+    "etag",
+    "stale-while-revalidate",
+    "service-worker",
+    "size-limit",
+    "lighthouse-ci"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "core-web-vitals",
+      "title": "Core Web Vitals: LCP, INP, CLS, diagnostico e thresholds",
+      "type": "topic",
+      "recommended": true,
+      "children": ["critical-rendering-path"]
+    },
+    {
+      "id": "critical-rendering-path",
+      "title": "Critical Rendering Path: HTML, CSS, JS, layout, paint, composite",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["bundle-analysis"]
+    },
+    {
+      "id": "bundle-analysis",
+      "title": "Bundle analysis: code splitting, tree shaking, dynamic imports",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["imagens-e-fontes"]
+    },
+    {
+      "id": "imagens-e-fontes",
+      "title": "Imagens e fontes: AVIF/WebP, srcset, font-display, preload",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cdn-e-cache"]
+    },
+    {
+      "id": "cdn-e-cache",
+      "title": "CDN e cache: Cache-Control, ETag, edge, stale-while-revalidate",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["perf-em-ci"]
+    },
+    {
+      "id": "perf-em-ci",
+      "title": "Performance em CI: Lighthouse CI, size-limit, perf budgets",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: auditoria de uma SPA e plano de otimizacao",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

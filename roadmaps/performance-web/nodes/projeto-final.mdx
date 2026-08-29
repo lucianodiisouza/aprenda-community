@@ -1,0 +1,390 @@
+---
+id: projeto-final
+title: "Projeto final: auditoria de uma SPA e plano de otimizacao"
+---
+
+Hora de unir tudo. Voce vai pegar uma
+**SPA real** (ou uma que voce ja tem),
+rodar **auditoria completa** com Lighthouse
++ bundle visualizer + network waterfall,
+identificar os **3-5 maiores problemas de
+performance**, e propor um **plano de
+otimizacao priorizado** com **estimativa de
+ganho** pra cada item. E' o ciclo completo:
+medir → diagnosticar → priorizar → otimizar
+→ validar → monitorar.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes de
+comecar.
+
+## O que voce vai construir
+
+Uma **auditoria de performance completa**
+de uma SPA, entregue como:
+
+- **1 relatorio em Markdown** (`audit.md`)
+  com os findings ordenados por impacto.
+- **1 dashboard de metricas** (grafico ou
+  tabela) com CWV antes vs depois.
+- **1 PR de otimizacoes** com as mudancas
+  (1 PR por "round" de otimizacoes).
+- **CI configurado** (Lighthouse CI +
+  size-limit) garantindo que nao regrida.
+
+A SPA pode ser:
+- Sua propria (portfolio, side project).
+- Uma open source conhecida (Vite default
+  template, Hacker News clone).
+- Uma do Bootcamp (landing page que voce
+  fez na trilha `frontend`).
+
+O esqueleto abaixo assume uma SPA React +
+Vite, mas as **tecnicas de auditoria** se
+aplicam a qualquer stack.
+
+## Objetivo
+
+- Praticar o ciclo **medir → diagnosticar
+  → otimizar → validar**.
+- Identificar **quick wins** (ganho
+  facil, baixo risco) vs **deep fixes**
+  (alto ganho, alto risco).
+- Estimar **ganho quantitativo** de cada
+  otimizacao (LCP de X pra Y, INP de A
+  pra B, bundle de P pra Q KB).
+- Configurar CI pra **prevenir regressao**
+  no futuro.
+- Entregar relatorio priorizado que
+  alguem (PM, time) consegue ler e tomar
+  decisao.
+
+## Requisitos (minimo)
+
+Auditoria inicial:
+
+- [ ] Rodar Lighthouse (mobile, slow 4G)
+  na pagina principal. Salvar score,
+  metricas CWV, e os 5 maiores "diagnostics".
+- [ ] Rodar bundle visualizer
+  (`rollup-plugin-visualizer`). Salvar
+  `dist/stats.html`. Identificar os 3
+  maiores contribuidores de tamanho.
+- [ ] Rodar network waterfall (DevTools
+  > Network). Contar requests, identificar
+  bloqueadores (CSS, JS sincronos), ver
+  tempo ate first byte.
+- [ ] Medir CWV com `web-vitals` em dev
+  (Chrome DevTools > Performance Insights
+  ou codigo instrumentado).
+- [ ] Conferir headers de cache
+  (`Cache-Control`, `ETag`) em 3-4
+  recursos criticos (HTML, JS, CSS, hero
+  image).
+- [ ] Documentar tudo em `audit.md` com
+  findings ordenados por **impacto
+  estimado**.
+
+Plano de otimizacao:
+
+- [ ] Listar **3-5 otimizacoes** priorizadas
+  (P0 = maior impacto, P3 = nice-to-have).
+- [ ] Pra cada otimizacao, documentar:
+  - **Problema:** o que esta errado hoje.
+  - **Diagnostico:** como voce descobriu
+    (qual ferramenta, qual metrica).
+  - **Solucao:** o que mudar (com codigo
+    de exemplo).
+  - **Ganho estimado:** "LCP de 4.2s pra
+    ~2.0s", "bundle de 250KB pra 80KB".
+  - **Risco:** "baixo" (trivial), "medio"
+    (mexer em config), "alto" (refactor).
+  - **Esforco:** "1h", "1 dia", "1 semana".
+
+Implementacao:
+
+- [ ] Implementar **P0** (1 quick win de
+  alto impacto) e medir de novo. Confirmar
+  que o ganho estimado aconteceu.
+- [ ] Adicionar `size-limit` ao CI com
+  budget baseado no bundle pos-otimizacao.
+- [ ] Adicionar Lighthouse CI (GitHub
+  Action) com threshold baseado no
+  Lighthouse score pos-otimizacao.
+- [ ] Atualizar `audit.md` com o "depois":
+  metricas antes vs depois, link pro PR.
+
+## Estrutura do relatorio (`audit.md`)
+
+O relatorio deve ter:
+
+```markdown
+# Auditoria de Performance - [nome-do-app]
+
+## TL;DR
+
+- LCP atual: 4.2s (ruim, threshold 2.5s).
+- INP atual: 180ms (ok).
+- CLS atual: 0.15 (precisa melhorar, threshold 0.1).
+- Initial bundle: 280KB gzipped.
+- **Top 3 problemas**: hero image sem otimizar
+  (LCP), JS bundle grande (INP), banner async
+  sem espaco reservado (CLS).
+
+## Metodologia
+
+- Lighthouse 12.0, mobile, simulated 4G.
+- Chrome DevTools 130, throttling 4x CPU.
+- Bundle visualizer gerado em `dist/stats.html`.
+- Network waterfall em
+  `devtools-perf/waterfall.json`.
+
+## Findings (por impacto)
+
+### P0 - Hero image sem otimizar (LCP)
+
+- **Problema:** hero de 2400x1200, JPEG,
+  800KB. Baixa em ~3s em 3G.
+- **Diagnostico:** Lighthouse "Largest
+  Contentful Paint element" = hero image.
+  Network waterfall mostra request de 800KB
+  bloqueando o LCP.
+- **Solucao:** converter pra AVIF (50KB) +
+  WebP (80KB) + JPEG (150KB) via
+  `vite-imagetools`. Adicionar
+  `<link rel="preload" as="image"
+  href="hero.avif" fetchpriority="high">`.
+- **Ganho estimado:** LCP 4.2s → ~2.0s
+  (-52%). Bundle similar (a imagem nao
+  esta no JS).
+- **Risco:** baixo. Apenas trocou formato
+  e adicionou preload.
+- **Esforco:** 2h.
+
+### P1 - JS bundle de 280KB (INP futuro)
+
+- **Problema:** todo o app num chunk so.
+  Inclui Moment.js (300KB), lodash full
+  (70KB), recharts (200KB) - mas a homepage
+  nao usa nenhum.
+- **Diagnostico:** bundle visualizer mostra
+  Moment.js sendo importado por um helper
+  de data. lodash full vem de um import
+  generico. recharts vem da rota
+  /dashboard, nao da homepage.
+- **Solucao:**
+  1. Trocar `moment` por `date-fns`
+     (tree-shakable). 300KB → 5KB.
+  2. Trocar `import _ from 'lodash'` por
+     imports especificos. 70KB → 10KB.
+  3. Lazy load `/dashboard` via
+     `React.lazy`. recharts sai do initial
+     bundle.
+- **Ganho estimado:** initial bundle
+  280KB → 80KB (-71%). INP mantido (ja
+  era ok).
+- **Risco:** medio. Trocar moment por
+  date-fns exige verificar formatacao em
+  todos os lugares.
+- **Esforco:** 1 dia.
+
+## Resultados (depois de implementar P0)
+
+- LCP: 4.2s → 2.0s (verde).
+- Bundle: 280KB → 280KB (imagens nao
+  afetam bundle).
+- Lighthouse Performance: 62 → 89.
+
+## Proximos passos
+
+- Implementar P1 (bundle).
+- Configurar CI (size-limit + Lighthouse CI)
+  com base nos novos numeros.
+- Configurar alerta em prod se p75 de LCP
+  passar de 2.5s.
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Auditoria de performance de
+  terceiros.** Adicionar ao relatorio
+  analise de 3rd-party scripts (analytics,
+  ads, widgets) e o impacto deles em
+  performance.
+- [ ] **RUM setup.** Instrumentar o app
+  com `web-vitals` em prod, mandar pra
+  Sentry/Datadog, criar alerta.
+- [ ] **Performance budget no PR.** Alem
+  de CI, adicionar bot que comenta no PR
+  com delta de bundle size e CWV vs main.
+- [ ] **Comparacao com concorrentes.**
+  Rodar Lighthouse em 2-3 concorrentes e
+  comparar CWV. Posicionamento competitivo.
+- [ ] **Long task analysis.** Usar
+  `PerformanceObserver` pra encontrar
+  long tasks > 50ms em uma sessao tipica
+  do app, priorizar quebras de tarefas
+  com base nisso.
+- [ ] **AVIF support check.** Verificar
+  suporte de browser dos usuarios via
+  RUM, decidir se vale manter fallback
+  WebP-only.
+- [ ] **CDN configuration review.** Auditar
+  as configs de cache da CDN, sugerir
+  melhorias.
+- [ ] **Critical CSS automatico.** Integrar
+  `critters` no Vite pra extrair critical
+  CSS automaticamente, medir impacto no
+  FCP.
+- [ ] **Service Worker pra assets
+  estaticos.** Cache de 1 ano via SW,
+  reduzir 90% dos requests em visitas
+  recorrentes.
+- [ ] **Comparar build com/sem source
+  maps em prod.** Source maps em prod
+  custam bandwidth. Medir se vale manter.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Escolha a SPA** - sua ou open source
+   conhecida. Algo que voce conhece o
+   codigo (ou aceita ler).
+2. **Lighthouse mobile primeiro.** 80% dos
+   usuarios vem de mobile. Otimizar pra
+   desktop e' perder tempo.
+3. **Bundle visualizer cedo.** Em 30s voce
+   descobre 80% dos problemas de bundle
+   size.
+4. **Network waterfall.** Identifica
+   recursos bloqueadores (CSS, JS
+   sincronos).
+5. **Priorize por impacto, nao por
+   facilidade.** "Trocar moment por
+   date-fns" e' facil E alto impacto.
+   "Adicionar preload no hero" e' facil E
+   altissimo impacto. "Refatorar pra SSR"
+   e' dificil E alto impacto. Escolha os
+   faceis-primeiro.
+6. **Meca apos cada otimizacao.** Ganho
+   estimado != ganho real. As vezes
+   otimizar A atrapalha B.
+
+**Armadilhas comuns:**
+
+- **Otimizar com base em intuicao, nao
+  medicao.** "Acho que o problema e' o
+  CSS" - **mece primeiro**. Lighthouse
+  mostra o "largest contentful paint
+  element" - se for imagem, CSS nao e' o
+  problema.
+- **Confundir Lab com Real.** Lighthouse
+  roda em condicoes simuladas. CWV real
+  (CrUX, RUM) e' diferente. **Sempre
+  confira CrUX** no PageSpeed Insights
+  antes de sair otimizando.
+- **Otimizar CWV individual sem ver o
+  conjunto.** LCP bom, INP ruim, CLS
+  ok. **3 problemas podem ter a mesma
+  causa** (bundle grande causa LCP ruim
+  via TTFB e INP ruim via parse).
+- **CI budget muito agressivo.** "Bundle
+  era 280KB, budget 80KB" - tudo quebra.
+  Defina budget **baseado no estado
+  atual + meta realista**.
+- **Esquecer de medir "depois".** Achou
+  que otimizeu, mas nao mediu. As vezes
+  o ganho e' 50ms (nao vale o risco).
+  As vezes piorou (regressao).
+- **Bundle visualizer no caminho
+  errado.** A maioria dos projetos
+  grandes tem "pacote inesperado" no
+  bundle. Investigue sempre o top 3.
+- **Lighthouse em CI com dados nao-
+  realistas.** Lighthouse CI com
+  `localhost` rapido demais. Use
+  `--throttling.cpuSlowdownMultiplier=4`
+  e `--throttling.rttMs=150` pra simular
+  mobile real.
+- **Confundir Core Web Vitals com
+  Lighthouse score.** Lighthouse gera
+  score 0-100 (sintetico). CWV sao 3
+  metricas (LCP/INP/CLS). Uma pagina
+  com Lighthouse 100 pode ter CWV ruim.
+
+**Como validar que terminou:**
+
+- [ ] `audit.md` com 3-5 findings
+  priorizados (P0, P1, ...).
+- [ ] Cada finding tem problema,
+  diagnostico, solucao, ganho estimado,
+  risco, esforco.
+- [ ] Pelo menos 1 P0 implementado e
+  medido "depois".
+- [ ] `size-limit` rodando em CI.
+- [ ] Lighthouse CI rodando em CI.
+- [ ] Lighthouse score pos-otimizacao
+  >= 90 (mobile).
+- [ ] CWV pos-otimizacao verde em todas
+  as 3.
+- [ ] Bundle pos-otimizacao dentro do
+  budget.
+
+**Leituras que ajudam durante o projeto:**
+
+- [web.dev - Performance budgets](https://web.dev/articles/performance-budgets) - como definir e enforces budgets.
+- [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci) - setup detalhado de CI.
+- [size-limit](https://github.com/ai/size-limit) - patterns avancados de budget.
+
+> O projeto final e' onde a trilha vira
+> "sua". A escolha de **quais problemas
+> priorizar** (trade-off impacto vs risco
+> vs esforco) e' a **habilidade real** de
+> performance. Otimizar e' facil. **Saber
+> o que otimizar** e' o skill. O esqueleto
+> dado e' o caminho feliz, desvie quando
+> precisar e anote as decisoes no
+> `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `priorizarOtimizacoes(otimizacoes)` que recebe uma lista de otimizacoes (cada uma com `id`, `impacto: 1-10`, `esforco: 1-10`, `risco: 1-10`) e retorna a lista ordenada por score (maior primeiro). Score = impacto * 2 - esforco - risco (otimizacoes de alto impacto, baixo esforco, baixo risco ficam no topo). Em caso de empate, mantenha a ordem original. Cada item do retorno deve incluir o `score` calculado."
+  starterCode={`// Implemente priorizarOtimizacoes(otimizacoes) que recebe:
+//
+// [
+//   { id: 'a', impacto: 8, esforco: 3, risco: 2 },   // 8*2-3-2 = 11
+//   { id: 'b', impacto: 5, esforco: 2, risco: 1 },   // 5*2-2-1 = 7
+//   { id: 'c', impacto: 9, esforco: 8, risco: 5 },   // 9*2-8-5 = 5
+// ]
+//
+// E retorna a lista ordenada por score (maior primeiro), com `score`
+// adicionado a cada item. Em caso de empate no score, mantem a
+// ordem original do array de entrada.
+function priorizarOtimizacoes(otimizacoes) {
+  return [];
+}
+
+const _r1 = priorizarOtimizacoes([
+  { id: "a", impacto: 8, esforco: 3, risco: 2 },
+  { id: "b", impacto: 5, esforco: 2, risco: 1 },
+  { id: "c", impacto: 9, esforco: 8, risco: 5 },
+]);
+console.log(JSON.stringify(_r1));
+
+const _r2 = priorizarOtimizacoes([
+  { id: "x", impacto: 6, esforco: 4, risco: 3 },
+  { id: "y", impacto: 6, esforco: 4, risco: 3 },
+]);
+console.log(JSON.stringify(_r2));
+
+const _r3 = priorizarOtimizacoes([]);
+console.log(JSON.stringify(_r3));`}
+  expected='[{"id":"a","impacto":8,"esforco":3,"risco":2,"score":11},{"id":"b","impacto":5,"esforco":2,"risco":1,"score":7},{"id":"c","impacto":9,"esforco":8,"risco":5,"score":5}]
+[{"id":"x","impacto":6,"esforco":4,"risco":3,"score":5},{"id":"y","impacto":6,"esforco":4,"risco":3,"score":5}]
+[]'
+  slug="performance-web"
+  nodeId="projeto-final"
+/>

@@ -1,0 +1,465 @@
+---
+id: core-web-vitals
+title: "Core Web Vitals: LCP, INP, CLS, diagnostico e thresholds"
+resources:
+  - title: "web.dev - Web Vitals (oficial, EN)"
+    url: https://web.dev/articles/vitals
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - INP (oficial, EN)"
+    url: https://web.dev/articles/inp
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Performance (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/Performance
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou a `frontend`, fez a landing
+page bonita, deploy no Vercel. Aí o cliente
+manda print do celular dele reclamando que
+"a pagina ta lenta". Voce abre no seu
+MacBook Pro com Chrome em wifi e... ta
+instantanea. O que da?
+
+A resposta e' **performance e' situacional**.
+Depende do device, da rede, do browser, do
+que o usuario tava fazendo antes. A
+**Core Web Vitals** (CWV) e' o jeito do Google
+medir performance do jeito que o **usuario
+real** sente, em **condicoes reais**. Em vez
+de "qual o tempo de load" (que so captura o
+inicio), CWV mede **3 dimensoes**: quando o
+conteudo aparece (LCP), quando o app reage
+(INP), e quanto a tela "pula" durante o load
+(CLS).
+
+Se voce entende LCP, INP, CLS + thresholds +
+como diagnosticar com Lighthouse, voce
+consegue sair de "ta lento" pra "LCP 4.2s
+pela imagem do hero, otimizar pra < 2.5s
+com AVIF + preload".
+
+## O essencial 🟢
+
+**As 3 Core Web Vitals (e o que cada uma
+mede).** CWV e' um conjunto de 3 metricas
+que o Google define como proxy da "experiencia
+que o usuario sente":
+
+- **`LCP` (Largest Contentful Paint):** quando
+  o **maior elemento visivel** (imagem, texto
+  grande, video poster) terminou de renderizar.
+  Mede **velocidade de carregamento
+  percebida**. Threshold: < 2.5s para 75% dos
+  usuarios.
+- **`INP` (Interaction to Next Paint):** o
+  tempo entre o usuario **clicar/tocar** e o
+  browser **pintar o resultado**. Mede
+  **responsividade**. Substituiu o FID
+  (First Input Delay) em marco 2024. Threshold:
+  < 200ms.
+- **`CLS` (Cumulative Layout Shift):** quanto
+  a tela "pula" visualmente enquanto carrega
+  (imagem sem tamanho definido, fonte custom
+  que troca, banner async). Mede **estabilidade
+  visual**. Threshold: < 0.1.
+
+A regra pratica: **LCP = carregamento,
+INP = interacao, CLS = estabilidade**. Cada
+um ataca uma dimensao diferente. Uma pagina
+pode ter LCP bom mas INP ruim (carrega rapido
+mas trava ao clicar).
+
+**Thresholds oficiais (Google, 2026).** O
+Google classifica experiencias em 3 faixas:
+
+| Metrica | Bom (verde) | Ruim (vermelho) |
+| ------- | ----------- | --------------- |
+| LCP     | < 2.5s      | > 4.0s          |
+| INP     | < 200ms     | > 500ms         |
+| CLS     | < 0.1       | > 0.25          |
+
+Entre verde e vermelho e' "needs improvement"
+(amarelo). Para rankear bem no Google Search
+(CWV e' fator de ranking desde 2021), voce
+precisa estar no **verde em todas as 3** pra
+75% dos usuarios reais (p75). "Funciona no meu
+computador" nao conta.
+
+**Como medir CWV.** 3 caminhos principais,
+cada um com tradeoffs:
+
+1. **Lighthouse (DevTools ou CLI):** roda
+   local, simula conexao 4G + CPU throttling,
+   gera relatorio detalhado. Bom pra **dev
+   workflow** (CI, PR check). Nao captura
+   usuario real.
+
+   ```bash
+   # Chrome DevTools > Lighthouse > Generate
+   # report. Ou CLI:
+   pnpm dlx lighthouse https://example.com --view
+   ```
+
+2. **CrUX (Chrome User Experience Report):**
+   dados reais de usuarios do Chrome que
+   optaram por telemetria. Disponivel no
+   [PageSpeed Insights](https://pagespeed.web.dev/),
+   Search Console, e BigQuery. E' a **fonte
+   oficial** que o Google usa pra ranking.
+   **Sempre o que importa pro SEO**.
+
+3. **`web-vitals` lib (Google, JS):** biblioteca
+   oficial pra coletar CWV no seu proprio
+   app e mandar pro seu analytics:
+
+   ```bash
+   pnpm add web-vitals
+   ```
+
+   ```ts
+   import { onLCP, onINP, onCLS, sendToAnalytics } from "web-vitals";
+
+   onLCP(console.log);   // 1234 ms
+   onINP(console.log);   // 87 ms
+   onCLS(console.log);   // 0.04
+   ```
+
+   Util pra **RUM** (Real User Monitoring) -
+   saber como sua pagina perform em devices
+   reais, em producao, segmentado por
+   pais/device/rede.
+
+**O "75th percentile" (p75) e' o que importa.**
+CWV nao mede a media. Mede o **percentil 75**
+- 75% dos usuarios tem performance <= esse
+valor. Se LCP p75 = 2.3s, significa que 75%
+dos usuarios viram o conteudo em <= 2.3s.
+Os 25% restantes viram depois. **Por que p75?**
+Pra penalizar paginas com **caudas longas** -
+aquela pagina que funciona pra maioria mas
+trava 5% (e esses 5% sao justamente usuarios
+de celular ruim em 3G).
+
+**Por que CWV nao e' so SEO.** Sim, CWV e'
+fator de ranking no Google. Mas o motivo real
+pra se importar: **conversao**. Estudos
+constantes da Google/WPO Stats mostram que:
+
+- Cada 100ms de LCP pior = 7% menos conversao
+  (e-commerce).
+- INP > 500ms = bounce rate 2x maior.
+- CLS alto = clique acidental em anuncio
+  (pessima UX, reclamações, chargeback).
+
+Performance nao e' "nice to have". **E' receita**.
+
+**A arvore de decisao: "minha pagina ta lenta,
+por onde comecar?"** Quando alguem reclama
+"ta lento", CWV te da 3 portas de entrada.
+A escolha depende da metrica que ta ruim:
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Pagina ta lenta]
+    Start --> Medir[Rodar Lighthouse / PageSpeed Insights]
+    Medir --> LCP{LCP > 2.5s?}
+    Medir --> INP{INP > 200ms?}
+    Medir --> CLS{CLS > 0.1?}
+
+    LCP -->|Sim| LCPcause[LCP ruim: carregamento]
+    LCPcause --> LCPimg[Hero image sem preload?<br/>otimizar formato/peso]
+    LCPcause --> LCPttfb[Servidor lento?<br/>TTFB > 800ms = hosting ruim]
+    LCPcause --> LCPcss[CSS bloqueando?<br/>critical CSS inlined?]
+    LCPcause --> LCPfont[Font custom?<br/>preload + font-display]
+
+    INP -->|Sim| INPcause[INP ruim: interacao]
+    INPcause --> INPjs[JS bundle pesado?<br/>code splitting]
+    INPcause --> INPmain[Long task > 50ms?<br/>quebrar em chunks]
+    INPcause --> INPrender[Re-render excessivo?<br/>memo/useMemo]
+    INPcause --> INPevent[Event handler lento?<br/>debounce/throttle]
+
+    CLS -->|Sim| CLScause[CLS ruim: estabilidade]
+    CLScause --> CLSimg[Imagem sem width/height?]
+    CLScause --> CLSad[Banner async sem reservar espaco?]
+    CLScause --> CLSfont[Font swap muda layout?<br/>size-adjust / fallback]
+    CLScause --> CLSinject[Conteudo injetado por JS?<br/>reservar espaco antes]
+
+    LCPcause --> LCPfix[Otimizar: imagens/CDN/critical CSS]
+    INPcause --> INPfix[Otimizar: bundle/long tasks]
+    CLScause --> CLSfix[Otimizar: size hints/reservar espaco]
+
+    LCPfix --> Retest[Re-rodar Lighthouse]
+    INPfix --> Retest
+    CLSfix --> Retest
+    Retest --> Done{Verde em todas?}
+    Done -->|Nao| Medir
+    Done -->|Sim| Ship[Ship e monitorar em prod]`}
+  caption="Decision tree: quando alguem reclama 'ta lento', o primeiro passo e' rodar Lighthouse. A partir das 3 metricas, voce desce em cenarios especificos ate chegar na causa raiz."
+/>
+
+**O que afeta cada metrica (resumo).** Pra
+fechar o no:
+
+- **LCP** e' afetado por: tempo de resposta do
+  servidor (TTFB), tempo de download de
+  recursos criticos (HTML, CSS, hero image),
+  tempo de renderizacao do conteudo principal.
+  Solucao: CDN, preload, formatos modernos
+  (AVIF), critical CSS inlined.
+- **INP** e' afetado por: tamanho do JS
+  (parsing, execution), long tasks (> 50ms
+  bloqueiam o main thread), re-renders
+  desnecessarios. Solucao: code splitting,
+  web workers pra tarefas pesadas, memoizacao.
+- **CLS** e' afetado por: elementos sem
+  dimensao definida (imagens, iframes), conteudo
+  injetado apos o load (anuncios, banners),
+  troca de fonte custom (FOUT/FOIT). Solucao:
+  sempre definir `width`/`height`/`aspect-ratio`,
+  reservar espaco pra conteudo async,
+  `font-display: optional` ou `size-adjust`.
+
+A trilha toda gira em torno desses 3 eixos.
+Cada no aprofunda um subset.
+
+## Aprofundamento 🟡
+
+**Por que FID virou INP.** FID (First Input
+Delay) media apenas a **primeira** interacao
+do usuario. INP (Interaction to Next Paint)
+considera **todas** as interacoes durante a
+vida da pagina e mede ate a proxima pintura
+(nao so o tempo de processamento). Resultado:
+INP captura melhor o que o usuario sente em
+apps SPA com muita interacao. Substituicao
+oficial em marco 2024.
+
+**`web-vitals` lib: detalhes da API.** A lib
+oferece 2 modos:
+
+```ts
+import { onLCP, onINP, onCLS } from "web-vitals";
+
+// 1. On* (callback quando a metrica estabiliza)
+onLCP((metric) => {
+  console.log(metric.value);  // 1234 (ms)
+  console.log(metric.rating); // "good" | "needs-improvement" | "poor"
+  console.log(metric.id);     // ID unico da pagina
+  console.log(metric.entries); // PerformanceEntry[]
+});
+
+// 2. Reportar pra analytics
+function sendToAnalytics({ name, value, rating }) {
+  // mandar pro Segment, GA4, Datadog, etc
+  gtag("event", name, {
+    event_category: "Web Vitals",
+    value: Math.round(name === "CLS" ? value * 1000 : value),
+    event_label: rating,
+  });
+}
+
+onLCP(sendToAnalytics);
+onINP(sendToAnalytics);
+onCLS(sendToAnalytics);
+```
+
+Em producao, **sempre envie pra um analytics**.
+Lighthouse local nao captura 5% dos usuarios
+em devices low-end com 3G. RUM captura
+**todos**.
+
+**CrUX vs RUM vs Lab data - quando usar cada.**
+
+- **Lab data (Lighthouse):** simulado,
+  consistente, ideal pra **CI e PR checks**.
+- **CrUX (Chrome User Experience):** agregado
+  oficial do Google, 28 dias de janela,
+  **fonte do SEO ranking**. Cobertura: so
+  usuarios do Chrome que optaram por
+  telemetria.
+- **RUM (Real User Monitoring):** seu proprio
+  app, todos os browsers, em tempo real.
+  Util pra **alertas** (p75 de LCP subiu
+  > 2.8s) e **segmentacao** (p75 de LCP em
+  mobile e' pior que desktop?).
+
+A combinacao: **RUM em prod** (alertas
+imediato) + **CrUX no Search Console**
+(visão de SEO) + **Lighthouse em CI**
+(regressao em PR).
+
+**Lighthouse score vs Core Web Vitals - nao
+sao a mesma coisa.** Lighthouse gera um score
+0-100 e mostra **3 categorias** (Performance,
+A11y, Best Practices). As Core Web Vitals
+sao **3 metricas especificas**. Um site pode
+ter Lighthouse Performance 100 mas CWV ruim
+(porque Lighthouse simula condicoes fixas,
+CWV mede cenario real). **O ranking do Google
+olha CWV, nao Lighthouse score**.
+
+**Regressao silenciosa: por que CI ajuda.**
+O caso classico: dev A mergea um PR que
+adiciona um import de 200KB. Ninguem percebe.
+2 semanas depois, o time nota que mobile
+ta lento. **Lighthouse CI em cada PR** quebra
+o build antes do merge - budget de bundle
+size + Lighthouse score. Coberto em
+`perf-em-ci`.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que TTFB (Time to First Byte) importa
+mais do que parece.** TTFB e' o "tempo de
+resposta do servidor" - quanto o browser
+espera ate o **primeiro byte** da resposta
+chegar. E' o gargalo de **toda** performance
+web: se o servidor demora 2s pra responder,
+LCP nao vai ser < 2.5s nem com imagem
+otimizada. **A maioria dos problemas de
+"pagina lenta" comecam no TTFB**, nao no
+client. Solucao: CDN edge (Cloudflare,
+Vercel), caching server-side, SSR/hidratar
+rapido, evitar DB calls no critical path.
+
+**Por que LCP e' tao sensivel a imagens.** O
+"largest contentful element" em 80% das
+paginas e' uma imagem (hero, banner, product
+photo). Se essa imagem demora 3s pra baixar,
+LCP e' 3s. Mesma pagina com a mesma imagem
+em AVIF 30KB demora 200ms. **A diferenca
+entre LCP 3s e LCP 1s e' literalmente o
+formato e o tamanho do hero image**.
+
+**`onINP` debounce vs real-time.** O
+`web-vitals` reporta INP em tempo real
+(apos cada interacao). Em apps com muitos
+cliques, isso vira muito evento. Em prod,
+**agrupe** (envie a cada 30s ou em batch
+no `beforeunload`).
+
+**`ttfb`, `fcp`, `fid` - as "outras" metricas
+que viraram menos criticas.** Google ja
+usou FID, FCP (First Contentful Paint), TTFB
+como Core Web Vitals. Em 2024, reduziu pra
+LCP + INP + CLS. As outras ainda aparecem no
+Lighthouse mas nao sao ranking factor. FCP
+ainda importa pra "perceived speed" mas LCP
+captura melhor. TTFB ainda importa como
+**causa raiz** de LCP ruim. FID morreu em
+prol do INP.
+
+**`LargestContentfulPaint` API vs `elementtiming`.**
+Pra LCP avancado (saber **qual** elemento
+foi o LCP), use `PerformanceObserver`:
+
+```ts
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    console.log("LCP element:", entry.element);
+    console.log("LCP time:", entry.startTime);
+  }
+});
+observer.observe({ type: "largest-contentful-paint", buffered: true });
+```
+
+Util pra debugging - "o LCP e' a imagem do
+hero ou o titulo?" muda a otimizacao.
+
+**Leitura recomendada:**
+
+- [web.dev - Web Vitals](https://web.dev/articles/vitals) - a referencia oficial do Google sobre as 3 metricas.
+- [web.dev - INP](https://web.dev/articles/inp) - doc dedicado a INP, com debug patterns.
+- [MDN - Performance](https://developer.mozilla.org/en-US/docs/Web/Performance) - APIs nativas de medicao (`PerformanceObserver`, `PerformanceEntry`).
+
+> Dica: o erro mais comum em performance web
+> e' **comecar pela otimizacao errada**.
+> Devs veem "bundle de 2MB", ficam obcecados
+> em cortar, mas se o LCP e' 4s por causa do
+> TTFB de 3s, cortar bundle nao ajuda nada.
+> **Sempre meca primeiro. Lighthouse
+> primeiro. Depois otimize. CWV te diz
+> POR ONDE comecar**.
+
+No proximo no, vamos ver o **Critical
+Rendering Path**: o que acontece entre o
+browser receber o HTML e a pagina aparecer
+na tela. E' o "por que CSS bloqueia
+render", "por que JS no head trava a
+pagina", e como usar `defer`/`async`/
+`preload` pra nao travar.
+
+<Checkpoint
+  challenge="Implemente a função `classificarCWV(metricas)` que recebe um objeto com as 3 Core Web Vitals (LCP, INP, CLS) e retorna um objeto { lcp, inp, cls, todasVerde, lista } - onde cada metrica e' classificada como 'good' | 'needs-improvement' | 'poor' conforme os thresholds do Google 2026, `todasVerde` e' true se todas as 3 estao em 'good', e `lista` e' um array com o nome das metricas que estao em 'poor' (vazio se nenhuma)."
+  starterCode={`// Implemente classificarCWV(metricas) que recebe:
+// { lcp: 1.8,    // em segundos
+//   inp: 95,     // em milissegundos
+//   cls: 0.05 }  // valor raw
+//
+// E retorna:
+// {
+//   lcp: 'good' | 'needs-improvement' | 'poor',
+//   inp: 'good' | 'needs-improvement' | 'poor',
+//   cls: 'good' | 'needs-improvement' | 'poor',
+//   todasVerde: boolean,
+//   lista: string[]  // nomes das que estao em 'poor'
+// }
+//
+// Thresholds (Google 2026):
+// - LCP: < 2.5 good | < 4.0 needs-improvement | >= 4.0 poor
+// - INP: < 200 good | < 500 needs-improvement | >= 500 poor
+// - CLS: < 0.1 good | < 0.25 needs-improvement | >= 0.25 poor
+function classificarCWV(metricas) {
+  return {
+    lcp: "good",
+    inp: "good",
+    cls: "good",
+    todasVerde: true,
+    lista: [],
+  };
+}
+
+const _r1 = classificarCWV({ lcp: 1.8, inp: 95, cls: 0.05 });
+console.log(JSON.stringify(_r1));
+
+const _r2 = classificarCWV({ lcp: 4.5, inp: 350, cls: 0.02 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = classificarCWV({ lcp: 6.0, inp: 600, cls: 0.3 });
+console.log(JSON.stringify(_r3));`}
+  expected='{"lcp":"good","inp":"good","cls":"good","todasVerde":true,"lista":[]}
+{"lcp":"poor","inp":"needs-improvement","cls":"good","todasVerde":false,"lista":["lcp"]}
+{"lcp":"poor","inp":"poor","cls":"poor","todasVerde":false,"lista":["lcp","inp","cls"]}'
+  slug="performance-web"
+  nodeId="core-web-vitals"
+/>
+
+<Quiz
+  question="Por que CWV mede o percentil 75 (p75) e nao a media?"
+  options={[
+    {
+      text: "p75 captura melhor a cauda longa de usuarios em devices lentos. A media esconde os 25% que tem a pior experiencia, que sao justamente os que mais sentem o problema (mobile 3G, devices low-end).",
+      correct: true,
+      explanation:
+        "Media esconde cauda longa: se 95% dos usuarios tem LCP 1s mas 5% tem LCP 8s, a media e' 1.4s (ok), mas 5% estao tendo experiencia pessima. p75 (percentil 75) penaliza paginas com cauda longa: significa que 75% dos usuarios estao <= valor. Os 25% restantes sao justamente mobile 3G, devices low-end, conexao ruim - os usuarios que mais sentem performance ruim. CWV usa p75 pra forcar devs a tratar esses casos, nao so os felizes.",
+    },
+    {
+      text: "p75 e' mais facil de calcular que a media em datasets grandes.",
+      correct: false,
+      explanation:
+        "Nao, p75 e' MAIS caro de calcular que media em escala. Media e' O(n) trivial. p75 em escala (bilhoes de pageviews) exige algoritmos de selecao ou aproximacoes. O Google escolheu p75 NAO por facilidade, mas porque captura melhor a 'experiencia que o usuario sente' (cauda longa).",
+    },
+    {
+      text: "Media e p75 dao o mesmo resultado - e' so convencao de qual mostrar.",
+      correct: false,
+      explanation:
+        "Nao dao o mesmo resultado. Em distribuicoes assimetricas (comuns em performance - poucos usuarios lentos), media e p75 diferem bastante. CWV usa p75 porque e' estavel (um outlier nao move muito) e porque captura a cauda. A media seria dominada por usuarios em condicoes boas, escondendo os problemas reais.",
+    },
+  ]}
+/>
