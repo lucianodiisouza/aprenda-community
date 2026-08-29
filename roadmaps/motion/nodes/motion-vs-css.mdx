@@ -1,0 +1,415 @@
+---
+id: motion-vs-css
+title: "Motion vs CSS: quando usar cada um (arvore de decisao)"
+resources:
+  - title: "Motion - Motion vs CSS (oficial, EN)"
+    url: https://motion.dev/docs/quick-start
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Animations and Performance (artigo, EN)"
+    url: https://web.dev/articles/animations-and-performance
+    lang: en
+    type: artigo
+    free: true
+  - title: "MDN - prefers-reduced-motion (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou `css-animacoes`. Sabe fazer
+`transition: opacity 0.3s ease`, sabe
+`@keyframes spin` pra loading, sabe que
+`transform: translateX` e GPU-accelerated. Aí
+voce precisa animar uma lista reordenando
+items, ou fazer exit animation quando um
+modal fecha, ou triggar animacao quando o
+usuario rola a pagina. CSS nao resolve esses
+casos sem gambiarra. Aí entra Motion.
+
+A pergunta deste no e simples: **quando usar
+CSS e quando usar Motion?** A resposta nao e
+"um ou outro" - e uma arvore de decisao baseada
+no que a animacao precisa fazer.
+
+## O essencial 🟢
+
+**A pergunta-chave: "a animacao precisa de estado
+ou sequencia complexa?"** Se sim, Motion. Se
+nao, CSS. Detalhando:
+
+| Caso                                               | Ferramenta      | Por que                                          |
+| -------------------------------------------------- | --------------- | ------------------------------------------------ |
+| Hover em link, focus em input, transicao simples  | CSS             | Stateless, declarativo, GPU-accelerated          |
+| Modal aparece/some, toast entra/sai                | Motion          | Mount/unmount precisa de exit animation           |
+| Items de lista reordenam                            | Motion          | FLIP animation (shared layout)                   |
+| Drag, swipe, pan com gesto do usuario              | Motion          | `whileDrag` + `dragConstraints`                    |
+| Animacao triggered por scroll position              | Motion          | `useScroll` + `useTransform`                       |
+| Animacao de SVG path complexa                       | Motion ou Lottie | Motion: morphing. Lottie: vetor pre-feito.      |
+| Mascote / ilustracao vetorial com varios estados   | Rive            | Animacao complexa feita no Figma/After Effects   |
+| Theme toggle (light/dark) com cross-page transition | View Transitions | API nativa do browser, sem JS                    |
+
+A regra pratica: **CSS primeiro, Motion quando
+CSS nao resolve**. A maioria das animacoes
+(~80%) cabem em CSS. Motion entra nos 20% que
+CSS nao cobre bem.
+
+**Por que CSS nao cobre esses 20%.** O motivo
+e fundamental: CSS animation e **stateless**.
+Voce define keyframes e o browser toca.
+Quando o elemento sai da arvore DOM (ex: modal
+fecha), CSS nao tem mecanismo de "exit animation" -
+o elemento e removido imediatamente. Solucoes
+com CSS (delay na remocao, etc) viram gambiarra.
+
+Motion e **stateful**. O `<motion.div>` sabe
+quando esta mountando, animando, ou saindo. Da
+pra definir `exit={{ opacity: 0 }}` e o Motion
+espera a animacao terminar antes de remover do
+DOM. Sem gambiarra.
+
+A arvore de decisao visualizada:
+
+<Mermaid
+  chart={`flowchart TD
+    Q[Que tipo de animacao?]
+    Hover[Hover/focus simples]
+    Estado[State change mount/unmount]
+    Layout[Layout change reorder/expand]
+    Gesture[Drag/swipe/pan com gesto]
+    Scroll[Scroll-linked progress/parallax]
+    Vetorial[Ilustracao complexa vetorial]
+    Tema[Cross-page theme toggle]
+
+    Hover --> C[CSS: transition ou @keyframes]
+    Estado --> M[Motion: AnimatePresence + exit]
+    Layout --> M2[Motion: layout prop + FLIP]
+    Gesture --> M3[Motion: whileDrag + dragConstraints]
+    Scroll --> M4[Motion: useScroll + useTransform]
+    Vetorial --> R{Rive ou Lottie?<br/>exportado do design?}
+    Tema --> V[View Transitions API - nativo do browser]
+
+    R --> Sim[Sim, do Figma/After Effects]
+    R --> Nao[Nao - e' codigo]
+    Sim --> Lottie[Lottie: json file, leve]
+    Lottie --> Maior[Maior que Motion:<br/>use Lottie]
+    Nao --> Maior2[Motion: morphing via animate]
+    Maior2 --> Maior
+
+    C --> Reduced[Honra prefers-reduced-motion]
+    M --> Reduced
+    M2 --> Reduced
+    M3 --> Reduced
+    M4 --> Reduced
+    V --> Reduced
+    Maior --> Reduced
+    Reduced --> Done[Animacao respeitando a11y]`}
+  caption="Arvore de decisao pra escolher entre CSS, Motion, View Transitions e Rive/Lottie. O ultimo no da arvore e' sempre: respeita prefers-reduced-motion."
+/>
+
+A leitura e: **o criterio de decisao e o que a
+animacao precisa fazer, nao qual ferramenta voce
+prefere**. A maioria dos devs pensa "Motion em
+tudo" (porque e mais legal) ou "CSS em tudo"
+(porque e mais simples). A resposta certa e:
+**CSS pro simples, Motion pro stateful, View
+Transitions pra cross-page, Rive/Lottie pra
+assets do design**.
+
+**Performance: a preocupacao que nao importa
+(ainda).** Voce vai ouvir "Motion e mais lento
+que CSS". Tecnicamente sim - Motion roda JS,
+CSS e GPU-accelerated nativo. Na pratica, a
+diferenca e **imperceptivel** em casos reais:
+
+- CSS animation: roda na compositor thread
+  (GPU). 60fps garantido.
+- Motion: roda na main thread (JS). Pode cair
+  pra 30fps em animacoes muito complexas
+  (muitos elementos simultaneos).
+
+Em hardware moderno (celular mid 2024+), Motion
+roda 60fps ate ~30 elementos animando ao mesmo
+tempo. Acima disso, voce tera problemas - e
+mesmo com CSS, 30 elementos animados ao mesmo
+tempo e problema (pinta muito).
+
+**A regra pratica: use Motion sem medo ate ter
+evidencia de problema**. Profile depois. Em
+landing page tipica (5-10 elementos animando
+na entrada), Motion roda 60fps. Em dashboard
+denso (100+ rows animando reordenacao), voce
+tem problema de qualquer jeito (virtualize a
+lista primeiro).
+
+**`prefers-reduced-motion` - o filtro universal.**
+Todo no de animacao desta trilha termina com:
+**respeite `prefers-reduced-motion`**. E o CSS
+media query que detecta se o usuario configurou
+o SO pra reduzir movimento (sensibilidade
+vestibular, migranea, TDAH, ou simplesmente
+preferência pessoal). Browsers e SOs tem essa
+opcao em Settings > Accessibility.
+
+```css
+/* CSS - respeitando reduced motion */
+.button {
+  transition: transform 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+```
+
+```tsx
+// Motion - useReducedMotion
+import { useReducedMotion } from "motion/react";
+
+function AnimatedButton() {
+  const reduced = useReducedMotion();
+  return (
+    <motion.button
+      whileHover={reduced ? undefined : { scale: 1.05 }}
+    />
+  );
+}
+```
+
+Toda animacao desta trilha tem esse pattern:
+**se `reduced`, ou desabilita a animacao, ou usa
+uma versao simplificada (fade em vez de scale +
+translate)**. Motion 11+ tem `MotionConfig` que
+faz isso globalmente:
+
+```tsx
+import { MotionConfig } from "motion/react";
+
+<MotionConfig reducedMotion="user">
+  {/* Todas as animacoes respeitam prefers-reduced-motion */}
+  <App />
+</MotionConfig>
+```
+
+`reducedMotion="user"` significa "se o usuario
+preferir reduced motion, simplifica todas as
+animacoes". O Motion internamente reduz
+duração, troca springs por tweens, e remove
+effects como parallax. Voce nao precisa
+lembrar em cada componente.
+
+## Aprofundamento 🟡
+
+**O detalhe de GPU acceleration.** Pra uma
+animacao rodar a 60fps sem jank, ela precisa
+ser pintada pela GPU. CSS consegue isso
+quando voce anima `transform` (translate, scale,
+rotate) e `opacity` - essas propriedades nao
+causam layout, nao causam paint, so "composicao"
+(compositor thread). Animar `width`, `height`,
+`top`, `left` causa layout + paint - nao roda
+na GPU, janka em 30+ elementos.
+
+Motion respeita isso por baixo - anima `transform`
+e `opacity` por default. Mas se voce mexer em
+`width` via Motion (com `animate={{ width: 100 }}`),
+voce quebra a GPU acceleration. **Regra: anime
+`transform` e `opacity`. Mais nada, a nao ser
+que voce saiba o que esta fazendo.**
+
+**Spring physics: a diferenca filosofica.** CSS
+tem `cubic-bezier()` e `ease`/`linear` - funcoes
+matematicas. Motion tem `spring` - simulacao
+fisica de mola. A diferenca pratica:
+
+- CSS `ease`: comeca rapido, desacelera, para
+  (animacao previsivel).
+- Motion `spring`: passa do alvo, volta, ajusta,
+  repousa (animacao organica, humana).
+
+Em interface, spring da sensacao de "vivo" -
+botao que "pula" ao clicar, card que "pousa" ao
+entrar. Ease da sensacao de "mecanico". Motion
+default e spring, e isso e por que parece natural.
+
+Pra usar `linear` ou `tween` (ease equivalente)
+em Motion: `transition={{ type: "tween", duration:
+0.3, ease: "easeOut" }}`. Use quando voce quer
+comportamento previsivel (loading bars, progress).
+
+**Reduced motion: simplifique, nao desabilite.**
+A primeira reacao a `prefers-reduced-motion` e
+"desabilita toda animacao". Isso quebra UX:
+modal aparece instantaneamente (jarring), toast
+sem feedback, hover sem resposta. O usuario
+preferiu **menos movimento**, nao **zero
+movimento**.
+
+A pratica recomendada (WCAG 2.3.3 + WAI guidance):
+**substitua movimento por fade**. Em vez de
+"elemento entra com scale + translate + rotate
++ spring 800ms", use "elemento entra com
+opacity 0 -> 1 em 200ms". Menos movimento, mesma
+informacao.
+
+```tsx
+// "Sem reduced motion" - completo
+<motion.div
+  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+  animate={{ opacity: 1, scale: 1, y: 0 }}
+  transition={{ type: "spring", stiffness: 300 }}
+/>
+
+// "Com reduced motion" - simplificado
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: 0.2 }}
+/>
+```
+
+`MotionConfig reducedMotion="user"` faz essa
+substituicao automaticamente - ele nao remove
+animacao, ele **substitui** movimento grande
+por fade. Boa pratica default.
+
+**Layout animations com FLIP.** A tecnica "FLIP"
+(First, Last, Invert, Play) e o coracao do
+`layout` prop do Motion. Explicado:
+
+- **F**irst: mede posicao do elemento ANTES
+  da mudanca.
+- **L**ast: aplica a mudanca, mede posicao DEPOIS.
+- **I**nvert: aplica `transform` pra "voltar"
+  visualmente pra posicao antiga.
+- **P**lay: anima `transform` de "voltar" pra
+  "natural" (sem transform).
+
+O usuario ve: elemento desliza suavemente da
+posicao antiga pra nova, sem "pular". Motion
+faz isso internamente, voce so coloca `layout`
+no `<motion.div>`. Coberto a fundo no no 3.
+
+**Quando JS vale o custo.** Em resumo:
+
+- **Vale JS** (Motion): exit animation,
+  AnimatePresence, gestural, layout, scroll-
+  linked, sequenciamento complexo.
+- **Nao vale JS** (CSS): hover simples, focus,
+  loading spinners, transicoes de cor/opacity/
+  transform sem unmount.
+
+A pegadinha: **animacoes que dependem de estado
+JS** (ex: "animar quando item e adicionado a
+lista") sao impossiveis em CSS sem workarounds
+(classes condicionais + key trick). Motion resolve
+isso nativamente. Da vem o "vale JS" - nao
+performance, mas **expressividade**.
+
+## Pra quem quer ir alem 🔴
+
+**Historia em uma linha.** CSS animation nasceu
+com CSS3 (~2009, com `transition` e `@keyframes`).
+Em 2014, **Velocity.js** virou popular pra "CSS
++ JS fallback". Em 2015, **GSAP** (GreenSock)
+dominou animacao JS complexa (timeline,
+sequenciamento). Em 2017, **Framer Motion**
+surgiu como "GSAP pra React" - mesma API
+declarativa, integrada com React. Em 2024,
+**Framer Motion virou Motion** (renomeado pela
+equipe, mesmo time). Em 2026, Motion e o
+padrao de fato em React, GSAP ainda existe
+mas perdeu espaco. Rive e Lottie ocupam
+nicho de assets vetoriais do design.
+
+**Motion One: a versao core.** Motion 11+
+tambem publica **Motion One** - a versao
+"core" sem dependencia de React. 1.7KB gzipped,
+funciona com qualquer framework (ou vanilla JS).
+Mesma API basica (animate, in-view, scroll).
+Vale pra landing pages estaticas que nao usam
+React. Em 2026, e o "CSS++" - mais leve que
+Motion+React, mais poderoso que CSS-only.
+
+**Por que Motion venceu GSAP no React.** GSAP
+existia antes e e mais maduro em features
+(timeline complexa, morphing de path SVG, etc).
+Motion venceu por **integracao com React**:
+declarativo (renderiza com JSX), ergonomico
+(variants, props), e respeita lifecycle do React
+(cleanup, re-render). GSAP precisa de `useRef` +
+`useEffect` + cleanup manual. Em React, Motion e
+o caminho natural. Em vanilla JS ou outros
+frameworks, GSAP ainda e relevante.
+
+**Performance real: profiling.** Em 2026, o
+melhor profiler e o **DevTools Performance tab**
+do Chrome. Profile com 6x CPU throttling
+(simula celular mid). Animate 30+ elementos
+simultaneamente. Se o FPS fica abaixo de 60,
+simplifique. As otimizacoes comuns:
+
+- **`will-change: transform`** - diz ao browser
+  pra promover o elemento pra sua propria
+  compositor layer. Use com moderacao (cada
+  layer custa memoria).
+- **Lazy load Motion** - se voce so usa em
+  uma landing page, `dynamic(() => import('motion/react'))`
+  no Next.js.
+- **Simplificar variantes** - 5 variants em um
+  mesmo componente = 5 vezes mais JS por render.
+- **Evitar `layout` em listas grandes** - o FLIP
+  faz layout em cada item; 100 items = 100 FLIPs.
+
+**Leitura recomendada:**
+
+- [Motion - Quick Start](https://motion.dev/docs/quick-start) - a doc oficial, hands-on em 5 min.
+- [CSS Tricks - Animation Performance](https://css-tricks.com/animation-performance/) - o "por que" de GPU acceleration.
+- [MDN - prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) - a referencia da media query.
+
+> Dica: o erro mais comum no comeco e
+> **importar Motion pra tudo**. "Vou animar
+> o hover do botao com Motion" - nao.
+> Use CSS. CSS e 0KB de JS, GPU-accelerated,
+> e nao precisa de preferencia de movimento
+> no codigo (o media query e uma linha).
+> Reserve Motion pro que CSS nao resolve
+> (mount/unmount, layout, gestures).
+
+No proximo no, vamos abrir o **Motion basico**:
+`motion.div`, `AnimatePresence`, `variants`, e o
+ciclo de vida mount/animate/exit.
+
+<Quiz
+  question="Qual destas animacoes deve ser feita com CSS e nao com Motion?"
+  options={[
+    {
+      text: "Hover em link - mudar cor de cinza pra azul com transition 150ms.",
+      correct: true,
+      explanation:
+        "Hover simples, sem unmount, sem gesto, sem layout change - CSS resolve em 1 linha com `transition: color 150ms ease`. Motion e 30KB+ de JS, GPU nao acelera CSS-only de cor. Reserve Motion pra exit animation (modal), layout change (FLIP), ou gestos.",
+    },
+    {
+      text: "Modal aparecendo com fade + scale - precisa animar o mount e o unmount.",
+      correct: false,
+      explanation:
+        "Modal precisa de exit animation (animar o unmount antes de remover do DOM). CSS nao tem mecanismo de exit - o elemento sai instantaneamente. Motion com AnimatePresence resolve. CSS nao serve aqui.",
+    },
+    {
+      text: "Lista reordenando items quando o usuario arrasta um item - usa FLIP.",
+      correct: false,
+      explanation:
+        "Lista reordenando = layout change. FLIP animation (First, Last, Invert, Play) e a solucao classica, e Motion tem `layout` prop que faz isso nativamente. CSS nao tem FLIP - voce teria que calcular as posicoes manualmente. Motion resolve.",
+    },
+    {
+      text: "Drag de um card pelo usuario - segue o dedo e dropa em outra posicao.",
+      correct: false,
+      explanation:
+        "Drag com gesto do usuario (mouse + touch) precisa de `whileDrag` + `dragConstraints` + `onDragEnd`. CSS tem `touch-action: none` mas nao tem a logica de 'pegar', 'arrastar', 'soltar'. Motion resolve com React state. CSS nao serve aqui.",
+    },
+  ]}
+/>

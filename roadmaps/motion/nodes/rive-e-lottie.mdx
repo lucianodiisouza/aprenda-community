@@ -1,0 +1,423 @@
+---
+id: rive-e-lottie
+title: "Rive e Lottie: animacoes vetoriais vindas do design"
+resources:
+  - title: "Rive - Docs oficiais (EN)"
+    url: https://rive.app/docs
+    lang: en
+    type: doc
+    free: true
+  - title: "lottie-react - GitHub (EN)"
+    url: https://github.com/Gamote/lottie-react
+    lang: en
+    type: doc
+    free: true
+  - title: "airbnb/lottie-web - spec do formato JSON (EN)"
+    url: https://github.com/airbnb/lottie-web
+    lang: en
+    type: doc
+    free: true
+---
+
+Ate agora, todas as animacoes foram
+**programadas**: voce escreveu JS, Motion
+interpolou. Mas e quando o designer faz a
+animacao numa ferramenta propria (After
+Effects, Rive editor) e exporta um arquivo
+que voce so consome? Ai entra **Lottie** e
+**Rive** - os 2 formatos que dominam animacao
+vetorial na web em 2026.
+
+Motion resolve 80% das animacoes web. Os 20%
+restantes (mascotes, ilustracoes com varios
+estados, loading customizado, animacoes
+"cinematograficas") vem de arquivos
+exportados por designers. Saber **quando
+usar Lottie vs Rive** (e quando nao usar
+nenhum) e o que este no cobre.
+
+Se voce entende Lottie + Rive + state
+machines do Rive, voce consegue integrar
+animacoes complexas feitas pelo design
+sem travar o bundle nem a performance.
+
+## O essencial 🟢
+
+**Lottie - o veterano (2017+).** Lottie e um
+formato JSON criado pelo Airbnb (originalmente
+`bodymovin` para After Effects). Um designer
+exporta a animacao do After Effects como
+JSON, e uma lib em JS renderiza esse JSON
+como SVG/canvas.
+
+```bash
+pnpm add lottie-react
+```
+
+```tsx
+import Lottie from "lottie-react";
+import animationData from "./animations/loading.json";
+
+function Loading() {
+  return (
+    <Lottie
+      animationData={animationData}
+      loop={true}
+      autoplay={true}
+      style={{ width: 200, height: 200 }}
+    />
+  );
+}
+```
+
+Voce importa o JSON (gerado pelo designer no
+After Effects via plugin bodymovin ou
+LottieFiles), passa pro componente, e a
+animacao roda. **Zero codigo de animacao do
+seu lado** - so consumo.
+
+**Quando Lottie faz sentido.** Lottie brilha
+em:
+- **Loading customizado** (spinner, skeleton
+  animado).
+- **Icones animados** (microinteracoes visuais).
+- **Ilustracoes decorativas** (hero background,
+  empty state com personagem).
+- **Animacoes one-shot** (celebration, success
+  state).
+
+Lottie e **one-way**: a animacao roda pra
+frente, loop, ou one-shot. Nao responde a
+gestos do usuario em tempo real. Pra isso,
+Rive.
+
+**Limites do Lottie.** O formato JSON do
+Lottie cresce rapido com complexidade. Uma
+animacao de 5 segundos com 10 elementos
+vetoriais pode ter 200KB de JSON. Em mobile
+3G, isso pesa. Alem disso, Lottie **nao tem
+state machine** - a animacao e "pre-cozida"
+no After Effects. Se o designer errou um
+detalhe, o dev precisa pedir nova exportacao.
+
+**Rive - o moderno (2021+).** Rive e um
+editor de animacao vetorial proprio
+(rive.app) com runtime em JS. O designer
+cria a animacao no Rive editor, exporta um
+arquivo `.riv` (binario compacto), e o dev
+consome via runtime.
+
+```bash
+pnpm add @rive-app/react-canvas
+```
+
+```tsx
+import { useRive } from "@rive-app/react-canvas";
+
+function Mascot() {
+  const { RiveComponent } = useRive({
+    src: "/animations/mascot.riv",
+    stateMachines: "State Machine 1",
+    autoplay: true,
+  });
+
+  return <RiveComponent style={{ width: 300, height: 300 }} />;
+}
+```
+
+Voce aponta pro `.riv`, declara qual state
+machine usar, e o Rive renderiza. O arquivo
+`.riv` e **binario** (nao JSON), compacto
+(50-100KB para animacoes complexas vs 200KB+
+do Lottie equivalente).
+
+**A grande diferenca: state machines.** Rive
+tem **state machines** nativas no editor. O
+designer define:
+
+- Estados: `idle`, `hover`, `click`, `success`.
+- Transicoes: "do `idle` ir pro `hover` quando
+  o usuario passar o mouse".
+- Inputs: `isHover`, `isPressed` (variaveis
+  boolean/number que o dev controla).
+
+E o dev **dispara** os inputs:
+
+```tsx
+import { useRive } from "@rive-app/react-canvas";
+
+function InteractiveMascot() {
+  const { rive, RiveComponent } = useRive({
+    src: "/animations/mascot.riv",
+    stateMachines: "State Machine 1",
+  });
+
+  return (
+    <div
+      onMouseEnter={() => rive && rive.setBoolean("isHover", true)}
+      onMouseLeave={() => rive && rive.setBoolean("isHover", false)}
+      onClick={() => rive && rive.setBoolean("isClicked", true)}
+    >
+      <RiveComponent />
+    </div>
+  );
+}
+```
+
+O mascote fica em `idle` por default. Quando
+o usuario passa o mouse, vai pra `hover`.
+Quando clica, vai pra `click`. O designer
+programou essa logica no editor, o dev so
+dispara os inputs. **E programacao visual
++ codigo cooperando**.
+
+**Lottie vs Rive - a decisao.**
+
+| Caso                                       | Ferramenta    | Por que                                       |
+| ------------------------------------------ | ------------- | --------------------------------------------- |
+| Loading, ilustracao one-shot, icone        | Lottie        | Formato maduro, 100x mais libs/plugins        |
+| Mascote interativo, ilustracao com varios estados | Rive  | State machine nativa, runtime mais leve       |
+| Animacao complexa controlada por gestos    | Rive          | State machine + inputs (boolean/number)       |
+| Animacao "cinematografica" one-shot        | Lottie ou Rive | Ambos vao bem, Rive tem melhor performance   |
+| Animacao **programada** com dados dinamicos | Motion         | Nao use Lottie/Rive - voce quer reagir a state |
+
+A regra pratica: **se a animacao responde a
+gesto do usuario, Rive. Se e decorativa,
+Lottie. Se voce precisa de reatividade a
+estado React, Motion.**
+
+**Por que nao "fazer tudo com Rive/Lottie".**
+Rive e Lottie brilham em **animacao
+vetorial pre-feita**. Motion brilha em
+**animacao reativa a estado**. Sao camadas
+diferentes:
+
+- Motion: animacao e **derivada** do estado
+  React (state muda, animacao segue).
+- Lottie/Rive: animacao e **pre-feita** e roda
+  independente do estado React (a menos que
+  voce use state machines Rive).
+
+Se voce quer "card reordena quando o usuario
+clica", Motion. Se voce quer "mascote acena
+quando termina o load", Rive/Lottie.
+
+**Performance: Lottie vs Rive vs Motion.**
+Em media, por complexidade equivalente:
+- **Motion**: melhor. Roda em CSS transforms
+  via WebAssembly-compiled JS. 60fps
+  consistente.
+- **Rive**: segundo melhor. Arquivo `.riv` e
+  binario, runtime WebAssembly, 60fps
+  consistente.
+- **Lottie**: varia. JSON grande = parse mais
+  lento. SVG renderer mais leve, canvas
+  renderer mais rapido mas perde qualidade de
+  texto.
+
+Em 2026, a recomendacao: **use canvas renderer
+do Lottie para animacoes complexas** (Lottie
+oferece `lottie-svg` e `lottie-canvas`; o
+canvas e mais rapido pra >30 elementos
+animados).
+
+## Aprofundamento 🟡
+
+**Lottie: SVG vs canvas renderer.** Lottie
+oferece 2 renderers:
+
+```bash
+pnpm add lottie-react      # usa SVG por default
+pnpm add lottie-web        # core, voce escolhe o renderer
+```
+
+```tsx
+import lottie from "lottie-web";
+
+lottie.loadAnimation({
+  container: containerRef.current,
+  renderer: "svg",        // ou "canvas"
+  loop: true,
+  autoplay: true,
+  animationData: data,
+});
+```
+
+**SVG** = mais lento com muitos elementos,
+mas tem subpixel rendering e zoom infinito
+(bom pra icones/ilustracoes).
+**Canvas** = mais rapido, mas perde qualidade
+de texto/gradientes complexos. Escolha por
+caso de uso.
+
+**Rive: `useRive` vs `useRiveFile` vs
+`<RiveComponent>`.** O `@rive-app/react-canvas`
+oferece varios hooks pra carregar:
+
+```tsx
+// De URL (lazy load)
+const { RiveComponent } = useRive({ src: "/anim.riv" });
+
+// De File object
+const { rive, RiveComponent } = useRiveFile(file);
+
+// Ref-driven (controle imperativo)
+const ref = useRiveAnimation();
+ref.setBoolean("isHover", true);
+```
+
+`useRive` cobre 95% dos casos. Os outros
+existem pra integracao com upload de arquivo
+(user-generated content) ou controle
+imperativo avancado.
+
+**Rive: `rive.setNumber` para blend trees.**
+Rive suporta **blend trees** (transicao
+continua entre 2 estados baseado em valor
+float, nao so booleano):
+
+```tsx
+// Progress 0-1 mapeia pra "calm" (0) -> "excited" (1)
+rive.setNumber("excitement", 0.7);
+```
+
+Util pra: scroll-linked (parallax do
+mascote), volume (mascote reage a volume do
+audio), saude (HP bar do jogo).
+
+**Rive: triggar transicoes one-shot.** Alem
+de state machines, voce pode triggar
+transicoes one-shot:
+
+```tsx
+// Rive API low-level
+const animations = rive.animations;     // lista de animacoes
+const track = animations[0];
+rive.play(track);    // roda uma vez
+
+// No editor, o designer marcou a animacao como one-shot
+// Voce so dispara quando precisa.
+```
+
+Padrao classico: "success animation" do
+mascote quando o formulario e submetido.
+
+**Lottie: controlar o tempo manualmente.** Alem
+de `autoplay`, voce pode pausar, retomar, e
+ir pra frame especifico:
+
+```tsx
+const lottieRef = useRef(null);
+
+useEffect(() => {
+  if (lottieRef.current) {
+    lottieRef.current.goToAndStop(30, true);    // vai pro frame 30
+    lottieRef.current.playSegments([0, 60]);    // roda frames 0-60
+  }
+}, []);
+```
+
+Util pra sincronizar animacao com estado
+exterior (ex: "mostra frame de erro quando a
+API retorna 500").
+
+**Bundle size: lottie-react vs
+@rive-app/react-canvas.**
+- `lottie-react`: ~50KB gzipped (core +
+  React wrapper).
+- `@rive-app/react-canvas`: ~150KB gzipped
+  (runtime WASM + canvas + React).
+
+Rive e maior, mas o arquivo `.riv` e menor
+(50KB vs 200KB JSON). Trade-off: lib maior,
+asset menor. Em projetos com 1-2 animacoes,
+diferenca desprezivel. Em projetos com
+10+, o `.riv` menor ajuda no long run.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Rive usa WebAssembly e Lottie nao.**
+Rive renderiza via WASM (compilado de C++)
+pra performance - 60fps consistente mesmo
+com 50 elementos animando. Lottie usa JS puro
+no SVG renderer (mais lento com escala) ou
+JS no canvas renderer (mais rapido, perde
+qualidade de texto). Em 2026, Rive e
+tecnicamente superior em performance, mas
+Lottie tem **ecossistema maior** (LottieFiles
+marketplace com 100k+ animacoes prontas).
+
+**`@rive-app/react-canvas` vs
+`@rive-app/react`.** Sao duas libs separadas:
+- `react-canvas`: usa canvas (mais rapido,
+  menos qualidade).
+- `react`: usa SVG (mais lento, mais
+  qualidade).
+
+Pra 2026, a maioria dos casos usa
+`react-canvas`. `react` (SVG) so faz sentido
+pra animacoes com texto grande ou gradientes
+complexos que ficam ruins em canvas.
+
+**Lottie com lazy load.** Lottie e pesado
+inicializar (parse do JSON). Pra Lottie
+"abaixo da dobra" (que o usuario nao ve
+imediatamente), lazy load:
+
+```tsx
+const Lottie = lazy(() => import("lottie-react"));
+
+function BelowFold() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <Lottie animationData={data} />
+    </Suspense>
+  );
+}
+```
+
+A lib so baixa quando o componente monta
+(scrollIntoView ou similar). Reduz bundle
+inicial.
+
+**Rive com SSR (Next.js).** Rive **nao
+funciona em SSR** (precisa de canvas). Em
+Next.js App Router, use `dynamic` com
+`ssr: false`:
+
+```tsx
+import dynamic from "next/dynamic";
+
+const RiveComponent = dynamic(
+  () => import("@rive-app/react-canvas").then((mod) => mod.useRive),
+  { ssr: false },
+);
+```
+
+Sem isso, Next quebra no build com
+"document is not defined".
+
+**Leitura recomendada:**
+
+- [Rive - Docs oficiais](https://rive.app/docs) - editor + runtime, com tutoriais passo-a-passo.
+- [lottie-react - GitHub](https://github.com/Gamote/lottie-react) - README direto, com exemplos de uso.
+- [LottieFiles - Spec e validators](https://lottiefiles.com/specs) - a spec do formato Lottie JSON, util pra debugar exportacoes problematicas.
+
+> Dica: o erro mais comum com Rive/Lottie e'
+> **tentar controlar a animacao por dentro
+> do React state** (`useState`). A animacao
+> roda em runtime proprio (Rive WASM, Lottie
+> SVG/canvas), independente do React. Pra
+> sincronizar, use refs e `useEffect` -
+> nunca `setState` por frame. Regra:
+> **animacao importada = "fire and forget"
+> da inicializacao, controle via refs do
+> runtime**.
+
+No proximo no, vamos ver **acessibilidade em
+animacao**: `prefers-reduced-motion` (o
+media query que 5-15% dos usuarios ativa),
+WCAG 2.3.3 (limite de flashes/3 hz), e o
+pattern de **design com a11y desde o
+comeco** - nao como "feature extra" no fim.
+

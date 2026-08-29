@@ -1,0 +1,79 @@
+{
+  "slug": "motion",
+  "title": "Motion: animacao JS declarativa, View Transitions, Rive e a11y",
+  "description": "Trilha sobre animacao JS declarativa em React: Motion (ex-Framer Motion) para gestural, layout animations e AnimatePresence, View Transitions API nativa do browser para transicoes de estado, Rive/Lottie para animacoes vetoriais vindas do design, e acessibilidade (prefers-reduced-motion, vestibular disorders) como requisito desde o design. Complementa a `css-animacoes` (que cobre CSS-only) com a camada JS e API nativa para padroes que CSS nao resolve.",
+  "difficulty": "intermediario",
+  "skills": [
+    "motion",
+    "framer-motion",
+    "animation",
+    "react",
+    "view-transitions",
+    "rive",
+    "lottie",
+    "framer-motion",
+    "a11y",
+    "prefers-reduced-motion",
+    "css-animation",
+    "gestures",
+    "drag",
+    "scroll-linked"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "motion-vs-css",
+      "title": "Motion vs CSS: quando usar cada um (arvore de decisao)",
+      "type": "topic",
+      "recommended": true,
+      "children": ["framer-motion-basico"]
+    },
+    {
+      "id": "framer-motion-basico",
+      "title": "Motion basico: motion, AnimatePresence, variants, transitions",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["padroes-de-animacao"]
+    },
+    {
+      "id": "padroes-de-animacao",
+      "title": "Padroes de animacao: layout, gestures, drag, scroll-linked",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["view-transitions-api"]
+    },
+    {
+      "id": "view-transitions-api",
+      "title": "View Transitions API: transicoes nativas do browser",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rive-e-lottie"]
+    },
+    {
+      "id": "rive-e-lottie",
+      "title": "Rive e Lottie: animacoes vetoriais vindas do design",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["acessibilidade-em-animacao"]
+    },
+    {
+      "id": "acessibilidade-em-animacao",
+      "title": "Acessibilidade em animacao: prefers-reduced-motion, performance, WCAG 2.3.3",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: landing page com animacoes intencionais e a11y desde o design",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

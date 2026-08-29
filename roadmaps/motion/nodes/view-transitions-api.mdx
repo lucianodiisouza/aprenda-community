@@ -1,0 +1,446 @@
+---
+id: view-transitions-api
+title: "View Transitions API: transicoes nativas do browser"
+resources:
+  - title: "MDN - View Transitions API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API
+    lang: en
+    type: doc
+    free: true
+  - title: "Chrome Developers - View Transitions (oficial, EN)"
+    url: https://developer.chrome.com/docs/web-platform/view-transitions
+    lang: en
+    type: doc
+    free: true
+  - title: "Jake Archibald - View Transitions (video, EN)"
+    url: https://www.youtube.com/watch?v=fTznXESe5_U
+    lang: en
+    type: video
+    free: true
+---
+
+Voce ja viu Motion pra animacoes stateful em
+React. Mas e transicoes **cross-page** (SPA
+route change, theme toggle, layout shift)? Em
+2023, antes da View Transitions API, isso
+exigia: routing library com animacao
+integrada, ou AnimatePresence com exit/enter
+choreography em cada rota. Pesado e
+quebradiço.
+
+A **View Transitions API** e uma API **nativa
+do browser** (Chrome 111+, Edge 111+, Safari
+18+, Firefox em implementacao) que faz
+transicao de estado **entre qualquer mudanca
+de DOM** com 1 chamada. Sem libs, sem React,
+sem state machine. O browser cuida do "antes"
+e do "depois" e interpola sozinho.
+
+Se voce entende `document.startViewTransition`
++ `view-transition-name` + custom keyframes,
+voce faz transicoes cross-page, theme toggle
+animado, e layout shifts suaves com 20 linhas
+de codigo. Sem Motion, sem libs, sem
+re-render.
+
+## O essencial 🟢
+
+**O problema que a View Transitions API
+resolve.** Toda vez que o DOM muda
+"instantaneamente" (theme toggle, route
+change, troca de imagem), o usuario ve um
+"salto". A View Transitions API resolve isso
+capturando o estado **antes** da mudanca, o
+estado **depois**, e animando entre os dois
+**automaticamente**. E magia de browser
+otimizada em GPU.
+
+**`document.startViewTransition(updateCallback)`
+- a entrada da API.** Voce passa um callback
+que aplica a mudanca de DOM. O browser:
+
+1. Captura screenshot do estado atual.
+2. Roda o callback (DOM atualiza).
+3. Captura screenshot do novo estado.
+4. Interpola entre os dois com default
+   cross-fade (ou custom animation).
+
+```js
+function toggleTheme() {
+  if (!document.startViewTransition) {
+    // Fallback: aplica direto se browser nao suporta
+    document.documentElement.classList.toggle("dark");
+    return;
+  }
+
+  document.startViewTransition(() => {
+    document.documentElement.classList.toggle("dark");
+  });
+}
+
+// Em qualquer botao:
+// <button onClick={toggleTheme}>Toggle theme</button>
+```
+
+Ao clicar, em vez do theme "pular" de light
+pra dark, a tela toda faz um cross-fade suave.
+**Sem CSS, sem keyframes, sem React.** O
+browser cuida.
+
+**`view-transition-name` CSS - identificar
+elementos especificos.** O default da API
+anima **tudo** de uma vez (full-page
+cross-fade). Pra animar **so alguns
+elementos** (um card que vira outro, uma imagem
+que muda de tamanho), voce atribui
+`view-transition-name`:
+
+```css
+.hero-image {
+  view-transition-name: hero;
+}
+
+.thumbnail {
+  view-transition-name: hero;   /* mesmo nome */
+}
+```
+
+```js
+function openImage(thumbnail) {
+  document.startViewTransition(() => {
+    // Mostra o hero (que tem view-transition-name: hero)
+    // e esconde a thumbnail
+  });
+}
+```
+
+O browser detecta que o "hero" e o mesmo
+elemento logico (mesmo `view-transition-name`)
+e **anima so ele** - sai da posicao da
+thumbnail, cresce pra posicao do hero. **E o
+pattern de shared element transition, nativo
+do browser, sem Motion, sem libs.**
+
+**Dois `view-transition-name` na mesma pagina
+= erro.** O `view-transition-name` precisa ser
+**unico** por "estado" do DOM. Se voce tem
+uma thumbnail E um hero visiveis ao mesmo
+tempo com `view-transition-name: hero`, o
+browser ignora a transicao. Padrao: ou
+mostra um, ou mostra outro.
+
+**Custom animation com `::view-transition-old`
+e `::view-transition-new`.** O default da API
+e cross-fade. Pra customizar (slide, scale,
+zoom):
+
+```css
+/* Fade rapido (default ja e isso) */
+::view-transition-old(root) {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+::view-transition-new(root) {
+  animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+}
+```
+
+`::view-transition-old(root)` e o snapshot
+**antes** da mudanca; `::view-transition-new(root)`
+e o **depois**. `root` e o nome do "scope" (o
+default e a pagina toda).
+
+**Custom duration pra elemento especifico.**
+Pra fazer o "hero" animar mais devagar que o
+resto:
+
+```css
+::view-transition-old(hero) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::view-transition-new(hero) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+```
+
+Cada `view-transition-name` tem sua propia
+duracao e easing. Voce controla a velocidade
+de cada elemento individualmente.
+
+**Por que essa API e importante.** E a **unica
+maneira nativa** de fazer transicao de estado
+de DOM no browser. Antes dela, voce precisava
+de:
+- React + Motion + AnimatePresence + rotas
+  animadas.
+- Ou libs SPA com animacao integrada.
+- Ou FLIP manual (calcular posicoes, aplicar
+  transform).
+
+A View Transitions API faz **tudo isso em
+browser-nativo, com performance otimizada**.
+Funciona em **qualquer** framework (React,
+Vue, Svelte, vanilla JS) e ate sem framework
+(SSR + hydration).
+
+**Suporte de browser.** Chrome e Edge desde
+v111 (marco 2023). Safari desde v18 (setembro
+2024). Firefox: implementacao em progresso
+(ainda atrasado em 2026). Por isso o
+`if (!document.startViewTransition) { fallback; }`
+e **obrigatorio** em producao.
+
+## Aprofundamento 🟡
+
+**View Transitions com Next.js (App Router).**
+O Next.js 14.2+ tem suporte integrado a View
+Transitions via componente `<ViewTransition>`:
+
+```tsx
+import { unstable_ViewTransition as ViewTransition } from "react";
+
+export default function Page() {
+  return (
+    <ViewTransition>
+      <main>Conteudo da pagina</main>
+    </ViewTransition>
+  );
+}
+```
+
+O Next automaticamente:
+- Habilita View Transitions em route changes.
+- Cuida do fallback pra browsers sem suporte.
+- Aplica `view-transition-name` por pagina.
+
+Combinado com `view-transition-name` em
+elementos especificos, voce faz shared
+transitions cross-page com **zero
+configuracao** de routing.
+
+**`update-callback` async.** O callback pode
+ser async (esperar data, esperar animacao
+externa terminar). A transicao espera:
+
+```js
+document.startViewTransition(async () => {
+  await fetch("/api/next-image");
+  // ... aplica o resultado no DOM
+});
+```
+
+O browser **segura** a transicao ate o
+callback resolver. Util pra transicoes que
+dependem de data.
+
+**`transition.ready` e `transition.finished`
+- promises de lifecycle.** O metodo retorna
+um objeto com promises:
+
+```js
+const transition = document.startViewTransition(() => {
+  document.documentElement.classList.toggle("dark");
+});
+
+transition.ready.then(() => {
+  console.log("DOM novo pronto, animacao comecou");
+  // Mexer em coisas no momento exato em que o novo DOM ta visivel
+});
+
+transition.finished.then(() => {
+  console.log("Animacao completa");
+  // Cleanup, analytics, etc
+});
+
+transition.skipTransition();  // Cancela a animacao
+```
+
+`skipTransition()` util pra casos onde o
+usuario ja navegou (cancelar transicao que
+ficou "presa" no meio).
+
+**Tipos de transicao: `auto` (default) e
+`update`.** Em alguns casos voce quer
+**atualizar** o estado sem animar (ex: scroll
+restore). Use o parametro `types`:
+
+```js
+document.startViewTransition(
+  () => updateScrollPosition(),
+  { update: async () => { /* roda em paralelo */ } }
+);
+```
+
+Pattern avancado pra coordenar atualizacoes
+com transicoes.
+
+**`view-transition-class` - aplicar classe
+durante a transicao.** Pra mudar estilos do
+elemento **so durante** a transicao:
+
+```css
+.card {
+  view-transition-class: card-transition;
+}
+
+::view-transition-group.card-transition {
+  /* estilos especificos pra esse grupo */
+  border-radius: 16px;
+}
+```
+
+Menos usado que `view-transition-name`, mas
+util pra casos com varios elementos do mesmo
+tipo que precisam de estilos diferentes.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Firefox atrasou.** A View Transitions
+API usa **snapshots de pixel** do DOM (nao
+serializa elementos - faz screenshot real).
+Firefox prioriza SVG-as-image snapshots que
+nao existem em todos os engines. A
+implementacao de Firefox exige rework no
+rendering pipeline. A expectativa e' que
+chegue em 2026, mas ate la voce precisa de
+fallback.
+
+**`view-transition-group` - o container
+"logico" da transicao.** Cada par
+old/new com mesmo `view-transition-name` forma
+um **group**. Voce pode customizar o group
+(estilos que aplicam a ambos old e new):
+
+```css
+::view-transition-group(hero) {
+  animation-duration: 0.4s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+```
+
+`group` e o "esqueleto" da animacao;
+`::view-transition-old` e `::view-transition-new`
+sao os "conteudos" especificos.
+
+**Limites praticos da API.** A View Transitions
+API **nao** resolve:
+- **Animacoes complexas com physics** (mola,
+  bounce, drag). Pra isso, Motion.
+- **Gestures** (drag, swipe). Pra isso, Motion.
+- **Animacoes que dependem de estado React
+  complexo** (AnimatePresence com variants).
+  Pra isso, Motion.
+
+Ela resolve: **transicoes de estado de DOM**.
+Ponto. E' uma API **complementar** ao Motion,
+nao substituta. Motion pra gestures/layout
+interativos, View Transitions pra transicoes
+de estado "grandes" (theme, route change,
+layout shift).
+
+**Combinando View Transitions com Motion.** Em
+producao, os dois coexistem:
+
+```tsx
+// Theme toggle com View Transition (cross-fade global)
+function toggleTheme() {
+  document.startViewTransition(() => {
+    document.documentElement.classList.toggle("dark");
+  });
+}
+
+// Modal com AnimatePresence (mount/unmount)
+<AnimatePresence>
+  {isOpen && <motion.div initial={{...}} animate={{...}} exit={{...}} />}
+</AnimatePresence>
+```
+
+View Transitions pra "estado global da pagina".
+Motion pra "estado local de componente". Cada
+um pro seu caso.
+
+**Leitura recomendada:**
+
+- [MDN - View Transitions API](https://developer.mozilla.org/en-US/docs/Web/API/View_Transitions_API) - referencia completa, com exemplos por caso de uso.
+- [Chrome Developers - View Transitions](https://developer.chrome.com/docs/web-platform/view-transitions) - intro oficial do time do Chrome, com 4 demos.
+- [Jake Archibald - View Transitions](https://www.youtube.com/watch?v=fTznXESe5_U) - o engenheiro do Chrome que projetou a API, explicando os tradeoffs.
+- [Next.js - View Transition](https://nextjs.org/docs/app/api-reference/components/view-transition) - integracao oficial com App Router.
+
+> Dica: o erro mais comum em View Transitions
+> e' **usar `view-transition-name` em
+> muitos elementos simultaneamente**. O
+> browser tem limite de quantos grupos
+> diferentes pode animar ao mesmo tempo
+> (8-12 dependendo do engine). Use so nos
+> elementos **criticos** (hero, header,
+> card principal). O resto, deixa no
+> cross-fade global.
+
+No proximo no, vamos ver **Rive e Lottie**:
+animacoes vetoriais complexas vindas do
+design (mascotes, ilustracoes com varios
+estados) que Motion nao resolve - voce nao
+programa frame-by-frame, voce consome um
+arquivo `.riv` ou `.lottie` feito por um
+designer.
+
+<Checkpoint
+  challenge="Implemente a função `gerarCSSViewTransition(grupos)` que recebe um array de nomes de grupos (strings como 'header', 'hero', 'avatar') e retorna uma string CSS onde cada nome vira uma regra `.nome { view-transition-name: nome; }` em uma linha. Use '\\n' entre as linhas (quebra de linha real)."
+  starterCode={`// Implemente gerarCSSViewTransition(grupos) que recebe:
+// ['header', 'hero', 'avatar']
+//
+// E retorna a string CSS:
+// .header { view-transition-name: header; }
+// .hero { view-transition-name: hero; }
+// .avatar { view-transition-name: avatar; }
+//
+// - Cada grupo vira uma regra CSS em sua propria linha.
+// - O seletor e' .nome (classe CSS) e a propriedade usa o mesmo nome.
+// - Linhas separadas por '\\n' (quebra de linha real).
+function gerarCSSViewTransition(grupos) {
+  return "";
+}
+
+const _css = gerarCSSViewTransition(["header", "hero", "avatar"]);
+console.log(_css);`}
+  expected='.header { view-transition-name: header; }
+.hero { view-transition-name: hero; }
+.avatar { view-transition-name: avatar; }'
+  slug="motion"
+  nodeId="view-transitions-api"
+/>
+
+<Quiz
+  question="Por que a View Transitions API e' uma API 'complementar' ao Motion, nao substituta?"
+  options={[
+    {
+      text: "View Transitions e' uma API nativa de browser focada em transicao de estado de DOM (theme toggle, route change, shared element). Motion cobre gestures, layout animations e physics - casos que View Transitions nao resolve.",
+      correct: true,
+      explanation:
+        "View Transitions resolve 'transicao de estado de DOM': o browser captura snapshot antes e depois, e interpola. Perfeito pra theme toggle, route change cross-page, shared element. Motion resolve 'animacao interativa': gestures (drag, hover), layout animations (FLIP), physics (spring), AnimatePresence (mount/unmount). Sao camadas diferentes - voce usa View Transitions pra 'estado global' e Motion pra 'estado local de componente'.",
+    },
+    {
+      text: "View Transitions substitui Motion - em 2026 Motion e' redundante.",
+      correct: false,
+      explanation:
+        "Nao. View Transitions NAO substitui Motion. View Transitions nao tem gestures, nao tem layout animations (FLIP), nao tem spring physics, nao tem AnimatePresence. Pra esses casos, Motion continua sendo a escolha. View Transitions e' uma API complementar pra um caso especifico (transicoes de estado grandes), nao um substituto geral.",
+    },
+    {
+      text: "View Transitions e Motion resolvem o mesmo problema - use qualquer um.",
+      correct: false,
+      explanation:
+        "Nao. View Transitions e Motion resolvem problemas diferentes. View Transitions: transicao de estado de DOM (cross-page, theme toggle, shared element). Motion: animacoes stateful com gestures, layout, mount/unmount. Voce nao consegue fazer drag-and-drop com View Transitions (ela nao tem gesture), e nao consegue fazer cross-page transition nativa com Motion (ela nao controla o browser-level transition). Complementares.",
+    },
+  ]}
+/>

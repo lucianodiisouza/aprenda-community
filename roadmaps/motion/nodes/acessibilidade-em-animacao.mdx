@@ -1,0 +1,612 @@
+---
+id: acessibilidade-em-animacao
+title: "Acessibilidade em animacao: prefers-reduced-motion, performance, WCAG 2.3.3"
+resources:
+  - title: "MDN - prefers-reduced-motion (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion
+    lang: en
+    type: doc
+    free: true
+  - title: "WCAG 2.3.3 - Animation from Interactions (oficial, EN)"
+    url: https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions
+    lang: en
+    type: doc
+    free: true
+  - title: "Vestibular Disorders - A11y Project (EN)"
+    url: https://www.a11yproject.com/posts/understanding-vestibular-disorders/
+    lang: en
+    type: article
+    free: true
+---
+
+Ate agora, toda a discussao foi "como fazer
+animacoes legais". Mas 5-15% dos usuarios tem
+algum grau de **vestibular disorder** ou
+sensibilidade a movimento. Pra esses usuarios,
+parallax agressivo, scale no hover, e slides
+nao sao "polimento" - sao **gatilho de nausea,
+tontura, e enxaqueca**. O navegador ja
+oferece um media query proprio
+(`prefers-reduced-motion`) pra esses usuarios
+se manifestarem, e **respeitar isso e'
+requisito de WCAG 2.3.3 (nivel AAA)**.
+
+Se voce entende `prefers-reduced-motion` +
+`useReducedMotion` + `MotionConfig` + os
+limites de WCAG 2.3.3 (3 flashes por segundo),
+voce entrega animacoes que **funcionam pra
+todos** - nao como "feature extra", mas como
+**default desde o design**.
+
+## O essencial 🟢
+
+**O media query `prefers-reduced-motion`.** O
+navegador expõe a preferencia do usuario via
+media query CSS e JS:
+
+```css
+/* CSS: detecta se o usuario prefere reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  /* Reseta todas as animacoes */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+```
+
+```js
+// JS: detecta em runtime
+const prefersReduced = window.matchMedia(
+  "(prefers-reduced-motion: reduce)"
+).matches;
+```
+
+**O que significa "reduced motion".** O
+usuario disse pro sistema operacional
+"minimize animacao nao-essencial". O OS
+transmite isso pro browser, e o browser
+expõe via media query. Em 2026:
+- **macOS / iOS**: System Settings > Accessibility
+  > Display > Reduce motion.
+- **Windows**: Settings > Accessibility >
+  Visual effects > Animation effects.
+- **Android**: Settings > Accessibility >
+  Remove animations.
+- **Linux**: varia (GNOME, KDE tem opcoes).
+
+O usuario **nao** ta dizendo "sem animacao" -
+ta dizendo "menos, ou mais simples". A regra
+pratica: **se a animacao nao e essencial pra
+entender a UI, simplifique**.
+
+**Por que isso importa (alem de WCAG).**
+Estudos da WebAIM mostram que 5-15% dos
+usuarios tem algum grau de sensibilidade
+visual/vestibular. Animacoes grandes
+(parallax agressivo, zoom, slide) podem causar:
+- Nausea, tontura, vertigem.
+- Enxaqueca.
+- Dificuldade de foco.
+
+Pra esses usuarios, uma landing page com
+parallax "moderno" e' **inacessivel**, nao
+"enfeitada". Respeitar `prefers-reduced-motion`
+e' literalmente **deixar o usuario usar o
+produto**.
+
+**`useReducedMotion()` no Motion.** O hook
+`useReducedMotion` retorna um boolean que
+reage a mudanca de preferencia em tempo real
+(nao so no load):
+
+```tsx
+import { motion, useReducedMotion } from "motion/react";
+
+function Hero() {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
+    >
+      Bem-vindo
+    </motion.div>
+  );
+}
+```
+
+Se o usuario tem `reduce`, a animacao
+**some** (y: 0 desde o inicio, duration 0).
+Senao, fade + slide up. O hook **reage
+dinamicamente**: se o usuario troca a
+preferencia durante o uso (raro, mas
+possivel), o componente re-renderiza.
+
+**`MotionConfig reducedMotion="user"` -
+default global.** Em vez de verificar
+`useReducedMotion` em cada componente, voce
+define o comportamento **uma vez na raiz**:
+
+```tsx
+import { MotionConfig } from "motion/react";
+
+function App() {
+  return (
+    <MotionConfig reducedMotion="user">
+      <Hero />      {/* nao precisa de useReducedMotion */}
+      <Modal />     {/* Motion automaticamente simplifica */}
+      <Toast />     {/* animacoes viram instantaneas */}
+    </MotionConfig>
+  );
+}
+```
+
+`reducedMotion="user"` faz Motion:
+- **Transform-based animations** (x, y, scale,
+  rotate): viram **instantaneas** (duration 0).
+- **Non-transform animations** (opacity, color):
+  **continuam normais** (porque nao causam
+  movimento).
+
+E o ponto-chave: Motion entende a diferenca
+entre "animacao que move elementos" (ruim pra
+vestibular) e "animacao que muda cor" (neutra).
+So as primeiras sao removidas.
+
+**`useReducedMotion` vs `MotionConfig`.** Os
+dois coexistem:
+- `MotionConfig reducedMotion="user"`: cobre
+  80% dos casos. Voce nao pensa nisso
+  componente por componente.
+- `useReducedMotion()`: pra casos custom (ex:
+  "se reduced, troca parallax por static").
+
+A recomendacao: **sempre coloque
+`MotionConfig reducedMotion="user"` na raiz
+da app**. Use `useReducedMotion` so quando
+precisar de logica custom.
+
+**WCAG 2.3.3 - limite de 3 flashes por
+segundo.** O WCAG (Web Content Accessibility
+Guidelines) tem criterios especificos pra
+animacao. O mais importante:
+
+> **2.3.3 Animation from Interactions (AAA):**
+> Para animacao disparada por interacao, ela
+> deve ser **dispensavel**, a menos que seja
+> **essencial** para a funcionalidade.
+
+E criticos relacionados:
+- **2.3.1 Three Flashes**: nenhum conteudo
+  pode piscar mais de 3 vezes por segundo
+  (causa convulsão fotosensivel).
+- **2.2.2 Pause, Stop, Hide**: animacao com
+  duracao > 5s deve ter **controle de pause**.
+
+**O que "essencial" significa em 2026.** A
+excecao a 2.3.3 e' animacao **essencial**:
+- Indicador de loading (sem animacao, o
+  usuario nao sabe se carregou).
+- Barra de progresso (sem animacao, perde
+  feedback).
+- Cursor customizado com animacao de
+  movimento (acessibilidade especifica).
+
+Quase tudo o mais (parallax, slide-in, hover
+scale, theme transition) **nao e' essencial**
+e deve ser dispensavel. A interpretacao
+dominante: **se o conteudo e' entendivel sem
+a animacao, ela nao e' essencial**.
+
+**Pattern: motion-simplified vs motion-disabled
+vs motion-essential.** O especialista de
+a11y Adrian Roselli classifica animacoes em
+3 niveis:
+
+- **Motion-essential:** sem animacao, a UI
+  nao funciona (loading spinner, progress).
+  Sempre animar.
+- **Motion-simplified:** animacao ajuda mas
+  pode ser simplificada (parallax vira fade,
+  slide vira opacity).
+- **Motion-disabled:** animacao e' puro
+  enfeite, sem perda semantica (pulse no
+  icone, hover scale em botao).
+
+Pra cada nivel, trate diferente:
+
+```tsx
+function BotaoAnimado() {
+  const shouldReduce = useReducedMotion();
+
+  return (
+    <motion.button
+      whileHover={shouldReduce ? {} : { scale: 1.05 }}
+      whileTap={shouldReduce ? {} : { scale: 0.95 }}
+    >
+      Salvar
+    </motion.button>
+  );
+}
+```
+
+`shouldReduce` true = nada de scale. Senao,
+scale normal. Pattern classico de
+"motion-disabled" - hover scale e' puro
+enfeite, dispensavel.
+
+**`useReducedMotion` no Rive/Lottie.** Pra
+animacoes importadas, **pause/stop** em vez de
+remover:
+
+```tsx
+import { useEffect, useState } from "react";
+import { useReducedMotion } from "motion/react";
+
+function LottieAnim({ data }) {
+  const shouldReduce = useReducedMotion();
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    setPaused(shouldReduce);
+  }, [shouldReduce]);
+
+  return (
+    <Lottie
+      animationData={data}
+      autoplay={!paused}
+    />
+  );
+}
+```
+
+Se o usuario prefere reduce, a animacao
+**nao roda** (paused from start). A escolha
+e' sua: ou remove o componente, ou pausa a
+animacao. Recomendo **pausar** - alguns
+elementos ainda fazem sentido estaticos
+(loading congelado e' confuso, mas uma
+ilustracao decorativa congelada e' OK).
+
+**Por que a11y nao e' "feature extra".** A
+discussao classica e' "vamos adicionar a11y
+depois do MVP". Isso e' um erro por 2
+motivos:
+
+1. **E' mais barato fazer desde o inicio.**
+   Adicionar `prefers-reduced-motion`
+   awareness custa 2 linhas. Refatorar 50
+   animacoes depois custa 1 sprint.
+
+2. **Inclusao e' requisito legal** (em varios
+   paises - EAA na Europa desde 2025, ADA nos
+   EUA, Lei Brasileira de Inclusao). Nao e'
+   "nice to have".
+
+A regra: **trate `prefers-reduced-motion`
+como default, nao como caso especial**.
+
+**A maquina de estados.** Veja o diagrama
+abaixo - como o sistema lida com
+`prefers-reduced-motion` em diferentes
+cenarios:
+
+<Mermaid
+  chart={`flowchart TD
+    Start[App inicia] --> Detect{Deteccao<br/>prefers-reduced-motion}
+    Detect -->|user = reduce| Reduced[Modo reduced]
+    Detect -->|user = no-preference| Normal[Modo normal]
+
+    Reduced --> ReducedCSS[CSS: animaçoes viram instantaneas<br/>via media query global]
+    Reduced --> ReducedMotion[Motion: useReducedMotion = true<br/>transforms = 0s, opacity normal]
+    Reduced --> ReducedRive[Rive/Lottie: pause/autoplay=false]
+    Reduced --> ReducedFinal[UI renderiza sem movimento]
+
+    Normal --> NormalCSS[CSS: animaçoes rodam normalmente]
+    Normal --> NormalMotion[Motion: transicoes normais<br/>MotionConfig reducedMotion=user]
+    Normal --> NormalRive[Rive/Lottie: autoplay=true]
+    Normal --> NormalFinal[UI com animacoes completas]
+
+    ReducedFinal --> Check{WCAG 2.3.3 OK?}
+    NormalFinal --> Check
+    Check -->|Sim| Done[A11y garantida]
+    Check -->|Nao| Fix[Refatorar: 3 flashes/s<br/>controle de pause em >5s]`}
+  caption="Fluxo de decisao: como o sistema trata prefers-reduced-motion em diferentes contextos (CSS, Motion, Rive/Lottie). O objetivo final e' WCAG 2.3.3 compliance para todos os usuarios."
+/>
+
+## Aprofundamento 🟡
+
+**`reducedMotion="always"` vs `"never"` vs
+`"user"`.** O `MotionConfig` aceita 3 valores:
+
+```tsx
+<MotionConfig reducedMotion="user">  {/* default: respeita user */}
+<MotionConfig reducedMotion="always">  {/* sempre reduced, ignora user */}
+<MotionConfig reducedMotion="never">   {/* nunca reduced, sempre anima */}
+```
+
+`"user"` e' o que voce quer em producao.
+`"always"` e util pra **debug**: voce pode
+forcar o modo reduced sem mexer no OS.
+`"never"` e' util pra demos/showcases (mas
+**nao use em producao** - exclui usuarios
+sensíveis).
+
+**Debug de reduced motion.** Pra testar sem
+mudar o OS:
+- **Chrome DevTools**: Rendering tab >
+  Emulate CSS media feature > prefers-reduced-motion.
+- **Firefox DevTools**: Inspector > Layout >
+  "Disable animations".
+- **macOS Chrome**: tambem responde ao
+  "Reduce motion" do macOS.
+
+`useReducedMotion()` reage em tempo real
+nessas emulacoes. Teste o componente **com e
+sem** reduced pra garantir que a UI faz
+sentido nos dois modos.
+
+**`motion-safe:` e `motion-reduce:` no
+Tailwind.** Se voce usa Tailwind, ele ja
+oferece variants:
+
+```html
+<div class="motion-safe:animate-spin motion-reduce:hidden">
+  Loading...
+</div>
+```
+
+- `motion-safe:` so aplica se
+  `prefers-reduced-motion: no-preference`.
+- `motion-reduce:` so aplica se
+  `prefers-reduced-motion: reduce`.
+
+Util pra esconder loading custom em reduced
+mode, ou pra simplificar animacoes CSS
+rapidamente.
+
+**`@media (prefers-reduced-motion: no-preference)`
+- opt-in pra animacao.** A maioria dos devs
+faz o contrario: anima sempre, simplifica em
+reduce. Mas a abordagem "mais acessivel" e'
+opt-in:
+
+```css
+.card {
+  /* sem animacao por default */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card {
+    transition: transform 0.3s ease;
+  }
+  .card:hover {
+    transform: scale(1.05);
+  }
+}
+```
+
+Se o usuario **nao declarou** preferencia, a
+animacao roda. Se declarou `reduce`, nao roda.
+**E' mais seguro** porque presume "no
+animation" como estado base. Em projetos
+grandes, misture: `MotionConfig` global pra
+Motion + `@media (prefers-reduced-motion)`
+pra CSS legado.
+
+**`scroll-behavior: smooth` e reduced.** A
+propriedade CSS `scroll-behavior: smooth`
+tambem deve respeitar reduce:
+
+```css
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;  /* sem smooth scroll */
+  }
+}
+```
+
+Smooth scroll (animado) pode causar
+desconforto em usuarios sensiveis. **Reset em
+reduced mode.**
+
+**Testando a11y de animacao.** 3 formas
+praticas:
+
+1. **Manual**: ativar reduce motion no OS,
+   navegar o app, sentir onde fica ruim.
+
+2. **axe-core / Lighthouse**: rodam axe que
+   checa **alguns** criterios de animacao
+   (3 flashes, alt text em animacoes
+   decorativas). Nao cobre todos.
+
+3. **Teste com usuarios reais**: incluir
+   usuarios com sensibilidade no user
+   research. Mais trabalhoso, mais honesto.
+
+O `prefers-reduced-motion` nao tem teste
+automatizado confiavel - voce precisa
+**visualizar** o app em modo reduced.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Motion diferencia transform vs
+opacity em reduced mode.** Internamente, o
+Motion sabe que:
+- `transform: translateX(100px) -> 0` move
+  elementos no espaco -> **causa vertigem**.
+- `opacity: 0 -> 1` so muda transparencia ->
+  **neutro** (nao causa vertigem).
+
+Entao, em `reducedMotion="user"`:
+- Transform animations: viram **instantaneas**
+  (duration 0, mas interpolam mesmo assim pra
+  evitar "salto" tecnico).
+- Opacity / color / filter: **continuam
+  normais**.
+
+Isso e' a diferenca entre "remover animacao" e
+"simplificar animacao". Motion simplifica de
+forma inteligente.
+
+**`update` callback em `useReducedMotion` - ouvir
+mudancas.** Em vez de só ler o valor, voce pode
+reagir a mudancas:
+
+```tsx
+import { useReducedMotion } from "motion/react";
+
+function App() {
+  const shouldReduce = useReducedMotion();
+
+  useEffect(() => {
+    if (shouldReduce) {
+      console.log("Usuario ativou reduced motion");
+      // analytics, ajustar config global, etc
+    }
+  }, [shouldReduce]);
+}
+```
+
+Util pra analytics ("quantos % dos usuarios
+preferem reduced?") e pra ajustar config
+global que nao e' Motion (Lottie, Rive).
+
+**`MotionConfig` e `useReducedMotion` - quem
+vence.** Se voce tem `MotionConfig
+reducedMotion="always"` e usa `useReducedMotion`,
+o `useReducedMotion` retorna `true` (porque
+"always" sobrescreve). A hierarquia:
+`MotionConfig` > `useReducedMotion`. Use
+`MotionConfig` pra override global (testes,
+demos), `useReducedMotion` pra detectar
+preferencia do usuario.
+
+**Flash test - o que WCAG 2.3.1 exige.** Alem
+de reduced motion, WCAG 2.3.1 proibe mais de 3
+flashes por segundo em qualquer area > 25%
+da tela. Isso e' **muito** restritivo:
+- Loading spinners pulsando: tipicamente OK
+  (flash lento, 1-2 hz).
+- Videos com strobe: cuidado (Hollywood ainda
+  faz isso em epilepsia warning).
+- Animacoes de "erro" pulsando em vermelho:
+  cuidado (pode ser > 3 hz se rapido).
+
+A regra: **se sua animacao pisca, garanta que
+pisca < 3 vezes por segundo**. Isso e'
+absoluto - nao depende de `prefers-reduced-motion`.
+
+**`update` callback pra debug em dev.** Um
+pattern util em dev:
+
+```tsx
+function App() {
+  const shouldReduce = useReducedMotion();
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[motion]", { shouldReduce });
+  }
+
+  // ...
+}
+```
+
+Em dev, log no console toda vez que
+`shouldReduce` muda. Ajuda a debugar casos
+"no dev funciona, em prod nao" (raro, mas
+acontece quando o OS do dev tem configuracao
+diferente do staging).
+
+**Leitura recomendada:**
+
+- [MDN - prefers-reduced-motion](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion) - referencia completa do media query.
+- [WCAG 2.3.3](https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions) - o criterio AAA de animacao dispensavel.
+- [Vestibular Disorders - A11y Project](https://www.a11yproject.com/posts/understanding-vestibular-disorders/) - explicacao **humana** de como animacao pode prejudicar.
+- [Motion - useReducedMotion](https://motion.dev/docs/react-use-reduced-motion) - doc oficial do hook, com exemplos de MotionConfig.
+
+> Dica: o erro mais comum em a11y de
+> animacao e' **usar `useReducedMotion` em 1
+> componente e esquecer o resto**. A
+> consistencia vem do `MotionConfig
+> reducedMotion="user"` global na raiz. Use
+> o hook so pra logica custom. Regra:
+> **`MotionConfig` na raiz = a11y basica
+> garantida sem pensar em cada componente**.
+
+No proximo no, vamos ao **projeto final**:
+uma landing page com 3-5 animacoes
+intencionais (hero fade-in, theme toggle com
+View Transitions, card com `layoutId`, e
+parallax de scroll), todas respeitando
+`prefers-reduced-motion` desde o design.
+
+<Checkpoint
+  challenge="Implemente a função `classificarAnimacao(tipo, reducedMotion)` que recebe um tipo de animacao ('fade', 'slide', 'scale', 'complex') e um boolean reducedMotion, e retorna o objeto de config: { duration, type, properties }. Quando reducedMotion = true: duration 0 e properties []. Quando reducedMotion = false: tipo 'fade' → duration 0.3 e properties ['opacity']; 'slide' → duration 0.4 e properties ['x', 'y', 'opacity']; 'scale' → duration 0.3 e properties ['scale', 'opacity']; 'complex' → duration 0.6 e properties ['x', 'y', 'scale', 'opacity']. Sempre type 'tween'."
+  starterCode={`// Implemente classificarAnimacao(tipo, reducedMotion):
+//
+// Input: (tipo: string, reducedMotion: boolean)
+//
+// Output: { duration, type, properties }
+//
+// - Se reducedMotion === true:
+//   { duration: 0, type: 'tween', properties: [] }
+//
+// - Se reducedMotion === false:
+//   fade    → { duration: 0.3, type: 'tween', properties: ['opacity'] }
+//   slide   → { duration: 0.4, type: 'tween', properties: ['x', 'y', 'opacity'] }
+//   scale   → { duration: 0.3, type: 'tween', properties: ['scale', 'opacity'] }
+//   complex → { duration: 0.6, type: 'tween', properties: ['x', 'y', 'scale', 'opacity'] }
+function classificarAnimacao(tipo, reducedMotion) {
+  return {};
+}
+
+const _r1 = classificarAnimacao("slide", true);
+console.log(JSON.stringify(_r1));
+
+const _r2 = classificarAnimacao("slide", false);
+console.log(JSON.stringify(_r2));
+
+const _r3 = classificarAnimacao("complex", false);
+console.log(JSON.stringify(_r3));`}
+  expected='{"duration":0,"type":"tween","properties":[]}
+{"duration":0.4,"type":"tween","properties":["x","y","opacity"]}
+{"duration":0.6,"type":"tween","properties":["x","y","scale","opacity"]}'
+  slug="motion"
+  nodeId="acessibilidade-em-animacao"
+/>
+
+<Quiz
+  question="Qual a diferenca entre `MotionConfig reducedMotion='user'` e `useReducedMotion()` no Motion?"
+  options={[
+    {
+      text: "`MotionConfig` aplica a regra globalmente: Motion automaticamente simplifica transform animations em reduced mode (opacity continua normal). `useReducedMotion()` e' o hook que expoe o boolean pra logica custom.",
+      correct: true,
+      explanation:
+        "`MotionConfig reducedMotion='user'` define o comportamento DEFAULT pra todos os `motion.*` da arvore. Motion automaticamente: zera transform animations (x, y, scale, rotate) e mantem opacity/color normais. Voce nao precisa pensar em cada componente. `useReducedMotion()` expoe o boolean em runtime - util pra logica custom (parallax vira static, Lottie pausa, etc). Use `MotionConfig` na raiz como baseline, e `useReducedMotion` so quando precisar de logica custom.",
+    },
+    {
+      text: "Sao a mesma coisa - `MotionConfig` e' so syntax sugar pra `useReducedMotion`.",
+      correct: false,
+      explanation:
+        "Nao. `MotionConfig` aplica automaticamente a todos os componentes da arvore. `useReducedMotion()` expoe o boolean pra logica custom. Semanticas diferentes. Voce normalmente usa `MotionConfig` na raiz (cobre 80% dos casos) e `useReducedMotion` em casos especificos (parallax custom, integracao com Rive/Lottie, analytics).",
+    },
+    {
+      text: "`useReducedMotion()` e' deprecated - use so `MotionConfig` em codigo novo.",
+      correct: false,
+      explanation:
+        "Nao, `useReducedMotion` NAO e' deprecated. Os dois coexistem e servem propositos diferentes. `MotionConfig` e' declarativo e global. `useReducedMotion` e' imperativo e por componente. Caso classico: Lottie/Rive pausam via `useReducedMotion` (MotionConfig nao controla libs externas).",
+    },
+  ]}
+/>

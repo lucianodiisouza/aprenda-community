@@ -1,0 +1,616 @@
+---
+id: padroes-de-animacao
+title: "Padroes de animacao: layout, gestures, drag, scroll-linked"
+resources:
+  - title: "Motion - layout animations (oficial, EN)"
+    url: https://motion.dev/docs/react-layout-animations
+    lang: en
+    type: doc
+    free: true
+  - title: "Motion - useScroll (oficial, EN)"
+    url: https://motion.dev/docs/react-use-scroll
+    lang: en
+    type: doc
+    free: true
+  - title: "Motion - Drag (oficial, EN)"
+    url: https://motion.dev/docs/react-drag
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce ja sabe fazer fade in, AnimatePresence,
+variants. Agora vem a parte que faz Motion
+valer a pena sobre CSS: animacoes que **reagem
+a estado do DOM** (FLIP, layout), **a gesto do
+usuario** (drag, swipe), ou **a posicao de
+scroll** (parallax, progress bar). Esses 3
+padroes - `layout`, `drag`, `useScroll` -
+cobrem 90% das animacoes "avancadas" que uma
+landing page, dashboard ou app moderno precisa.
+
+Se voce entende `layout` + `drag` + `useScroll`
++ `useTransform`, voce consegue resolver
+reordenacao de lista, swipe-to-dismiss,
+parallax de hero, progress bar de scroll, e
+shared element transitions (foto vira hero).
+
+## O essencial 🟢
+
+**`layout` prop - FLIP animation automatica.** A
+prop `layout` faz Motion animar **a posicao e
+tamanho** de um elemento quando eles mudam.
+Por baixo dos panos, Motion aplica o algoritmo
+FLIP (First, Last, Invert, Play):
+
+```tsx
+<motion.div layout>
+  Conteudo
+</motion.div>
+```
+
+O que muda na pratica: imagine uma lista
+de cards que reordena. Sem `layout`, os cards
+"pulam" pra nova posicao instantaneamente. Com
+`layout`, eles **deslizam** suavemente:
+
+```tsx
+function CardList({ items, onReorder }) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <motion.li
+          key={item.id}
+          layout              // <-- FLIP automatico
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          {item.text}
+        </motion.li>
+      ))}
+    </ul>
+  );
+}
+```
+
+Ao reordenar, Motion mede a posicao antiga e
+nova de cada item, calcula o delta, e anima com
+spring. Voce **nao** precisa escrever nenhum
+codigo de animacao - a prop `layout` faz tudo.
+
+**Quando `layout` ajuda.** Em qualquer caso em
+que um elemento **muda de tamanho ou posicao**
+no DOM:
+- Items de lista sendo adicionados/removidos.
+- Sidebar que abre/fecha (largura muda).
+- Modal que expande (altura cresce).
+- Reordenacao (drag-and-drop reorder).
+
+Em todos esses casos, sem `layout`, o usuario
+ve "pular". Com `layout`, ve "transitar".
+
+**`layoutId` - shared layout entre elementos.**
+Quando o "mesmo item" existe em **dois lugares**
+diferentes da arvore, voce quer que ele "viaje"
+de um lugar pro outro em vez de sumir e
+reaparecer. `layoutId` e a chave pra isso:
+
+```tsx
+import { AnimatePresence, motion } from "motion/react";
+
+function Gallery() {
+  const [selectedId, setSelectedId] = useState(null);
+
+  return (
+    <>
+      {/* Lista */}
+      <motion.div layoutId={selectedId ?? "placeholder"}>
+        {/* item da lista */}
+      </motion.div>
+
+      {/* Hero - aparece quando selecionado */}
+      <AnimatePresence>
+        {selectedId && (
+          <motion.div
+            layoutId={selectedId}
+            onClick={() => setSelectedId(null)}
+          >
+            {/* versao expandida do mesmo item */}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+```
+
+O elemento "cresce" da posicao da lista pra
+posicao do hero. Visualmente: o card "voa" da
+galeria pro hero. E o pattern usado no Unsplash,
+Apple website, e em todos os portfolios modernos.
+
+**`layoutId` precisa de `AnimatePresence` ou
+`LayoutGroup` por volta.** O `AnimatePresence`
+garante que Motion mantem o elemento no DOM
+durante a transicao entre as duas "versoes".
+
+**`drag` prop - arrastar com o mouse/dedo.**
+A prop `drag` faz o elemento responder a
+gestos de arrasto. Sem voce escrever
+`onMouseDown`/`onMouseMove`/`onMouseUp`:
+
+```tsx
+<motion.div
+  drag                      // arrastar no eixo X e Y
+  dragConstraints={{ left: 0, right: 300, top: 0, bottom: 200 }}
+  dragElastic={0.1}         // resistencia nas bordas (0 = rigido, 1 = elastico)
+  dragMomentum={true}       // inercia ao soltar (default true)
+  onDragEnd={(event, info) => console.log(info.offset.x, info.offset.y)}
+>
+  Arraste-me
+</motion.div>
+```
+
+`drag="x"` restringe ao eixo X, `drag="y"` ao
+Y. `drag` (sem valor) ativa os dois eixos. Os 4
+modificadores mais uteis:
+
+- **`dragConstraints`:** limite de movimento
+  (numerico `{left, right, top, bottom}` ou ref
+  a um container).
+- **`dragElastic`:** quanto "elastico" alem do
+  constraint (0 = trava, 1 = super elastico).
+- **`dragMomentum`:** se solta com inercia
+  (default true).
+- **`dragSnapToOrigin`:** se volta pra posicao
+  inicial ao soltar (util pra "swipe to
+  dismiss").
+
+**`dragConstraints` com ref - limite a partir de
+um container.** Em vez de calcular numeros
+manuais, voce passa uma ref a um container e
+Motion limita o arrasto dentro dele:
+
+```tsx
+import { useRef } from "react";
+import { motion } from "motion/react";
+
+function DraggableCard() {
+  const containerRef = useRef(null);
+
+  return (
+    <div ref={containerRef} style={{ width: 400, height: 300, position: "relative" }}>
+      <motion.div
+        drag
+        dragConstraints={containerRef}    // <-- limita ao container
+        dragElastic={0.2}
+      >
+        Card arrastavel
+      </motion.div>
+    </div>
+  );
+}
+```
+
+Motion mede o tamanho do container e do card
+automaticamente. O card nao sai do container.
+Mais robusto que numeros hardcoded.
+
+**`useScroll` - posicao de scroll como
+MotionValue.** O hook `useScroll` retorna a
+posicao de scroll como `MotionValue` (valor
+animavel fora do React):
+
+```tsx
+import { motion, useScroll, useTransform } from "motion/react";
+
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll();
+  // scrollYProgress vai de 0 (topo) a 1 (fim da pagina)
+
+  return (
+    <motion.div
+      style={{
+        scaleX: scrollYProgress,    // barra cresce com o scroll
+        transformOrigin: "left",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        background: "blue",
+      }}
+    />
+  );
+}
+```
+
+O `scrollYProgress` atualiza em **tempo real**
+durante o scroll, sem re-render do React. A
+barra de progresso cresce conforme o usuario
+rola. Padrao classico de "read progress" em
+artigos.
+
+**`useScroll` pode apontar pra um container
+especifico.** Em vez de scrollar a pagina,
+voce observa um container:
+
+```tsx
+const targetRef = useRef(null);
+const { scrollYProgress } = useScroll({
+  target: targetRef,
+  offset: ["start end", "end start"],
+});
+```
+
+`offset: ["start end", "end start"]` significa
+"a animacao comeca quando o **topo** do target
+atinge o **fim** do viewport, e termina quando
+o **fim** do target atinge o **inicio** do
+viewport". E o jeito de fazer animacoes
+"triggered by scroll" tipo parallax.
+
+**`useTransform` - mapear um MotionValue pra
+outro.** O hook `useTransform` pega um
+MotionValue e mapeia via ranges de
+entrada/saida:
+
+```tsx
+import { motion, useScroll, useTransform } from "motion/react";
+
+function ParallaxHero() {
+  const { scrollY } = useScroll();
+  // scrollY vai de 0 a 800px (altura do hero)
+
+  // y do background vai de 0 a -200 (move pra cima mais devagar)
+  const yBackground = useTransform(scrollY, [0, 800], [0, -200]);
+  // y do foreground vai de 0 a -100 (move menos)
+  const yForeground = useTransform(scrollY, [0, 800], [0, -100]);
+
+  return (
+    <>
+      <motion.div style={{ y: yBackground, position: "absolute" }}>
+        Background image
+      </motion.div>
+      <motion.div style={{ y: yForeground, position: "absolute" }}>
+        Foreground content
+      </motion.div>
+    </>
+  );
+}
+```
+
+Background move 200px, foreground move 100px
+-> **parallax**. Voce construiu parallax de
+hero sem nenhuma math manual, sem nenhum
+listener de scroll, sem re-render do React.
+E so Motion.
+
+**`useTransform` com 3+ valores pra "pulsar".**
+Se a saida e maior que a entrada, Motion
+interpola entre os pontos. Pra fazer algo
+"pulsar" (sai de 0, sobe pra 1, volta pra 0):
+
+```tsx
+const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.5, 1]);
+```
+
+Aos 0% de scroll: opacity 1. Aos 50%: 0.5. Aos
+100%: 1 de novo. Pattern classico de "fade no
+meio" em hero sections.
+
+**`useMotionValue` - valor customizado animavel.**
+Em 90% dos casos voce vai usar `useScroll`
+(que retorna MotionValue pronto). Mas pra
+criar o seu:
+
+```tsx
+import { motion, useMotionValue, useTransform } from "motion/react";
+
+function CustomValue() {
+  const x = useMotionValue(0);     // MotionValue inicializado em 0
+  const opacity = useTransform(x, [-100, 0, 100], [0, 1, 0]);
+
+  return (
+    <motion.div style={{ x, opacity }}>
+      Conteudo
+    </motion.div>
+  );
+}
+```
+
+`x` e uma `MotionValue` (objeto especial que
+guarda um valor e dispara updates sem re-render).
+Voce passa pro `style` e Motion liga direto no
+DOM. Voce pode ler com `x.get()`, escrever com
+`x.set(50)`, e usar em `useTransform` como
+fonte.
+
+## Aprofundamento 🟡
+
+**Por que FLIP existe.** Antes do FLIP, animar
+a posicao de um elemento depois que ele mudou
+exigia: medir posicao antiga, mudar posicao,
+medir nova, calcular delta, aplicar transform
+inverso, animar pra zero. O FLIP e um algoritmo
+(Aerotwist, 2016) que sistematiza isso em
+4 passos: First (mede posicao inicial), Last
+(muda layout, mede posicao final), Invert
+(aplica transform pra elemento "parecer" na
+posicao antiga), Play (anima transform pra
+zero). O Motion implementa isso em Rust/WebAssembly
+pra ser performante mesmo com 100+ items.
+
+**`LayoutGroup` - compartilhar layout entre
+sub-arvores.** Quando dois elementos estao em
+componentes separados (nao compartilham
+ancestral direto), `LayoutGroup` ativa o
+compartilhamento de `layoutId`:
+
+```tsx
+import { LayoutGroup, motion } from "motion/react";
+
+function App() {
+  return (
+    <LayoutGroup>
+      <Sidebar />         {/* tem motion.div layoutId="avatar" */}
+      <MainContent />     {/* tem outro motion.div layoutId="avatar" */}
+    </LayoutGroup>
+  );
+}
+```
+
+Sem `LayoutGroup`, cada `layoutId` e unico
+dentro do seu ancestral mais proximo, e dois
+`layoutId="avatar"` em lugares diferentes
+colidiriam. Com `LayoutGroup`, voce declara
+"esses dois lugares compartilham o mesmo
+namespace de layoutId".
+
+**`layout` com `Layout` strategy customizada.**
+A prop `layout` aceita um valor que controla
+**o que** e animado:
+
+```tsx
+<motion.div
+  layout="position"   // so posicao (default)
+  // ou
+  layout="size"       // so tamanho
+  // ou
+  layout              // ambos
+/>
+```
+
+Em performance-cenas, voce pode preferir
+animar so **posicao** (e nao tamanho) pra
+evitar reflow. Conhecimento util pra listas
+com 100+ items.
+
+**`whileDrag` - estilo durante o arrasto.**
+Assim como `whileHover`/`whileTap`,
+`whileDrag` aplica estilo enquanto o usuario
+arrasta:
+
+```tsx
+<motion.div
+  drag
+  whileDrag={{ scale: 1.1, cursor: "grabbing" }}
+  whileHover={{ cursor: "grab" }}
+  whileTap={{ cursor: "grabbing" }}
+>
+  Arraste
+</motion.div>
+```
+
+Combinado com `whileHover` e `whileTap`, voce
+constroi a UX de "pode arrastar" (cursor
+grab) -> "esta arrastando" (grabbing) sem
+escrever CSS.
+
+**`useScroll` com `smooth` (Motion 12+).**
+Em vez de `useScroll()` que retorna valores
+raw de scroll, voce pode pedir valores
+"suavizados" (interpolados):
+
+```tsx
+const { scrollY } = useScroll();
+// scrollY: MotionValue que atualiza 1:1 com o scroll
+
+// vs
+const { scrollY } = useScroll({ smooth: 0.1 });
+// scrollY: MotionValue suavizado com lag de 100ms
+```
+
+Util pra animacoes que "atrasam" o scroll
+(efeito smooth scroll sem mexer no scroll real
+do browser). Motion 12 introduziu isso.
+
+**`useVelocity` - velocidade de um MotionValue.**
+Pra animacoes que dependem da velocidade
+(parallax com inercia, "rabicho" visual):
+
+```tsx
+const x = useMotionValue(0);
+const xVelocity = useVelocity(x);
+const scale = useTransform(xVelocity, [-1000, 0, 1000], [0.5, 1, 0.5]);
+```
+
+Quando o usuario arrasta rapido, scale diminui
+(efeito "esticado"). Quando para, volta a 1.
+Pattern de games / efeitos fisicos.
+
+**Drag com snap a posicoes especificas.** Pra
+drag que "encaixa" em pontos (timeline,
+carrossel):
+
+```tsx
+<motion.div
+  drag="x"
+  dragSnapToOrigin={false}
+  dragConstraints={{ left: 0, right: 300 }}
+  onDragEnd={(event, info) => {
+    if (info.offset.x > 150) snapToNext();
+    else if (info.offset.x < -150) snapToPrev();
+    else snapToOrigin();
+  }}
+/>
+```
+
+Padrao classico de carrossel mobile.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que `layout` requer `position` ou
+`transform`.** O algoritmo FLIP usa `transform:
+translate()` pra mover o elemento visualmente
+sem causar reflow. Se o elemento tem `position:
+static`, Motion aplica `position: relative`
+automaticamente. Se voce tem `position:
+absolute` ou `fixed`, ele respeita. Mas se
+voce tem `display: contents` ou outra
+configuracao exotica, o FLIP pode quebrar. Em
+95% dos casos funciona out-of-the-box.
+
+**`useTransform` avancado com clamp.** Pra
+impedir que o output saia do range:
+
+```tsx
+const xClamped = useTransform(x, [-100, 0, 100], [0, 0.5, 1], { clamp: true });
+// xClamped sempre entre 0 e 1, mesmo se x sair de [-100, 100]
+```
+
+Util quando o `x` vem de `useDrag` e o usuario
+pode arrastar alem do esperado. Sem `clamp`,
+Motion extrapola (faz a animacao "continuar"
+proporcionalmente).
+
+**`MotionValue.on()` - subscribe manual.** Pra
+reagir a um MotionValue sem hook React:
+
+```tsx
+const x = useMotionValue(0);
+useEffect(() => {
+  return x.on("change", (latest) => {
+    console.log("x mudou para:", latest);
+  });
+}, [x]);
+```
+
+Util pra integrar com bibliotecas imperativas
+(Three.js, GSAP, canvas). Em 90% dos casos,
+`useTransform` resolve sem precisar disso.
+
+**`useMotionValueEvent` - versao hook.** Mais
+idiomatico em React:
+
+```tsx
+import { useMotionValueEvent } from "motion/react";
+
+const x = useMotionValue(0);
+useMotionValueEvent(x, "change", (latest) => {
+  console.log("x:", latest);
+});
+```
+
+Limpa automaticamente o listener no unmount.
+Mesmo padrao de `useEffect`.
+
+**`layout` + `AnimatePresence` - "out"
+animation com FLIP.** Padrao avancado pra
+items que saem de uma lista sendo reordenada:
+
+```tsx
+<AnimatePresence>
+  {items.map((item) => (
+    <motion.li
+      key={item.id}
+      layout
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {item.text}
+    </motion.li>
+  ))}
+</AnimatePresence>
+```
+
+O item que sai tem exit animation. Os que
+ficaram tem FLIP (deslizam pra nova posicao).
+Combinacao classica de "lista reordenavel com
+animacao de saida".
+
+**Leitura recomendada:**
+
+- [Motion - layout animations](https://motion.dev/docs/react-layout-animations) - a doc oficial, com exemplos visuais de FLIP.
+- [Motion - useScroll](https://motion.dev/docs/react-use-scroll) - o hook de scroll, com todos os offsets explicados.
+- [Motion - Drag](https://motion.dev/docs/react-drag) - drag com constraints, snap, e gestures avancadas.
+- [Sam Selikoff - shared layout transitions](https://www.youtube.com/watch?v=SUEm7rwR1Zk) - 20 min de pattern de shared layout em app real.
+
+> Dica: o erro mais comum em padroes de
+> animacao e **esquecer de passar `layoutId`
+> identico nos dois elementos** da shared
+> transition. Se o `layoutId` for diferente
+> ("avatar" vs "user-avatar"), Motion trata
+> como elementos diferentes, sem animacao
+> compartilhada. Regra: **o mesmo
+> `layoutId` aparece no elemento de origem E
+> no destino**.
+
+No proximo no, vamos ver **View Transitions
+API**: a API nativa do browser (Chrome 111+)
+que faz transicoes de estado cross-page sem
+JS pesado, e o pattern de "theme toggle
+animado" com `document.startViewTransition`.
+
+<Checkpoint
+  challenge="Implemente a função `calcularDragConstraints(container, item)` que recebe as dimensões (largura/altura) de um container e de um item, e retorna o objeto `dragConstraints` que o Motion aceita: { left, right, top, bottom } - o maximo que o item pode deslocar antes de bater na borda. O item comeca no centro, entao a constraint e a distancia do centro ate a borda menos metade do item."
+  starterCode={`// Implemente calcularDragConstraints(container, item) que recebe:
+// container: { width: 500, height: 300 }
+// item:      { width: 100, height: 60 }
+//
+// E retorna as constraints de drag (maximo deslocamento a partir
+// do centro antes de bater na borda):
+// { left: -200, right: 200, top: -120, bottom: 120 }
+//
+// Logica:
+// - horizontal: o item pode ir de 0 ate (container.width - item.width)
+//   e comeca no centro, entao o range e +/- ((container.width - item.width) / 2).
+// - vertical: mesma logica com height.
+// - Retorne um objeto com left, right, top, bottom (numeros).
+function calcularDragConstraints(container, item) {
+  return {};
+}
+
+const _container = { width: 500, height: 300 };
+const _item = { width: 100, height: 60 };
+
+const _c = calcularDragConstraints(_container, _item);
+console.log(JSON.stringify(_c));`}
+  expected='{"left":-200,"right":200,"top":-120,"bottom":120}'
+  slug="motion"
+  nodeId="padroes-de-animacao"
+/>
+
+<Quiz
+  question="Qual a diferença prática entre `layout` e `layoutId` no Motion?"
+  options={[
+    {
+      text: "`layout` anima o próprio elemento quando ele muda de tamanho ou posição. `layoutId` conecta DOIS elementos diferentes (em lugares separados da árvore) pra Motion saber que são o 'mesmo item' e animar entre eles.",
+      correct: true,
+      explanation:
+        "`layout` é per-element: Motion mede a posição do elemento antes e depois da mudança, e anima a transição. `layoutId` é cross-element: você coloca o mesmo `layoutId` em um item da lista e em um modal (por exemplo), e Motion faz o item 'viajar' da lista pro modal. Padrão clássico de shared element transition (Unsplash, Apple). `layoutId` requer `AnimatePresence` ou `LayoutGroup` por volta.",
+    },
+    {
+      text: "`layout` e `layoutId` são a mesma coisa - nomes diferentes pra mesma funcionalidade.",
+      correct: false,
+      explanation:
+        "Não. `layout` (sem sufixo) é uma prop booleana: true/false. `layoutId` é uma prop string: um identificador único. O `layout` faz o elemento animar quando ELE muda. O `layoutId` faz Motion conectar elementos com o mesmo ID em lugares diferentes. Casos de uso diferentes.",
+    },
+    {
+      text: "`layoutId` é a versão antiga de `layout`. Use `layout` em código novo.",
+      correct: false,
+      explanation:
+        "Não, `layoutId` não é deprecated. Os dois coexistem e servem propósitos diferentes. `layout` é pra animar mudanças em um único elemento. `layoutId` é pra fazer elementos diferentes parecerem o 'mesmo item' em lugares diferentes. Você usa `layout` em 80% dos casos, e `layoutId` quando precisa de shared element transitions.",
+    },
+  ]}
+/>
