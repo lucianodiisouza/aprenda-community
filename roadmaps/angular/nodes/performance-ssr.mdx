@@ -1,0 +1,79 @@
+---
+id: performance-ssr
+title: "Performance, SSR e Deploy"
+resources:
+  - title: "Angular: Performance"
+    url: https://angular.dev/best-practices/runtime-performance
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Server-side rendering"
+    url: https://angular.dev/guide/ssr
+    type: doc
+    lang: en
+    free: true
+---
+
+Aplicação que funciona localmente ainda não está pronta. Em produção ela precisa
+carregar bem, lidar com rede real, ser empacotada corretamente e, em alguns
+casos, renderizar conteúdo no servidor.
+
+## Performance no Angular
+
+Comece pelo básico que evita trabalho desnecessário:
+
+- listas com `track`
+- rotas carregadas sob demanda
+- componentes menores
+- imagens otimizadas
+- chamadas HTTP sem duplicação
+- partes secundárias carregadas depois com `@defer`
+- estado derivado com `computed` em vez de recalcular no template
+
+```html
+@defer (on viewport) {
+  <app-grafico-progresso />
+} @placeholder {
+  <p>Carregando gráfico...</p>
+}
+```
+
+Também vale entender change detection. Signals ajudam o Angular a saber melhor o
+que mudou. Componentes bem divididos reduzem o custo de atualização. O problema
+normalmente não é "Angular é lento"; é app fazendo trabalho demais a cada
+mudança.
+
+## SSR
+
+SSR renderiza a primeira resposta no servidor. Isso pode melhorar primeira
+renderização, SEO e preview de compartilhamento. Para dashboard interno ou área
+logada, SPA pura pode ser suficiente.
+
+SSR muda restrições: código que usa `window`, `document` ou `localStorage`
+precisa considerar que no servidor essas APIs não existem.
+
+## Deploy
+
+O build começa aqui:
+
+```bash
+ng build
+```
+
+Depois disso, a estratégia depende do tipo de app:
+
+- SPA estática em CDN ou servidor web.
+- App com SSR rodando em Node/adapter suportado.
+- Container com servidor configurado.
+- Plataforma gerenciada com build automático.
+
+Três ideias pra levar deste nó:
+
+- **Build local não é deploy.**
+- **SSR é decisão de produto e arquitetura.**
+- **Performance começa com menos trabalho desnecessário.**
+
+> Dica: rode o build antes de abrir PR grande. Erro de produção às vezes não
+> aparece no `ng serve`.
+
+No próximo nó, você junta tudo em um dashboard Angular completo.

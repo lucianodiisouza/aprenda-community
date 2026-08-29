@@ -1,0 +1,113 @@
+---
+id: ciclo-de-vida
+title: "Ciclo de Vida do Componente"
+resources:
+  - title: "Angular: Component lifecycle"
+    url: https://angular.dev/guide/components/lifecycle
+    type: doc
+    lang: en
+    free: true
+---
+
+Componente não é só um arquivo parado. Ele nasce, recebe dados, passa por
+verificações, renderiza, pode reagir à DOM pronta e precisa limpar recursos
+quando sai da tela.
+
+O ciclo de vida importa quando você precisa executar algo no momento certo:
+carregar dado, reagir a mudança de input, acessar elementos renderizados ou
+encerrar uma subscription.
+
+## A ordem mental
+
+Não precisa decorar tudo no primeiro dia, mas precisa conhecer o mapa:
+
+- `constructor` cria a classe. Use para injeção simples, não para buscar dado.
+- `ngOnChanges` roda quando inputs mudam.
+- `ngOnInit` roda uma vez depois da inicialização dos inputs.
+- `ngDoCheck` permite checagem manual, mas é raro e fácil de usar mal.
+- `ngAfterContentInit` roda depois do conteúdo projetado com `ng-content`.
+- `ngAfterContentChecked` roda após a checagem desse conteúdo.
+- `ngAfterViewInit` roda depois da view do componente estar pronta.
+- `ngAfterViewChecked` roda após a checagem da view.
+- `afterNextRender` roda depois da próxima renderização completa da aplicação.
+- `afterEveryRender` roda depois de toda renderização completa.
+- `ngOnDestroy` roda antes do componente ser destruído.
+
+## Um caso comum
+
+Buscar dados iniciais costuma caber em `ngOnInit`:
+
+```ts
+import { Component, OnInit, inject } from "@angular/core"
+
+@Component({
+  selector: "app-trilhas",
+  standalone: true,
+  template: `...`,
+})
+export class TrilhasComponent implements OnInit {
+  private readonly service = inject(TrilhasService)
+
+  ngOnInit() {
+    this.service.carregar()
+  }
+}
+```
+
+Mas acessar algo da view, como uma referência de elemento ou componente filho,
+normalmente pertence a `ngAfterViewInit`.
+
+```ts
+ngAfterViewInit() {
+  console.log("view pronta")
+}
+```
+
+## Limpando recursos
+
+Se você cria timer, listener ou subscription manual, precisa limpar. O caminho
+clássico é `ngOnDestroy`. No Angular moderno, `DestroyRef` também ajuda a
+registrar limpeza perto do código que criou o recurso.
+
+```ts
+const destroyRef = inject(DestroyRef)
+
+const id = setInterval(() => console.log("tick"), 1000)
+
+destroyRef.onDestroy(() => {
+  clearInterval(id)
+})
+```
+
+Três coisas pra levar deste nó:
+
+- **`ngOnInit` não é o ciclo de vida inteiro.** Ele é só o ponto mais comum.
+- **Hooks de view e content existem para momentos diferentes.**
+- **Toda inscrição manual precisa de estratégia de limpeza.**
+
+> Dica: antes de usar um hook, pergunte "isso depende mesmo desse momento?". Se
+> for só valor derivado, talvez caiba melhor em template, `computed` ou service.
+
+No próximo nó, vamos conectar componentes entre si com inputs e outputs.
+
+<Quiz
+  question="Qual hook costuma ser usado quando você precisa acessar a view já inicializada?"
+  options={[
+    {
+      text: "ngAfterViewInit",
+      correct: true,
+    },
+    {
+      text: "ngOnInit",
+      correct: false,
+      explanation:
+        "ngOnInit roda cedo e é comum para dados iniciais, mas a view completa ainda não é o foco dele.",
+    },
+    {
+      text: "ngOnDestroy",
+      correct: false,
+      explanation:
+        "ngOnDestroy roda na saída do componente, normalmente para limpeza.",
+    },
+  ]}
+/>

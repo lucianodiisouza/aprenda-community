@@ -1,0 +1,83 @@
+---
+id: guards-interceptors
+title: "Guards e Interceptors"
+resources:
+  - title: "Angular: Route guards"
+    url: https://angular.dev/guide/routing/route-guards
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: HTTP interceptors"
+    url: https://angular.dev/guide/http/interceptors
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando o app ganha login e API, duas perguntas aparecem rápido: quem pode entrar
+em cada tela? E como evitar repetir token e tratamento de erro em toda chamada?
+
+Guards cuidam da navegação. Interceptors cuidam do caminho das requisições HTTP.
+
+## Guards
+
+Guard decide se uma rota pode ser acessada, carregada ou abandonada. Os casos
+mais comuns são:
+
+- `CanActivate`: pode entrar nesta rota?
+- `CanMatch`: esta rota deve ser considerada no matching?
+- `CanDeactivate`: pode sair desta tela com alterações não salvas?
+- resolver/carregamento prévio: a rota precisa de dados antes de abrir?
+
+```ts
+import { inject } from "@angular/core"
+import { Router } from "@angular/router"
+
+export const authGuard = () => {
+  const auth = inject(AuthService)
+  const router = inject(Router)
+
+  return auth.estaLogado() ? true : router.parseUrl("/login")
+}
+```
+
+Guard melhora o fluxo do front-end, mas não substitui segurança no backend. A
+API ainda precisa validar permissão.
+
+## Interceptors
+
+Interceptor é bom para comportamento repetido: anexar token, padronizar headers,
+medir tempo de requisição, renovar credencial ou tratar erro global.
+
+```ts
+export const authInterceptor = (req, next) => {
+  const token = localStorage.getItem("token")
+
+  return next(req.clone({
+    setHeaders: { Authorization: `Bearer ${token}` },
+  }))
+}
+```
+
+Também é comum capturar erros:
+
+```ts
+export const errorInterceptor = (req, next) =>
+  next(req).pipe(
+    catchError((error) => {
+      console.error("falha HTTP", error)
+      return throwError(() => error)
+    })
+  )
+```
+
+Três ideias pra levar deste nó:
+
+- **Guard protege fluxo de navegação.**
+- **Interceptor centraliza regra de HTTP.**
+- **Front-end não é a barreira final de segurança.**
+
+> Dica: se você copiou o mesmo header em três services, está na hora de pensar
+> em interceptor.
+
+No próximo nó, vamos cuidar da entrada de dados com formulários.

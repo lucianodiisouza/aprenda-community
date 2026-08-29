@@ -297,6 +297,26 @@
           "via": "trilha:backend"
         }
       ]
+    },
+    {
+      "github": "lucaspedruo",
+      "name": "Lucas Pedro",
+      "avatar": "https://github.com/lucaspedruo.png",
+      "profile": "https://github.com/lucaspedruo",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 0,
+        "bootcamps": 0,
+        "total": 1
+      },
+      "trilhas": [
+        {
+          "slug": "angular",
+          "title": "Angular"
+        }
+      ],
+      "projetos": [],
+      "bootcamps": []
     }
   ]
 }
