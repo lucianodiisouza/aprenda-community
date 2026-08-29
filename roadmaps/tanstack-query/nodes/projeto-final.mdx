@@ -1,0 +1,341 @@
+---
+id: projeto-final
+title: "Projeto final: app de tarefas com fetch, mutations, cache e offline"
+---
+
+Esse é o projeto que junta tudo que vimos nos 6 nós
+anteriores. A ideia é construir um **app de tarefas (CRUD
+completo)** usando TanStack Query como o **único** mecanismo
+de leitura e escrita de dados - nada de `useState` + `fetch`
+pra dados do servidor. Quando você terminar, vai ter
+praticado:
+
+- `useQuery` pra listar tarefas
+- `useMutation` pra criar, editar, deletar
+- **Optimistic update** em "marcar como feita"
+- **Cache invalidation** depois de cada mutation
+- **`useMutationState`** pra indicador global de "salvando"
+- **React Query Devtools** pra debugar
+- **Offline behavior** com `networkMode`
+
+## O que você vai construir
+
+Um app de página única (SPA) com:
+
+- **Lista de tarefas** (carrega do servidor via `useQuery`)
+- **Criar tarefa** (mutation POST)
+- **Editar tarefa** (mutation PUT)
+- **Deletar tarefa** (mutation DELETE)
+- **Marcar como feita** (mutation PATCH com **optimistic
+  update**)
+- **Filtro por status** (pendente / feita / todas) - usa
+  `useQuery` com queryKey derivada
+- **Indicador "salvando..."** no header quando qualquer
+  mutation está rodando (`useMutationState`)
+- **Comportamento offline**: queries pausam sem rede,
+  voltam a rodar quando reconecta
+
+A UI é propositalmente simples: HTML sem estilização
+elaborada, foco no comportamento de dados. Você pode
+usar o framework de UI que quiser (ou nenhum) - o que
+importa é o TanStack Query.
+
+## Setup
+
+1. **Crie um projeto React novo com Vite + TypeScript:**
+
+   ```bash
+   npm create vite@latest tarefas-tanstack -- --template react-ts
+   cd tarefas-tanstack
+   npm install
+   ```
+
+2. **Instale as dependências:**
+
+   ```bash
+   npm install @tanstack/react-query @tanstack/react-query-devtools
+   ```
+
+3. **Configure o `QueryClient` no `main.tsx`:**
+
+   ```tsx
+   import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+   import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+   const queryClient = new QueryClient({
+     defaultOptions: {
+       queries: {
+         staleTime: 30 * 1000, // 30s
+         retry: 1, // tenta 1x em caso de erro
+       },
+     },
+   });
+
+   ReactDOM.createRoot(document.getElementById("root")!).render(
+     <QueryClientProvider client={queryClient}>
+       <App />
+       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+     </QueryClientProvider>,
+   );
+   ```
+
+4. **Suba uma API local.** Você tem três opções, em ordem
+   de simplicidade:
+
+   - **JSON Server** (recomendado pra começar):
+     `npx json-server@latest --watch db.json --port 3001`
+   - **Mock Service Worker (MSW)** - mais robusto,
+     intercepta `fetch` no browser. Bom pra testes.
+   - **API pública** - JSONPlaceholder
+     (`https://jsonplaceholder.typicode.com/todos`) - serve
+     pra testar, mas não persiste.
+
+   Pra este projeto, JSON Server é suficiente. Crie um
+   `db.json` na raiz:
+
+   ```json
+   {
+     "tarefas": [
+       { "id": "1", "titulo": "Estudar TanStack Query", "feita": false },
+       { "id": "2", "titulo": "Fazer o projeto final", "feita": false }
+     ]
+   }
+   ```
+
+5. **Configure o fetch base.** Pra não repetir a URL em
+   cada `queryFn`, crie um helper:
+
+   ```ts
+   // src/api.ts
+   const BASE_URL = "http://localhost:3001";
+
+   export async function api<T>(
+     path: string,
+     options?: RequestInit,
+   ): Promise<T> {
+     const r = await fetch(`${BASE_URL}${path}`, {
+       headers: { "Content-Type": "application/json" },
+       ...options,
+     });
+     if (!r.ok) {
+       throw new Error(`API error: ${r.status} ${r.statusText}`);
+     }
+     return r.json();
+   }
+   ```
+
+## Requisitos
+
+### Funcionais (todos obrigatórios)
+
+- **`useTarefas` (hook)** - busca a lista de tarefas do
+  servidor. Retorna `{ data, isLoading, isError, error }`.
+  Use `useQuery` com `queryKey: ["tarefas"]`.
+- **`useCriarTarefa`** - mutation que faz POST e invalida
+  `["tarefas"]` no `onSuccess`. Use `useMutation` com
+  `mutationFn: (nova) => api("/tarefas", { method: "POST", body: JSON.stringify(nova) })`.
+- **`useEditarTarefa`** - mutation que faz PUT e atualiza
+  a key específica `["tarefas", id]` no `onSuccess` com
+  `setQueryData`. Também invalida a lista raiz.
+- **`useDeletarTarefa`** - mutation que faz DELETE e
+  remove a key `["tarefas", id]` no `onSuccess`. Atualiza
+  a lista removendo o item.
+- **`useMarcarComoFeita`** - mutation PATCH com
+  **optimistic update**:
+  - `onMutate`: cancela refetches, salva snapshot da
+    lista, atualiza o item com `feita: !feita` via
+    `setQueryData`, retorna snapshot no context.
+  - `onError`: rollback com o snapshot do context.
+  - `onSettled`: invalida a lista raiz.
+
+### UX (todos obrigatórios)
+
+- **Loading inicial**: mostra "Carregando tarefas..."
+  enquanto `isLoading`.
+- **Erro**: mostra mensagem de erro com botão "Tentar
+  novamente" (chama `refetch`).
+- **Optimistic update visível**: ao marcar como feita, a
+  UI muda **instantaneamente** (sem esperar o servidor).
+  Se der erro, volta ao estado anterior + mostra toast.
+- **Indicador "salvando..."** no header quando qualquer
+  mutation de tarefas está rodando. Use `useMutationState`
+  com `filters: { mutationKey: ["tarefas"] }`.
+- **Filtro funciona sem loading cheio**: ao trocar de
+  "pendentes" pra "feitas", a lista anterior continua
+  visível (esmaecida) até a nova carregar. Use
+  `placeholderData: keepPreviousData` (ou
+  `placeholderData: (anterior) => anterior` em versões
+  mais antigas).
+- **Offline**: desligue a rede no DevTools, faça
+  operações. Mutations devem ficar em estado `paused` e
+  retomar quando a rede voltar.
+
+### Estrutura de código (recomendado)
+
+Separe em arquivos:
+
+- `src/api.ts` - helper de fetch
+- `src/hooks/useTarefas.ts` - query de lista
+- `src/hooks/useCriarTarefa.ts` - mutation POST
+- `src/hooks/useEditarTarefa.ts` - mutation PUT
+- `src/hooks/useDeletarTarefa.ts` - mutation DELETE
+- `src/hooks/useMarcarComoFeita.ts` - mutation PATCH com
+  optimistic
+- `src/App.tsx` - UI principal com lista + form + filtros
+- `src/components/ListaTarefas.tsx` - render da lista
+- `src/components/FormTarefa.tsx` - input + botão de criar
+- `src/components/IndicadorSalvando.tsx` - header com
+  `useMutationState`
+
+Cada hook é um arquivo separado. Você importa nos
+componentes. Isso facilita revisar e testar.
+
+## Desafios extras (opcionais, pra ir além)
+
+Cada um cobre um conceito de um nó anterior:
+
+- **Persistência offline**: com
+  `@tanstack/query-persist-client-core` e
+  `createSyncStoragePersister`, persista o cache no
+  `localStorage`. Recarregue a página - o cache deve
+  voltar do storage em vez de refazer todas as requests.
+- **Infinite scroll**: troque a lista simples por
+  `useInfiniteQuery`, com 20 itens por página. Scroll
+  infinito via `IntersectionObserver`.
+- **Dependência entre queries**: adicione um detalhe
+  de tarefa (clicar numa tarefa abre um painel com
+  comentários). Use `useQuery` com `enabled` condicional
+  baseado na query de lista.
+- **Teste E2E**: com Playwright, valide o fluxo
+  principal - criar, marcar como feita, deletar. Use
+  o Checkpoint abaixo como referência.
+- **Type-safe com `queryOptions`**: refatore os hooks
+  pra usar `queryOptions({ ... })` (introduzido no
+  TanStack Query 5.x), que infere tipos automaticamente
+  sem generics verbosos.
+
+## Dicas
+
+- **Não invente `queryKey` na hora de invalidar.** Extraia
+  pra um arquivo `src/keys.ts`:
+
+  ```ts
+  export const tarefasKey = {
+    all: ["tarefas"] as const,
+    detail: (id: string) => ["tarefas", id] as const,
+  };
+  ```
+
+  Aí `queryKey: tarefasKey.all` e
+  `invalidateQueries({ queryKey: tarefasKey.all })`. Sem
+  chance de typo.
+
+- **Valide o cache no Devtools a cada mutation.** Abra o
+  painel, faça uma operação, veja o status mudar de
+  "fresh" pra "stale" pra "fetching" pra "fresh" de novo.
+  Se algum estado estiver errado, é bug na sua lógica
+  de invalidação.
+
+- **Não use `refetchInterval` em lugar de
+  `invalidateQueries`.** É tentador "só pra resolver
+  rápido", mas vira requests desnecessárias. O caminho
+  certo é mutation → invalidate → refetch natural.
+
+- **Tipe explicitamente o retorno do `api<T>`.** O TS
+  infere `T` a partir de quem chama, então o `data` do
+  `useQuery` fica tipado:
+
+  ```ts
+  const { data } = useQuery({
+    queryKey: ["tarefas"],
+    queryFn: () => api<Tarefa[]>("/tarefas"),
+  });
+  // data: Tarefa[] | undefined
+  ```
+
+- **Trate `error: unknown` em TS 4.4+.** TanStack Query
+  tipa `error` como `Error` por padrão, mas se você
+  tipar genérico, vira `unknown`. Adicione `useQuery<TData,
+  Error>({...})` pra ter autocomplete.
+
+## Como você sabe que terminou
+
+O projeto está pronto quando:
+
+1. **Todas as operações CRUD funcionam** (criar, listar,
+   editar, deletar, marcar como feita) sem erro no
+   console.
+2. **Optimistic update é instantâneo**: marcar como feita
+   muda a UI em < 50ms, mesmo com a rede "lenta" (throttle
+   no DevTools pra "Slow 3G" pra testar).
+3. **Cache se mantém entre navegações**: ir pra outra
+   rota e voltar não dispara loading cheio.
+4. **Devtools mostra o ciclo de vida correto**: cada
+   mutation causa `stale` → `fetching` → `fresh` na query
+   correspondente.
+5. **Offline funciona**: com rede desligada, mutations
+   ficam `paused`. Quando religa, completam.
+6. **Indicador "salvando..."** aparece e some corretamente.
+7. **Código está separado em hooks** (não tudo em um
+   arquivo `App.tsx` de 500 linhas).
+
+## Próximo passo depois do projeto
+
+Quando o projeto estiver rodando, você está pronto pra:
+
+- **Mergear com a `nextjs`**: integrar TanStack Query
+  com Server Components, pré-popular o cache no server
+  via `dehydrate`, evitar loading flash no client.
+- **Aprofundar testes**: com `@testing-library/react` e
+  MSW pra mockar a API, escrever testes que verificam
+  que `useQuery` chama o `queryFn` correto, e que
+  `useMutation` faz rollback em caso de erro.
+- **Migração pra `useSuspenseQuery`**: trocar os
+  `useQuery` por `useSuspenseQuery` e mover os loadings
+  pra `<Suspense>` na borda.
+- **Trilha `storybook-design-systems`**: extrair a UI
+  do projeto (lista, form, indicador) pra componentes
+  reutilizáveis com stories e testes visuais.
+
+> Dica: o projeto é a parte mais importante da trilha.
+> Ler os nós sem fazer o projeto é como ler sobre
+> cozinhar sem cozinhar. Aprofundamento real vem de
+> encontrar o bug, abrir o Devtools, e ver o que estava
+> errado. Reserve pelo menos 4-6 horas pra fazer com
+> calma, com a `rede do Devtools throttled` pra "Slow 3G"
+> durante o desenvolvimento - assim você sente o que o
+> usuário sente com rede ruim, e a importância do
+> optimistic update fica concreta.
+
+<Checkpoint
+  challenge="Implemente o hook `useTarefas()` que retorna a lista de tarefas da API. A API retorna objetos `{ id: string; titulo: string; feita: boolean }`. Use `useQuery` com `queryKey: ['tarefas']` e `queryFn` chamando `fetch('http://localhost:3001/tarefas')`. Configure `staleTime: 30_000`."
+  starterCode={`import { useQuery } from "@tanstack/react-query";
+
+type Tarefa = {
+  id: string;
+  titulo: string;
+  feita: boolean;
+};
+
+function useTarefas() {
+  // Implemente o useQuery aqui.
+  // - queryKey: ["tarefas"]
+  // - queryFn: fetch em http://localhost:3001/tarefas (joga erro se !r.ok)
+  // - staleTime: 30_000
+  //
+  // Retorne o que o useQuery te der.
+  return null as any;
+}
+
+// Não edite abaixo - é o teste manual.
+const _resultado = useTarefas();
+// _resultado.data é Tarefa[] quando carrega
+// _resultado.isLoading é true na primeira vez
+// _resultado.refetch() força novo fetch
+
+const _tipo: Tarefa = { id: "1", titulo: "X", feita: false };
+console.log(_resultado, _tipo);`}
+expected='[{"id":"1","titulo":"Estudar TanStack Query","feita":false}]'
+slug="tanstack-query"
+nodeId="projeto-final"
+/>

@@ -1,0 +1,495 @@
+---
+id: mutations
+title: "Mutations: useMutation, onSuccess, onError, optimistic updates"
+resources:
+  - title: "TanStack Query - useMutation (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/reference/useMutation
+    type: doc
+    lang: en
+    free: true
+  - title: "TkDodo - Mastering Mutations in React Query"
+    url: https://tkdodo.eu/blog/mastering-mutations-in-react-query
+    type: artigo
+    lang: en
+    free: true
+  - title: "TkDodo - Practical React Query 7: Optimistic Updates (vídeo, EN)"
+    url: https://www.youtube.com/watch?v=UK0g2lst5FI
+    type: video
+    lang: en
+    free: true
+---
+
+O `useQuery` lê dados do servidor. O `useMutation` escreve.
+A primeira vista, `useMutation` parece trivial (é só um
+`fetch` com loading state, certo?), mas o que faz a
+diferença em apps reais é o que acontece **depois** que a
+mutation volta: como você atualiza o cache, como você lida
+com erro, e como você dá feedback instantâneo pro usuário
+sem esperar a request voltar.
+
+Este nó é sobre o ciclo de vida de uma mutation, os
+callbacks que conectam ela ao resto da UI, e o padrão de
+**optimistic update** - a feature que faz apps como
+Trello, Notion e Gmail parecerem instantâneas.
+
+## O essencial 🟢
+
+**O mínimo do `useMutation`.** O hook recebe `mutationFn`
+(a função que faz o `POST`/`PUT`/`DELETE`), e devolve
+`mutate` (a função que você chama pra disparar) mais
+estado da mutation.
+
+```tsx
+import { useMutation } from "@tanstack/react-query";
+
+type NovoUsuario = { nome: string; email: string };
+type Usuario = NovoUsuario & { id: string };
+
+function Formulario() {
+  const { mutate, isPending, isError, error } = useMutation<
+    Usuario,
+    Error,
+    NovoUsuario
+  >({
+    mutationFn: (novo) =>
+      fetch("/api/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(novo),
+      }).then((r) => {
+        if (!r.ok) throw new Error("Falha ao criar");
+        return r.json();
+      }),
+  });
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        mutate({
+          nome: form.get("nome") as string,
+          email: form.get("email") as string,
+        });
+      }}
+    >
+      <input name="nome" required />
+      <input name="email" type="email" required />
+      <button disabled={isPending}>{isPending ? "Salvando..." : "Salvar"}</button>
+      {isError && <p style={{ color: "red" }}>{error.message}</p>}
+    </form>
+  );
+}
+```
+
+A anatomia:
+
+- **`mutate(variables)`** - dispara a mutation. O argumento
+  é o que vai pra `mutationFn`. Diferente de `useQuery`, o
+  resultado da mutation **não vai automaticamente pro cache**
+  (você decide o que fazer com ele).
+- **`mutateAsync(variables)`** - mesma coisa, mas devolve
+  uma Promise. Use quando você precisa do resultado antes
+  de continuar (ex: redirecionar depois do POST).
+- **`isPending`** - true enquanto a mutation está em
+  andamento. Use pra desabilitar botão.
+- **`isError` / `error`** - true se a `mutationFn` jogou
+  exceção. Use pra mostrar mensagem de erro.
+- **`isSuccess`** - true se a mutation completou sem erro.
+- **`data`** - o retorno da `mutationFn` (ex: o objeto
+  criado com o `id` gerado pelo servidor).
+- **`reset()`** - reseta o estado da mutation. Útil pra
+  limpar erro/sucesso depois de mostrar um toast.
+- **`variables`** - os argumentos passados pro `mutate`.
+  Útil pra mostrar "salvando X" enquanto roda.
+
+**`mutate` vs `mutateAsync` - quando usar cada um.** A
+diferença é pequena, mas o tipo de retorno muda:
+
+- `mutate` - **fire and forget**. Não devolve Promise.
+  Use quando você não se importa com o resultado (botão
+  "Curtir", "Marcar como lido", log de evento).
+- `mutateAsync` - devolve Promise. Use quando você
+  precisa do resultado antes de continuar (ex: redirect
+  depois de login, fechar modal só depois de salvar).
+
+```tsx
+// mutate - fire and forget
+const curtir = useMutation({
+  mutationFn: (postId: string) => fetch(`/api/posts/${postId}/like`, { method: "POST" }),
+});
+// Uso: curtir.mutate(postId);
+
+// mutateAsync - precisa do resultado
+const login = useMutation({
+  mutationFn: (credenciais) => fetch("/api/login", { ... }).then((r) => r.json()),
+});
+async function onSubmit() {
+  try {
+    const { token } = await login.mutateAsync(credenciais);
+    localStorage.setItem("token", token);
+    router.push("/dashboard");
+  } catch (e) {
+    // erro já tratado em isError, mas dá pra customizar
+  }
+}
+```
+
+**Callbacks: `onSuccess`, `onError`, `onSettled`.** O
+`useMutation` aceita callbacks que rodam em momentos
+específicos. Úteis pra side effects (toast, redirect, log):
+
+```tsx
+const mutation = useMutation({
+  mutationFn: criarUsuario,
+  onSuccess: (data) => {
+    // Roda quando a mutation completa sem erro
+    toast.success(`Usuário ${data.nome} criado!`);
+    form.reset();
+  },
+  onError: (error) => {
+    // Roda quando a mutation joga exceção
+    toast.error(error.message);
+  },
+  onSettled: (data, error) => {
+    // Roda SEMPRE (sucesso ou erro). Bom pra cleanup.
+    setEnviando(false);
+  },
+});
+```
+
+A diferença entre `onSuccess` no objeto da mutation e
+`mutate(variables, { onSuccess: ... })`:
+
+- **No objeto da mutation** - roda em **toda** chamada
+  dessa mutation. Use pra comportamento padrão.
+- **No segundo argumento de `mutate`** - roda **só nessa
+  chamada** específica. Use quando o callback depende do
+  contexto (ex: callback de "salvar e fechar modal"
+  diferente de "salvar e continuar editando").
+
+```tsx
+// Padrão global da mutation
+const salvar = useMutation({
+  mutationFn: ...,
+  onSuccess: () => toast.success("Salvo!"),
+});
+
+// Comportamento específico dessa chamada
+function onSalvarEVoltar() {
+  salvar.mutate(dados, {
+    onSuccess: () => router.push("/lista"),
+  });
+}
+
+function onSalvarEContinuar() {
+  salvar.mutate(dados, {
+    onSuccess: () => toast.info("Salvo, pode continuar editando"),
+  });
+}
+```
+
+**Optimistic updates: feedback instantâneo.** O padrão que
+faz a app "parecer" rápida. A ideia: aplica a mudança na
+UI **antes** da request voltar. Se a request falhar, reverte.
+
+```tsx
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+function Curtir({ postId, jaCurtiu }: { postId: string; jaCurtiu: boolean }) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      fetch(`/api/posts/${postId}/like`, { method: "POST" }),
+    onMutate: async () => {
+      // 1. CANCELA refetches em andamento pra não sobrescrever
+      // nosso update otimista
+      await queryClient.cancelQueries({ queryKey: ["posts", postId] });
+
+      // 2. SNAPSHOT do estado anterior (pra rollback se der erro)
+      const anterior = queryClient.getQueryData(["posts", postId]);
+
+      // 3. APLICA o update otimista
+      queryClient.setQueryData(["posts", postId], (antigo: any) => ({
+        ...antigo,
+        curtidas: antigo.curtidas + (jaCurtiu ? -1 : 1),
+      }));
+
+      // 4. RETORNA o snapshot pro contexto (vai pro onError)
+      return { anterior };
+    },
+    onError: (_err, _vars, context) => {
+      // 5. ROLLBACK: se a request falhou, volta o estado anterior
+      queryClient.setQueryData(["posts", postId], context.anterior);
+    },
+    onSettled: () => {
+      // 6. REVALIDA: garante que o servidor é a fonte da verdade
+      queryClient.invalidateQueries({ queryKey: ["posts", postId] });
+    },
+  });
+
+  return (
+    <button onClick={() => mutation.mutate()}>
+      {jaCurtiu ? "Descurtir" : "Curtir"}
+    </button>
+  );
+}
+```
+
+O fluxo:
+
+1. Usuário clica em "Curtir".
+2. UI atualiza **instantaneamente** (a cor muda, o contador
+   sobe) - o `setQueryData` no `onMutate` aplica a mudança
+   sem esperar nada.
+3. Request vai pro servidor em background.
+4. Se deu certo (`onSuccess`): nada a fazer, a UI já está
+   certa. `onSettled` invalida a query pra revalidar.
+5. Se deu errado (`onError`): rollback pro estado anterior.
+   A UI volta como se nada tivesse acontecido, e o usuário
+   vê um toast de erro.
+
+**Por que `cancelQueries` no começo.** Se uma revalidação
+estiver em andamento (refetch on focus, por exemplo) e ela
+voltar **depois** do `setQueryData`, ela sobrescreve o update
+otimista com o valor antigo. Cancelar garante que nossa
+mudança otimista é a "última palavra" até o servidor
+responder.
+
+**Por que `onSettled` invalida, e não `onSuccess`.** Em
+teoria, se o servidor confirmou, a UI já está certa. Mas
+e se **outro usuário** editou o mesmo registro no meio
+tempo? `invalidateQueries` força uma revalidação que
+garante que o cache bate com o servidor - sem isso, sua
+UI pode mostrar dados que **não são mais a verdade** no
+servidor.
+
+**Mutation não vai pro cache automaticamente.** Diferente
+do que muita gente espera, chamar `mutate({ nome: "Ana" })`
+**não** adiciona o objeto criado à lista de usuários. Você
+decide o que fazer:
+
+- **Opção 1: invalidar a query** (mais comum). Depois da
+  mutation, marca a query de lista como stale, e a próxima
+  vez que alguém ler, ela é revalidada. Custa uma request
+  extra, mas é simples e correto.
+- **Opção 2: atualizar o cache manualmente** (optimistic).
+  Adiciona o objeto novo à lista em memória antes da
+  request voltar. Custa zero requests mas você precisa
+  tratar o erro (rollback).
+
+Veremos a Opção 1 em detalhe no próximo nó
+(`cache-invalidation`). Por ora, basta saber: **mutation +
+`onSuccess: () => invalidateQueries(...)`** é o caminho
+padrão e cobre 80% dos casos.
+
+## Aprofundamento 🟡
+
+**`mutate` com optimistic update + `setQueryData` - quando
+vale a pena.** O exemplo acima (curtir post) é o caso
+clássico: feedback instantâneo importa mais que precisão
+absoluta. Mas nem todo caso é assim.
+
+- **Vale optimistic:** curtir, favoritar, marcar como lido,
+  drag-and-drop de coluna, increment/decrement de contador.
+  A UI fica "viva" e o usuário confia mais.
+- **Não vale optimistic:** delete (a UI já fica esvaziada
+  rápido, e o servidor precisa confirmar pra liberar
+  espaço), criar recurso (você precisa do `id` do servidor
+  pra editar depois), transferências bancárias (a
+  confirmação importa demais pra mentir pro usuário).
+
+A regra: se o rollback em caso de erro é fácil e barato,
+optimistic. Se o rollback é caro ou confuso (ex: o servidor
+manda email de confirmação, e o rollback não cancela o
+email), espera a request voltar.
+
+**Mutations encadeadas com `useMutation` + `mutateAsync`.**
+Às vezes uma mutation depende do resultado de outra (criar
+usuário → adicionar à organização). Encadeie com
+`mutateAsync`:
+
+```tsx
+const criarUsuario = useMutation(...);
+const adicionarAOrg = useMutation(...);
+
+async function cadastrar() {
+  const usuario = await criarUsuario.mutateAsync(dadosUsuario);
+  await adicionarAOrg.mutateAsync({ orgId, userId: usuario.id });
+}
+```
+
+Cuidado: erros no meio do encadeamento deixam o sistema
+em estado parcial. Pra fluxos críticos, prefira uma única
+mutation no servidor (que faz tudo atomicamente) e chame
+ela do client.
+
+**`mutationKey` pra organizar devtools.** Quando você tem
+dezenas de mutations, dar uma key ajuda o devtools (próximo
+nó) a agrupar e buscar:
+
+```tsx
+const criarUsuario = useMutation({
+  mutationKey: ["usuarios", "criar"],
+  mutationFn: ...,
+});
+
+const deletarUsuario = useMutation({
+  mutationKey: ["usuarios", "deletar"],
+  mutationFn: ...,
+});
+```
+
+Sem `mutationKey`, o devtools agrupa tudo em "Anonymous".
+Com a key, fica fácil achar a mutation específica.
+
+**`useMutationState` pra observar mutations de fora.** Hook
+menos conhecido, mas útil pra mostrar "tem uma mutation
+rodando" em indicador global:
+
+```tsx
+// Em algum lugar alto da app
+const mutations = useMutationState({
+  filters: { mutationKey: ["usuarios"] },
+  select: (mutation) => mutation.state.status,
+});
+
+const temMutationAtiva = mutations.some((s) => s === "pending");
+
+// No header
+{temMutationAtiva && <BarraSalvando />}
+```
+
+Útil quando várias mutations disparam de componentes
+diferentes e você quer feedback unificado.
+
+## Pra quem quer ir além 🔴
+
+**Mutations paralelas com `useMutation` + `Promise.all`.**
+Pra "salvar tudo de uma vez" (ex: criar post + tags +
+imagem em paralelo), dispare várias mutations em paralelo
+e espere todas:
+
+```tsx
+const criarPost = useMutation(...);
+const criarTags = useMutation(...);
+const uploadImagem = useMutation(...);
+
+async function publicar() {
+  await Promise.all([
+    criarPost.mutateAsync(dadosPost),
+    criarTags.mutateAsync(tags),
+    uploadImagem.mutateAsync(imagem),
+  ]);
+}
+```
+
+Cuidado: se uma falhar, as outras continuam. Pra "tudo
+ou nada", precisa de transação no servidor (não dá pra
+resolver só no client).
+
+**Mutations offline com `networkMode: 'offlineFirst'`.**
+Por padrão, mutations em rede off-line ficam pausadas
+(`fetchStatus: 'paused'`) e voltam a rodar quando a rede
+volta. Mas dá pra configurar pra rodar em fila persistente:
+
+```tsx
+const mutation = useMutation({
+  mutationFn: ...,
+  networkMode: "offlineFirst",
+  onMutate: () => {
+    // Salva a mutation na fila (localStorage, IndexedDB)
+    // pra rodar quando voltar online
+  },
+});
+```
+
+Aprofundamento em offline-first fica pra trilha
+`pwa-offline-first` (issue #51). Esta trilha menciona
+porque é uma feature padrão do TanStack Query, mas o
+projeto real de offline-first precisa de mais infra
+(queue persistente, retry exponencial server-side, etc).
+
+**Leitura recomendada:**
+
+- [TanStack Query - useMutation (oficial)](https://tanstack.com/query/latest/docs/framework/react/reference/useMutation) -
+  referência completa.
+- [TkDodo - Mastering Mutations in React Query](https://tkdodo.eu/blog/mastering-mutations-in-react-query) -
+  o post mais completo sobre o tema, pelo mantenedor.
+- [TkDodo - Practical React Query 7: Optimistic Updates (vídeo)](https://www.youtube.com/watch?v=UK0g2lst5FI) -
+  passo a passo visual do padrão.
+
+> Dica: o erro mais comum em optimistic update é esquecer
+> o `cancelQueries` no começo. O sintoma é "minha UI volta
+> sozinha pro valor antigo depois de 2 segundos". O motivo
+> é uma revalidação em background que sobrescreveu seu
+> update otimista. `await queryClient.cancelQueries(...)`
+> no `onMutate` resolve.
+
+No próximo nó, vamos ao coração do problema de server
+state: **`cache-invalidation`**. Quando invalidar, como
+invalidar, e por que "fetch é fácil, invalidation é o
+problema difícil".
+
+<Checkpoint
+  challenge="Implemente um botão 'Curtir' com optimistic update. O componente recebe `postId` e `jaCurtiu`. Ao clicar: (1) cancela refetches da query `['posts', postId]`, (2) incrementa/ decrementa o campo `curtidas` no cache, (3) se a request falhar, faz rollback. A request POST vai pra `/api/posts/:postId/like`."
+  starterCode={`import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+type Post = {
+  id: string;
+  titulo: string;
+  curtidas: number;
+};
+
+function BotaoCurtir({ postId, jaCurtiu }: { postId: string; jaCurtiu: boolean }) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      fetch(\`/api/posts/\${postId}/like\`, { method: "POST" }),
+
+    // Implemente aqui:
+    // - onMutate: cancela refetches, salva snapshot, aplica update otimista
+    // - onError: rollback com o snapshot
+    // - onSettled: invalida a query pra revalidar
+  });
+
+  return (
+    <button onClick={() => mutation.mutate()}>
+      {jaCurtiu ? "Descurtir" : "Curtir"}
+    </button>
+  );
+}
+
+// Não edite abaixo - é o teste manual.
+const _tipo: Post = { id: "p-1", titulo: "X", curtidas: 5 };
+console.log(_tipo);`}
+expected='{"curtidas":6}'
+slug="tanstack-query"
+nodeId="mutations"
+/>
+
+<Quiz
+  question="Por que `onSettled` deve invalidar a query (e não só deixar o update otimista em paz)?"
+  options={[
+    {
+      text: "Porque outro usuário pode ter editado o mesmo registro no meio tempo, e a invalidação garante que o cache bate com o servidor.",
+      correct: true,
+      explanation:
+        "Mesmo se a sua mutation deu certo, o estado do servidor pode ter mudado por outras mãos. invalidateQueries força uma revalidação que sincroniza o cache. Sem isso, sua UI pode mostrar dados que não são mais a verdade no servidor.",
+    },
+    {
+      text: "Porque se não invalidar, o cache fica stale pra sempre e o useQuery nunca mais atualiza.",
+      correct: false,
+      explanation:
+        "Quase certo, mas incompleto. O cache fica stale, mas refetchOnWindowFocus revalida em algum momento. O motivo principal é concorrência: outros usuários podem ter mudado o dado, e sem revalidação você assume que sua mutation é a única mudança.",
+    },
+    {
+      text: "Não precisa invalidar - o setQueryData já cuidou disso.",
+      correct: false,
+      explanation:
+        "setQueryData atualiza o cache localmente, mas não busca o estado real do servidor. Você pode ter atualizado sua cópia local com sucesso, mas o servidor tem outro estado (concorrência, side effects no server, etc).",
+    },
+  ]}
+/>

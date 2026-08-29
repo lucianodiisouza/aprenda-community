@@ -1,0 +1,545 @@
+---
+id: queries-basico
+title: "Queries na prática: useQuery, query keys, staleTime, gcTime"
+resources:
+  - title: "TanStack Query - useQuery (oficial)"
+    url: https://tanstack.com/query/latest/docs/framework/react/reference/useQuery
+    type: doc
+    lang: en
+    free: true
+  - title: "TkDodo - Effective React Query Keys"
+    url: https://tkdodo.eu/blog/effective-react-query-keys
+    type: artigo
+    lang: en
+    free: true
+  - title: "TkDodo - Practical React Query 2: Stale while revalidate (vídeo, EN)"
+    url: https://www.youtube.com/watch?v=seU46c6Jz7E
+    type: video
+    lang: en
+    free: true
+---
+
+O `useQuery` é o hook que você vai chamar 90% do tempo. A
+assinatura parece grande, mas cada campo do retorno tem um
+significado específico, e a maioria das opções tem um default
+que funciona na maioria dos casos. Este nó é sobre dominar a
+anatomia do hook: o que cada campo te dá, como configurar
+`queryKey` pra deduplicar e invalidar corretamente, e o que
+`staleTime` e `gcTime` realmente controlam.
+
+Se você entende o ciclo de vida "fresh → stale → inactive →
+garbage collected" e o que cada estado significa na UI, o
+resto da biblioteca vira "configurações em cima desse
+ciclo".
+
+## O essencial 🟢
+
+**O mínimo que você precisa saber pra começar.** O `useQuery`
+recebe um objeto com, no mínimo, duas coisas: `queryKey` (um
+array que identifica a query) e `queryFn` (a função que faz
+a request). O retorno é um objeto com `data`, `isLoading`,
+`isError`, `error` e mais alguns campos.
+
+```tsx
+import { useQuery } from "@tanstack/react-query";
+
+type Usuario = { id: string; nome: string; email: string };
+
+function Perfil({ userId }: { userId: string }) {
+  const { data, isLoading, isError, error } = useQuery<Usuario>({
+    queryKey: ["usuarios", userId],
+    queryFn: () =>
+      fetch(`/api/usuarios/${userId}`).then((r) => {
+        if (!r.ok) throw new Error("Falha ao buscar usuário");
+        return r.json();
+      }),
+  });
+
+  if (isLoading) return <Spinner />;
+  if (isError) return <Erro mensagem={error.message} />;
+  return <h1>{data.nome}</h1>;
+}
+```
+
+Esse é o **caminho feliz**. Sem cache global, sem retry
+configurado, sem nada - e já funciona, porque o `QueryClient`
+global (configurado uma vez no `main.tsx` via
+`QueryClientProvider`) cuida do resto.
+
+**A anatomia completa do retorno.** O objeto que o `useQuery`
+retorna tem mais campos do que o exemplo mostra. Vale
+conhecer os principais:
+
+- **`data`** - a resposta da `queryFn`, tipada via generic.
+  É `undefined` enquanto a primeira request não voltou.
+- **`isLoading`** - `true` na **primeira** vez que essa query
+  roda, sem cache. Se o cache já tem dado (mesmo stale), é
+  `false`.
+- **`isFetching`** - `true` sempre que tem uma request em
+  background rodando, mesmo se `data` já tem valor (revalidação).
+  Use pra mostrar um spinner discreto no canto da tela.
+- **`isError`** - `true` se a `queryFn` jogou exceção.
+- **`error`** - a exceção jogada. `null` enquanto não tem erro.
+- **`refetch`** - função que dispara uma nova request. Use
+  em botão "Atualizar" ou após ação do usuário.
+- **`status`** - `'pending' | 'error' | 'success'`. Útil pra
+  switch exaustivo em vez de `isLoading` + `isError` separados.
+- **`fetchStatus`** - `'fetching' | 'paused' | 'idle'`. Indica
+  se tem request em andamento, pausada (sem rede), ou idle.
+- **`isStale`** - `true` se o cache passou do `staleTime` e
+  pode precisar de revalidação.
+- **`dataUpdatedAt`** - timestamp (ms) da última vez que `data`
+  foi atualizado. Útil pra "atualizado há 5 minutos".
+
+A diferença entre `isLoading` e `isFetching` confunde no
+começo. Resumo:
+
+- `isLoading: true` = "primeira vez, sem cache, sem dado".
+  Use pra spinner de página cheia.
+- `isFetching: true` = "tem request em andamento agora".
+  Use pra spinner pequeno de "atualizando".
+
+```tsx
+function Perfil({ userId }: { userId: string }) {
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useQuery({
+      queryKey: ["usuarios", userId],
+      queryFn: () =>
+        fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+    });
+
+  if (isLoading) return <PaginaCarregando />;
+  if (isError) return <PaginaErro erro={error} />;
+
+  return (
+    <div>
+      <h1>{data.nome}</h1>
+      {/* Spinner pequeno de "atualizando" no canto */}
+      {isFetching && <IndicadorAtualizando />}
+      <button onClick={() => refetch()}>Atualizar agora</button>
+    </div>
+  );
+}
+```
+
+**`queryKey` é a identidade da query, e a string importa.**
+A `queryKey` é o array que o TanStack Query usa pra:
+- **Deduplicar** requests (mesma key = mesma query = uma request só).
+- **Buscar no cache** (se a key existe, tenta usar o cache).
+- **Invalidar** (veremos no nó 4 - `invalidateQueries` precisa
+  da key).
+
+A regra prática: a key deve descrever **o que a request
+retorna**, não **como ela foi feita**. A key inclui todos
+os parâmetros que mudam o resultado.
+
+```tsx
+// Bom: a key reflete o que vem de volta
+useQuery({
+  queryKey: ["usuarios"],                    // lista de usuários
+  queryFn: () => fetch("/api/usuarios").then((r) => r.json()),
+});
+
+useQuery({
+  queryKey: ["usuarios", userId],            // um usuário específico
+  queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+});
+
+useQuery({
+  queryKey: ["usuarios", { status: "ativo" }], // lista filtrada
+  queryFn: () =>
+    fetch("/api/usuarios?status=ativo").then((r) => r.json()),
+});
+
+// Ruim: a key ignora um parâmetro que muda o resultado
+useQuery({
+  queryKey: ["usuarios"], // ❌ userId tá no queryFn mas não na key
+  queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+});
+```
+
+Quando você invalida `["usuarios"]` (sem o `userId`), TanStack
+Query invalida **todas** as queries que começam com esse
+prefixo: `["usuarios", 1]`, `["usuarios", 2]`, `["usuarios", { status: "ativo" }]`. Isso é **recurso**, não bug - é o que
+permite "invalidar tudo relacionado a usuários" com uma chamada.
+Veremos a fundo no nó 4.
+
+**`staleTime` controla quando o cache é considerado velho.**
+Default: `0` (toda vez que um componente monta, dispara
+revalidação em background). Pra apps com dados que mudam
+pouco (lista de categorias, perfil do próprio usuário),
+aumente pra evitar requests desnecessárias.
+
+```tsx
+// Default: revalida em todo mount + window focus
+useQuery({ queryKey: ["categorias"], queryFn: ... });
+
+// 5 minutos: durante 5min, o cache é "fresh" e nenhum componente
+// dispara revalidação
+useQuery({
+  queryKey: ["categorias"],
+  queryFn: ...,
+  staleTime: 5 * 60 * 1000,
+});
+
+// "Infinito": o cache nunca é considerado stale. A request só
+// roda de novo se você invalidar manualmente. Útil pra dados
+// realmente estáticos (lista de países, constantes de UI).
+useQuery({
+  queryKey: ["paises"],
+  queryFn: ...,
+  staleTime: Infinity,
+});
+```
+
+A regra prática: comece com o default. Se você ver
+"spinner de loading" indesejado em cada navegação, ou requests
+desnecessárias no Network tab, ajuste `staleTime` por query.
+Não é uma config global - cada query tem suas necessidades.
+
+**`gcTime` (antes `cacheTime`) controla quando o cache é
+descartado.** Default: 5 minutos. Se nenhum componente
+observou a query por 5 minutos, o cache é removido da
+memória. Na próxima vez que alguém pedir, é uma nova request
+(isLoading: true de novo).
+
+Você raramente mexe em `gcTime`. O default funciona em 99%
+dos casos. As exceções:
+
+- App de página única com navegação complexa: aumentar pra
+  10-15 minutos pra não perder cache entre rotas.
+- App com memória crítica: abaixar pra 1-2 minutos.
+- Debug: `gcTime: 0` força o cache a ser descartado
+  imediatamente (útil pra testar "e se a request falhasse
+  toda vez?").
+
+```tsx
+// Quase nunca muda, mas se mudar:
+useQuery({
+  queryKey: ["usuarios"],
+  queryFn: ...,
+  gcTime: 10 * 60 * 1000, // 10 minutos
+});
+```
+
+**O ciclo de vida visualizado.** Pra fixar:
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Fresh: useQuery monta, queryFn roda
+    Fresh --> Stale: staleTime passou
+    Fresh --> Inactive: nenhum componente observando
+    Stale --> Fetching: novo componente monta, ou refetch on focus
+    Stale --> Inactive: último componente desmonta
+    Fetching --> Fresh: queryFn voltou, dentro do staleTime
+    Fetching --> Stale: queryFn voltou, passou do staleTime
+    Inactive --> GarbageCollected: gcTime passou sem novo observador
+    GarbageCollected --> [*]
+    GarbageCollected --> Fresh: novo useQuery monta, queryFn roda`}
+  caption="Ciclo de vida de uma query: fresh (dado novo) -> stale (passou do staleTime, revalida em background) -> inactive (sem observador) -> garbage collected (passou do gcTime, cache removido)."
+/>
+
+- **Fresh** - cache é considerado novo. Nenhum componente
+  dispara request, mesmo em `refetchOnWindowFocus` ou
+  remount.
+- **Stale** - cache passou do `staleTime`. Se um novo
+  componente montar ou se a janela recuperar foco, TanStack
+  Query revalida em background (devolve o cache stale enquanto
+  a request roda).
+- **Inactive** - nenhum componente está usando essa query
+  agora. O cache ainda está em memória.
+- **Garbage collected** - ficou inactive por mais que
+  `gcTime`. Próximo `useQuery` com a mesma key = nova
+  request, `isLoading: true` de novo.
+
+**`enabled` desliga a query condicionalmente.** Quando a
+query depende de algo que não está pronto (ID que vem de
+outra request, flag de feature, valor de input), use
+`enabled: false` pra suprimir a request.
+
+```tsx
+function Pedido({ pedidoId }: { pedidoId: string | null }) {
+  // Só busca se pedidoId existe. Sem `enabled`, o queryFn
+  // roda com `null` e quebra.
+  const { data, isLoading } = useQuery({
+    queryKey: ["pedidos", pedidoId],
+    queryFn: () => fetch(`/api/pedidos/${pedidoId}`).then((r) => r.json()),
+    enabled: pedidoId !== null,
+  });
+
+  if (!pedidoId) return <SelecioneUmPedido />;
+  if (isLoading) return <Spinner />;
+  return <DetalhesPedido pedido={data} />;
+}
+```
+
+`enabled: false` é também o que faz o padrão de **dependent
+queries** funcionar (veremos no nó 5): a query B só roda
+quando a query A já resolveu.
+
+**Erros: como e quando jogar.** O `queryFn` deve jogar
+exceção quando a request falha. TanStack Query captura,
+marca `isError: true`, expõe em `error`, e (por padrão)
+tenta de novo com backoff exponencial. Você decide o que é
+"falha" - qualquer `throw` conta.
+
+```tsx
+// Bom: joga erro com mensagem útil
+queryFn: async () => {
+  const r = await fetch(`/api/usuarios/${userId}`);
+  if (!r.ok) {
+    throw new Error(`Usuário não encontrado (${r.status})`);
+  }
+  return r.json();
+},
+
+// Ruim: devolve um objeto "erro" - TanStack Query não sabe que falhou
+queryFn: async () => {
+  const r = await fetch(`/api/usuarios/${userId}`);
+  if (!r.ok) return { error: true };
+  return r.json();
+},
+```
+
+A diferença importa: com `throw`, TanStack Query faz retry
+automático e mostra o erro na UI. Com retorno de "objeto
+erro", você perde tudo isso e tem que tratar na mão.
+
+## Aprofundamento 🟡
+
+**`refetchOnWindowFocus` e o "padrão Gmail".** Default:
+`true`. Quando o usuário volta pra aba do navegador depois
+de mexer em outra, TanStack Query revalida **todas** as
+queries stale em background. É o que faz apps como Gmail
+mostrarem "X novas mensagens" sem você dar refresh.
+
+```tsx
+// Configuração global: desligar pra todas as queries
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Por query: desligar só pra essa
+useQuery({
+  queryKey: ["estatisticas-internas"],
+  queryFn: ...,
+  refetchOnWindowFocus: false, // dado puramente local, sem valor revalidando
+});
+```
+
+Quando desligar: dados que não mudam fora do app (configurações
+locais, dados calculados em tempo real no client), ou apps
+que priorizam bateria/performance sobre "frescor".
+
+**`refetchOnReconnect` e o caso offline.** Default: `true`.
+Quando a conexão volta, TanStack Query revalida queries
+stale. Combinado com `networkMode`, dá controle fino:
+
+- `'online'` (default) - só roda com rede. Sem rede = query
+  pausa, fica em `fetchStatus: 'paused'`.
+- `'always'` - roda mesmo offline. Útil pra queries
+  baseadas em `localStorage` ou `IndexedDB`.
+- `'offlineFirst'` - tenta uma vez, se falhar fica em
+  cache.
+
+```tsx
+useQuery({
+  queryKey: ["carrinho"],
+  queryFn: () => fetch("/api/carrinho").then((r) => r.json()),
+  networkMode: "offlineFirst", // mostra cache se a request falhar
+});
+```
+
+**`select` pra transformar o dado sem perder cache.** O cache
+guarda a resposta crua da API. Às vezes a UI quer um pedaço
+ou transformação. `select` te dá um campo derivado memoizado
+sem precisar de `useMemo` ou segundo hook:
+
+```tsx
+const { data: nomesUsuarios } = useQuery({
+  queryKey: ["usuarios"],
+  queryFn: () => fetch("/api/usuarios").then((r) => r.json()),
+  select: (usuarios) =>
+    usuarios.map((u) => u.nome.toUpperCase()).sort(),
+});
+
+// O cache ainda é a lista de usuários. O componente recebe
+// só os nomes em uppercase, ordenados. Memoizado.
+```
+
+Cuidado: `select` roda em todo render. Se a transformação
+for cara, envolva em `useMemo` ou compute fora.
+
+**`placeholderData` e `keepPreviousData` pra UX suave.**
+Quando o usuário troca de filtro e a query muda de key,
+o componente re-renderiza com `isLoading: true` e some o
+dado anterior. Pra evitar o "flash de vazio":
+
+```tsx
+function ListaFiltrada({ filtro }: { filtro: string }) {
+  const { data, isPlaceholderData } = useQuery({
+    queryKey: ["usuarios", filtro],
+    queryFn: () => fetch(`/api/usuarios?filtro=${filtro}`).then((r) => r.json()),
+    placeholderData: (previousData) => previousData,
+  });
+
+  // Mostra dado anterior com opacity reduzida enquanto
+  // o novo carrega
+  return (
+    <div style={{ opacity: isPlaceholderData ? 0.5 : 1 }}>
+      {data.map((u) => (
+        <Usuario key={u.id} usuario={u} />
+      ))}
+    </div>
+  );
+}
+```
+
+A UX fica "dado anterior continua visível, esmaecido,
+enquanto o novo carrega". Sem o flash de loading.
+
+**`initialData` e `initialDataUpdatedAt` pra SSR/hidratação.**
+Quando o cache já tem dado (vindo de SSR, de outra parte
+da app, ou de uma query pai), passe via `initialData` pra
+o `useQuery` não começar com `isLoading: true`:
+
+```tsx
+const { data, isLoading } = useQuery({
+  queryKey: ["usuarios"],
+  queryFn: ...,
+  initialData: () => queryClient.getQueryData(["usuarios"]),
+});
+```
+
+Aprofundamento: a `frontend` cobre fetch + useEffect (a forma
+"vanilla"), a `nextjs` cobre Server Components (o caminho
+server-side), e esta trilha cobre o caminho client-side
+com cache. Os três coexistem - em Next, dá pra pré-popular
+o cache do TanStack Query no server e evitar o flash de
+loading no client (veremos no nó 5 com `dehydrate` /
+`HydrationBoundary`).
+
+## Pra quem quer ir além 🔴
+
+**Por que `queryKey` é array, não string.** A `queryKey` ser
+array (e não string) é o que permite hierarquia de invalidação.
+`["usuarios", 1]` é "filho" de `["usuarios"]`, então
+`invalidateQueries({ queryKey: ["usuarios"] })` invalida
+todas as queries de usuário. Se fosse string, você teria
+que usar prefix matching manual ou manter um registro
+separado de keys. O custo é que você precisa se acostumar
+a sempre escrever `["x", ...params]`, nunca só `"x"`.
+
+**Query keys como dependência de hooks derivados.** A
+`queryKey` é usada como dependência do hook. Mudou a key
+= TanStack Query re-executa o `queryFn`. Por isso `useEffect`
+com TanStack Query é redundante na maioria dos casos: o
+hook já reage à mudança de key automaticamente.
+
+**Internacionalização de erros com `Error` tipado.** O campo
+`error` é tipado como `Error` por padrão, mas você pode
+tipar com generics: `useQuery<Usuario, MeuErro>({...})`. Útil
+pra erros com estrutura conhecida (status code, código de
+erro, etc).
+
+**Cache warming com `queryClient.prefetchQuery`.** Antes do
+usuário chegar numa rota, dá pra "esquentar" o cache:
+
+```tsx
+function onMouseEnterLink() {
+  queryClient.prefetchQuery({
+    queryKey: ["usuarios", id],
+    queryFn: ...,
+  });
+}
+
+<a onMouseEnter={onMouseEnterLink} href={`/usuarios/${id}`}>
+  Ver perfil
+</a>;
+```
+
+Quando o usuário clicar, o dado já está no cache e a página
+abre sem loading. Aprofundamento em UX, não em TanStack
+Query em si.
+
+**Leitura recomendada:**
+
+- [TanStack Query - useQuery (oficial)](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery) -
+  a referência. Toda opção documentada.
+- [TkDodo - Practical React Query 6: Query Keys](https://tkdodo.eu/blog/practical-react-query-6-query-keys) -
+  o porquê da key ser array, e como organizar keys em apps
+  grandes.
+- [TkDodo - React Query Render Optimizations](https://tkdodo.eu/blog/react-query-render-optimizations) -
+  quando o componente re-renderiza à toa, e como evitar.
+
+> Dica: o erro mais comum no começo é esquecer de tipar
+> `error` e cair em `error: unknown` (a partir do TS 4.4+).
+> Adicione o generic: `useQuery<Usuario, Error>({...})`
+> e a inferência volta ao normal. Ou crie um tipo
+> `ApiError` com `code`, `message`, `status` e use em
+> todas as queries da app.
+
+No próximo nó, vamos ver **`useMutation`**: como criar,
+atualizar e deletar dados, e como combinar com queries
+existentes pra manter a UI em sincronia.
+
+<Checkpoint
+  challenge="Implemente um hook `useUser(userId)` que retorna o usuário buscado em `/api/usuarios/:id`. Use TanStack Query. Configure `staleTime` para 30 segundos e `enabled: false` se `userId` for vazio. Tipos: o usuário tem `{ id: string; nome: string; email: string }`."
+  starterCode={`import { useQuery } from "@tanstack/react-query";
+
+type Usuario = {
+  id: string;
+  nome: string;
+  email: string;
+};
+
+function useUser(userId: string) {
+  // Implemente o useQuery aqui.
+  // - queryKey: ["usuarios", userId]
+  // - queryFn: fetch em /api/usuarios/:userId (joga erro se !r.ok)
+  // - staleTime: 30_000
+  // - enabled: userId !== ""
+  //
+  // Retorne o que o useQuery te der.
+  return null as any;
+}
+
+// Não edite abaixo - isso é o teste manual esperado.
+const _teste1 = useUser("u-1");
+// Esperado: objeto com data, isLoading, isError, etc.
+// Quando data chega, _teste1.data é { id: "u-1", nome: "...", email: "..." }
+
+const _teste2 = useUser("");
+// Esperado: enabled false, sem request disparada.`}
+expected='{"data":{"id":"u-1","nome":"Ana","email":"ana@x.com"}}'
+slug="tanstack-query"
+nodeId="queries-basico"
+/>
+
+<Quiz
+  question="Qual é a diferença entre `isLoading` e `isFetching` no retorno do useQuery?"
+  options={[
+    {
+      text: "isLoading é true na primeira vez (sem cache), isFetching é true sempre que tem request em background rodando.",
+      correct: true,
+      explanation:
+        "isLoading: 'primeira vez, sem cache, sem dado - mostra spinner de página cheia'. isFetching: 'tem request em andamento agora, mesmo se data já tem valor' - mostra spinner pequeno de 'atualizando'. A diferença importa pra UX: página carregando vs. revalidando em background.",
+    },
+    {
+      text: "isLoading é true quando o React está renderizando, isFetching é true quando TanStack Query está esperando resposta.",
+      correct: false,
+      explanation:
+        "Quase isso, mas confunde 'loading' (estado do React) com 'sem cache' (estado do TanStack Query). isLoading = sem cache + primeira request. isFetching = qualquer request em andamento, mesmo se o cache já tem dado (revalidação).",
+    },
+    {
+      text: "São a mesma coisa, só nomes diferentes.",
+      correct: false,
+      explanation:
+        "São diferentes. isLoading é um subconjunto de isFetching. Quando isLoading é true, isFetching também é. Mas isFetching pode ser true com isLoading false (revalidação em background de cache stale).",
+    },
+  ]}
+/>
