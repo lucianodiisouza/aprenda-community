@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 24,
+        "trilhas": 25,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 37
+        "total": 38
       },
       "trilhas": [
         {
@@ -81,6 +81,10 @@
         {
           "slug": "nosql",
           "title": "NoSQL: Bancos Não-Relacionais"
+        },
+        {
+          "slug": "performance-web",
+          "title": "Performance Web: Core Web Vitals, bundle, imagens, CDN e CI"
         },
         {
           "slug": "programacao-do-zero",

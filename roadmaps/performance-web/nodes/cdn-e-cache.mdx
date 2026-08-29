@@ -1,0 +1,472 @@
+---
+id: cdn-e-cache
+title: "CDN e cache: Cache-Control, ETag, edge, stale-while-revalidate"
+resources:
+  - title: "web.dev - HTTP Cache (oficial, EN)"
+    url: https://web.dev/articles/http-cache
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - HTTP caching (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Content delivery networks (oficial, EN)"
+    url: https://web.dev/articles/content-delivery-networks
+    lang: en
+    type: doc
+    free: true
+---
+
+Ate agora, otimizamos **o que o browser
+baixa**: formato, tamanho, ordem. Mas e
+**onde** esses arquivos estao? Se seu
+servidor fica em Sao Paulo e o usuario
+esta em Tóquio, cada request leva ~300ms
+so de latencia geografica. Solucao: **CDN
+(Content Delivery Network)** - servidores
+distribuidos pelo mundo que servem o
+conteudo de **perto** do usuario.
+
+E **cache** - a tecnologia que faz a CDN
+brilhar. Se o conteudo nao muda, **por que
+re-baixar do servidor original a cada
+visita?** Cache headers dizem ao browser
+(ou CDN) "isso e' estavel por 1 ano, nao
+pergunte de novo".
+
+Se voce entende Cache-Control, ETag,
+como CDN funciona, e `stale-while-revalidate`,
+voce consegue reduzir TTFB de 300ms pra
+10ms, suportar milhoes de usuarios com 1
+servidor fraquinho, e evitar que a CDN
+sirva conteudo desatualizado quando voce
+faz deploy.
+
+## O essencial 🟢
+
+**O que e' cache HTTP e por que importa.**
+O **cache HTTP** e' o mecanismo pelo qual
+o browser (ou proxy/CDN) **guarda uma copia**
+de uma resposta e a **reutiliza** sem pedir
+de novo ao servidor. Sem cache, cada
+visita baixa **tudo** de novo. Com cache
+inteligente, o usuario so baixa o que
+muda.
+
+Os 2 cenarios onde cache faz diferenca
+brutal:
+
+1. **Recursos estaticos (JS, CSS, imagens,
+   fonts):** mudam raramente (em deploy).
+   Cache de 1 ano e' razoavel. **Usuario
+   so baixa 1x**.
+2. **Assets com hash no nome
+   (`app-abc123.js`):** mudam **a cada
+   deploy**, mas o hash e' unico. Cache
+   de 1 ano com `immutable` e' seguro -
+   quando voce muda o codigo, o hash muda,
+   entao o browser **sempre baixa a versao
+   nova**.
+
+Vite gera esses hashes automaticamente
+(`index-abc123.js`). E' a combinacao
+perfeita: cache longo + invalida por
+conteudo.
+
+**`Cache-Control` - o header que manda.**
+O header `Cache-Control` e' o "control
+panel" do cache. Principais directives:
+
+| Directive                | O que faz                                           |
+| ------------------------ | --------------------------------------------------- |
+| `public`                 | Qualquer cache (browser, CDN) pode guardar         |
+| `private`                | So browser pode guardar (CDN nao)                   |
+| `no-store`               | Nenhum cache, sempre re-baixar                      |
+| `no-cache`               | Cache pode guardar, mas **revalidar** antes de usar |
+| `max-age=N`              | Cache por N segundos                                |
+| `s-maxage=N`             | Cache de CDN por N segundos (sobrepoe max-age)      |
+| `immutable`              | Conteudo nunca muda (otimizacao extra)             |
+| `stale-while-revalidate=N` | Servir cache antigo enquanto revalida em background |
+
+Exemplos praticos:
+
+```nginx
+# HTML (muda a cada deploy)
+Cache-Control: no-cache
+# Ou: max-age=0, must-revalidate
+
+# JS/CSS com hash (muda raramente, com novo nome)
+Cache-Control: public, max-age=31536000, immutable
+
+# Imagens sem hash (podem mudar)
+Cache-Control: public, max-age=86400
+
+# API response (dados do user, nao cacheavel em CDN)
+Cache-Control: private, no-store
+```
+
+**`ETag` - "revalide se mudou".** Quando o
+recurso pode mudar, voce quer **perguntar ao
+servidor "essa copia ainda e' valida?"** em
+vez de re-baixar. O `ETag` e' o "ID do
+conteudo" - geralmente um hash do arquivo:
+
+```nginx
+# Servidor retorna na primeira resposta:
+ETag: "abc123"
+Cache-Control: max-age=3600
+```
+
+Na proxima request (apos 1h), o browser
+envia:
+
+```http
+If-None-Match: "abc123"
+```
+
+Se o arquivo **nao mudou**, servidor
+retorna `304 Not Modified` (sem body) -
+**economiza o download**. Se mudou,
+retorna `200 OK` com a nova versao + novo
+ETag.
+
+Resultado: **304 sao 100-200 bytes, 200 sao
+o arquivo inteiro**. Em conexao lenta, 304
+vs 200 = economia de 1-5s.
+
+**`stale-while-revalidate` - "serve velho,
+atualiza em background".** O pattern mais
+poderoso de cache:
+
+```nginx
+Cache-Control: max-age=60, stale-while-revalidate=600
+```
+
+Significado:
+
+- Por 60s, o browser serve do cache.
+- Apos 60s, o browser **ainda serve do
+  cache** (stale) mas **em paralelo**
+  revalida com o servidor.
+- Proxima request (ate 600s apos), ja tem
+  versao nova em cache.
+
+**Latencia percebida pelo usuario: 0** (sempre
+cache hit). E o cache fica atualizado sem
+trade-off de UX. Padrao moderno de 2026
+pra maioria dos recursos.
+
+**O que e' uma CDN e como funciona.** CDN
+(Content Delivery Network) e' uma rede de
+servidores distribuidos pelo mundo, cada
+um chamado **POP (Point of Presence)** ou
+**edge**. Quando o usuario em Tóquio
+pede `https://example.com/hero.avif`, o
+DNS aponta pro **POP mais proximo** (Tóquio),
+nao pro servidor original em Sao Paulo.
+
+Latencia tipica:
+
+- **Sem CDN** (Sao Paulo → Tóquio): 250-400ms
+  RTT.
+- **Com CDN** (Tóquio → Tóquio): 5-20ms RTT.
+- **Reducao**: 20-50x mais rapido.
+
+CDN faz 3 coisas principais:
+
+1. **Edge cache** - serve arquivos estaticos
+   do POP mais proximo.
+2. **Image optimization** - AVIF/WebP
+   on-demand (Cloudflare Polish, ImageKit).
+3. **DDoS protection** - filtra ataques
+   antes de chegarem ao servidor.
+
+Em 2026, **Cloudflare** e' a CDN dominante
+(70%+ de sites usam). Outras: Fastly (Vercel
+usa), Akamai, AWS CloudFront, Vercel Edge.
+
+**Vercel/Netlify = CDN + edge por default.**
+Voce faz `git push`, e o deploy sai em
+edge nodes pelo mundo. Em 2026, a maioria
+dos projetos novos ja esta em uma dessas
+plataformas e tem CDN gratis. O caso "CDN
+separado" so aparece em apps self-hosted
+(Docker, Kubernetes, on-premise).
+
+**`s-maxage` vs `max-age` - cache de browser
+vs cache de CDN.** Quando voce tem CDN na
+frente, ela pode ter **politica de cache
+propria**:
+
+```nginx
+# Browser pode cachear por 1 minuto (refresh rapido em dev)
+# CDN pode cachear por 1 dia (protege o servidor)
+Cache-Control: public, max-age=60, s-maxage=86400
+```
+
+- `max-age=60`: browser checa a cada 1 min
+  (com `stale-while-revalidate`, serve do
+  cache e revalida).
+- `s-maxage=86400`: CDN serve do cache
+  por 1 dia sem revalidar.
+
+Use quando o conteudo muda **muito raramente**
+(artigo publicado, foto de produto) mas voce
+quer permitir refresh rapido em dev.
+
+**Cache busting com query string vs hash
+no filename.** Duas estrategias pra
+"forcar download de nova versao":
+
+1. **Query string:** `app.js?v=2`. Funciona,
+   mas alguns CDNs **ignoram query string**
+   no cache key (Cloudflare por default).
+2. **Hash no filename:** `app-abc123.js`.
+   E' o padrao moderno. Vite faz
+   automaticamente. Funciona em 100% dos
+   CDNs.
+
+**Sempre prefira hash no filename**.
+
+**`Vary` header - cache por device/encoding.**
+O header `Vary` diz ao cache "essa resposta
+pode variar por header X":
+
+```nginx
+# CDN serve versao diferente de /api/data.json
+# dependendo do Accept-Encoding
+Vary: Accept-Encoding
+
+# Ou: dependendo do Origin (CORS)
+Vary: Origin
+```
+
+Sem `Vary`, um usuario com `Accept-Encoding:
+gzip` pode receber versao **br** (sem
+compressao) cacheada de outro usuario.
+Com `Vary`, CDN serve a versao correta.
+
+Em 2026, a maioria dos CDNs configura
+`Vary: Accept-Encoding` automaticamente
+pra gzip/brotli.
+
+## Aprofundamento 🟡
+
+**`immutable` e o "revalidate on reload"
+do Chrome DevTools.** O Chrome tem um
+checkbox no DevTools ("Disable cache") que
+**ignora max-age e `immutable`**. Util em
+dev. Em prod, `immutable` e' respeitado por
+todos os browsers, mesmo apos reload. E' a
+melhor garantia de "esse arquivo nunca vai
+mudar".
+
+**`Cache-Control: public, max-age=0,
+must-revalidate` vs `no-cache`.** Sao quase
+iguais, com uma diferenca:
+
+- `no-cache`: cache pode guardar, mas
+  SEMPRE revalida antes de usar. Equivale
+  a "use o cache, mas pergunta ao servidor
+  se ainda vale".
+- `max-age=0, must-revalidate`: mesmo
+  comportamento, mas **mais explicito**.
+
+Use `no-cache` por padrao. E' o que
+Cloudflare/Vercel usam por default pra HTML.
+
+**`Vary: *` - invalida cache de tudo (use
+com cuidado).** Em situacoes extremas, voce
+pode forcar o cache a tratar cada request
+como unica:
+
+```nginx
+Vary: *
+```
+
+Significa "essa resposta pode variar por
+**qualquer** header do request". Resultado:
+**nenhum cache e feito** (cada combinacao
+e unica). Use so em paginas realmente
+customizadas (dashboard logado, etc).
+
+**Service Worker cache - controle programatico.**
+Service Worker (cobre em PWA, trilha #51)
+destrava **cache custom** em JS:
+
+```js
+// service-worker.js
+self.addEventListener("fetch", (event) => {
+  if (event.request.url.includes("/static/")) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        return cached || fetch(event.request).then((response) => {
+          return caches.open("v1").then((cache) => {
+            cache.put(event.request, response.clone());
+            return response;
+          });
+        });
+      })
+    );
+  }
+});
+```
+
+Permite estrategias custom (cache first,
+network first, stale-while-revalidate)
+**independente dos headers HTTP**. Poderoso
+mas complexo - so vale a pena em apps
+offline-first (PWA).
+
+**HTTP/2 push vs HTTP/3 + preload.** HTTP/2
+introduziu "server push" (servidor envia
+recursos antes do browser pedir). Foi
+descontinuado em 2024 - **substituido por
+preload hints** (mais simples, mesmo
+resultado). HTTP/3 (QUIC) ja e' mainstream
+em 2026 e oferece **0-RTT** (conexao
+estabelecida em 0 round-trips se o cliente
+ja conectou antes). 30-50% mais rapido
+que HTTP/2 em conexao ruim.
+
+**`Content-Encoding: br` (Brotli) vs gzip.**
+Brotli (Chrome, Firefox, Safari) e' ~20%
+mais compacto que gzip. **Sempre habilite
+brotli no servidor/CDN** - e' free
+performance. Cloudflare aplica brotli
+automaticamente. Nginx precisa de
+config:
+
+```nginx
+# nginx
+brotli on;
+brotli_types text/plain text/css application/javascript image/svg+xml;
+```
+
+**Cache de API responses com
+`stale-while-revalidate`.** Em 2026, o
+padrao pra APIs publicas e' **SWR**:
+
+```nginx
+# API endpoint: serve cache por 1 min, revalida em background
+Cache-Control: public, max-age=60, stale-while-revalidate=600
+
+# Ou pra dados semi-privados:
+Cache-Control: private, max-age=60, stale-while-revalidate=600
+```
+
+Combinado com **ETag**, o usuario so faz
+request real quando o cache expira E o
+servidor confirma que mudou (304). Latencia
+percebida = 0.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Cloudflare Workers mudou o jogo.**
+Cloudflare Workers (V8 isolate, nao Node)
+roda **no edge** - mesmo lugar que serve
+o HTML. Resultado: latencia de 5-20ms
+em vez de 250-400ms pra qualquer "API
+call" no request. Em 2026, **muita logica
+de frontend migrou pra Workers**: auth,
+A/B testing, geolocation, edge-rendered
+HTML. Cobre em `edge-deploy` (trilha #56).
+
+**`Cache-Control: public, max-age=31536000,
+immutable` em Service Worker.** Combinacao
+extrema: arquivo com hash + cache de 1 ano
++ imutavel + cache do Service Worker.
+Resultado: o usuario **nunca mais baixa
+esse arquivo** (ate o Service Worker ser
+atualizado). Em apps grandes, 90%+ dos
+recursos estao nessa categoria. O initial
+bundle baixa **1x na vida do usuario**.
+
+**`Vary: User-Agent` - anti-pattern de 2026.**
+Cachear por User-Agent era comum nos anos
+2000 (servir versao mobile vs desktop).
+Em 2026, **designs sao responsive** e o
+mesmo HTML serve todos. Use `Vary:
+User-Agent` so se voce tem um site com
+versoes realmente diferentes (raro).
+Misturar User-Agent com cache e' **fonte
+de bugs** - um usuario com User-Agent
+estranho pega versao errada.
+
+**`Surrogate-Key` (Fastly) - purge seletivo.**
+Fastly (CDN usada pelo Vercel, GitHub)
+destrava **tags** em respostas:
+
+```nginx
+Surrogate-Key: article-123 author-456 category-tech
+```
+
+Apos editar o artigo, faca:
+
+```bash
+curl -X POST https://api.fastly.com/service/.../purge \
+  -H "Fastly-Key: ..." \
+  -d '{"surrogate_keys": ["article-123"]}'
+```
+
+**CDN invalida so as paginas com essa tag**.
+Em vez de purgar tudo (`/purge/*`), voce
+purga so o que mudou. Em 2026, **Cloudflare
+copiou isso** com Cache Tags (Enterprise
+plan).
+
+**Cache poisoning e security.** Cuidado
+com `Vary: Cookie` ou cachear respostas
+que dependem de auth. **Default: nunca
+cachear resposta autenticada** (`private,
+no-store`). Cachear resposta de usuario
+logado em CDN = **outro usuario ve dados
+privados**. Vetor de ataque classico.
+
+**Leitura recomendada:**
+
+- [web.dev - HTTP Cache](https://web.dev/articles/http-cache) - a referencia canonica do Google sobre cache.
+- [MDN - HTTP caching](https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching) - doc oficial MDN, com tabela completa de directives.
+- [web.dev - Content delivery networks](https://web.dev/articles/content-delivery-networks) - como CDN funciona e quando usar.
+
+> Dica: o erro mais comum em cache/CDN e'
+> **esquecer de cachear**. Achar que
+> "servidor ta rapido, nao precisa de
+> CDN". Servidor em Sao Paulo pode ter
+> 5ms de latencia, mas em Tóquio e' 300ms.
+> **CDN e' a maior alavanca de TTFB que
+> existe**. Em 2026, e' tao barato (Vercel/
+> Cloudflare gratis tier) que **todo app
+> de producao deveria ter**.
+
+No proximo no, vamos **performance em CI**:
+Lighthouse CI, `size-limit` (bundle
+budget), `web-vitals` em CI, e como
+configurar GitHub Actions pra **bloquear
+merge** se CWV ou bundle size regredirem.
+
+<Quiz
+  question="Qual a diferenca entre `Cache-Control: no-cache` e `Cache-Control: no-store`?"
+  options={[
+    {
+      text: "no-cache: pode guardar no cache, mas SEMPRE revalida com o servidor antes de usar (304 se inalterado). no-store: NAO pode guardar em cache nenhum, sempre baixa do servidor.",
+      correct: true,
+      explanation:
+        "no-cache NAO significa 'nao cachear'. Significa 'pode guardar, mas revalide antes de servir'. Browser faz request com If-None-Match (ETag) ou If-Modified-Since, servidor responde 304 Not Modified (sem body) ou 200 com nova versao. no-store = nunca guardar, sempre baixar. Use no-cache pra HTML (quer validar mudancas). Use no-store pra dados sensiveis (auth, API privada). Confundir os dois causa bug classico: 'coloquei no-cache e o usuario sempre baixa tudo'.",
+    },
+    {
+      text: "Sao a mesma coisa - ambos impedem cache.",
+      correct: false,
+      explanation:
+        "Nao. no-cache: cache pode guardar mas revalida antes de usar. no-store: cache nao pode guardar. Sao semanticas opostas. O nome 'no-cache' e' confuso - parece 'sem cache' mas e' 'cache com revalidacao'. MDN recomenda 'no-store' quando voce quer zero cache.",
+    },
+    {
+      text: "no-store e' mais rapido porque pula o cache.",
+      correct: false,
+      explanation:
+        "Nao, e' o oposto. no-store significa que CADA request baixa o servidor. Pula o cache = sempre latencia de rede. no-cache destrava cache local (com revalidacao via 304). Em conexao lenta, no-cache e' 10x mais rapido (304 sao 100 bytes, 200 sao o arquivo inteiro).",
+    },
+  ]}
+/>

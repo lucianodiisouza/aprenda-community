@@ -1,0 +1,557 @@
+---
+id: perf-em-ci
+title: "Performance em CI: Lighthouse CI, size-limit, perf budgets"
+resources:
+  - title: "Lighthouse CI - Docs oficiais (EN)"
+    url: https://github.com/GoogleChrome/lighthouse-ci
+    lang: en
+    type: doc
+    free: true
+  - title: "size-limit - GitHub (EN)"
+    url: https://github.com/ai/size-limit
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Performance budgets 101 (oficial, EN)"
+    url: https://web.dev/articles/performance-budgets-101
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce otimizou tudo: bundle, imagens,
+fonts, CDN, cache. A pagina ta rapida.
+**E semana que vem, dev A mergea um PR
+que adiciona um import de 400KB**. Sem
+ninguem perceber. Em 2 semanas, CWV
+regrediu 30% em prod.
+
+Performance **sem automacao** regride
+silenciosamente. Cada PR e' uma aposta.
+Solucao: **tratar performance como
+teste**. Lighthouse roda em CI, bundle
+budget quebra o build se exceder, web
+vitals em prod alertam quando piora.
+
+Se voce entende Lighthouse CI, `size-limit`,
+perf budgets em CI, e `web-vitals` em
+producao, voce pega **regressoes de
+performance antes do merge** e mantem
+CWV verde de forma sustentavel.
+
+## O essencial 🟢
+
+**Por que performance testing em CI.** O
+problema classico: "funciona na minha
+maquina" - e o time so descobre que
+performance regrediu quando usuarios
+reclamam. CIs de performance **invertem
+o jogo**: o PR que quebra performance e'
+**bloqueado antes do merge**.
+
+3 camadas de CI pra performance:
+
+1. **Bundle size budget** (`size-limit`):
+   barra build se o initial bundle gzipped
+   passa de X KB.
+2. **Lighthouse CI** (`@lhci/cli`): roda
+   Lighthouse na pagina de preview, falha
+   se Performance < threshold.
+3. **RUM alert** (web-vitals + alerting):
+   em prod, alerta se p75 de LCP/INP/CLS
+   piora alem de threshold.
+
+**`size-limit` - bundle budget no
+`package.json`.** Ferramenta mais simples
+pra **bloquear build se bundle ficar
+grande**:
+
+```bash
+pnpm add -D size-limit @size-limit/preset-app
+```
+
+```json
+// package.json
+{
+  "size-limit": [
+    {
+      "path": "dist/assets/index-*.js",
+      "limit": "100 KB",
+      "gzip": true
+    },
+    {
+      "path": "dist/assets/HomePage-*.js",
+      "limit": "50 KB",
+      "gzip": true
+    }
+  ],
+  "scripts": {
+    "size": "size-limit"
+  }
+}
+```
+
+`pnpm size` roda apos o build. Se o initial
+bundle (matching `index-*.js`) passar de
+100KB gzipped, **exit code nao-zero**, build
+quebra. CI usa isso pra falhar o PR.
+
+**Como funciona o threshold.** O `limit`
+e' gzipped (mais realista - e' o que o
+usuario baixa). `"100 KB"` = 102400 bytes
+gzipped. Se o bundle final (com Vite,
+com code splitting) for 80KB gzipped,
+**passa**. Se 110KB, **falha**.
+
+A diferenca entre "bundle raw" e
+"gzipped" e' brutal - um bundle de 300KB
+raw vira ~90KB gzipped. Sempre use
+`"gzip": true`.
+
+**Lighthouse CI - `lhci` runner.** A
+ferramenta oficial do time do Chrome pra
+rodar Lighthouse em CI. Compara o resultado
+contra um **baseline** (commit anterior) e
+detecta regressoes:
+
+```bash
+pnpm add -D @lhci/cli
+```
+
+```json
+// lighthouserc.json
+{
+  "ci": {
+    "collect": {
+      "url": [
+        "http://localhost:4173/",
+        "http://localhost:4173/dashboard"
+      ],
+      "numberOfRuns": 3
+    },
+    "assert": {
+      "preset": "lighthouse:recommended",
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9 }],
+        "first-contentful-paint": ["error", { "maxNumericValue": 2000 }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 2500 }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }]
+      }
+    }
+  }
+}
+```
+
+`pnpm lhci autorun` (apos `pnpm preview`)
+roda Lighthouse 3x em cada URL, calcula
+mediana, e falha o build se:
+- Performance < 0.9.
+- FCP > 2s.
+- LCP > 2.5s.
+- CLS > 0.1.
+
+**O `numberOfRuns: 3` e' importante.** Lighthouse
+tem variacao natural (~5-10%) entre runs.
+Rodar 1x e' noisy. **3 runs + mediana** da
+resultado estavel.
+
+**Integration com GitHub Actions.**
+
+```yaml
+# .github/workflows/lhci.yml
+name: Lighthouse CI
+on: [pull_request]
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm dlx serve dist -p 4173 &
+      - run: sleep 2
+      - run: pnpm dlx @lhci/cli@0.14.x autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+```
+
+PR abre → CI dispara → build → preview
+serve → Lighthouse roda → se CWV ruim,
+**CI vermelho, merge bloqueado**.
+
+**`web-vitals` em CI - o bonus.** Alem de
+Lighthouse (lab data), voce pode coletar
+**real user data** em CI comparando
+versoes. Mas isso e' mais avancado, feito
+com **comparacao de metricas RUM entre
+branches**.
+
+A versao simples: **comparar Lighthouse
+do PR vs main**. Se PR piorou LCP em
++200ms, alerta. `lhci` faz isso nativamente
+com `assert.compare` (ja incluido no
+`lighthouse:recommended`).
+
+**Perf budgets - o conceito.** **Performance
+budget** = "nosso site NAO pode usar mais
+que X". Funciona como budget financeiro:
+se passou, **para** e decida se paga a
+divida (otimizar) ou cancela o projeto
+(rollback).
+
+Categorias de budget:
+
+- **Bundle size:** initial JS < 100KB gzipped.
+- **Image size:** hero < 100KB.
+- **Request count:** < 50 requests no initial
+  load.
+- **CWV thresholds:** LCP < 2.5s, INP < 200ms,
+  CLS < 0.1.
+- **Lighthouse score:** Performance > 0.9.
+
+A escolha do threshold depende do **estado
+atual + meta realista**. Em 2026, sites
+"bem otimizados" tem initial bundle 60-90KB
+gzipped. Se voce esta em 200KB, **primeira
+meta e' 150KB** (nao 50KB). Iteracoes.
+
+**`web-vitals` em prod - alerta continuo.**
+Lighthouse CI pega **regressao em PR**.
+`web-vitals` em prod pega **regressao em
+producao** (que PR passou mas quebrou em
+alguns devices/condicoes).
+
+```ts
+import { onLCP, onINP, onCLS } from "web-vitals";
+
+function sendToAnalytics({ name, value, rating }) {
+  if (rating === "poor") {
+    // manda pra Sentry / Datadog / custom
+    Sentry.captureMessage(`Poor ${name}: ${value}`, "warning");
+  }
+  // manda tudo pra RUM (DataDog RUM, NewRelic, etc)
+  datadogRum.addUserAction(name, { value, rating });
+}
+
+onLCP(sendToAnalytics);
+onINP(sendToAnalytics);
+onCLS(sendToAnalytics);
+```
+
+Em Datadog/Grafana, configure alerta: "se
+**p75 de LCP > 2.8s por 1h** no prod,
+notifique on-call". **Performance vira
+incidente**.
+
+**Por que lighthouse:recommended nao e'
+suficiente.** O preset "recommended" e'
+bom pra comecar, mas **as vezes passa em
+PR ruim** (porque a baseline ja era ruim).
+Em 2026, o padrao e' **definir thresholds
+proprios** (stricter que recommended) e
+**falhar o build se performance baixar**.
+
+```json
+"assertions": {
+  "largest-contentful-paint": ["error", { "maxNumericValue": 2500 }],
+  // se subiu de 1800ms (main) pra 2400ms (PR), passa
+  // se subiu pra 2600ms, falha - mesmo que < 2500
+}
+```
+
+Para **detectar regressao vs baseline**,
+use `compare`:
+
+```json
+"assert": {
+  "assertions": {
+    "largest-contentful-paint": [
+      "error",
+      { "maxNumericValue": 2500, "compare": 1.2 }  // PR pode ser 20% pior que main
+    ]
+  }
+}
+```
+
+## Aprofundamento 🟡
+
+**`size-limit` com multiplos entries.** O
+exemplo mostrou 2 paths. Em apps reais,
+voze quer budget **por chunk**:
+
+```json
+{
+  "size-limit": [
+    { "path": "dist/assets/index-*.js", "limit": "100 KB", "gzip": true },
+    { "path": "dist/assets/vendor-*.js", "limit": "200 KB", "gzip": true },
+    { "path": "dist/assets/HomePage-*.js", "limit": "50 KB", "gzip": true },
+    { "path": "dist/assets/Dashboard-*.js", "limit": "80 KB", "gzip": true },
+    { "path": "dist/assets/Settings-*.js", "limit": "60 KB", "gzip": true },
+    { "path": "dist/assets/*.css", "limit": "30 KB", "gzip": true }
+  ]
+}
+```
+
+Cada chunk tem budget proprio. Se
+Dashboard passa de 80KB, build quebra.
+**Granularidade > budget global**.
+
+**`lhci compare` - assertion contra baseline.**
+A funcionalidade mais poderosa do `lhci`:
+
+```json
+"assert": {
+  "assertions": {
+    "categories:performance": ["warn", { "minScore": 0.9 }],
+    "largest-contentful-paint": [
+      "error",
+      { "maxNumericValue": 2500, "compare": 1.1 }  // 10% pior que main = erro
+    ]
+  }
+}
+```
+
+Se o PR piora LCP em 10% (mesmo que ainda
+esteja < 2.5s), **build falha**. Pega
+regressoes sutis que passariam em
+threshold absoluto.
+
+**Mocking de API em Lighthouse CI.** Um
+problema comum: o app faz fetch em
+`/api/products` no load. Lighthouse CI
+roda contra a URL real, mas a API
+localhost pode ter dados de teste que
+fazem o app render mais rapido (ou
+mais devagar) que em prod.
+
+Solucao: **mockar** as chamadas ou
+usar **dados estaticos** no build de CI.
+Em Vite, voce pode ter um build mode
+"demo" que usa dados mockados.
+
+**`lighthouse-ci-action` vs `@lhci/cli`.**
+GitHub tem uma action oficial:
+
+```yaml
+- uses: treosh/lighthouse-ci-action@v11
+  with:
+    urls: |
+      http://localhost:4173/
+      http://localhost:4173/dashboard
+    budgetPath: ./budget.json
+    uploadArtifacts: true
+```
+
+Action ja cuida de build, serve, run
+Lighthouse, upload artifacts. **Mais
+simples que CLI manual** mas menos
+customizavel.
+
+**`pagespeed-insights` API pra RUM
+"externo".** Em vez de coletar RUM com
+`web-vitals` no seu app, voce pode usar
+a **PageSpeed Insights API** do Google
+(gratis, sem auth):
+
+```bash
+curl "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://example.com&strategy=mobile"
+```
+
+Retorna JSON com LCP, INP, CLS reais (do
+**CrUX**). Util pra dashboards externos /
+alertas sem precisar instrumentar o app.
+Limitado: so dados do Chrome, do ultimo
+mes.
+
+**`calibre` (pago) e `speedcurve` (pago) -
+performance monitoring continuo.** Pra times
+que precisam de **alertas 24/7** em prod,
+ferramentas pagas como Calibre, SpeedCurve,
+Tenvi monitoram o site **continuamente** e
+alertam quando performance cai. Nao
+substitui Lighthouse CI (que pega regressao
+em PR), mas complementa com **monitoramento
+continuo em prod**.
+
+## Pra quem quer ir mais alem 🔴
+
+**`lighthouse-ci` self-hosted vs GitHub
+App.** Tem 2 jeitos de rodar `lhci` em
+GitHub:
+
+1. **GitHub Action** (como mostrado): roda
+   no CI do repo, **privado por default**.
+2. **Lighthouse CI Server** (self-hosted):
+   roda contra a URL de preview, mantem
+   historico, dashboard. Util pra times
+   grandes.
+
+Pra projetos solo/pequenos, action e'
+suficiente. Pra times com 5+ devs, server
+vale o setup.
+
+**`treosh/react-hooks-for-lighthouse` -
+integration custom com React.** Pra rodar
+Lighthouse em **componentes individuais** (nao
+pagina inteira), use:
+
+```jsx
+import { withReport } from "treosh/react-hooks-for-lighthouse";
+
+function App() {
+  return withReport(({ metrics }) => {
+    console.log("LCP:", metrics.lcp);
+    return <main>...</main>;
+  });
+}
+```
+
+Util pra debugar "qual componente e' o
+LCP?" em apps complexos.
+
+**`vitals` API do WebKit/Safari (2024+).**
+Safari adicionou suporte parcial a
+`web-vitals` em Safari 17. Em 2026, **iOS
+Safari reporta LCP/INP/CLS** pela primeira
+vez. Antes, CrUX era Chrome-only. **Agora
+vira cross-browser** - alertas cobrem
+toda a base de usuarios.
+
+**`Real User Monitoring` (RUM) vs `Synthetic
+Monitoring` (Lighthouse).** Os 2 capturam
+realidades diferentes:
+
+- **Synthetic (Lighthouse):** simulado,
+  consistente, captura **baseline de
+  regressao em PR**. Limitado: 1 device
+  simulado, 1 rede simulada.
+- **RUM (web-vitals em prod):** real,
+  variabilidade alta (diferentes devices,
+  redes, paises), captura **estado real
+  de performance**.
+
+A combinacao: **Synthetic em CI** (pega
+regressao cedo) + **RUM em prod** (pega
+cauda longa e regressao pos-deploy).
+**Nenhum substitui o outro**.
+
+**`web-vitals` + `sendBeacon` pra nao
+perder dados em `beforeunload`.** Em
+SPA, o usuario pode fechar a pagina
+antes do analytics processar. Use
+`navigator.sendBeacon` no `beforeunload`:
+
+```ts
+function sendToAnalytics({ name, value }) {
+  const body = JSON.stringify({ name, value });
+  navigator.sendBeacon("/api/vitals", body);
+}
+```
+
+`sendBeacon` e' **fire-and-forget** - nao
+bloqueia o unload, garante entrega mesmo
+se a pagina fechar. Essencial pra ter
+amostra completa de CWV.
+
+**Leitura recomendada:**
+
+- [Lighthouse CI - Docs oficiais](https://github.com/GoogleChrome/lighthouse-ci) - a doc oficial, com exemplos de integracao.
+- [size-limit - GitHub](https://github.com/ai/size-limit) - README direto, com patterns de uso.
+- [web.dev - Performance budgets](https://web.dev/articles/performance-budgets) - como definir e enforces budgets.
+
+> Dica: o erro mais comum em CI de performance
+> e' **threshold muito agressivo no comeco**.
+> Time tem bundle de 250KB, voce poe budget
+> 100KB. **Tudo quebra**. Devs ignoram CI
+> vermelho, fazem `--no-verify`, aprendem
+> a "driblar" o budget. **Comece com o estado
+> atual + 10%** (250KB → 225KB) e aperte
+> gradualmente. A meta e' **sustentavel**.
+
+No proximo no, vamos ao **projeto final**:
+auditoria completa de uma SPA real,
+identificando os 3-5 maiores problemas de
+performance, e propondo um plano de
+otimizacao priorizado com estimativa de
+ganho.
+
+<Checkpoint
+  challenge="Implemente a função `verificarRegressao(medicoes, baseline, tolerancia)` que recebe medicoes atuais (objeto com lcp, inp, cls), baseline (mesmo formato), e tolerancia (porcentagem, ex: 10 = 10%). Retorna { regressao: boolean, metricas: [{nome, atual, baseline, variacao, regrediu}], resumo } - onde metricas lista todas as 3 com variacao percentual (positivo = pior, negativo = melhor), regrediu = true se variacao > tolerancia, e resumo e' uma string descrevendo o estado (ex: '3 metricas estaveis', 'LCP regrediu 25% - investigue')."
+  starterCode={`// Implemente verificarRegressao(medicoes, baseline, tolerancia) que recebe:
+//
+// medicoes:  { lcp: 2.4, inp: 180, cls: 0.08 }    // valores ATUAIS
+// baseline:  { lcp: 1.8, inp: 150, cls: 0.05 }    // valores ANTERIORES (main)
+// tolerancia: 20                                      // porcentagem maxima de regressao aceita
+//
+// E retorna:
+// {
+//   regressao: boolean,  // true se QUALQUER metrica regrediu > tolerancia
+//   metricas: [
+//     { nome: 'lcp', atual: 2.4, baseline: 1.8, variacao: 33.3, regrediu: true },
+//     { nome: 'inp', atual: 180, baseline: 150, variacao: 20, regrediu: false },  // exatamente no limite, nao regrediu
+//     { nome: 'cls', atual: 0.08, baseline: 0.05, variacao: 60, regrediu: true },
+//   ],
+//   resumo: 'LCP regrediu 33% (de 1.8s pra 2.4s), CLS regrediu 60% (de 0.05 pra 0.08). INP estavel.'
+// }
+//
+// Regras:
+// - variacao = ((atual - baseline) / baseline) * 100, arredondada 1 casa.
+// - regrediu = true se variacao > tolerancia (estritamente maior).
+// - regressao = true se QUALQUER metrica regrediu.
+// - resumo lista metricas que regrediram (com variacao e valores).
+function verificarRegressao(medicoes, baseline, tolerancia) {
+  return {
+    regressao: false,
+    metricas: [],
+    resumo: "",
+  };
+}
+
+const _r1 = verificarRegressao(
+  { lcp: 2.4, inp: 180, cls: 0.08 },
+  { lcp: 1.8, inp: 150, cls: 0.05 },
+  20
+);
+console.log(JSON.stringify(_r1));
+
+const _r2 = verificarRegressao(
+  { lcp: 1.9, inp: 160, cls: 0.06 },
+  { lcp: 1.8, inp: 150, cls: 0.05 },
+  20
+);
+console.log(JSON.stringify(_r2));`}
+  expected='{"regressao":true,"metricas":[{"nome":"lcp","atual":2.4,"baseline":1.8,"variacao":33.3,"regrediu":true},{"nome":"inp","atual":180,"baseline":150,"variacao":20,"regrediu":false},{"nome":"cls","atual":0.08,"baseline":0.05,"variacao":60,"regrediu":true}],"resumo":"LCP regrediu 33% (de 1.8s pra 2.4s), CLS regrediu 60% (de 0.05 pra 0.08). INP estavel."}
+{"regressao":false,"metricas":[{"nome":"lcp","atual":1.9,"baseline":1.8,"variacao":5.6,"regrediu":false},{"nome":"inp","atual":160,"baseline":150,"variacao":6.7,"regrediu":false},{"nome":"cls","atual":0.06,"baseline":0.05,"variacao":20,"regrediu":false}],"resumo":"Todas as 3 metricas estaveis (variacao dentro da tolerancia de 20%)."}'
+  slug="performance-web"
+  nodeId="perf-em-ci"
+/>
+
+<Quiz
+  question="Qual a diferenca entre bundle size budget (`size-limit`) e Lighthouse CI?"
+  options={[
+    {
+      text: "size-limit verifica o TAMANHO do bundle gzipped (input, facil de testar, sem browser). Lighthouse CI roda Lighthouse REAL no browser, mede CWV e Performance score (output, requer build + serve, mais lento).",
+      correct: true,
+      explanation:
+        "size-limit = estatico, rapido (~1s), verifica tamanho de arquivo. Lighthouse CI = dinamico, lento (~30s), roda Chrome headless, mede performance real (LCP/INP/CLS). Os dois sao complementares: size-limit pega 'bundle ficou grande' (1 import de 500KB). Lighthouse pega 'bundle ficou grande E isso esta causando LCP ruim'. Ideal: rodar os 2 em paralelo no CI.",
+    },
+    {
+      text: "Sao a mesma coisa - ambos medem performance.",
+      correct: false,
+      explanation:
+        "Nao. size-limit mede TAMANHO (input, em KB). Lighthouse mede PERFORMANCE real (output, em segundos). Bundle pequeno NAO garante performance boa (pode ter 100KB de CSS bloqueante que trava LCP). E bundle grande NAO significa performance ruim (pode estar bem dividido com lazy loading). Os 2 capturam dimensoes diferentes.",
+    },
+    {
+      text: "Lighthouse CI substitui size-limit - use so Lighthouse.",
+      correct: false,
+      explanation:
+        "Nao. Lighthouse e' lento (~30s por run, 3 runs = 90s) e roda contra URL real. size-limit e' rapido (~1s) e roda contra arquivos locais. Em CI rapido, size-limit como pre-check + Lighthouse como check profundo e' o padrao. Lighthouse sem size-limit = dev adiciona 500KB mas so descobre no Lighthouse que LCP subiu. Os 2 sao complementares, nao substitutos.",
+    },
+  ]}
+/>

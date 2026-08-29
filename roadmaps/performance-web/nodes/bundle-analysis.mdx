@@ -1,0 +1,594 @@
+---
+id: bundle-analysis
+title: "Bundle analysis: code splitting, tree shaking, dynamic imports"
+resources:
+  - title: "web.dev - Reduce JavaScript payloads (oficial, EN)"
+    url: https://web.dev/articles/reduce-javascript-payloads-with-code-splitting
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Tree shaking (oficial, EN)"
+    url: https://web.dev/articles/remove-unused-code
+    lang: en
+    type: doc
+    free: true
+  - title: "Rollup - Code splitting tutorial (oficial, EN)"
+    url: https://rollupjs.org/tutorial/#code-splitting
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce viu o Critical Rendering Path e' importante
+pra LCP. Agora o outro lado da performance:
+**INP** (responsividade) depende quase
+totalmente de quanto JS o browser tem que
+parsear, compilar e executar. Cada KB de JS
+e' ~1ms de parse em celular mid-range. Um
+bundle de 2MB em 3G significa 10s de tela
+branca + travamento ao interagir.
+
+A boa noticia: **Vite (Rollup por baixo)**
+faz tree shaking automatico. A noticia
+ruim: **sem code splitting**, todo seu app
+vira **1 unico arquivo de 2MB** carregado
+na primeira visita - mesmo paginas que
+usam 5% do codigo.
+
+Se voce entende o que e' code splitting, tree
+shaking, dynamic imports, e como ler o
+**bundle visualizer** pra encontrar os
+"vilões" de tamanho, voce sai de "bundle de
+2MB" pra "initial bundle de 80KB + 10 lazy
+chunks de 50KB cada, carregados sob
+demanda".
+
+## O essencial 🟢
+
+**O que e' "bundle" e por que importa.** O
+**bundle** e' o arquivo final de JavaScript
+que o browser baixa e executa. Vite/Webpack/
+Rollup pega seu codigo (que pode ter
+centenas de arquivos `.ts`/`.tsx`/`.js`),
+processa, e gera **1 ou mais arquivos finais**
+(chamados "chunks") prontos pro browser.
+
+A questao nao e' "qual o tamanho total do
+codigo", mas "**quanto o usuario baixa
+antes de poder interagir**". Se seu app
+tem 2MB total mas so 100KB sao necessarios
+pra primeira interacao, **o usuario so
+baixa 100KB**. Isso e' code splitting.
+
+**Bundle inicial vs lazy chunks.** A
+divisao fundamental:
+
+- **Initial bundle** (synchronous): tudo
+  que baixa no load inicial da pagina.
+  Inclui o "shell" do app (React, router,
+  layout principal, componentes da rota
+  atual). **Esse tamanho importa pro
+  TTI/LCP**.
+- **Lazy chunks** (async): modulos que
+  baixam sob demanda, quando o usuario
+  navega ate eles. Cada pagina pode ser
+  um chunk. **Esses tamanhos importam
+  pra INP quando o usuario interage**.
+
+A regra: **o initial bundle deve ser o
+menor possivel**. Tudo que pode esperar
+deve ser lazy.
+
+**Code splitting: o que e' e por que
+funciona.** Em vez de "1 arquivo com
+tudo", voce tem "varios arquivos
+pequenos". O browser baixa o initial
+bundle (rapido), renderiza, e vai
+baixando os lazy chunks conforme o
+usuario navega. **Mesma UX, mas
+10x mais rapido pra primeira
+interacao**.
+
+Em Vite/Rollup, code splitting vem de 3
+fontes:
+
+1. **`import()` dinamico** (lazy loading
+   manual).
+2. **Roteamento** (cada pagina vira
+   um chunk automatico no React Router /
+   Next.js).
+3. **`SplitChunksPlugin`** (heuristica
+   automatica de Vite/Rollup pra separar
+   vendor de app code).
+
+**`import()` dinamico - o pattern principal.**
+Em vez de import estatico:
+
+```tsx
+// ESTATICO: tudo no initial bundle
+import { HeavyChart } from "./charts/HeavyChart";
+import { Markdown } from "./Markdown";
+
+function Dashboard() {
+  return (
+    <div>
+      <HeavyChart />     {/* 200KB - mas usuario pode nem chegar aqui */}
+      <Markdown />        {/* 80KB */}
+    </div>
+  );
+}
+```
+
+Voce usa `import()` dinamico + `lazy()` do
+React:
+
+```tsx
+// DINAMICO: lazy chunks separados
+import { lazy, Suspense } from "react";
+
+const HeavyChart = lazy(() =>
+  import("./charts/HeavyChart").then((m) => ({ default: m.HeavyChart }))
+);
+const Markdown = lazy(() =>
+  import("./Markdown").then((m) => ({ default: m.Markdown }))
+);
+
+function Dashboard() {
+  return (
+    <div>
+      <Suspense fallback={<div>Carregando grafico...</div>}>
+        <HeavyChart />
+      </Suspense>
+      <Suspense fallback={<div>Carregando texto...</div>}>
+        <Markdown />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+O bundle inicial **nao inclui** `HeavyChart`
+ou `Markdown`. Quando o componente vai
+renderizar pela primeira vez, o React baixa
+o chunk correspondente e renderiza. O
+`<Suspense>` mostra o `fallback` durante o
+download.
+
+Em Vite, cada `import()` dinamico vira um
+chunk separado no `dist/assets/`. O nome
+fica com hash (ex: `HeavyChart-abc123.js`)
+pra cache busting.
+
+**Tree shaking - remover codigo nao usado.**
+Vite/Rollup faz tree shaking automaticamente
+no build. A logica: se voce tem
+`export function a() {}` e `export function
+b() {}` em `utils.ts`, mas so importa `a`,
+o bundle final so inclui `a`.
+
+Pra tree shaking funcionar 100%, o codigo
+precisa ser **ES modules** (`import`/
+`export`). CommonJS (`require`/`module.exports`)
+nao da pra fazer tree shaking estatico.
+
+```ts
+// utils.ts
+export function a() { return 1; }
+export function b() { return 2; }
+export function c() { return 3; }
+```
+
+```ts
+// app.ts
+import { a } from "./utils";  // so importa 'a'
+// bundle final: so a() - b() e c() sao removidos
+```
+
+**Side effects quebram tree shaking.** Se
+um modulo tem "side effects" (executa
+codigo so por ser importado), o bundler
+preserva o modulo inteiro, mesmo que
+nenhum export seja usado:
+
+```ts
+// logger.ts
+console.log("Logger inicializado!");  // side effect
+export function log() { /* ... */ }
+```
+
+```ts
+// app.ts
+import "./logger";  // bundle inclui logger INTEIRO (por causa do console.log)
+```
+
+Pra tree shaking funcionar, marque o modulo
+como side-effect-free no `package.json`:
+
+```json
+{
+  "sideEffects": false
+}
+```
+
+Ou liste os arquivos que tem side effects
+explicitamente:
+
+```json
+{
+  "sideEffects": ["*.css", "./src/polyfills.ts"]
+}
+```
+
+**Bundle visualizer - encontrar os "vilões".**
+A melhor ferramenta pra debugar bundle
+size e' o `rollup-plugin-visualizer` (ou
+`vite-bundle-visualizer`). Gera um **treemap**
+interativo mostrando cada modulo e seu
+tamanho:
+
+```bash
+pnpm add -D rollup-plugin-visualizer
+```
+
+```ts
+// vite.config.ts
+import { visualizer } from "rollup-plugin-visualizer";
+
+export default {
+  plugins: [
+    visualizer({
+      filename: "dist/stats.html",
+      gzipSize: true,    // mostra tamanho gzipped tambem
+      brotliSize: true,
+    }),
+  ],
+};
+```
+
+Apos `pnpm build`, abre `dist/stats.html` no
+browser. Voce ve um treemap onde o tamanho
+de cada quadrado = espaco no bundle final.
+**O maior quadrado e' o seu vilao**. Em
+90% dos apps:
+
+- `moment.js` (300KB) - substitua por
+  `date-fns` ou `day.js`.
+- `lodash` full (70KB) - importe so
+  `lodash-es` (ES modules, tree-shakable)
+  ou pacotes especificos (`lodash.debounce`).
+- `chart.js` full (200KB) - lazy load
+  (quase sempre nao precisa no initial).
+- `@mui/material` ou `antd` (500KB+) - se
+  so usa 5 componentes, vale custom build
+  ou substituir por algo mais leve.
+
+**Bundle budgets - o tamanho "certo".** Nao
+existe numero magico, mas heuristicas 2026:
+
+- **Initial JS** (gzip): < 100KB ideal,
+  < 200KB aceitavel. Mais que isso, mobile
+  em 3G ja sofre.
+- **Initial CSS** (gzip): < 30KB ideal.
+- **Lazy chunks** (gzip): < 50KB cada.
+  Chunks de 200KB quebram a UX (usuario
+  clica e espera 2s).
+
+**Pra cada KB de JS no initial bundle, +1ms
+de parse em celular mid-range**. 100KB
+= 100ms de parse. 500KB = 500ms de parse
+(so isso, sem contar execucao). Em celular
+de entrada (Moto G, Redmi barato), parse
+e' **3x mais lento** que no seu MacBook.
+
+**Differential serving - bundle diferente
+por browser.** Em 2026, ~95% dos usuarios
+suportam features modernas. Mas e os 5%?
+Voce pode gerar **2 bundles**: um com tudo
+moderno (ES2020+, sem polyfills) e um
+"legacy" (ES5, polyfills incluidos). O
+moderno e' **30-40% menor**.
+
+Em Vite:
+
+```ts
+// vite.config.ts
+export default {
+  build: {
+    target: "es2020",  // bundle moderno
+  },
+};
+```
+
+E usa `<script type="module">` pra forcar
+browsers modernos a pegar o bundle novo.
+Browsers antigos ignoram o `type="module"`
+e caem no `<script nomodule>` com polyfills.
+
+**Vendor splitting - separar seu codigo de
+deps.** Vite faz isso automaticamente com
+`build.rollupOptions.output.manualChunks`.
+Util pra cache de longo prazo: vendor raramente
+muda, app code muda em cada PR. Usuario so
+re-baixa o que mudou.
+
+## Aprofundamento 🟡
+
+**`<link rel="modulepreload">` - preload de
+module chunks.** Em vez de preload de
+"image" ou "style", use `modulepreload` pra
+avisar o browser sobre **chunks de JS que
+vao ser necessarios em breve**:
+
+```html
+<head>
+  <link rel="modulepreload" href="/assets/app.js">
+  <link rel="modulepreload" href="/assets/HomePage.js">
+</head>
+```
+
+O browser baixa esses chunks **em paralelo**
+com o HTML, antes mesmo do React decidir o
+que renderizar. Util pra **rota provavel**
+(landing page apos login, dashboard, etc).
+
+**`React.lazy` + `Suspense` em rotas.** O
+pattern mais comum de code splitting: cada
+rota vira um chunk:
+
+```tsx
+import { lazy, Suspense } from "react";
+import { Routes, Route } from "react-router-dom";
+
+const Home = lazy(() => import("./pages/Home"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
+
+function App() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </Suspense>
+  );
+}
+```
+
+Acessa `/` - so baixa `Home.js`. Acessa
+`/dashboard` - baixa `Dashboard.js`
+separadamente. **Initial bundle nao inclui
+nenhuma das paginas "filhas"**.
+
+**Named chunks vs default chunks.** Por
+default, Rollup nomeia chunks com numeros
+(`chunk-abc123.js`). Pra debugar, use
+`output.chunkFileNames: "[name].js"` - o
+chunk vai ter o nome do modulo
+(`HomePage.js`, `Dashboard.js`):
+
+```ts
+// vite.config.ts
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+      },
+    },
+  },
+};
+```
+
+Em prod, mantenha o hash (cache busting). Em
+dev/staging, remova o hash pra debugar.
+
+**Prefetch de chunks "provavelmente"
+necessarios.** Em SPA, o usuario provavelmente
+vai navegar de `/` pra `/produtos`. Voce
+pode **prefetch** o chunk de produtos
+enquanto o usuario ta na home:
+
+```tsx
+// Em Home.tsx
+useEffect(() => {
+  // baixa em idle time
+  const id = requestIdleCallback(() => {
+    import("./pages/Products");
+  });
+  return () => cancelIdleCallback(id);
+}, []);
+```
+
+Quando o usuario clicar em "produtos", o
+chunk ja ta em cache - navega instantaneo.
+O `requestIdleCallback` garante que o
+prefetch nao concorre com o trabalho
+critico do browser.
+
+**`webpack-bundle-analyzer` equivalente
+Rollup.** Se voce usa Webpack (menos comum
+em 2026 com Vite), a ferramenta equivalente
+e' `webpack-bundle-analyzer`. Mesma logica,
+treemap visual. **Vale a pena rodar 1x** em
+todo projeto - surpresas comuns:
+- `core-js` (polyfills) sendo importado
+  inteiro em vez de especifico.
+- `react` sendo duplicado (2 versoes).
+- `moment` + `moment-timezone` (300KB+
+  facil).
+
+**Server-side rendering resolve bundle size?**
+Nao diretamente. SSR renderiza o HTML no
+servidor, mas o **JS ainda precisa
+hidratar** o client. Em Next.js, mesmo com
+SSR, o initial JS do app e' 100-200KB
+(React + Next runtime). SSR ajuda LCP (HTML
+chega rapido), nao INP (JS ainda precisa
+executar). Cobre em `nextjs`.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que `import()` dinamico nao funciona
+com SSR.** Em SSR, o servidor nao tem
+"navegacao do usuario" - tudo e' renderizado
+de uma vez. O `import()` dinamico funciona,
+mas o **chunk e' incluido no HTML inicial**
+(via `<script>` inline com o codigo do chunk).
+Em client-side, o chunk e' baixado sob
+demanda. A diferenca: SSR prioriza **First
+Paint rapido**, nao **Tamanho do JS**. Pra
+"bundle lazy em SSR", voce precisa de
+**streaming SSR** (Next.js 13+ App Router
+faz). Cobre em `nextjs`.
+
+**`esbuild` vs `swc` vs `terser` - qual
+minifier usar.** Vite usa `esbuild` por
+default (rapido, 100x mais rapido que terser,
+mas minificacao um pouco menos agressiva).
+Pra prod maximo, troque por `terser` ou
+`swc` (Rollup aceita custom minifier via
+`build.minify: "terser"`). Em 2026, a
+diferenca de tamanho e' ~3-5%. **Setup
+complexo pra pouco ganho** - deixe o
+default de Vite.
+
+**Module Federation e micro-frontends.**
+Pattern avancado onde apps separados sao
+"combinados" em runtime via Webpack 5
+Module Federation. Util pra times grandes
+com apps separados, mas **adiciona 50-200KB
+de overhead**. Pra maioria dos apps, **NAO
+vale a complexidade**. Micro-frontends
+exigem Module Federation; times normais
+exigem Next.js + pages.
+
+**`size-limit` - budget no package.json.**
+Configura budget por "entry point" e quebra
+o build se exceder:
+
+```json
+{
+  "size-limit": [
+    {
+      "path": "dist/assets/index-*.js",
+      "limit": "100 KB",
+      "gzip": true
+    }
+  ]
+}
+```
+
+CI quebra se o initial bundle passar de
+100KB gzipped. Combina com Lighthouse CI
+(coberto em `perf-em-ci`).
+
+**Importmap e `bare specifier` resolution.**
+Pattern emergente (Chrome 89+, Firefox 108+,
+Safari 16.4+) que destrava controle fino de
+como imports bare (`import React from "react"`)
+sao resolvidos. Em 2026, ainda limitado mas
+promissor pra **Deno** e **edge runtimes**.
+
+**Leitura recomendada:**
+
+- [web.dev - Reduce JavaScript payloads with code splitting](https://web.dev/articles/reduce-javascript-payloads-with-code-splitting) - a referencia canonica do Google.
+- [web.dev - Tree shaking](https://web.dev/articles/remove-unused-code) - patterns praticos de tree shaking.
+- [Rollup - Code splitting docs](https://rollupjs.org/rollup/docs/en/#code-splitting) - doc oficial do Rollup (o bundler por baixo do Vite).
+
+> Dica: o erro mais comum em bundle analysis
+> e' **focar no total em vez do initial**.
+> "Meu bundle tem 1.5MB" - mas se so 80KB
+> sao initial (resto e' lazy), **o usuario
+> ta bem**. O numero que importa e' o
+> initial bundle size gzipped. **Sempre
+> meca o initial, nao o total**.
+
+No proximo no, vamos **imagens e fontes**:
+os 2 tipos de recurso que mais afetam LCP
+e CLS. AVIF vs WebP, `<picture>` com
+`srcset`/`sizes`, `font-display: swap`,
+e o pattern de preloading pra LCP.
+
+<Checkpoint
+  challenge="Implemente a função `analisarChunks(chunks, orcamento)` que recebe uma lista de chunks do bundle (cada um com `nome`, `tipo: 'initial' | 'lazy'`, `tamanho: number` em KB) e um orcamento maximo por tipo de chunk. Retorna um objeto { violacoes: [{nome, tipo, tamanho, limite}], totalInicial, totalLazy, ok } - onde violacoes lista os chunks que excedem o orcamento do seu tipo, totalInicial e totalLazy sao a soma de tamanhos por tipo, e ok e' true se nao houver violacoes."
+  starterCode={`// Implemente analisarChunks(chunks, orcamento) que recebe:
+//
+// chunks: [
+//   { nome: 'index', tipo: 'initial', tamanho: 80 },
+//   { nome: 'HomePage', tipo: 'lazy', tamanho: 50 },
+//   { nome: 'ChartLib', tipo: 'lazy', tamanho: 250 },
+// ]
+//
+// orcamento: { initial: 100, lazy: 80 }  // em KB
+//
+// E retorna:
+// {
+//   violacoes: [{ nome, tipo, tamanho, limite }],  // chunks que excedem o orcamento do seu tipo
+//   totalInicial: number,    // soma de tamanhos initial
+//   totalLazy: number,       // soma de tamanhos lazy
+//   ok: boolean              // true se violacoes.length === 0
+// }
+//
+// Regras:
+// - Compare cada chunk.chunks.tamanho com orcamento[chunk.tipo].
+// - Se tamanho > limite, adicione a violacoes com { nome, tipo, tamanho, limite }.
+// - totalInicial e totalLazy sao a soma de TODOS os chunks do tipo (independente de violacao).
+function analisarChunks(chunks, orcamento) {
+  return { violacoes: [], totalInicial: 0, totalLazy: 0, ok: true };
+}
+
+const _r1 = analisarChunks(
+  [
+    { nome: "index", tipo: "initial", tamanho: 80 },
+    { nome: "HomePage", tipo: "lazy", tamanho: 50 },
+    { nome: "ChartLib", tipo: "lazy", tamanho: 250 },
+  ],
+  { initial: 100, lazy: 80 }
+);
+console.log(JSON.stringify(_r1));
+
+const _r2 = analisarChunks(
+  [
+    { nome: "a", tipo: "initial", tamanho: 50 },
+    { nome: "b", tipo: "initial", tamanho: 60 },
+    { nome: "c", tipo: "lazy", tamanho: 30 },
+  ],
+  { initial: 100, lazy: 80 }
+);
+console.log(JSON.stringify(_r2));
+
+const _r3 = analisarChunks([], { initial: 100, lazy: 80 });
+console.log(JSON.stringify(_r3));`}
+  expected='{"violacoes":[{"nome":"ChartLib","tipo":"lazy","tamanho":250,"limite":80}],"totalInicial":80,"totalLazy":300,"ok":false}
+{"violacoes":[],"totalInicial":110,"totalLazy":30,"ok":true}
+{"violacoes":[],"totalInicial":0,"totalLazy":0,"ok":true}'
+  slug="performance-web"
+  nodeId="bundle-analysis"
+/>
+
+<Quiz
+  question="Por que 'bundle total de 1.5MB' nao e' o numero que importa pra performance?"
+  options={[
+    {
+      text: "O que importa e' o INITIAL bundle (o que baixa antes do usuario poder interagir). Se so 80KB sao initial e o resto e' lazy chunks (carregados sob demanda), o usuario so baixa 80KB - mesmo que o total seja 1.5MB.",
+      correct: true,
+      explanation:
+        "Initial bundle = sincrono, baixa no load. Lazy chunks = async, baixam sob demanda (quando o usuario navega). Bundle total e' soma dos dois. Performance (LCP/INP) depende do INITIAL bundle, nao do total. Um app de 1.5MB com 80KB initial + 20 lazy chunks de 70KB cada e' mais rapido que um app de 200KB com tudo no initial. Heuristica 2026: initial < 100KB gzipped, lazy chunks < 50KB cada. Olhe sempre o initial.",
+    },
+    {
+      text: "Bundle total e' o que importa - e' o tamanho do download inicial do usuario.",
+      correct: false,
+      explanation:
+        "Nao. Com code splitting, o bundle total e' a soma de varios arquivos que baixam em momentos diferentes. O INITIAL bundle (carregado sincrono no load) e' o que afeta LCP/INP. Lazy chunks so baixam quando o usuario navega. Confundir total com initial e' o erro classico de metricas de bundle.",
+    },
+    {
+      text: "Nenhum dos dois - bundle size nao importa, so importa o tempo de execucao.",
+      correct: false,
+      explanation:
+        "Bundle size importa DIRETAMENTE. Cada KB de JS = ~1ms de parse em mobile mid-range. 1.5MB = 1.5s de parse (so parse, sem execucao). Em 3G ainda tem o download. Bundle pequeno ajuda INP (menos parse/exec) e LCP (menos tempo bloqueando o main thread). Importa sim - so nao confunda total com initial.",
+    },
+  ]}
+/>
