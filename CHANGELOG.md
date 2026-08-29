@@ -6,7 +6,7 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
-## [1.22.0] - 2026-08-29
+## [1.24.0] - 2026-08-29
 
 ### Adicionado
 
