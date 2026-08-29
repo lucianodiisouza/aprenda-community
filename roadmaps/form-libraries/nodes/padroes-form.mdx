@@ -1,0 +1,506 @@
+---
+id: padroes-form
+title: "Padrões: field arrays, controlled vs uncontrolled, condicionais"
+resources:
+  - title: "React Hook Form - useFieldArray (oficial, EN)"
+    url: https://react-hook-form.com/docs/usefieldarray
+    lang: en
+    type: doc
+    free: true
+  - title: "React Hook Form - useController (oficial, EN)"
+    url: https://react-hook-form.com/docs/usecontroller
+    lang: en
+    type: doc
+    free: true
+  - title: "Tomoda Hinata - useFieldArray practical guide (artigo, EN)"
+    url: https://tomodahinata.com/en/blog/react-hook-form-usefieldarray-dynamic-multi-step-wizard-guide
+    lang: en
+    type: artigo
+    free: true
+---
+
+Os nós 2 e 3 cobrem o "caminho feliz" - 1 input, 1
+register, validação via Zod. Em produção, você esbarra
+em três padrões que viram dor de cabeça se você não
+souber o atalho: **listas dinâmicas** (adicionar/remover
+items - ex: telefones de contato), **campos condicionais**
+(um campo que aparece só se outro for marcado), e
+**inputs controlados por libs de UI** (MUI, Chakra,
+shadcn, react-select). Este nó cobre os três.
+
+## O essencial 🟢
+
+**`useFieldArray` pra listas dinâmicas.** Quando o
+usuário precisa adicionar/remover/reordenar items
+(linhas de pedido, telefones, endereços, dependentes),
+o `useFieldArray` é o hook certo. Ele cuida do array
+interno e dá `append`, `remove`, `move`, `insert`,
+`update`, `replace` prontos.
+
+```tsx
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  nome: z.string().min(1),
+  telefones: z
+    .array(
+      z.object({
+        numero: z.string().min(10, "Telefone inválido"),
+        tipo: z.enum(["celular", "fixo", "trabalho"]),
+      })
+    )
+    .min(1, "Adicione pelo menos 1 telefone"),
+});
+
+type FormData = z.infer<typeof schema>;
+
+function Cadastro() {
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { nome: "", telefones: [{ numero: "", tipo: "celular" }] },
+  });
+
+  const { fields, append, remove, move } = useFieldArray({
+    control,
+    name: "telefones",
+  });
+
+  return (
+    <form onSubmit={handleSubmit((d) => console.log(d))}>
+      <input {...register("nome")} placeholder="Nome" />
+
+      <h3>Telefones</h3>
+      {fields.map((field, index) => (
+        <div key={field.id}>
+          {/* IMPORTANTE: key={field.id}, não index. */}
+          <input {...register(`telefones.${index}.numero` as const)} />
+          <select {...register(`telefones.${index}.tipo` as const)}>
+            <option value="celular">Celular</option>
+            <option value="fixo">Fixo</option>
+            <option value="trabalho">Trabalho</option>
+          </select>
+          <button type="button" onClick={() => remove(index)}>
+            Remover
+          </button>
+          {index > 0 && (
+            <button type="button" onClick={() => move(index, index - 1)}>
+              Subir
+            </button>
+          )}
+        </div>
+      ))}
+
+      {errors.telefones?.message && (
+        <span role="alert">{errors.telefones.message}</span>
+      )}
+      {errors.telefones?.[0]?.numero && (
+        <span role="alert">{errors.telefones[0].numero.message}</span>
+      )}
+
+      <button type="button" onClick={() => append({ numero: "", tipo: "celular" })}>
+        + Adicionar telefone
+      </button>
+
+      <button type="submit">Salvar</button>
+    </form>
+  );
+}
+```
+
+Os detalhes que importam:
+
+- **`key={field.id}`** - RHF dá um `id` estável pra cada
+  item. Use ele no `key`, não `index`. Se você usar
+  `index` e reordenar, o React vai remontar os inputs
+  e perder foco.
+- **`name` com dot notation** - `` `telefones.${index}.numero` ``
+  é como o RHF sabe qual campo é qual. Funciona com
+  Zod sem adaptação.
+- **`append` aceita o objeto do item** - mesma forma
+  que o schema espera.
+- **`remove(index)` remove um item** - o array se
+  reordena, e o `key` estável mantém o estado certo.
+- **`move(from, to)`** - reordena. Útil pra "subir/
+  descer" ou drag-and-drop.
+- **`errors.telefones?.[0]?.numero`** - erro de campo
+  aninhado. Zod retorna `errors.telefones[0].numero.message`.
+
+**`watch` pra campos condicionais.** Quando um campo
+só deve aparecer se outro for marcado, use `watch`
+pra observar o valor e renderizar condicionalmente:
+
+```tsx
+const { register, watch } = useForm<FormData>();
+const tipoPessoa = watch("tipo");
+
+return (
+  <div>
+    <select {...register("tipo")}>
+      <option value="">Selecione</option>
+      <option value="PF">Pessoa Física</option>
+      <option value="PJ">Pessoa Jurídica</option>
+    </select>
+
+    {tipoPessoa === "PF" && (
+      <input {...register("cpf")} placeholder="CPF" />
+    )}
+
+    {tipoPessoa === "PJ" && (
+      <>
+        <input {...register("cnpj")} placeholder="CNPJ" />
+        <input {...register("razaoSocial")} placeholder="Razão Social" />
+      </>
+    )}
+  </div>
+);
+```
+
+`watch` re-renderiza a cada mudança do campo. É o
+custo de observar. Em forms grandes com muitos campos
+condicionais, considere mover o campo condicional
+pra um sub-componente e usar `useFormContext` (ver
+adiante).
+
+**Validação condicional no schema.** O `watch` na UI
+vira `superRefine` no schema (nó 3 já cobriu):
+
+```ts
+const schema = z
+  .object({
+    tipo: z.enum(["PF", "PJ"]),
+    cpf: z.string().optional(),
+    cnpj: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.tipo === "PF" && !data.cpf) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cpf"],
+        message: "CPF obrigatório para PF",
+      });
+    }
+    if (data.tipo === "PJ" && !data.cnpj) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cnpj"],
+        message: "CNPJ obrigatório para PJ",
+      });
+    }
+  });
+```
+
+A UI esconde o campo (`watch`) e o schema obriga a
+existir (`superRefine`). Os dois juntos: o user não
+vê o campo, **e** se tentar submeter via devtools,
+o server também recusa.
+
+**`useController` pra inputs controlados por libs de
+UI.** MUI, Chakra, Ant Design, shadcn, react-select -
+todas essas libs controlam o input via `value` e
+`onChange` por prop. RHF, por padrão, é uncontrolled.
+Pra conectar:
+
+```tsx
+import { useForm, Controller } from "react-hook-form";
+import Select from "react-select";
+
+function Cadastro() {
+  const { control, handleSubmit } = useForm<FormData>({
+    defaultValues: { cidade: null },
+  });
+
+  return (
+    <Controller
+      name="cidade"
+      control={control}
+      render={({ field, fieldState }) => (
+        <div>
+          <Select
+            {...field}
+            options={cidades}
+            value={field.value}
+            onChange={field.onChange}
+          />
+          {fieldState.error && (
+            <span role="alert">{fieldState.error.message}</span>
+          )}
+        </div>
+      )}
+    />
+  );
+}
+```
+
+O `Controller` é a "ponte" entre RHF (uncontrolled)
+e a lib de UI (controlled). `field` tem `value`,
+`onChange`, `onBlur`, `name`, `ref` - é a mesma
+"forma" que `register` devolve, só que via render
+prop em vez de spread. `fieldState` tem `error`,
+`isTouched`, `invalid` - o que precisaria pra
+mostrar erro e validação.
+
+**Quando usar `Controller` vs `register`:**
+
+- **`register` (default)** - input HTML nativo, shadcn
+  (que é HTML + classes), Headless UI, qualquer
+  componente que aceita `name`/`onChange`/`ref`.
+  Mais performático (uncontrolled).
+- **`Controller`** - libs de UI controladas (MUI,
+  Chakra, Ant Design), `react-select`, `react-datepicker`,
+  qualquer componente que **exige** `value`/`onChange`
+  via prop. Custa um re-render a cada mudança do
+  campo (controlled), mas é a única forma de integrar.
+
+A regra prática: use `register` por padrão, recorra
+a `Controller` quando a lib exige controlled. Em
+2026, com a migração pra libs "headless" (Radix,
+Headless UI, shadcn), a maioria dos componentes
+funciona com `register`.
+
+## Aprofundamento 🟡
+
+**`useFormContext` pra forms compostos.** Quando o
+form é dividido em vários sub-componentes
+(`<DadosPessoais />`, `<Endereco />`, `<Pagamento />`),
+o `useFormContext` destrava o acesso a `useForm()`
+sem prop drilling:
+
+```tsx
+// Topo: FormProvider distribui o form
+import { useForm, FormProvider } from "react-hook-form";
+
+function Checkout() {
+  const methods = useForm<CheckoutData>({
+    resolver: zodResolver(checkoutSchema),
+  });
+
+  return (
+    <FormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <DadosPessoais />
+        <Endereco />
+        <Pagamento />
+        <button type="submit">Finalizar</button>
+      </form>
+    </FormProvider>
+  );
+}
+
+// Filho: useFormContext, sem prop drilling
+import { useFormContext } from "react-hook-form";
+
+function DadosPessoais() {
+  const { register, formState: { errors } } = useFormContext<CheckoutData>();
+  return (
+    <div>
+      <input {...register("nome")} />
+      {errors.nome && <span>{errors.nome.message}</span>}
+    </div>
+  );
+}
+```
+
+O `useFormContext` lê do contexto criado pelo
+`FormProvider`. Funciona em qualquer profundidade.
+É o padrão pra forms com 3+ seções ou pra
+multi-step (nó 5).
+
+**Field arrays com default values dinâmicos.** Quando
+o `useFieldArray` precisa de items baseados em
+dados externos (API, props), use `defaultValues` no
+`useForm`:
+
+```tsx
+const telefonesIniciais = await fetch("/api/telefones").then((r) => r.json());
+
+useForm<FormData>({
+  defaultValues: { telefones: telefonesIniciais },
+});
+
+const { fields, append } = useFieldArray({ control, name: "telefones" });
+// fields reflete os telefones iniciais
+```
+
+**Validação por item do array (Zod).** A validação
+aninhada do Zod funciona naturalmente:
+
+```ts
+const schema = z.object({
+  telefones: z
+    .array(
+      z.object({
+        numero: z.string().min(10, "Telefone inválido"),
+        tipo: z.enum(["celular", "fixo", "trabalho"]),
+      })
+    )
+    .min(1, "Adicione pelo menos 1 telefone")
+    .max(5, "Máximo 5 telefones"),
+});
+```
+
+Os erros vêm como `errors.telefones?.[0]?.numero?.message`
+(objeto aninhado). Pra UI, mapeia:
+
+```tsx
+{fields.map((field, index) => (
+  <div key={field.id}>
+    <input {...register(`telefones.${index}.numero` as const)} />
+    {errors.telefones?.[index]?.numero && (
+      <span role="alert">{errors.telefones[index].numero.message}</span>
+    )}
+  </div>
+))}
+```
+
+**`useWatch` pra observar sem re-renderizar o pai.**
+O `watch` no topo do `useForm` re-renderiza o
+componente que chamou `useForm`. Pra observar
+valor em filho sem re-renderizar o pai:
+
+```tsx
+import { useWatch } from "react-hook-form";
+
+function Preview() {
+  const nome = useWatch({ control, name: "nome" });
+  return <p>Olá, {nome}!</p>;
+}
+```
+
+Útil em formulários com preview em tempo real
+(nome do produto enquanto digita, cálculo de total
+enquanto muda quantidade). O pai do form não
+re-renderiza - só o `Preview`.
+
+**`useFormState` pra ler estado em filhos.** Similar
+ao `useFormContext`, mas só pra `formState`. Útil
+quando o pai tem o form inteiro e o filho só precisa
+de `errors`:
+
+```tsx
+import { useFormState } from "react-hook-form";
+
+function Erros() {
+  const { errors } = useFormState({ name: ["nome", "email"] });
+  // Re-renderiza só quando errors de nome ou email mudam
+  return <pre>{JSON.stringify(errors, null, 2)}</pre>;
+}
+```
+
+Padrão de otimização de performance em forms
+grandes: dividir a UI em componentes que observam
+só o que precisam.
+
+## Pra quem quer ir além 🔴
+
+**Drag-and-drop em field arrays com dnd-kit.** A
+biblioteca `@dnd-kit/core` integra naturalmente
+com `useFieldArray`:
+
+```tsx
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+
+function ListaOrdenavel({ fields, onMove }: Props) {
+  return (
+    <DndContext onDragEnd={(e) => onMove(e.oldIndex, e.newIndex)}>
+      <SortableContext items={fields.map((f) => f.id)}>
+        {fields.map((field, i) => (
+          <Item key={field.id} field={field} index={i} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+```
+
+Combinado com `useFieldArray.move`, dá pra
+construir listas reordenáveis com drag handle,
+acessibilidade por teclado, e sem perder o estado
+do form. Aprofundamento pertence a uma trilha de
+"interações avançadas" (a definir).
+
+**Schema dinâmico baseado em feature flag.** Em
+sistemas com feature flags, o schema pode mudar
+em runtime:
+
+```ts
+const baseSchema = z.object({ nome: z.string() });
+const schema = featureFlagHabilitada
+  ? baseSchema.extend({ campoExtra: z.string() })
+  : baseSchema;
+```
+
+Funciona, mas a inferência de tipo muda. Cuidado
+com `useForm<z.infer<typeof schema>>` quando o
+schema pode ser um ou outro. Solução comum: schema
+fixo com campos opcionais, feature flag só controla
+a **UI** (mostrar ou esconder).
+
+**Server-side field array validation.** Quando o
+backend precisa validar uma lista (ex: "no máximo
+3 dependentes"), o mesmo schema Zod roda no server
+(nó 6). O RHF valida no client, o Zod valida no
+server - mesma fonte.
+
+**Performance: `useFieldArray` em forms com 100+
+items.** Em forms muito grandes (ex: importar 100
+linhas de uma planilha), o `useFieldArray` pode
+virar gargalo. Soluções:
+
+- `useVirtualizer` do `react-window` ou `tanstack-virtual`
+  pra renderizar só a janela visível.
+- Dividir em chunks (submeter em batches).
+- Submeter um item por vez via mutation.
+
+É edge case de app de dados, não de form
+convencional.
+
+**Leitura recomendada:**
+
+- [React Hook Form - useFieldArray](https://react-hook-form.com/docs/usefieldarray) - a referência.
+- [React Hook Form - useController](https://react-hook-form.com/docs/usecontroller) - a ponte pra libs de UI controladas.
+- [TkDodo - Field Arrays](https://tkdodo.eu/blog/react-hook-form-field-arrays) - padrões e armadilhas.
+
+> Dica: o erro mais comum em field arrays é usar
+> `key={index}` em vez de `key={field.id}`. Isso
+> faz o React remontar os inputs a cada reordenação
+> ou remoção, perdendo foco e estado de erro. Use
+> sempre `key={field.id}` - o RHF dá um id estável
+> por design.
+
+No próximo nó, vamos compor tudo isso num **multi-step
+form** (wizard): navegação entre steps, validação
+por step, persistência local, e como o
+`FormProvider` + `useFormContext` simplificam a
+composição.
+
+<Quiz
+  question="Por que `useFieldArray` exige `key={field.id}` em vez de `key={index}`?"
+  options={[
+    {
+      text: "Porque field.id é estável - o RHF gera o mesmo id enquanto o item existir, independente da posição no array.",
+      correct: true,
+      explanation:
+        "RHF gera um id único por item no momento do append. Quando você remove ou move um item, o id do item que sobrou continua o mesmo. Com `key={index}`, o React remonta o input a cada reordenação (porque o índice mudou), perdendo foco e estado de erro. Com `key={field.id}`, o input mantém a referência certa.",
+    },
+    {
+      text: "Porque o React exige chaves únicas em listas, e o id garante que não tem colisão.",
+      correct: false,
+      explanation:
+        "Quase - a razão é a estabilidade da chave, não a unicidade. field.id garante que o input mantém a MESMA chave entre renders, não só chaves diferentes. Se você usar index como key, eles serão únicos, mas mudarão a cada reordenação - e o React remonta os inputs.",
+    },
+    {
+      text: "É apenas uma convenção - tanto faz usar id ou index, o comportamento é o mesmo.",
+      correct: false,
+      explanation:
+        "Não - tem diferença real e mensurável. Com index, drag-and-drop ou remoção faz o input perder foco e estado de erro. Com id, o estado persiste. A doc oficial do RHF recomenda id explicitamente.",
+    },
+  ]}
+/>

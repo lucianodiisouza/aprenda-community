@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 19,
+        "trilhas": 20,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 32
+        "total": 33
       },
       "trilhas": [
         {
@@ -45,6 +45,10 @@
         {
           "slug": "estruturas-de-dados",
           "title": "Estruturas de Dados"
+        },
+        {
+          "slug": "form-libraries",
+          "title": "Form Libraries: React Hook Form + Zod"
         },
         {
           "slug": "frontend",

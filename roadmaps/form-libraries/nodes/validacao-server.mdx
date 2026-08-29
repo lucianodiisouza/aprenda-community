@@ -1,0 +1,516 @@
+---
+id: validacao-server
+title: "Validação no server: reuso de schema, erros remotos, UX de loading"
+resources:
+  - title: "Zod - Error Handling (oficial, EN)"
+    url: https://zod.dev/?id=error-handling
+    lang: en
+    type: doc
+    free: true
+  - title: "React Hook Form - setError (oficial, EN)"
+    url: https://react-hook-form.com/docs/useform/seterror
+    lang: en
+    type: doc
+    free: true
+  - title: "Szymon Nowak - Shared validation schemas in full-stack apps (artigo, EN)"
+    url: https://www.totaltypescript.com/tutorials/zod
+    lang: en
+    type: artigo
+    free: true
+---
+
+Você validou o form no client com Zod. Aí o backend
+recebe o POST, e... **o que ele faz com o payload**?
+Reescreve as regras em JavaScript? Em Python? Em
+qualquer outra linguagem? Se sim, você tem **duas
+fontes da verdade** que podem divergir. Aí o user
+passa pela validação do client, submete, e o server
+rejeita por uma regra que o client não conhecia.
+
+O caminho certo é **reusar o mesmo schema no front e
+no back**. Em TypeScript full-stack (Next, tRPC, Hono
+com TS, Express com TS), o schema vive num pacote
+compartilhado e roda em ambos os lados. Este nó cobre
+o fluxo, o tratamento de erros remotos, e a UX
+durante o submit.
+
+## O essencial 🟢
+
+**O fluxo: schema compartilhado, parser nos dois
+lados.** A ideia central: o schema Zod vive num
+arquivo (ou pacote) que **tanto o client quanto o
+server importam**. O client usa via `zodResolver` do
+RHF, e o server usa via `safeParse` num middleware
+ou no handler da rota.
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph Cliente
+      UI[Form com RHF + zodResolver]
+      Schema1[schema.ts - importado]
+    end
+    subgraph Servidor
+      Handler[POST /api/cadastro]
+      Schema2[schema.ts - importado]
+      DB[(Banco)]
+    end
+    UI -->|1. user submete| RHF{RHF: trigger}
+    RHF -->|valida| Schema1
+    Schema1 -->|ok| Fetch[fetch POST]
+    Schema1 -->|erro| ErroUI[mostra em formState.errors]
+    Fetch -->|2. payload| Handler
+    Handler -->|safeParse| Schema2
+    Schema2 -->|ok| Salvar[insere no DB]
+    Schema2 -->|erro| ErroResp[400 + errors]
+    Salvar --> DB
+    DB -->|3. sucesso| Resp200[200 + dados]
+    ErroResp -->|4. client trata| SetError[setError por campo]
+    Resp200 -->|5. UI confirma| SucessoUI[mostra sucesso]`}
+  caption="O mesmo schema Zod roda no client (via zodResolver) e no server (via safeParse). Erros remotos chegam como 400 + payload estruturado, e o client mapeia pra setError por campo."
+/>
+
+O ganho: **uma definição, dois parses, zero divergência**.
+Se a regra "senha precisa de 8+ caracteres" mudar,
+você mexe num arquivo e tanto o client quanto o
+server pegam a nova regra.
+
+**Implementação no server (Node/Express).** O handler
+valida o body com `safeParse` antes de tocar no
+banco:
+
+```ts
+// server.ts (Node + Express, mas a ideia vale pra Hono, Fastify, etc.)
+import express from "express";
+import { cadastroSchema } from "./schemas/cadastro"; // mesmo arquivo do client
+
+const app = express();
+app.use(express.json());
+
+app.post("/api/cadastro", (req, res) => {
+  // Valida o body inteiro com o schema
+  const result = cadastroSchema.safeParse(req.body);
+
+  if (!result.success) {
+    // Falhou - devolve 400 com a estrutura de erros do Zod
+    return res.status(400).json({
+      message: "Dados inválidos",
+      errors: result.error.flatten(), // { fieldErrors: { email: ["Email inválido"] } }
+    });
+  }
+
+  // result.data é tipado como CadastroData. Pode usar direto.
+  const { nome, email, senha } = result.data;
+  // ... inserir no banco ...
+
+  return res.status(201).json({ id: 1, nome, email });
+});
+```
+
+`result.error.flatten()` é o formato que o Zod gera
+pra erros de validação em API. Estrutura:
+
+```ts
+{
+  formErrors: string[],         // erros do schema inteiro
+  fieldErrors: {                // erros por campo
+    email: ["Email inválido"],
+    senha: ["Senha precisa de 8+ caracteres"],
+  },
+}
+```
+
+É o formato que a maioria dos clientes espera, e
+é fácil de mapear pra `setError` no RHF.
+
+**Implementação no server (Hono).** Hono é a
+alternativa moderna, mais leve e edge-friendly:
+
+```ts
+// server.ts (Hono)
+import { Hono } from "hono";
+import { cadastroSchema } from "./schemas/cadastro";
+
+const app = new Hono();
+
+app.post("/api/cadastro", async (c) => {
+  const body = await c.req.json();
+  const result = cadastroSchema.safeParse(body);
+
+  if (!result.success) {
+    return c.json(
+      { message: "Dados inválidos", errors: result.error.flatten() },
+      400
+    );
+  }
+
+  // result.data é CadastroData
+  // ... inserir no banco ...
+
+  return c.json({ id: 1, nome: result.data.nome, email: result.data.email }, 201);
+});
+```
+
+A mesma ideia. A escolha de framework (Express,
+Fastify, Hono, Next route handler) não muda o
+núcleo: `safeParse` no body, `flatten` no erro.
+
+**Implementação no client: tratando erros remotos.**
+Quando o server devolve 400 com `errors.fieldErrors`,
+o cliente mapeia cada erro pro campo certo via
+`setError`:
+
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { cadastroSchema, type CadastroData } from "./schemas/cadastro";
+
+function Cadastro() {
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<CadastroData>({
+    resolver: zodResolver(cadastroSchema),
+  });
+
+  const onSubmit = async (data: CadastroData) => {
+    const response = await fetch("/api/cadastro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json();
+      // errorBody.errors vem de result.error.flatten() no server
+      // estrutura: { fieldErrors: { email: ["Email já existe"] } }
+      const fieldErrors = errorBody.errors?.fieldErrors ?? {};
+      for (const [field, messages] of Object.entries(fieldErrors)) {
+        if (Array.isArray(messages) && messages[0]) {
+          setError(field as keyof CadastroData, {
+            type: "server",
+            message: messages[0],
+          });
+        }
+      }
+      return;
+    }
+
+    // Sucesso
+    const novoUsuario = await response.json();
+    console.log("Cadastrado:", novoUsuario);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* ... inputs ... */}
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Enviando..." : "Cadastrar"}
+      </button>
+    </form>
+  );
+}
+```
+
+`setError(name, { type, message })` injeta um erro
+em `formState.errors` como se tivesse vindo da
+validação local. O `type: "server"` distingue
+erros remotos de erros locais (útil pra analytics
+ou estilo).
+
+**UX de loading e disabled.** O `isSubmitting` do
+RHF (true enquanto o `onSubmit` async está rodando)
+é a fonte da verdade pra desabilitar o form durante
+o submit:
+
+```tsx
+<form onSubmit={handleSubmit(onSubmit)}>
+  <fieldset disabled={isSubmitting}>
+    <input {...register("nome")} />
+    <input {...register("email")} />
+    <button type="submit">
+      {isSubmitting ? "Enviando..." : "Cadastrar"}
+    </button>
+  </fieldset>
+</form>
+```
+
+`<fieldset disabled>` desabilita todos os inputs do
+form, evitando duplo submit, mudanças durante o
+request, e cliques em outros botões do form. O
+botão muda pra "Enviando..." e fica cinza.
+
+**Erros remotos que NÃO são de validação.** O
+`setError` cobre erros de campo. Pra erros globais
+("API fora do ar", "rate limit", "sessão expirada"),
+use `setError("root", ...)`:
+
+```tsx
+if (response.status === 401) {
+  setError("root", {
+    type: "auth",
+    message: "Sessão expirada. Faça login novamente.",
+  });
+  return;
+}
+
+if (response.status >= 500) {
+  setError("root", {
+    type: "server",
+    message: "Erro no servidor. Tente novamente em alguns minutos.",
+  });
+  return;
+}
+```
+
+```tsx
+{errors.root && (
+  <div role="alert" className="erro-global">
+    {errors.root.message}
+  </div>
+)}
+```
+
+`errors.root` é o slot pra erros que não pertencem
+a um campo específico. Aparece no topo do form,
+em destaque.
+
+## Aprofundamento 🟡
+
+**Estrutura de pastas pra schema compartilhado.** Em
+monorepo:
+
+```text
+packages/
+  schemas/
+    src/
+      cadastro.ts     <- schema Zod + tipo inferido
+    package.json
+apps/
+  web/                <- importa de @app/schemas
+  api/                <- importa de @app/schemas
+```
+
+Em repo único (sem monorepo):
+
+```text
+src/
+  schemas/
+    cadastro.ts       <- schema único
+  client/
+    Cadastro.tsx      <- importa o schema, usa zodResolver
+  server/
+    routes/
+      cadastro.ts     <- importa o schema, usa safeParse
+```
+
+O ponto: o arquivo é o mesmo. O path é o mesmo. A
+mudança de regra muda um lugar só.
+
+**Validação progressiva: client valida UX, server
+valida segurança.** A validação no client serve pra
+**UX** - feedback instantâneo, mensagem de erro
+próxima do campo, submit bloqueado se inválido. A
+validação no server serve pra **segurança** - o
+client pode ser burlado (devtools, cURL, Postman).
+O server **sempre** valida, mesmo se o client não
+validou.
+
+```ts
+// Server SEMPRE valida, mesmo se o client não fez.
+// Se o client mandou { nome: "Ana", email: "invalido" } e a app
+// não validou no client, o server pega e devolve 400.
+app.post("/api/cadastro", (req, res) => {
+  const result = cadastroSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ errors: result.error.flatten() });
+  }
+  // ... continua ...
+});
+```
+
+**Regras que só fazem sentido no server.** Algumas
+regras dependem de estado externo (banco, API
+terceirizada) e rodam **só** no server:
+
+- "Email já existe" - precisa consultar o banco.
+- "CEP existe" - precisa chamar ViaCEP.
+- "Cartão é válido" - precisa chamar a adquirente.
+
+Essas regras vão no server, com schema Zod + `superRefine`
+async, ou num segundo passo depois do `safeParse`:
+
+```ts
+const cadastroSchema = z.object({
+  nome: z.string().min(1),
+  email: z.string().email(),
+  // ...
+}).superRefine(async (data, ctx) => {
+  // Verifica email no banco
+  const existe = await db.usuario.findUnique({ where: { email: data.email } });
+  if (existe) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["email"],
+      message: "Email já cadastrado",
+    });
+  }
+});
+```
+
+O schema vira async. O `zodResolver` do RHF
+detecta e mostra "carregando" via `isValidating`.
+O `safeParse` do server trata do mesmo jeito.
+
+**Rate limiting e proteção contra abuso.** Em
+produção, valide também no nível do handler (não
+só do schema): rate limit por IP, captcha após
+N submits, autenticação quando aplicável. Essas
+defesas ficam no middleware, não no schema.
+
+**Versão do schema: como evitar breaking change.**
+Em time grande, mudar o schema pode quebrar o
+client (que valida contra a versão antiga) ou o
+server (que espera o formato novo). Padrões:
+
+- **Versionar o schema** (`v1`, `v2`) e fazer
+  migração gradual.
+- **Backward-compatible** mudanças (campo novo
+  opcional, sem remover existente).
+- **Deprecation gradual**: marcar campos antigos
+  como deprecated, remover depois de 1-2 releases.
+
+Em time pequeno, o impacto é menor - mas em API
+pública, é obrigatório.
+
+## Pra quem quer ir além 🔴
+
+**tRPC: type-safety do schema até o handler.** tRPC
+vai além do "schema compartilhado": ele infere o
+tipo do input e output direto do handler, e o
+client recebe **type errors em tempo de build** se
+chamar errado.
+
+```ts
+// server/router.ts
+import { initTRPC } from "@trpc/server";
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  cadastro: t.procedure
+    .input(cadastroSchema) // <- Zod schema aqui
+    .mutation(({ input }) => {
+      // input é tipado como CadastroData
+      return db.usuario.create({ data: input });
+    }),
+});
+
+// client
+const trpc = createTRPCReact();
+trpc.cadastro.useMutation({
+  onError: (err) => {
+    // err.data.zodError tem os erros de validação
+    // ...
+  },
+});
+```
+
+A trilha não cobre tRPC porque é um framework
+adicional (com setup de servidor, client, e
+routing), mas vale mencionar como "o próximo
+salto" se a tipagem ponta a ponta virar prioridade.
+
+**Hono + Zod Validator middleware.** Hono tem um
+middleware oficial que valida o body automaticamente:
+
+```ts
+import { zValidator } from "@hono/zod-validator";
+
+app.post(
+  "/api/cadastro",
+  zValidator("json", cadastroSchema, (result, c) => {
+    if (!result.success) {
+      return c.json(
+        { errors: result.error.flatten() },
+        400
+      );
+    }
+    return c.json({ ok: true });
+  }),
+  (c) => {
+    // c.req.valid("json") é tipado como CadastroData
+    const data = c.req.valid("json");
+    // ...
+  }
+);
+```
+
+Similar existe em Fastify (`fastify-type-provider-zod`)
+e Express (com `express-zod-api`). Vale conhecer
+o ecosystem antes de escolher o framework de server.
+
+**OpenAPI / JSON Schema a partir de Zod.** Com
+`zod-to-openapi` ou `@asteasolutions/zod-to-openapi`,
+você converte o schema em spec OpenAPI e gera
+documentação interativa (Swagger UI) automática.
+Útil em API pública ou time grande.
+
+**Validação em camadas: schema, regra de negócio,
+e side effect.** Em sistemas grandes, separe:
+
+- **Schema** (Zod) - "estrutura do dado válido".
+- **Regra de negócio** (service) - "o user pode fazer
+  isso agora?" (ex: limite de cadastro por plano,
+  idade mínima legal pra contratar).
+- **Side effect** (controller) - "enviar email de
+  confirmação, registrar log, atualizar cache".
+
+A validação do schema é determinística (mesmo input
+= mesmo resultado). A regra de negócio depende de
+contexto. O side effect é o que muda o mundo. Não
+misture os três no mesmo lugar.
+
+**Leitura recomendada:**
+
+- [Zod - Error Handling](https://zod.dev/?id=error-handling) - a doc oficial, com `flatten` e `format`.
+- [React Hook Form - setError](https://react-hook-form.com/docs/useform/seterror) - como injetar erros remotos.
+- [Total TypeScript - Zod Tutorial](https://www.totaltypescript.com/tutorials/zod) - curso aprofundado de Zod com TS.
+
+> Dica: o erro mais comum em validação server é
+> devolver 400 sem estrutura. O cliente recebe
+> `{ message: "Dados inválidos" }` e não sabe em
+> qual campo tá o erro. Use **sempre** a estrutura
+> `{ errors: result.error.flatten() }` - é o que
+> o cliente espera pra mapear com `setError`.
+
+No próximo nó, vamos **unir tudo no projeto final**:
+um checkout de 3 steps com validação ponta a ponta,
+persistência local, integração com API mockada, e
+teste E2E mínimo.
+
+<Quiz
+  question="Qual é a principal razão de reusar o mesmo schema Zod no client e no server?"
+  options={[
+    {
+      text: "Eliminar divergência entre validação client e server - uma definição, dois parses, sem regras duplicadas.",
+      correct: true,
+      explanation:
+        "Quando o schema vive num arquivo importado pelos dois lados, mudar a regra (ex: 'senha precisa de 12+ caracteres') muda um lugar só. Sem reuso, o client diz 'senha ok' e o server rejeita - UX ruim e código duplicado. O schema compartilhado é o padrão de produção.",
+    },
+    {
+      text: "Reduzir o bundle size do client porque o Zod é tree-shakeable.",
+      correct: false,
+      explanation:
+        "Não - Zod no client adiciona ~14 KB gzipped ao bundle, e o Zod no server adiciona ao bundle do Node. O ganho do reuso é manutenibilidade (uma fonte da verdade), não tamanho de bundle. A alternativa de reescrever as regras no server em outra linguagem tem o mesmo peso no servidor.",
+    },
+    {
+      text: "Aumentar a performance do submit, porque a validação roda mais rápido quando o schema é compartilhado.",
+      correct: false,
+      explanation:
+        "Não há ganho de performance mensurável - o client valida o input do user (rápido, local), o server valida o payload que chegou (rápido, server-side). O reuso é sobre consistência, não velocidade.",
+    },
+  ]}
+/>

@@ -1,0 +1,554 @@
+---
+id: validacao-com-zod
+title: "Validação com Zod: schema, zodResolver, type-safety"
+resources:
+  - title: "Zod - Getting Started (oficial, EN)"
+    url: https://zod.dev/?id=getting-started
+    lang: en
+    type: doc
+    free: true
+  - title: "@hookform/resolvers (oficial, conecta Zod/Yup/Valibot ao RHF, EN)"
+    url: https://github.com/react-hook-form/resolvers
+    lang: en
+    type: doc
+    free: true
+  - title: "Valibot - Documentação oficial (alternativa bundle-size friendly, EN)"
+    url: https://valibot.dev/
+    lang: en
+    type: doc
+    free: true
+---
+
+No nó 2, a gente validou com opções do `register`:
+`required`, `pattern`, `minLength`. Funciona, mas pra
+form de produção você tem regras compostas ("senha
+precisa de 8+ caracteres, com 1 número, 1 maiúscula"),
+validação condicional ("se tipo = PJ, então CNPJ é
+obrigatório"), mensagens de erro customizadas, e -
+crucialmente - **a mesma validação no frontend e no
+backend**. As opções do `register` não dão conta disso
+com elegância.
+
+O **Zod** entra aqui: é uma lib de schema declarativo
+em que você descreve a forma do dado válido, e ela
+deriva (a) um parser que valida em runtime, (b) o tipo
+TypeScript correspondente. Você escreve o schema uma
+vez e ganha os dois de graça.
+
+## O essencial 🟢
+
+**O schema é a fonte da verdade.** Em vez de `if`/`else`
+espalhado ou opções de `register`, você define o que
+é válido uma vez:
+
+```ts
+import { z } from "zod";
+
+const schema = z.object({
+  nome: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  senha: z.string().min(8, "Senha precisa de 8+ caracteres"),
+  idade: z.number().int().min(18, "Idade mínima 18"),
+  aceitaTermos: z.literal(true, {
+    errorMap: () => ({ message: "Você precisa aceitar os termos" }),
+  }),
+});
+
+// Inferir o tipo TypeScript a partir do schema
+type FormData = z.infer<typeof schema>;
+// Equivale a:
+// type FormData = {
+//   nome: string;
+//   email: string;
+//   senha: string;
+//   idade: number;
+//   aceitaTermos: true;
+// }
+```
+
+`z.infer<typeof schema>` é o pulo do gato: o tipo do
+form é **derivado** do schema. Se você adicionar um
+campo no schema, o tipo atualiza sozinho. Se você
+remover, some do tipo. Não tem como divergirem.
+
+**Validar manualmente (sem form) é útil pra teste.** O
+schema é uma função: dá pra chamar `schema.parse(value)`
+e ela joga `ZodError` se inválido, ou devolve o valor
+tipado se válido.
+
+```ts
+const resultado = schema.parse({
+  nome: "Ana",
+  email: "ana@x.com",
+  senha: "12345",
+  idade: 25,
+  aceitaTermos: true,
+});
+// resultado: { nome: "Ana", email: "...", senha: "...", idade: 25, aceitaTermos: true }
+
+// Schema.parse joga ZodError se algo falhar
+try {
+  schema.parse({ nome: "", email: "errado" });
+} catch (e) {
+  if (e instanceof z.ZodError) {
+    console.log(e.issues);
+    // [{ path: ["nome"], message: "Nome é obrigatório" }, ...]
+  }
+}
+```
+
+`schema.safeParse(value)` é a versão "não-joga" - devolve
+`{ success, data, error }`. É o que `zodResolver` usa
+internamente, e o que você usa quando quer tratar o erro
+na mão (ex: teste, validação num server action).
+
+**`zodResolver` conecta Zod ao React Hook Form.** O
+pacote `@hookform/resolvers/zod` exporta um adapter
+que o RHF entende. Passa o schema no `useForm`:
+
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  nome: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+  senha: z.string().min(8, "Senha precisa de 8+ caracteres"),
+});
+
+type FormData = z.infer<typeof schema>;
+
+function Cadastro() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    // Opcional: defaultValues tipados pelo schema
+    defaultValues: {
+      nome: "",
+      email: "",
+      senha: "",
+    },
+  });
+
+  const onSubmit = async (data: FormData) => {
+    // data é { nome, email, senha } - tipado pelo schema.
+    // Se chegar aqui, é porque passou em TODA a validação.
+    await fetch("/api/cadastro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("nome")} aria-invalid={!!errors.nome} />
+      {errors.nome && <span role="alert">{errors.nome.message}</span>}
+
+      <input {...register("email")} aria-invalid={!!errors.email} />
+      {errors.email && <span role="alert">{errors.email.message}</span>}
+
+      <input type="password" {...register("senha")} aria-invalid={!!errors.senha} />
+      {errors.senha && <span role="alert">{errors.senha.message}</span>}
+
+      <button type="submit" disabled={isSubmitting}>Cadastrar</button>
+    </form>
+  );
+}
+```
+
+Comparado com o nó 2, a diferença é:
+
+- **Sem `required`/`pattern` no `register`** - a validação
+  toda mora no schema.
+- **`formState.errors.<campo>.message`** já vem em PT-BR
+  (a string que você passou pro Zod).
+- **`data` no `onSubmit` é tipado pelo schema** - sem
+  generics manuais, sem `any`, sem cast.
+
+**A anatomia do schema.** Os métodos mais comuns do
+Zod que você vai usar:
+
+- **Primitivos**: `z.string()`, `z.number()`, `z.boolean()`,
+  `z.date()`, `z.bigint()`, `z.symbol()`.
+- **Validação por tipo**: `.min(n)`, `.max(n)`,
+  `.length(n)`, `.email()`, `.url()`, `.uuid()`,
+  `.regex(pattern)`, `.int()`, `.positive()`,
+  `.nonnegative()`.
+- **Opcional/null**: `.optional()` (pode ser `undefined`),
+  `.nullable()` (pode ser `null`), `.nullish()` (qualquer
+  um dos dois).
+- **Default**: `.default(value)` - se o campo não vier,
+  usa o default.
+- **Mensagem custom**: `.min(1, "Mínimo 1")` ou via
+  `errorMap`.
+- **Refinements**: `.refine(fn, mensagem)` - validação
+  custom síncrona. `.superRefine` pra múltiplos checks
+  no mesmo campo.
+- **Transform**: `.transform(fn)` - converte o valor
+  depois de validar (string → number, string trimada,
+  string lowercased).
+
+```ts
+const schema = z.object({
+  // String obrigatória com trim
+  nome: z.string().trim().min(1, "Obrigatório"),
+
+  // Email que aceita string vazia como undefined
+  email: z.string().email("Email inválido").optional(),
+
+  // Boolean que precisa ser true (ex: aceita termos)
+  aceitaTermos: z.literal(true, {
+    errorMap: () => ({ message: "Precisa aceitar" }),
+  }),
+
+  // String com regex custom
+  username: z
+    .string()
+    .min(3, "Mínimo 3")
+    .max(20, "Máximo 20")
+    .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
+
+  // Refine custom (ex: senha forte)
+  senha: z
+    .string()
+    .min(8, "Mínimo 8 caracteres")
+    .refine((s) => /[A-Z]/.test(s), "Precisa de 1 maiúscula")
+    .refine((s) => /[0-9]/.test(s), "Precisa de 1 número"),
+});
+```
+
+**Schema para `defaultValues`:** quando você define o
+schema, o `defaultValues` precisa respeitar os campos
+obrigatórios. Um truque comum é derivar o default
+do schema com `schema.partial()` ou `z.input`:
+
+```ts
+// Pega os campos do schema como Partial<>
+const defaults = schema.partial().parse({});
+// defaults: { nome: undefined, email: undefined, ... }
+
+// Ou define manualmente, mas tipando pelo schema
+useForm<FormData>({
+  defaultValues: {
+    nome: "",
+    email: "",
+    senha: "",
+  } satisfies FormData,
+});
+```
+
+**Validação assíncrona com `refine` async.** Pra
+checar coisas externas (email já existe, CEP válido,
+cartão real), o Zod suporta `refine` que retorna
+Promise:
+
+```ts
+const schema = z.object({
+  email: z
+    .string()
+    .email("Email inválido")
+    .refine(
+      async (email) => {
+        const r = await fetch(`/api/usuarios/existe?email=${email}`);
+        const { existe } = await r.json();
+        return !existe;
+      },
+      { message: "Email já cadastrado", path: ["email"] }
+    ),
+});
+```
+
+O RHF entende validação assíncrona e mostra "carregando"
+via `formState.isValidating` (campo a campo) ou
+`formState.isSubmitting` (form inteiro). Veremos
+detalhes no nó 6 (validação no server).
+
+**`safeParse` vs `parse`.** A diferença importa:
+
+- **`parse(value)`** - joga `ZodError` se falhar. Use em
+  casos onde a falha é excepcional e você quer parar o
+  fluxo (entrada de um job, request crítico).
+- **`safeParse(value)`** - devolve `{ success, data, error }`.
+  Use quando você quer tratar o erro programaticamente
+  sem try/catch (e é o que `zodResolver` usa).
+
+```ts
+const result = schema.safeParse(dados);
+if (result.success) {
+  // result.data é tipado como FormData
+} else {
+  // result.error é ZodError com result.error.issues
+}
+```
+
+## Aprofundamento 🟡
+
+**Compor schemas: `.merge`, `.extend`, `.pick`,
+`.omit`, `.partial`.** Em forms grandes ou em sistemas
+com formulários que compartilham campos, dá pra
+**compor** schemas:
+
+```ts
+const baseAuth = z.object({
+  email: z.string().email(),
+  senha: z.string().min(8),
+});
+
+const cadastroSchema = baseAuth.extend({
+  nome: z.string().min(1),
+  confirmaSenha: z.string(),
+}).refine((d) => d.senha === d.confirmaSenha, {
+  message: "Senhas não conferem",
+  path: ["confirmaSenha"],
+});
+
+const loginSchema = baseAuth; // reusa email+senha
+
+// Pegar só um subconjunto
+const emailSchema = baseAuth.pick({ email: true });
+```
+
+**Validação condicional com `superRefine` ou
+`discriminatedUnion`.** Quando um campo depende do
+valor de outro ("se tipo = PJ, então CNPJ"), use
+`superRefine` no objeto inteiro:
+
+```ts
+const schema = z
+  .object({
+    tipo: z.enum(["PF", "PJ"]),
+    cpf: z.string().optional(),
+    cnpj: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.tipo === "PF" && !data.cpf) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cpf"],
+        message: "CPF obrigatório para PF",
+      });
+    }
+    if (data.tipo === "PJ" && !data.cnpj) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["cnpj"],
+        message: "CNPJ obrigatório para PJ",
+      });
+    }
+  });
+```
+
+Ou, pra campos **mutuamente exclusivos** (só um dos
+dois pode estar presente), use `discriminatedUnion`:
+
+```ts
+const schema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("PF"), cpf: z.string() }),
+  z.object({ tipo: z.literal("PJ"), cnpj: z.string() }),
+]);
+```
+
+O `discriminatedUnion` é mais type-safe: o tipo de
+`data` muda baseado em `data.tipo`.
+
+**`z.coerce` pra converter tipos automaticamente.**
+Inputs HTML sempre retornam string. Se o schema espera
+number, dá pra converter antes de validar:
+
+```ts
+const schema = z.object({
+  idade: z.coerce.number().int().min(18),
+  // string do input -> vira number (ou joga erro se NaN)
+});
+```
+
+`z.coerce.number()` é equivalente a
+`Number(value)` antes de validar. Útil pra form de
+input numérico onde o value é sempre string.
+
+**Reuso de schema no backend (preview do nó 6).** O
+schema vive num arquivo que pode ser importado pelo
+front e pelo back. No Node:
+
+```ts
+// schema.ts (compartilhado)
+export const cadastroSchema = z.object({ /* ... */ });
+export type CadastroData = z.infer<typeof cadastroSchema>;
+
+// server.ts
+app.post("/api/cadastro", (req, res) => {
+  const result = cadastroSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ errors: result.error.flatten() });
+  }
+  // result.data é CadastroData - tipado
+  salvarUsuario(result.data);
+});
+```
+
+Isso é o "reuso de schema" do qual a trilha toda
+tira o nome. Veremos a fundo no nó 6.
+
+**`safeParseAsync` e validação que envolve I/O.** Pra
+checagens que dependem de banco/API externa, use
+`safeParseAsync` (ou `parseAsync`):
+
+```ts
+const result = await schema.safeParseAsync(formData);
+// result.success e result.error
+```
+
+O RHF com `zodResolver(schema)` detecta se o schema é
+async automaticamente e mostra "carregando" via
+`isValidating`. Sem código extra.
+
+## Pra quem quer ir além 🔴
+
+**Custom error maps pra i18n.** Pra internacionalizar
+mensagens de erro, Zod suporta `z.setErrorMap`:
+
+```ts
+z.setErrorMap((issue, ctx) => {
+  if (issue.code === z.ZodIssueCode.invalid_type) {
+    if (issue.received === "undefined") return { message: "Campo obrigatório" };
+  }
+  return { message: ctx.defaultError };
+});
+```
+
+Útil pra mensagens de erro em PT-BR / EN / ES
+sem repetir a string em cada `.min(1, "obrigatório")`.
+Aprofundamento pertence à `i18n-l10n` (issue #53).
+
+**`z.brand` pra tipos nominais (TypeScript puro).** Pra
+impedir `email: string` de virar `username: string`
+por engano, dá pra criar **branded types**:
+
+```ts
+const emailSchema = z.string().email().brand<"Email">();
+type Email = z.infer<typeof emailSchema>;
+
+function enviarEmail(email: Email) { /* ... */ }
+enviarEmail("ana@x.com"); // ❌ TS error: string não é Email
+enviarEmail(emailSchema.parse("ana@x.com")); // ✅
+```
+
+Padrão avançado, mas útil em apps grandes. Detalhes em
+`typescript-frontend` (quando sair).
+
+**Zod vs Valibot em produção (2026).** Valibot tem
+a mesma API básica (`object`, `string`, `email`) mas
+com **funções** em vez de método chaining, e tree-shaking
+mais agressivo. Bundle: Valibot ~1 KB, Zod ~14 KB
+gzipped. Vale considerar se você está publicando uma
+lib ou tem budget apertado de bundle. Pra app
+convencional, Zod ainda ganha pelo ecossistema.
+
+**Schema como documentação viva.** Com `z.toJSONSchema()`,
+você converte um schema Zod em JSON Schema (formato
+OpenAPI) e gera documentação de API automaticamente.
+Útil em times grandes ou em apps com doc pública.
+
+**Leitura recomendada:**
+
+- [Zod - Getting Started](https://zod.dev/?id=getting-started) - a doc oficial, com exemplos do zero.
+- [@hookform/resolvers](https://github.com/react-hook-form/resolvers) - os adapters oficiais.
+- [Zod vs Valibot](https://valibot.dev/compare/zod/) - comparativo direto, com números de bundle.
+
+> Dica: o ganho real de Zod não é "validação melhor" -
+> é **uma fonte da verdade**. Você escreve o schema
+> uma vez e tem o parser (runtime) + o tipo (compilador)
+> + as mensagens de erro + o reuso no server. Quando
+> o tipo diverge do schema, o TS pega. Quando a regra
+> muda, você muda num lugar só.
+
+No próximo nó, vamos ver **padrões de form** que saem
+do "1 input, 1 register" - field arrays pra listas
+dinâmicas, campos condicionais, e quando forçar
+controlled com `useController`.
+
+<Checkpoint
+  challenge="Implemente a função `validarCadastro(dados)` que valida um objeto com nome, email, senha e confirmaSenha. Retorna `{ valido: true, dados }` se tudo passa, ou `{ valido: false, erros: { campo: mensagem } }` se algo falha. Regras: nome obrigatório e min 2; email obrigatório e contém '@'; senha min 8; confirmaSenha igual a senha."
+  starterCode={`// Implemente validarCadastro(dados) com as regras:
+// - nome: obrigatório, min 2 caracteres
+// - email: obrigatório, deve conter "@"
+// - senha: obrigatória, min 8 caracteres
+// - confirmaSenha: obrigatório, deve ser igual a senha
+//
+// Retorne { valido: true, dados } se tudo passa, ou
+// { valido: false, erros: { campo: "mensagem" } } se algo falha.
+function validarCadastro(dados) {
+  return { valido: false, erros: { nome: "não implementado" } };
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _casoValido = validarCadastro({
+  nome: "Ana",
+  email: "ana@x.com",
+  senha: "12345678",
+  confirmaSenha: "12345678",
+});
+console.log(JSON.stringify({
+  case: "valido",
+  valido: _casoValido.valido,
+  temErroNome: !!_casoValido.erros?.nome,
+}));
+
+const _casoInvalido = validarCadastro({
+  nome: "Ana",
+  email: "ana@x.com",
+  senha: "12345678",
+  confirmaSenha: "outra",
+});
+console.log(JSON.stringify({
+  case: "senhas_diferentes",
+  valido: _casoInvalido.valido,
+  campoErro: Object.keys(_casoInvalido.erros || {})[0],
+}));
+
+const _casoVazio = validarCadastro({
+  nome: "",
+  email: "errado",
+  senha: "123",
+  confirmaSenha: "123",
+});
+console.log(JSON.stringify({
+  case: "varios_erros",
+  valido: _casoVazio.valido,
+  qtdErros: Object.keys(_casoVazio.erros || {}).length,
+}));`}
+expected='{"case":"valido","valido":true,"temErroNome":false}
+{"case":"senhas_diferentes","valido":false,"campoErro":"confirmaSenha"}
+{"case":"varios_erros","valido":false,"qtdErros":3}'
+slug="form-libraries"
+nodeId="validacao-com-zod"
+/>
+
+<Quiz
+  question="Qual é a principal vantagem de derivar o tipo TypeScript do schema com `z.infer<typeof schema>`?"
+  options={[
+    {
+      text: "Garante que o tipo do form e as regras de validação nunca divergem - uma fonte da verdade.",
+      correct: true,
+      explanation:
+        "Você escreve o schema uma vez, e o tipo é derivado. Adicionar campo no schema = campo aparece no tipo. Tirar = some. Sem `z.infer`, você acaba com tipo manual que diverge do schema, e o TypeScript não pega.",
+    },
+    {
+      text: "Permite usar o schema em runtime e em compile time sem ter que escrever duas definições.",
+      correct: true,
+      explanation:
+        "Exato. Sem inferência, você escreveria o schema pra validação em runtime E a interface/types pra type-safety. Com `z.infer`, uma definição vira as duas. Elimina a divergência.",
+    },
+    {
+      text: "Reduz o bundle size da aplicação.",
+      correct: false,
+      explanation:
+        "Não - na verdade, o `z.infer` é só um tipo (some do bundle final via tree-shaking do TS). O bundle de runtime é o schema em si, não o tipo. A vantagem é manter schema e tipo em sincronia, não performance.",
+    },
+  ]}
+/>

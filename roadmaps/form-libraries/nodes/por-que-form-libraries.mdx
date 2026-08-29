@@ -1,0 +1,334 @@
+---
+id: por-que-form-libraries
+title: "Por que existem libs de form: re-render, validação, UX"
+resources:
+  - title: "React Hook Form - Motivation (oficial, EN)"
+    url: https://react-hook-form.com/get-started
+    lang: en
+    type: doc
+    free: true
+  - title: "Zod - Introduction (oficial, EN)"
+    url: https://zod.dev/
+    lang: en
+    type: doc
+    free: true
+---
+
+Você terminou `frontend`. Sabe `<form>`, sabe `onSubmit`, sabe
+`useState` por campo, sabe `fetch` no submit. Seu formulário
+de 2 campos funciona. Aí você precisa construir um cadastro com
+15 campos, validação condicional, e checagem de CEP em API
+externa. E descobre que o caminho "controlado com `useState`"
+não escala. Este nó é sobre mapear **onde** ele quebra e
+**o que** as libs de form resolvem.
+
+## O essencial 🟢
+
+**O problema: re-render em form controlado.** Um input controlado
+em React é `value={state} onChange={setState}`. Cada tecla
+pressionada dispara um `setState`, que dispara um re-render do
+componente. Com 2 campos, ninguém percebe. Com 30 campos
+(num cadastro, num checkout), o re-render percorre a árvore
+inteira do form, e a UI fica perceptivelmente lenta em devices
+menos potentes.
+
+```tsx
+// Form "vanilla" - 1 useState por campo, re-render a cada tecla
+function Cadastro() {
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [cep, setCep] = useState("");
+  // ... 25 campos a mais
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!email.includes("@")) {
+      setErro("Email inválido");
+      return;
+    }
+    fetch("/api/cadastro", { method: "POST", body: JSON.stringify({ nome, email, senha /* ... */ }) });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={nome} onChange={(e) => setNome(e.target.value)} />
+      <input value={email} onChange={(e) => setEmail(e.target.value)} />
+      {/* ... */}
+    </form>
+  );
+}
+```
+
+Os problemas que aparecem rápido:
+
+- **Re-render descontrolado.** Cada tecla em qualquer input
+  re-renderiza o componente inteiro. Em 30 inputs, isso é
+  perceptível.
+- **Validação espalhada.** `if (!email.includes("@"))` no
+  meio do `handleSubmit`, mas e validação por campo, enquanto
+  digita? Mais `if` espalhados. E validação assíncrona
+  (checar se email já existe)? Callback hell.
+- **Mensagens de erro manuais.** `useState` pra cada erro,
+  lógica pra "quando mostrar", lógica pra "limpar ao
+  corrigir". Esquece um e fica bug.
+- **Estado não tipado.** `email: string` no TS, mas em
+  runtime pode ser `null`, `undefined`, número, qualquer
+  coisa. Você confia que o `setEmail` só recebe string,
+  mas a API pode mandar qualquer lixo.
+- **Reset, dirty, touched, submitting.** Tudo manual.
+  Cada flag vira um `useState` e um handler.
+- **Validação no backend duplicada.** Você escreveu a regra
+  "email válido" no client. Agora reescreve no backend
+  (porque o client não é confiável). Duas fontes da verdade
+  que divergem.
+
+**O que as libs de form resolvem.** Uma lib de form
+(React Hook Form, Formik, TanStack Form) cuida de:
+
+- **Performance** - RHF usa uncontrolled inputs por padrão,
+  ou seja, o React **não** re-renderiza o componente a cada
+  tecla. O input é controlado pelo DOM, e a lib só re-renderiza
+  o que precisa (ex: a mensagem de erro do campo que mudou).
+- **Estado de validação** - `errors`, `isValid`, `isDirty`,
+  `isSubmitting`, `touchedFields`, tudo exposto pelo hook.
+- **Integração com validação** - você passa um schema (Zod,
+  Yup, Valibot), a lib valida no `onChange`, `onBlur` ou
+  `onSubmit` automaticamente, e popula `errors` no formato
+  pronto pra UI.
+- **Field arrays, conditional fields, nested objects** -
+  padrões comuns que viram hooks ou APIs diretas
+  (`useFieldArray`, `useFormContext`, `useController`).
+- **Reset, setValue, getValues, watch, trigger** - controle
+  fino do estado sem `useState` por campo.
+
+**Por que React Hook Form especificamente.** RHF é a lib
+mais popular em 2026 por algumas razões práticas:
+
+- **Bundle pequeno** (~8 KB minified + gzipped).
+- **Sem dependência de UI** - funciona com HTML nativo,
+  shadcn, MUI, Chakra, qualquer coisa.
+- **DX consistente** - uma vez que você entende `useForm`,
+  o resto da API é combinação dele com hooks auxiliares.
+- **Performance líder** - é a mais rápida das libs
+  principais em benchmarks públicos (Mantine, MUI,
+  shadcn/ui default). Usa uncontrolled por padrão,
+  com subscribe granular.
+- **Integração oficial com Zod, Yup, Valibot, ArkType,
+  etc.** - via `@hookform/resolvers`.
+
+A concorrente mais próxima hoje é **TanStack Form** (mesmo
+time do TanStack Query, TanStack Router, etc.). Vale olhar
+em 2026 porque tem type-safety ponta a ponta via generics
+mais ergonômicos que RHF, e suporta field arrays, async
+validation, e SSR de primeira. A trilha usa RHF porque é
+o que o mercado tem em produção, mas o modelo mental é o
+mesmo: schema declarativo + hook que controla o estado.
+
+**Validação síncrona vs assíncrona.** A validação pode rodar
+em dois momentos:
+
+- **Síncrona** (no momento, sem esperar nada externo):
+  "email tem formato válido", "senha tem 8+ caracteres",
+  "idade é maior que 18". O resultado é imediato -
+  ou o valor passa no schema, ou não.
+- **Assíncrona** (precisa esperar uma API): "esse email
+  já está cadastrado", "esse CEP existe", "esse cartão
+  é válido". Precisa de `await`.
+
+O **Zod** cuida da validação síncrona com sintaxe declarativa.
+Validação assíncrona é `superRefine` / `refine` async no Zod
+ou um resolver customizado. RHF suporta os dois sem
+configuração extra - você passa o schema, e o RHF decide
+quando rodar com base no `mode` (`onChange`, `onBlur`,
+`onSubmit`, `onTouched`, `all`).
+
+```tsx
+// Validação assíncrona com Zod: checar se email já existe
+const schema = z.object({
+  email: z.string().email().refine(
+    async (email) => {
+      const r = await fetch(`/api/usuarios/existe?email=${email}`);
+      const { existe } = await r.json();
+      return !existe;
+    },
+    { message: "Email já cadastrado" }
+  ),
+});
+```
+
+**A separação que essa trilha assume.** A partir deste nó,
+a gente adota o stack **React Hook Form + Zod**. A divisão
+é clara:
+
+- **RHF** cuida de "como o form se comporta" (re-render,
+  estado, submit, reset, validação, hooks auxiliares).
+- **Zod** cuida de "o que é válido" (schema declarativo,
+  inferência de tipo, mensagens de erro, reuso no server).
+
+Quem sabe ler um schema Zod consegue ler 80% do que importa
+num form. Quem sabe ler `useForm` consegue ler os outros
+20%. A trilha cobre os dois juntos porque eles se
+complementam - e porque, na prática, é o que você vai usar.
+
+## Aprofundamento 🟡
+
+**O modelo mental de RHF: uncontrolled por padrão.** A
+diferença chave é que RHF usa **refs** pra acessar os
+valores dos inputs, não state. Cada input registra um ref
+na lib, e quando você chama `handleSubmit`, a lib lê
+todos os valores via ref de uma vez. Resultado: o React
+**não re-renderiza** o componente a cada tecla.
+
+```tsx
+// RHF: o input não é controlado via value/onChange - é uncontrolled.
+// O RHF lê o valor via ref no momento do submit (ou via watch/trigger).
+const { register, handleSubmit } = useForm();
+return <input {...register("nome")} />;
+```
+
+Comparado com o `useState` por campo, o ganho de performance
+é brutal em forms grandes. Em forms de 1-2 campos, a
+diferença é desprezível. Em forms de 20+ campos, é a
+diferença entre "snappy" e "laggy".
+
+A pegadinha: por ser uncontrolled, você **não vê** o valor
+do input em tempo real sem pedir. Pra ver (ex: pra preview
+do nome em outro lugar), use `watch("nome")` - mas saiba
+que `watch` re-renderiza. Pra ler o valor sem re-renderizar
+(quando precisa só no momento de uma ação), use
+`getValues("nome")`.
+
+**Quando NÃO usar lib de form.** Vale reconhecer os casos
+onde lib é overkill:
+
+- **Form de 1-2 campos** (login, busca) - `useState` por
+  campo é mais curto e mais legível.
+- **Form controlado por outro state** (ex: editor de
+  texto onde cada caractere precisa estar em `useState`
+  pra undo/redo) - use `useState` mesmo.
+- **Form que vive num Server Component do Next** - não dá
+  pra usar `useForm` (é Client). Use `<form action={...}>`
+  + Server Action, ou um form controlado mínimo.
+- **Form com lógica de validação que muda a cada tecla
+  e que precisa de feedback frame-by-frame** - raro, mas
+  se você está construindo um editor de regex, talvez
+  `useState` seja melhor.
+
+**Comparativo rápido: RHF vs Formik vs TanStack Form.**
+Vale saber o que existe:
+
+- **React Hook Form** - a escolha padrão. Bundle pequeno,
+  uncontrolled, integra com qualquer validador via
+  resolvers. Type-safety é boa mas exige generics manuais
+  em alguns lugares.
+- **Formik** - a lib "original" (~2017). Mais antiga,
+  bundle maior, controlled por padrão (mais re-render).
+  Mantida, mas com menos tração em projetos novos. Não
+  vale começar projeto novo com Formik em 2026.
+- **TanStack Form** - a mais nova (~2024). Type-safety
+  via generics mais ergonômica, suporta field arrays
+  nativamente, sync/async validation sem boilerplate,
+  SSR-friendly. Vale considerar pra projeto novo se você
+  já está no ecossistema TanStack. Bundle maior que RHF.
+- **React Final Form** - mantida em modo de manutenção,
+  sem features novas. Não vale pra projeto novo.
+- **Conform** (Remix) - específica pra Server Actions do
+  Remix/React Router. Vale se você está nesse mundo.
+
+**Zod vs Valibot vs Yup.** Mesmo raciocínio pras libs
+de schema:
+
+- **Zod** - a padrão. Maior ecossistema, integração
+  oficial com RHF/Formik/Conform, inferência de tipo
+  poderosa (`z.infer<typeof Schema>`). Bundle grande
+  (~50 KB minified, ~14 KB gzipped).
+- **Valibot** - alternativa moderna, bundle muito menor
+  (~1 KB, tree-shakeable). API similar ao Zod, mas com
+  funções em vez de método chaining. Vale se bundle
+  size importa muito (mobile, edge). Integração com RHF
+  via `@hookform/resolvers/valibot` está estável.
+- **Yup** - a mais antiga. Inferência de tipo mais fraca
+  que Zod (depende de generics manuais). Mantida, mas
+  perdeu tração nos últimos 2 anos.
+- **Joi** - mais usada em backend (Node, Hapi). Sintaxe
+  parecida com Zod mas sem inferência de tipo natural
+  pra TS.
+- **ArkType** - nova, type-safety ainda mais agressiva
+  que Zod. Vale olhar em 2026, mas ecossistema menor.
+
+A trilha usa **Zod** porque é o caminho padrão, mas o
+conceito (schema declarativo, inferência de tipo,
+reuso client/server) se aplica a qualquer uma delas.
+
+## Pra quem quer ir além 🔴
+
+**História em uma linha.** HTML teve `<form>` desde o início
+(1993). JavaScript começou a interceptar submit no IE5
+(1999). React popularizou controlled inputs (2013). A
+comunidade percebeu que controlled com `useState` por campo
+não escala (2018-2020), e surgiram Formik (2017) e RHF
+(2019). O esquema "schema declarativo" virou padrão com
+Yup (~2015) e Zod (2020). A combo RHF + Zod consolidou
+em 2022-2024 como o stack de fato em produção.
+
+**Por que uncontrolled venceu.** Tem uma longa thread no
+React GitHub sobre controlled vs uncontrolled. O resumo:
+uncontrolled é mais performático, mas perde a "fonte da
+verdade" no React. RHF resolve isso mantendo o estado em
+refs + um state interno só pra "o que precisa re-renderizar"
+(`errors`, `isDirty`, etc.). O React continua sendo a fonte
+da verdade da UI; o DOM é a fonte da verdade do valor.
+Essa divisão é o que destrava forms grandes.
+
+**O que vem depois dessa trilha.** Em 2026, o "form state
+machine" está virando coisa: XState, Robot, ou a própria
+TanStack Form destravam modelar o form como uma máquina
+de estados finita (idle → editing → validating → submitting
+→ success/error). Pra forms de 2-3 campos, é overkill. Pra
+wizard de 5 steps com validação condicional entre eles, é
+o próximo salto. Mencionado no nó 5 (multi-step) como
+"se a lógica do wizard ficar complexa, considere modelar
+como state machine".
+
+**Leitura recomendada:**
+
+- [React Hook Form - Get Started](https://react-hook-form.com/get-started) - o caminho oficial, 5 minutos de leitura.
+- [Zod - Introduction](https://zod.dev/) - a doc oficial, com exemplos curtos.
+
+> Dica: o erro mais comum no começo é tentar reproduzir
+> "controlled com useState" dentro do React Hook Form. **Não
+> faça isso.** O ganho de performance do RHF vem de ser
+> uncontrolled. Se você quer um input controlado (ex: o
+> valor precisa estar em `useState` pra outro lugar),
+> use `useController` - é o caminho oficial pra integrar
+> com libs de UI controladas. Veremos isso no nó 4.
+
+No próximo nó, vamos abrir o **`useForm`** de verdade:
+a anatomia do hook, o que cada campo do retorno significa,
+e como `register`, `handleSubmit` e `formState` se conectam.
+
+<Quiz
+  question="Qual é o principal motivo de performance pelo qual React Hook Form usa uncontrolled inputs por padrão?"
+  options={[
+    {
+      text: "Uncontrolled evita re-render do componente a cada tecla, porque o valor fica no DOM e o React lê via ref só quando precisa.",
+      correct: true,
+      explanation:
+        "É a essência do RHF. Controlled (value={state} onChange={setState}) re-renderiza o componente a cada tecla. Uncontrolled (ref) deixa o DOM ser a fonte do valor, e o RHF só re-renderiza o que precisa (ex: a mensagem de erro do campo que mudou). Em forms de 20+ campos, a diferença é perceptível.",
+    },
+    {
+      text: "Uncontrolled é mais novo e todo mundo usa, mas não tem ganho real de performance - é só preferência.",
+      correct: false,
+      explanation:
+        "Tem ganho real, e ele é mensurável. O RHF tem benchmarks públicos comparando uncontrolled (default) vs controlled (forçado via useController) e a diferença é grande em forms grandes. Não é só preferência - é a base do design da lib.",
+    },
+    {
+      text: "Uncontrolled permite integrar com qualquer lib de UI externa sem adaptações.",
+      correct: false,
+      explanation:
+        "Esse é um efeito colateral útil, mas não é a razão da escolha. Existem libs de UI que **precisam** de controlled (MUI, Chakra) e o RHF integra com elas via useController - que é justamente a forma de forçar controlled quando você precisa.",
+    },
+  ]}
+/>

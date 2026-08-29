@@ -1,0 +1,565 @@
+---
+id: multi-step-forms
+title: "Multi-step forms: wizard, validação por step, persistência local"
+resources:
+  - title: "React Hook Form - useFormContext (oficial, EN)"
+    url: https://react-hook-form.com/docs/formprovider
+    lang: en
+    type: doc
+    free: true
+  - title: "Build a React Multi-Step Form Wizard with RHF + Zod (artigo, EN)"
+    url: https://asoasis.tech/articles/2026-04-25-1453-react-multi-step-form-wizard-tutorial/
+    lang: en
+    type: artigo
+    free: true
+  - title: "XState - Guia introdutório (referência pra modelar wizards complexos, EN)"
+    url: https://stately.ai/docs/xstate
+    lang: en
+    type: doc
+    free: true
+---
+
+Form de 1 step é o que vimos até aqui. Form de produção
+- checkout, cadastro longo, onboarding - é dividido em
+**steps**: o usuário preenche parte 1, clica "Continuar",
+preenche parte 2, e assim por diante até o submit final.
+Cada step tem sua própria validação, o user pode voltar
+pra corrigir, e o form inteiro persiste se a aba for
+fechada por acidente.
+
+Este nó é sobre como construir isso com RHF + Zod sem
+virar espaguete. O segredo é tratar o wizard como uma
+**máquina de estados**: o `currentStep` é o estado, e as
+transições (avançar, voltar, submit final) dependem da
+validação do step atual.
+
+## O essencial 🟢
+
+**O modelo mental: máquina de estados.** Um wizard
+multi-step é, no fundo, uma máquina de estados
+simples. Cada step é um estado; "avançar", "voltar" e
+"submit" são transições. O diagrama abaixo mostra a
+forma mais comum:
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Step1
+    Step1 --> Step2: validar(passo1) ok
+    Step2 --> Step1: voltar
+    Step2 --> Step3: validar(passo2) ok
+    Step3 --> Step2: voltar
+    Step3 --> Submit: validar(passo3) ok
+    Step1 --> Erro: validar(passo1) falha
+    Erro --> Step1: usuario corrige
+    Step2 --> Erro: validar(passo2) falha
+    Erro --> Step2: usuario corrige
+    Step3 --> Erro: validar(passo3) falha
+    Erro --> Step3: usuario corrige
+    Submit --> [*]: sucesso
+    Submit --> ErroFinal: API rejeita
+    ErroFinal --> Step3: usuario corrige`}
+  caption="Ciclo de vida de um wizard de 3 steps: cada step valida antes de avançar, voltar volta pro anterior, e o submit final dispara a mutation no backend."
+/>
+
+A implementação é mais simples do que o diagrama sugere.
+O `useState<Step>("step1")` é a "fonte da verdade" do
+estado atual, e as transições são funções que checam
+a validação do step antes de mudar.
+
+**Estrutura de componentes.** A separação clássica:
+
+- **`<Wizard />`** (pai) - segura o `useForm`, o
+  `currentStep`, e o `handleSubmit` final.
+- **`<Step1DadosPessoais />`, `<Step2Endereco />`,
+  `<Step3Pagamento />`** (filhos) - cada um é um
+  sub-componente com `useFormContext` e os inputs do
+  step.
+- **`<Stepper />`** (UI) - indicador visual de progresso
+  ("Step 2 de 3").
+- **`<Botoes />`** (UI) - "Voltar", "Continuar", "Finalizar".
+
+```tsx
+// Wizard.tsx
+import { useState } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  // Step 1 - dados pessoais
+  nome: z.string().min(2),
+  email: z.string().email(),
+  // Step 2 - endereço
+  cep: z.string().regex(/^\d{5}-?\d{3}$/),
+  cidade: z.string().min(1),
+  // Step 3 - pagamento
+  numeroCartao: z.string().regex(/^\d{16}$/),
+  validade: z.string().regex(/^\d{2}\/\d{2}$/),
+  cvv: z.string().regex(/^\d{3}$/),
+});
+
+type FormData = z.infer<typeof schema>;
+type Step = "step1" | "step2" | "step3";
+
+const stepFields: Record<Step, (keyof FormData)[]> = {
+  step1: ["nome", "email"],
+  step2: ["cep", "cidade"],
+  step3: ["numeroCartao", "validade", "cvv"],
+};
+
+function Wizard() {
+  const [currentStep, setCurrentStep] = useState<Step>("step1");
+  const methods = useForm<FormData>({
+    resolver: zodResolver(schema),
+    mode: "onBlur",
+  });
+
+  const handleNext = async () => {
+    // Valida só os campos do step atual antes de avançar
+    const fieldsToValidate = stepFields[currentStep];
+    const isValid = await methods.trigger(fieldsToValidate);
+    if (isValid) {
+      const order: Step[] = ["step1", "step2", "step3"];
+      const nextIndex = order.indexOf(currentStep) + 1;
+      if (nextIndex < order.length) {
+        setCurrentStep(order[nextIndex]);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    const order: Step[] = ["step1", "step2", "step3"];
+    const prevIndex = order.indexOf(currentStep) - 1;
+    if (prevIndex >= 0) {
+      setCurrentStep(order[prevIndex]);
+    }
+  };
+
+  const onSubmit = async (data: FormData) => {
+    // Só chega aqui se TODOS os steps passaram
+    await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  };
+
+  return (
+    <FormProvider {...methods}>
+      <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <Stepper current={currentStep} />
+
+        {currentStep === "step1" && <Step1DadosPessoais />}
+        {currentStep === "step2" && <Step2Endereco />}
+        {currentStep === "step3" && <Step3Pagamento />}
+
+        <div>
+          {currentStep !== "step1" && (
+            <button type="button" onClick={handleBack}>Voltar</button>
+          )}
+          {currentStep !== "step3" ? (
+            <button type="button" onClick={handleNext}>Continuar</button>
+          ) : (
+            <button type="submit">Finalizar compra</button>
+          )}
+        </div>
+      </form>
+    </FormProvider>
+  );
+}
+```
+
+E cada step é um componente separado que lê do
+`useFormContext`:
+
+```tsx
+// Step1DadosPessoais.tsx
+import { useFormContext } from "react-hook-form";
+
+function Step1DadosPessoais() {
+  const { register, formState: { errors } } = useFormContext<FormData>();
+  return (
+    <fieldset>
+      <legend>Dados pessoais</legend>
+      <input {...register("nome")} placeholder="Nome completo" />
+      {errors.nome && <span role="alert">{errors.nome.message}</span>}
+
+      <input {...register("email")} placeholder="Email" />
+      {errors.email && <span role="alert">{errors.email.message}</span>}
+    </fieldset>
+  );
+}
+```
+
+O `useFormContext` elimina prop drilling - cada step
+acessa `register`, `errors`, `setValue`, `watch` direto
+do form, sem precisar receber via props.
+
+**Validação por step com `trigger`.** O ponto-chave:
+não valide o form inteiro a cada "Continuar". Valide
+**só os campos do step atual**:
+
+```tsx
+const handleNext = async () => {
+  const fields = stepFields[currentStep];
+  const isValid = await methods.trigger(fields);
+  if (isValid) setCurrentStep(next);
+};
+```
+
+`methods.trigger(fields)` retorna `true` se todos os
+campos da lista passam, `false` caso contrário. Os
+erros aparecem em `formState.errors` no step atual -
+não nos outros steps (porque não foram validados).
+
+A vantagem: se o user esqueceu de preencher o CEP no
+step 2, o erro aparece no step 2 quando ele clica
+"Continuar", não no step 1.
+
+**Submit final valida o form inteiro.** O
+`methods.handleSubmit(onSubmit)` (chamado no `<form
+onSubmit>`) valida **todos** os campos do schema
+antes de chamar `onSubmit`. Se o user voltar pro
+step 1 e deixar o nome vazio, vai dar erro no submit
+final. Pra evitar isso:
+
+```tsx
+<form
+  onSubmit={async (e) => {
+    // Valida o form inteiro antes de submeter
+    const allValid = await methods.trigger();
+    if (allValid) {
+      methods.handleSubmit(onSubmit)(e);
+    }
+  }}
+>
+```
+
+Ou setar `mode: "onBlur"` + `reValidateMode: "onChange"`
+e confiar que o user passou por todos os steps (o
+que é razoável em wizard).
+
+**Persistência local com `localStorage` (bônus).** O
+wizard é longo, o user fecha a aba sem querer, e
+perde tudo. Pra evitar:
+
+```tsx
+const STORAGE_KEY = "checkout-draft";
+
+function Wizard() {
+  const methods = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: loadDraft(),
+  });
+
+  // Auto-save a cada mudança
+  useEffect(() => {
+    const subscription = methods.watch((value) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    });
+    return () => subscription.unsubscribe();
+  }, [methods]);
+
+  // Carrega no mount, limpa no submit
+  const onSubmit = async (data: FormData) => {
+    await fetch("/api/checkout", { /* ... */ });
+    localStorage.removeItem(STORAGE_KEY);
+  };
+}
+
+function loadDraft(): Partial<FormData> {
+  if (typeof window === "undefined") return {};
+  const raw = localStorage.getItem("checkout-draft");
+  return raw ? JSON.parse(raw) : {};
+}
+```
+
+Esse padrão simples resolve 90% dos casos. Pra apps
+com dados sensíveis (cartão de crédito), **não**
+persista - o user pode ficar com a info de pagamento
+no disco. Persistência robusta (IndexedDB, expiração)
+fica pra `pwa-offline-first` (issue #51).
+
+## Aprofundamento 🟡
+
+**Stepper visual com progresso.** O indicador de
+"step 2 de 3" é o caminho mais comum:
+
+```tsx
+function Stepper({ current }: { current: Step }) {
+  const steps: { id: Step; label: string }[] = [
+    { id: "step1", label: "Dados pessoais" },
+    { id: "step2", label: "Endereço" },
+    { id: "step3", label: "Pagamento" },
+  ];
+  const currentIndex = steps.findIndex((s) => s.id === current);
+
+  return (
+    <ol className="stepper">
+      {steps.map((step, i) => (
+        <li
+          key={step.id}
+          aria-current={i === currentIndex ? "step" : undefined}
+          className={i <= currentIndex ? "active" : "pending"}
+        >
+          {i + 1}. {step.label}
+        </li>
+      ))}
+    </ol>
+  );
+}
+```
+
+`aria-current="step"` é o atributo que leitores de tela
+reconhecem pra "você está aqui". Pequeno detalhe que
+faz diferença em a11y.
+
+**`shouldFocus` em `setFocus` e acessibilidade.** Quando
+o user clica "Continuar", o foco deve ir pro primeiro
+input do próximo step. RHF tem `setFocus`:
+
+```tsx
+const handleNext = async () => {
+  const fields = stepFields[currentStep];
+  const isValid = await methods.trigger(fields);
+  if (isValid) {
+    setCurrentStep(next);
+    // Foca no primeiro campo do próximo step
+    setTimeout(() => methods.setFocus(stepFields[next][0]), 0);
+  }
+};
+```
+
+Pequeno detalhe, mas melhora muito a experiência de
+teclado e leitor de tela.
+
+**Validação por step no schema (sub-schemas).** Em
+vez de manter `stepFields` separado, dá pra derivar
+do schema:
+
+```ts
+const step1Schema = schema.pick({ nome: true, email: true });
+const step2Schema = schema.pick({ cep: true, cidade: true });
+const step3Schema = schema.pick({
+  numeroCartao: true,
+  validade: true,
+  cvv: true,
+});
+
+// Valida o step atual com o sub-schema
+const handleNext = async () => {
+  const subSchema = { step1: step1Schema, step2: step2Schema, step3: step3Schema }[currentStep];
+  const isValid = await subSchema.safeParseAsync(methods.getValues());
+  if (isValid.success) setCurrentStep(next);
+};
+```
+
+Vantagem: a definição de "quais campos pertencem a
+qual step" vive **no schema**, não num array separado.
+Refatorar o schema reorga os steps automaticamente.
+
+**Wizard com URL state.** Pra wizards longos, salvar
+o step atual na URL (`/checkout/step/2`) tem
+vantagens:
+
+- **Back/forward do browser** funciona como esperado.
+- **Refresh** mantém o step.
+- **Compartilhar link** leva o user pro mesmo step.
+
+```tsx
+import { useSearchParams } from "next/navigation"; // Next App Router
+// ou useSearchParams do react-router-dom
+
+const [params, setParams] = useSearchParams();
+const stepParam = (params.get("step") as Step) ?? "step1";
+const [currentStep, setCurrentStep] = useState<Step>(stepParam);
+
+const handleNext = () => {
+  const next = order[order.indexOf(currentStep) + 1];
+  setCurrentStep(next);
+  setParams({ step: next });
+};
+```
+
+A URL vira mais uma fonte da verdade do wizard, junto
+com o state local. Pra wizards simples (3-4 steps,
+internos) o state local basta. Pra wizards longos
+(5+ steps, com refresh esperado) a URL vale a
+complexidade extra.
+
+**Wizard como state machine formal (XState).** Quando
+a lógica do wizard começa a ter muitos estados
+condicionais ("se o user é guest, mostra step de
+cadastro antes do pagamento"), uma máquina de
+estados formal (XState, Robot) pode valer a pena:
+
+```ts
+import { createMachine } from "xstate";
+
+const wizardMachine = createMachine({
+  id: "checkout",
+  initial: "step1",
+  states: {
+    step1: { on: { NEXT: { target: "step2", cond: "step1Valido" } } },
+    step2: {
+      on: {
+        NEXT: { target: "step3", cond: "step2Valido" },
+        BACK: "step1",
+      },
+    },
+    step3: {
+      on: {
+        SUBMIT: { target: "submitting", cond: "formValido" },
+        BACK: "step2",
+      },
+    },
+    submitting: { /* ... */ },
+    success: { type: "final" },
+  },
+});
+```
+
+XState é overkill pra wizard de 3 steps. Mas quando
+vira "5 steps, 3 sub-flows, error recovery, retry com
+backoff", modelar como state machine formal economiza
+bugs. Mencionado como aprofundamento - pertence a
+uma trilha futura de "state machines".
+
+## Pra quem quer ir além 🔴
+
+**Acessibilidade em wizard: foco, leitor de tela, e
+"completou o step".** Wizard é um dos componentes
+mais difíceis de a11y:
+
+- Anunciar "Step 2 de 3 - Endereço" em região
+  `aria-live="polite"` quando o step muda.
+- Mover foco pro primeiro input do novo step.
+- Permitir navegação por teclado (Tab, Shift+Tab,
+  Enter pra "Continuar" quando o foco está no último
+  input).
+- Marcar steps concluídos (`aria-current="step"` no
+  atual, `aria-disabled="true"` nos futuros, e
+  marca visual nos passados).
+
+A `acessibilidade-avancada` (issue #50) cobre a
+auditoria e testes automatizados. Aqui a gente garante
+o mínimo: `aria-current` no stepper, `aria-live` no
+container que muda de step.
+
+**Persistência robusta: IndexedDB + expiração.**
+`localStorage` é síncrono, bloqueia a thread em
+leituras grandes, e tem limite de ~5 MB. Pra
+formulários com muitas informações, IndexedDB:
+
+```ts
+import { openDB } from "idb";
+
+const db = await openDB("wizard", 1, {
+  upgrade(db) {
+    db.createObjectStore("drafts");
+  },
+});
+
+await db.put("drafts", formData, "checkout");
+const saved = await db.get("drafts", "checkout");
+```
+
+Aprofundamento pertence a `pwa-offline-first` (issue #51).
+
+**Wizard com Server Components (Next App Router).** A
+`nextjs` cobre wizards com Server Actions e
+`useFormState` / `useActionState`. A vantagem é que
+o progresso do wizard pode ser gerenciado no
+servidor, com state em cookie ou DB, e o user pode
+retomar de qualquer device. Vale se você já está no
+ecossistema Next.
+
+**Leitura recomendada:**
+
+- [React Hook Form - FormProvider](https://react-hook-form.com/docs/formprovider) - a doc oficial do contexto.
+- [SitePoint - Multi-Step Form](https://www.sitepoint.com/multi-step-form-react-hook-form/) - tutorial passo a passo.
+- [XState - Guia](https://stately.ai/docs/xstate) - referência pra modelar wizards complexos como state machine.
+
+> Dica: o erro mais comum em wizard é validar o form
+> inteiro a cada "Continuar". Isso faz o user ver
+> erros de steps que ele ainda nem tocou. Use
+> `methods.trigger(stepFields[currentStep])` pra
+> validar só o que importa agora.
+
+No próximo nó, vamos ver **validação no server**: como
+reusar o mesmo schema Zod no backend, como tratar
+erros remotos (`setError` por campo), e como dar UX
+de loading + disabled sem piscar.
+
+<Checkpoint
+  challenge="Implemente a função `avancarStep` que recebe o `currentStep` (um dos 'step1', 'step2', 'step3'), os campos do step atual, e os métodos do React Hook Form. A função deve: (1) chamar `trigger(campos)` pra validar; (2) se válido, retornar o próximo step (step1 -> step2, step2 -> step3, step3 -> 'submit'); (3) se inválido, retornar o mesmo step."
+  starterCode={`type Step = "step1" | "step2" | "step3";
+type Methods = {
+  trigger: (campos: string[]) => Promise<boolean>;
+};
+
+const order: Step[] = ["step1", "step2", "step3"];
+
+function getNextStep(current: Step): Step | "submit" {
+  const i = order.indexOf(current);
+  return i === -1 || i === order.length - 1 ? "submit" : order[i + 1];
+}
+
+async function avancarStep(
+  currentStep: Step,
+  camposDoStep: string[],
+  methods: Methods
+): Promise<Step | "submit"> {
+  // 1) Chame methods.trigger(camposDoStep)
+  // 2) Se true, retorne getNextStep(currentStep)
+  // 3) Se false, retorne currentStep
+  return currentStep;
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _m1: Methods = { trigger: async () => true };
+const _m2: Methods = { trigger: async () => false };
+
+avancarStep("step1", ["nome", "email"], _m1).then((s) =>
+  console.log(JSON.stringify({ case: "valido_step1", next: s }))
+);
+avancarStep("step2", ["cep"], _m1).then((s) =>
+  console.log(JSON.stringify({ case: "valido_step2", next: s }))
+);
+avancarStep("step3", ["cvv"], _m1).then((s) =>
+  console.log(JSON.stringify({ case: "valido_step3", next: s }))
+);
+avancarStep("step1", ["nome"], _m2).then((s) =>
+  console.log(JSON.stringify({ case: "invalido_step1", next: s }))
+);`}
+expected='{"case":"valido_step1","next":"step2"}
+{"case":"valido_step2","next":"step3"}
+{"case":"valido_step3","next":"submit"}
+{"case":"invalido_step1","next":"step1"}'
+slug="form-libraries"
+nodeId="multi-step-forms"
+/>
+
+<Quiz
+  question="Por que validar só os campos do step atual em `handleNext`, em vez de validar o form inteiro?"
+  options={[
+    {
+      text: "Pra não mostrar erros de campos que o usuário ainda não tocou - erro do step 3 não deve aparecer quando ele está no step 1.",
+      correct: true,
+      explanation:
+        "Se você validar o form inteiro a cada 'Continuar', o usuário vê erros de campos em steps futuros que ele nem tocou ainda. UX ruim e confusa. `methods.trigger(stepFields[currentStep])` valida só o que importa agora, mantém `errors` populado só pro step atual, e o user segue o fluxo sem ruído.",
+    },
+    {
+      text: "Porque validar o form inteiro é mais lento - custa processar todos os schemas.",
+      correct: false,
+      explanation:
+        "Não é questão de performance - Zod é rápido o suficiente pra validar 30 campos. É questão de UX: mostrar erro de campo que o user nem viu é confuso. A performance é a mesma, o ganho é clareza.",
+    },
+    {
+      text: "Porque o React Hook Form não suporta validação parcial do form.",
+      correct: false,
+      explanation:
+        "Suporta sim - é o método `trigger(fields)`. Você pode validar um campo só, uma lista, ou o form inteiro (passando nada). A escolha é sua, e nesse caso a escolha certa é validar só o step atual.",
+    },
+  ]}
+/>
