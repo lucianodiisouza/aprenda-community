@@ -1,0 +1,79 @@
+---
+id: componentes-standalone
+title: "Componentes Standalone"
+resources:
+  - title: "Angular: Components"
+    url: https://angular.dev/guide/components
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Component lifecycle"
+    url: https://angular.dev/guide/components/lifecycle
+    type: doc
+    lang: en
+    free: true
+---
+
+Componente é a unidade principal da interface Angular. Uma página pode ser um
+componente. Um card dentro dela também. Um filtro, um formulário e um menu
+também.
+
+O ganho não é só "reaproveitar HTML". O ganho é dar uma fronteira clara para
+cada pedaço da tela.
+
+```ts
+import { Component } from "@angular/core"
+
+@Component({
+  selector: "app-card",
+  standalone: true,
+  template: `<article>{{ titulo }}</article>`,
+  styles: [`article { padding: 1rem; }`],
+})
+export class CardComponent {
+  titulo = "Minha trilha"
+}
+```
+
+## O que forma um componente
+
+Um componente tem metadados e uma classe:
+
+- `selector` define como ele é usado no HTML.
+- `standalone` permite importar dependências direto nele.
+- `template` ou `templateUrl` define a marcação.
+- `styles` ou `styleUrl` define o CSS do componente.
+- `imports` lista componentes, diretivas e pipes usados no template.
+
+```ts
+@Component({
+  selector: "app-trilhas-page",
+  standalone: true,
+  imports: [TrilhaCardComponent],
+  templateUrl: "./trilhas-page.component.html",
+  styleUrl: "./trilhas-page.component.css",
+})
+export class TrilhasPageComponent {}
+```
+
+## Standalone
+
+No Angular moderno, componentes standalone importam diretamente o que usam. Isso
+deixa dependências explícitas e evita depender de um `NgModule` só para começar.
+
+Isso não quer dizer que tudo precisa ficar no componente. Um bom componente tem
+uma responsabilidade: listar trilhas, exibir um card, editar uma meta ou mostrar
+um estado vazio. Quando ele começa a buscar dados, validar regra, navegar e
+formatar tudo sozinho, é sinal de que precisa dividir.
+
+Três coisas pra levar deste nó:
+
+- **Componente é fronteira de UI.**
+- **Standalone deixa dependências explícitas.**
+- **Template, estilo e classe precisam trabalhar juntos sem misturar papéis.**
+
+> Dica: nomeie componentes pelo papel na tela, não pela aparência genérica. Um
+> `TrilhaCardComponent` comunica mais que `BoxComponent`.
+
+No próximo nó, vamos ver o que acontece quando um componente nasce, muda e sai
+da tela.

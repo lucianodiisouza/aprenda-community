@@ -1,0 +1,76 @@
+---
+id: ambiente-cli
+title: "Ambiente e Angular CLI"
+resources:
+  - title: "Angular: Installation"
+    url: https://angular.dev/installation
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular CLI"
+    url: https://angular.dev/tools/cli
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes de discutir arquitetura, você precisa conseguir criar e rodar um app. No
+Angular, esse caminho passa pelo Angular CLI.
+
+O CLI é a ferramenta que cria o projeto, sobe servidor local, gera arquivos,
+roda build e aciona testes. Ele evita que cada pessoa monte a estrutura do zero
+de um jeito diferente.
+
+```bash
+npm install -g @angular/cli
+ng new meu-app
+cd meu-app
+ng serve
+```
+
+Depois disso, o app fica disponível no navegador. A partir daí você edita os
+arquivos em `src/` e vê a tela recarregar durante o desenvolvimento.
+
+## O que está acontecendo
+
+`ng new` cria um workspace com TypeScript, build, assets, configuração de teste e
+um primeiro componente. `ng serve` inicia o servidor local. `ng generate` cria
+peças novas no padrão do framework.
+
+```bash
+ng generate component trilhas
+ng generate service trilhas
+```
+
+Três coisas pra levar deste nó:
+
+- **Use o CLI enquanto aprende.** Ele reduz erro de nome, pasta e import.
+- **`ng serve` é para desenvolvimento**, não para publicar o app.
+- **`ng build` gera a versão de produção**, que será servida por outra camada.
+
+> Dica: se um tutorial manda criar muitos arquivos na mão, tente descobrir o
+> comando `ng generate` equivalente. Em projeto real, consistência vale muito.
+
+No próximo nó, vamos abrir a estrutura criada e entender onde cada coisa mora.
+
+<Quiz
+  question="Qual comando roda o servidor local de desenvolvimento do Angular?"
+  options={[
+    {
+      text: "ng serve",
+      correct: true,
+    },
+    {
+      text: "ng build",
+      correct: false,
+      explanation:
+        "ng build empacota a aplicação para produção; não é o servidor de desenvolvimento.",
+    },
+    {
+      text: "ng publish",
+      correct: false,
+      explanation:
+        "Esse não é o comando padrão para rodar um app Angular localmente.",
+    },
+  ]}
+/>

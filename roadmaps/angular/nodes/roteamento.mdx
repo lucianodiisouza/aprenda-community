@@ -1,0 +1,80 @@
+---
+id: roteamento
+title: "Rotas e Navegação"
+resources:
+  - title: "Angular: Routing"
+    url: https://angular.dev/guide/routing
+    type: doc
+    lang: en
+    free: true
+---
+
+Sem router, uma aplicação com várias telas vira um monte de estado manual:
+"se estiver na tela X, mostra isso; se estiver na Y, esconde aquilo". A URL
+perde significado e o usuário não consegue compartilhar uma página específica.
+
+Router resolve isso declarando qual componente responde por cada caminho.
+
+```ts
+import { Routes } from "@angular/router"
+
+export const routes: Routes = [
+  { path: "", redirectTo: "trilhas", pathMatch: "full" },
+  { path: "trilhas", loadComponent: () => import("./trilhas.page") },
+  { path: "trilhas/:id", loadComponent: () => import("./trilha-detalhe.page") },
+]
+```
+
+## Router outlet e links
+
+O componente principal precisa ter um lugar onde a rota atual aparece:
+
+```html
+<nav>
+  <a routerLink="/trilhas">Trilhas</a>
+</nav>
+
+<router-outlet />
+```
+
+Use `routerLink` em vez de montar navegação manual com `href` quando a navegação
+é interna ao app Angular.
+
+## Rota com parâmetro
+
+Detalhes, edição e perfil costumam depender de um id na URL:
+
+```ts
+import { ActivatedRoute } from "@angular/router"
+import { inject } from "@angular/core"
+
+const route = inject(ActivatedRoute)
+const id = route.snapshot.paramMap.get("id")
+```
+
+Quando o parâmetro pode mudar sem destruir o componente, prefira observar o
+`paramMap` em vez de usar só `snapshot`.
+
+## Lazy loading
+
+Rotas podem carregar componentes ou grupos de rotas sob demanda. Isso evita
+mandar o app inteiro no primeiro carregamento.
+
+```ts
+{
+  path: "admin",
+  loadChildren: () => import("./admin/routes").then((m) => m.adminRoutes),
+}
+```
+
+Três ideias pra levar deste nó:
+
+- **Rota dá endereço para uma tela.**
+- **Parâmetro representa dado vindo da URL.**
+- **Lazy loading evita carregar tudo no início.**
+
+> Dica: uma tela importante do produto merece URL própria. Isso ajuda usuário,
+> suporte, teste e depuração.
+
+No próximo nó, vamos controlar acesso e comportamento HTTP com guards e
+interceptors.

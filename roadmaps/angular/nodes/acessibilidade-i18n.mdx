@@ -1,0 +1,71 @@
+---
+id: acessibilidade-i18n
+title: "Acessibilidade e i18n"
+resources:
+  - title: "Angular: Accessibility"
+    url: https://angular.dev/best-practices/a11y
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Internationalization"
+    url: https://angular.dev/guide/i18n
+    type: doc
+    lang: en
+    free: true
+---
+
+Acessibilidade e internacionalização parecem acabamento, mas mexem na estrutura
+da interface. Se ficam para o fim, você descobre tarde que botões não têm nome,
+formulários não são navegáveis por teclado e textos estão espalhados pelo app.
+
+## Acessibilidade
+
+Angular não torna uma interface acessível sozinho. HTML correto continua sendo a
+base.
+
+- `button` para ações, `a` para navegação.
+- `label` conectado ao campo.
+- foco visível.
+- navegação por teclado.
+- mensagens de erro associadas ao formulário.
+- contraste suficiente.
+
+```html
+<label for="titulo">Título</label>
+<input id="titulo" type="text" aria-describedby="titulo-erro" />
+<p id="titulo-erro">Informe um título.</p>
+```
+
+Use ARIA para completar semântica quando HTML sozinho não resolve. Não use ARIA
+para consertar HTML errado se existe elemento nativo melhor.
+
+## CDK a11y
+
+O CDK pode ajudar com foco, live announcer, trapping de foco em dialogs e
+padrões de interação. Isso é especialmente importante em overlays, menus e
+modais.
+
+## i18n
+
+Internacionalização prepara o app para mais de um idioma e para formatos de
+data, número, moeda e texto.
+
+```html
+<p>{{ valor | currency: "BRL" }}</p>
+<p>{{ atualizadoEm | date: "short" }}</p>
+```
+
+Mesmo que o app comece só em português, evite tratar texto como detalhe solto.
+Texto de interface é parte do produto. Datas, moedas e plurais também precisam
+de cuidado quando o app muda de idioma ou região.
+
+Três ideias pra levar deste nó:
+
+- **Acessibilidade começa no HTML.**
+- **Teclado é fluxo principal, não extra.**
+- **i18n exige organização de texto e formato.**
+
+> Dica: teste uma tela sem mouse. Se você não consegue completar o fluxo pelo
+> teclado, a interface ainda não está pronta.
+
+No próximo nó, vamos falar de PWA e service worker.

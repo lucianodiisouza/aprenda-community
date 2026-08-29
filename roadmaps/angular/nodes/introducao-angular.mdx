@@ -1,0 +1,77 @@
+---
+id: introducao-angular
+title: "O que é Angular"
+resources:
+  - title: "Angular: What is Angular?"
+    url: https://angular.dev/overview
+    type: doc
+    lang: en
+    free: true
+---
+
+Muita gente chega no Angular depois de aprender HTML, CSS e JavaScript achando
+que a diferença principal é "usar componentes". Componentes são parte da
+história, mas não explicam o motivo do framework existir.
+
+O problema aparece quando a interface deixa de ser uma página e vira um produto:
+rotas, formulários, API, permissão, loading, erro, estado compartilhado e build.
+Sem uma arquitetura clara, cada tela começa a resolver essas coisas de um jeito.
+
+## O app que cresceu demais
+
+Imagina um dashboard de estudos. No começo ele só lista trilhas. Depois precisa
+filtrar por status, abrir detalhes, cadastrar metas, salvar progresso, mostrar
+erro da API e impedir acesso sem login.
+
+Se tudo fica em um arquivo só, o código vira uma mistura de HTML, regra,
+requisição, validação e navegação.
+
+```ts
+import { Component } from "@angular/core"
+
+@Component({
+  selector: "app-root",
+  standalone: true,
+  template: `<h1>Olá, Angular</h1>`,
+})
+export class AppComponent {}
+```
+
+Esse exemplo é pequeno, mas já mostra o modelo: uma classe TypeScript guarda
+estado e comportamento; o template descreve o que aparece na tela.
+
+Três ideias pra levar deste nó:
+
+- **Angular é um framework**, não só uma biblioteca de UI.
+- **Ele é opinativo de propósito**: router, forms, HTTP, build e testes seguem
+  padrões do próprio ecossistema.
+- **Ele faz mais sentido em apps que crescem**, com várias telas e regras.
+
+> Dica: não avalie Angular por uma tela simples. Ele parece grande quando o
+> problema é pequeno, mas começa a fazer sentido quando o app precisa manter
+> organização por meses ou anos.
+
+No próximo nó, vamos preparar o ambiente e criar o primeiro projeto com Angular
+CLI.
+
+<Quiz
+  question="Qual problema o Angular tenta resolver melhor?"
+  options={[
+    {
+      text: "Organizar uma aplicação web que cresce em telas, estado e regras",
+      correct: true,
+    },
+    {
+      text: "Substituir HTML e CSS por completo",
+      correct: false,
+      explanation:
+        "Angular usa HTML e CSS; ele organiza como essas peças entram numa aplicação.",
+    },
+    {
+      text: "Rodar JavaScript sem navegador",
+      correct: false,
+      explanation:
+        "Esse é o papel de runtimes como Node.js. Angular roda no contexto de aplicações web.",
+    },
+  ]}
+/>

@@ -1,0 +1,58 @@
+---
+id: pwa
+title: "PWA e Service Worker"
+resources:
+  - title: "Angular: Service worker"
+    url: https://angular.dev/ecosystem/service-workers
+    type: doc
+    lang: en
+    free: true
+  - title: "MDN: Progressive web apps"
+    url: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps
+    type: doc
+    lang: en
+    free: true
+---
+
+Nem todo app precisa virar PWA. Mas quando o usuário abre em rede ruim, volta
+sempre às mesmas telas ou precisa de uma experiência mais próxima de app
+instalável, PWA entra na conversa.
+
+Service worker é a peça que fica entre o navegador e a rede. Ele pode cachear
+arquivos, controlar atualização e melhorar a experiência offline.
+
+```bash
+ng add @angular/pwa
+```
+
+Esse comando adiciona manifest, ícones, configuração de service worker e ajustes
+no build.
+
+## O que PWA costuma cobrir
+
+- manifest para instalação.
+- ícones e nome do app.
+- cache de assets.
+- estratégia para dados.
+- atualização de versão.
+- experiência quando a rede falha.
+
+## O cuidado
+
+Cache é útil, mas também cria problema: usuário vendo versão antiga, dado
+desatualizado ou comportamento diferente entre desenvolvimento e produção.
+
+Você precisa decidir o que pode ser cacheado. Arquivos estáticos são mais
+simples. Dados de API exigem mais cuidado, principalmente quando envolvem sessão,
+permissão ou informação que muda rápido.
+
+Três ideias pra levar deste nó:
+
+- **PWA melhora instalação, cache e uso em rede instável.**
+- **Service worker precisa de estratégia de atualização.**
+- **Cache errado pode piorar a experiência.**
+
+> Dica: teste atualização de versão. O problema real de PWA não é só funcionar
+> offline; é garantir que o usuário receba a versão nova sem confusão.
+
+No próximo nó, vamos escrever testes para reduzir medo de mexer no app.

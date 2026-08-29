@@ -1,0 +1,87 @@
+---
+id: inputs-outputs
+title: "Inputs, Outputs e Comunicação"
+resources:
+  - title: "Angular: Sharing data between components"
+    url: https://angular.dev/guide/components/inputs-outputs
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando a tela cresce, um componente precisa conversar com outro. A lista passa
+dados para o card. O card avisa que foi clicado. O formulário avisa que salvou.
+
+Angular resolve comunicação direta entre pai e filho com inputs e outputs. O pai
+envia dados. O filho emite eventos. Essa direção evita que todo componente
+altere todo mundo.
+
+## Input: dado entrando
+
+```ts
+import { Component, input } from "@angular/core"
+
+@Component({
+  selector: "app-trilha-card",
+  standalone: true,
+  template: `<h2>{{ titulo() }}</h2>`,
+})
+export class TrilhaCardComponent {
+  titulo = input.required<string>()
+}
+```
+
+O pai usa o componente assim:
+
+```html
+<app-trilha-card [titulo]="trilha.titulo" />
+```
+
+Inputs podem ser opcionais, obrigatórios, ter alias e até transformação. Use
+isso para deixar o contrato do componente explícito.
+
+```ts
+destacado = input(false, { transform: Boolean })
+```
+
+## Output: evento saindo
+
+```ts
+import { Component, output } from "@angular/core"
+
+export class TrilhaCardComponent {
+  abrir = output<string>()
+
+  selecionar(id: string) {
+    this.abrir.emit(id)
+  }
+}
+```
+
+O pai escuta o evento:
+
+```html
+<app-trilha-card
+  [titulo]="trilha.titulo"
+  (abrir)="abrirTrilha($event)"
+/>
+```
+
+## E two-way binding?
+
+Two-way binding é útil quando um valor precisa entrar e sair pelo mesmo contrato,
+como em componentes de formulário. Mas não use como padrão para tudo. Em muitos
+casos, input + output separado deixa o fluxo mais claro.
+
+Três coisas pra levar deste nó:
+
+- **Input entra no componente.**
+- **Output sai como evento.**
+- **Filho comunica intenção; pai decide a regra.**
+
+> Dica: se você está passando dados por muitos níveis de componentes, talvez o
+> problema não seja input/output. Talvez exista estado compartilhado pedindo um
+> service.
+
+No próximo nó, vamos ligar dados e ações ao HTML com templates, binding e
+eventos.

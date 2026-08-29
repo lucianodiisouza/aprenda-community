@@ -1,0 +1,98 @@
+---
+id: projeto-final
+title: "Projeto Final: Dashboard Angular"
+resources:
+  - title: "Angular: Tutorial"
+    url: https://angular.dev/tutorials/learn-angular
+    type: curso
+    lang: en
+    free: true
+---
+
+Chegou a hora de juntar tudo: CLI, workspace, TypeScript, componentes,
+templates, services, rotas, formulários, HTTP, RxJS, Signals, estado,
+acessibilidade, testes e build.
+
+## A missão
+
+Construa um dashboard em Angular para acompanhar estudos. Ele precisa listar
+trilhas, mostrar detalhes, cadastrar metas e acompanhar progresso.
+
+O domínio é simples de entender, mas força você a usar as partes importantes do
+framework em um fluxo só.
+
+<Mermaid
+  chart={`flowchart LR
+    U["Usuário"] --> L["Lista de trilhas"]
+    L --> D["Detalhe da trilha"]
+    L --> F["Formulário de meta"]
+    F --> S["TrilhasService"]
+    D --> S
+    S --> API["API fake ou real"]
+    S --> E["Estado do app"]
+
+    classDef page fill:#0e7490,stroke:#22d3ee,color:#ecfeff
+    classDef infra fill:#1e3a5f,stroke:#60a5fa,color:#dbeafe
+    classDef external fill:#064e3b,stroke:#34d399,color:#d1fae5
+    classDef state fill:#581c87,stroke:#c084fc,color:#f3e8ff
+    classDef user fill:#1f2937,stroke:#9ca3af,color:#e5e7eb
+    class U user
+    class L,D,F page
+    class S infra
+    class API external
+    class E state`}
+  caption="O dashboard conecta telas, serviço, estado interno e integração externa."
+/>
+
+## Requisitos
+
+**Telas**
+
+- Dashboard com cards de resumo.
+- Tela de detalhes de uma trilha usando rota com parâmetro.
+- Formulário para criar uma trilha ou meta.
+- Lista filtrável por status.
+
+**Dados**
+
+- Service centralizando leitura e escrita.
+- Integração HTTP simulada ou real.
+- Estado de carregando, erro, vazio e sucesso.
+- Signals para estado local ou derivado.
+- RxJS para chamadas assíncronas.
+
+**Qualidade**
+
+- Formulário com validação.
+- Navegação por teclado funcionando.
+- Labels e mensagens de erro acessíveis.
+- Teste para pelo menos um service e um formulário.
+- Build final com `ng build`.
+
+## Como saber que funcionou
+
+Teste cada garantia de propósito:
+
+1. **Navegação** - abra lista e detalhe direto pela URL.
+2. **Formulário** - tente salvar dado inválido e confirme a validação.
+3. **HTTP** - simule loading, sucesso vazio e erro.
+4. **Estado** - crie uma meta e veja a lista atualizar.
+5. **Acessibilidade** - complete o fluxo principal usando teclado.
+6. **Produção** - rode testes e `ng build`.
+
+## Se quiser ir além
+
+- Persistir no `localStorage`.
+- Usar Angular Material em formulário, cards e tabela.
+- Criar uma autenticação fake com guard.
+- Adicionar interceptor para token e erro global.
+- Transformar em PWA.
+- Adicionar SSR se quiser estudar renderização inicial.
+
+> Dica: não comece pelo visual perfeito. Primeiro faça o fluxo funcionar ponta a
+> ponta: listar, criar, marcar progresso e navegar. Depois refine interface,
+> testes e produção.
+
+Terminando isso, você já terá praticado o desenho de muitos apps Angular reais:
+telas por rota, componentes menores, services para dados, estado explícito,
+integração com API e build pronto para publicar.
