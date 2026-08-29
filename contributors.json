@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 20,
+        "trilhas": 22,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 33
+        "total": 35
       },
       "trilhas": [
         {
@@ -93,6 +93,10 @@
         {
           "slug": "terminal-para-devs",
           "title": "Terminal para Devs"
+        },
+        {
+          "slug": "testing-frontend",
+          "title": "Testing Frontend: Vitest, Testing Library, Playwright"
         },
         {
           "slug": "typescript",

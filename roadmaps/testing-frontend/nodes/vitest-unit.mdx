@@ -1,0 +1,620 @@
+---
+id: vitest-unit
+title: "Vitest: setup, matchers, mocks, spies, coverage"
+resources:
+  - title: "Vitest - Getting Started (oficial, EN)"
+    url: https://vitest.dev/guide/
+    lang: en
+    type: doc
+    free: true
+  - title: "Vitest - API (oficial, todas as funções, EN)"
+    url: https://vitest.dev/api/
+    lang: en
+    type: doc
+    free: true
+  - title: "Autonoma - Jest vs Vitest 2026: 8x Faster Watch Mode (artigo, EN)"
+    url: https://getautonoma.com/blog/jest-vs-vitest-2026
+    lang: en
+    type: artigo
+    free: true
+---
+
+O `vitest` é o test runner padrão em React em 2026.
+Funciona com Vite, Next, Remix, TanStack Start, ou
+qualquer projeto TS. A API lembra Jest (porque é
+inspirada em Jest), mas é mais rápido (ESM nativo,
+não transpila), tem type-checking integrado, e
+suporta `import` direto. Este nó cobre o mínimo
+viável: setup, matchers, mocks, spies, coverage.
+
+Se você entende o ciclo `describe` / `it` / `expect`
+e como mockar uma dependência, o resto da API vira
+"combinações dessas peças".
+
+## O essencial 🟢
+
+**Setup em 3 linhas.** Pra rodar Vitest num
+projeto Vite/Next, instala e roda:
+
+```bash
+pnpm add -D vitest @vitest/ui
+```
+
+```ts
+// vitest.config.ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "jsdom", // ou "happy-dom" - engine de DOM pro Node
+    globals: true,        // describe/it/expect globais (sem import)
+    setupFiles: ["./vitest.setup.ts"],
+  },
+});
+```
+
+```ts
+// vitest.setup.ts (carregado antes de cada teste)
+import "@testing-library/jest-dom/vitest"; // matchers extras de DOM
+```
+
+```json
+// package.json
+{
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run", // CI mode - roda uma vez e sai
+    "coverage": "vitest run --coverage"
+  }
+}
+```
+
+`vitest` (sem `run`) fica em **watch mode** -
+re-roda os testes a cada mudança de arquivo.
+`vitest run` é o que CI usa - roda uma vez e
+termina. `vitest --ui` abre uma interface web
+no browser com a árvore de testes.
+
+**`describe`, `it`/`test`, `expect` - a anatomia
+do teste.** Todo teste segue o mesmo esqueleto:
+
+```ts
+import { describe, it, expect } from "vitest";
+import { somar, dividir } from "./math";
+
+describe("math", () => {
+  // Agrupa testes relacionados (aninhável)
+  it("somar dois números positivos", () => {
+    // Caso de teste
+    expect(somar(1, 2)).toBe(3);
+  });
+
+  it("somar com zero", () => {
+    expect(somar(0, 5)).toBe(5);
+  });
+
+  describe("dividir", () => {
+    it("divide números válidos", () => {
+      expect(dividir(10, 2)).toBe(5);
+    });
+
+    it("joga erro ao dividir por zero", () => {
+      // Para testar throw
+      expect(() => dividir(10, 0)).toThrow("Divisão por zero");
+    });
+  });
+});
+```
+
+- **`describe(name, fn)`** - agrupa testes. Pode
+  ser aninhado (describe dentro de describe).
+  Bom pra organizar "todas as funções de
+  validação", "todos os hooks de form", etc.
+- **`it(name, fn)`** ou **`test(name, fn)`** -
+  sinônimos. `it` é mais comum em BDD; `test`
+  é mais direto. Use o que o time prefere.
+- **`expect(value)`** - retorna um objeto com
+  matchers. `expect(x).toBe(y)`, `toEqual(obj)`,
+  `toThrow()`, etc.
+
+**Os matchers mais usados.** Vitest herda matchers
+do `expect` do Jest (mesma API), e adiciona
+matchers extras via `expect.extend()`:
+
+```ts
+// Igualdade
+expect(1 + 1).toBe(2);              // Object.is (estrito, sem coerção)
+expect({ a: 1 }).toEqual({ a: 1 }); // recursivo (deep equal)
+expect({ a: 1 }).toStrictEqual({ a: 1 }); // recursivo + tipos
+
+// Booleanos
+expect(true).toBeTruthy();
+expect(false).toBeFalsy();
+expect(null).toBeNull();
+expect(undefined).toBeUndefined();
+
+// Números
+expect(0.1 + 0.2).toBeCloseTo(0.3); // ignora erro de ponto flutuante
+expect(5).toBeGreaterThan(3);
+expect(5).toBeLessThanOrEqual(5);
+
+// Strings
+expect("Aprenda").toMatch(/enda/);
+expect("Aprenda").toContain("enda");
+
+// Arrays / Iteráveis
+expect([1, 2, 3]).toContain(2);
+expect([1, 2, 3]).toHaveLength(3);
+expect(new Set([1, 2])).toContain(1);
+
+// Objetos
+expect({ a: 1, b: 2 }).toHaveProperty("a");
+expect({ a: 1, b: 2 }).toMatchObject({ a: 1 });
+
+// Exceções
+expect(() => JSON.parse("x")).toThrow();
+expect(() => JSON.parse("x")).toThrow(SyntaxError);
+expect(() => JSON.parse("x")).toThrow(/JSON/); // match na mensagem
+
+// Promises
+await expect(fetch("/api")).resolves.toEqual({ id: 1 });
+await expect(fetch("/api")).rejects.toThrow("404");
+
+// Funções (mocks, aprofundamento abaixo)
+expect(mockFn).toHaveBeenCalled();
+expect(mockFn).toHaveBeenCalledWith("arg1", "arg2");
+expect(mockFn).toHaveBeenCalledTimes(3);
+```
+
+`toBe` vs `toEqual` confunde no começo. Resumo:
+
+- **`toBe`** - `Object.is`. Compara primitivos
+  ou referência. `expect(1).toBe(1)` ✅,
+  `expect({a:1}).toBe({a:1})` ❌ (referências
+  diferentes).
+- **`toEqual`** - deep equal recursivo. Compara
+  estrutura. `expect({a:1}).toEqual({a:1})` ✅.
+- **`toStrictEqual`** - deep equal + tipo
+  estrito. `undefined` vs ausente não passa
+  (mais rigoroso que `toEqual`).
+
+**Mocks com `vi.fn()`.** O `vi` é o namespace
+de mock do Vitest (análogo ao `jest` do Jest).
+`vi.fn()` cria uma função mock - você controla
+o que ela retorna e inspeciona como foi chamada:
+
+```ts
+import { vi, describe, it, expect } from "vitest";
+
+it("chama callback ao clicar", () => {
+  const onClick = vi.fn();         // mock que retorna undefined
+  const botao = render(<Botao onClick={onClick}>Bla</Botao>);
+
+  botao.click();
+
+  expect(onClick).toHaveBeenCalledTimes(1);
+  expect(onClick).toHaveBeenCalledWith(expect.any(Object));
+});
+
+// Mock que retorna valor específico
+const getUser = vi.fn().mockReturnValue({ id: 1, nome: "Ana" });
+expect(getUser()).toEqual({ id: 1, nome: "Ana" });
+
+// Mock que muda retorno por chamada
+const randomMock = vi.fn()
+  .mockReturnValueOnce("primeiro")
+  .mockReturnValueOnce("segundo")
+  .mockReturnValue("padrão");
+
+expect(randomMock()).toBe("primeiro");
+expect(randomMock()).toBe("segundo");
+expect(randomMock()).toBe("padrão");
+```
+
+`vi.fn()` é o canivete suíço de mock. Use pra:
+substituir dependências, simular retorno de API,
+verificar que função foi chamada, contar chamadas.
+
+**Mock de módulo com `vi.mock()`.** Pra mockar
+um **módulo inteiro** (não só uma função):
+
+```ts
+// userService.ts
+export async function buscarUsuario(id: string) {
+  const r = await fetch(`/api/usuarios/${id}`);
+  return r.json();
+}
+
+// userService.test.ts
+import { vi, describe, it, expect } from "vitest";
+
+// Mock do módulo - substitui o módulo inteiro
+vi.mock("./userService", () => ({
+  buscarUsuario: vi.fn().mockResolvedValue({ id: "1", nome: "Ana" }),
+}));
+
+import { buscarUsuario } from "./userService";
+
+it("usa o mock do módulo", async () => {
+  const user = await buscarUsuario("1");
+  expect(user).toEqual({ id: "1", nome: "Ana" });
+});
+```
+
+`vi.mock()` é hoisted pelo Vitest - mesmo que
+você escreva depois do `import`, o mock é
+aplicado **antes** do módulo ser carregado. É
+o que destrava `import { buscarUsuario } from
+"./userService"` e o `buscarUsuario` ser o mock.
+
+**`vi.spyOn()` pra observar função existente.**
+Quando você quer manter a implementação original
+mas **observar** como foi chamada:
+
+```ts
+import * as consoleMod from "console";
+import { vi, describe, it, expect } from "vitest";
+
+it("loga mensagem de erro", () => {
+  const spy = vi.spyOn(consoleMod, "error").mockImplementation(() => {});
+  // mockImplementation substitui a função - sem ela, ainda chama o original
+
+  minhaFuncaoQueLoga();
+
+  expect(spy).toHaveBeenCalledWith("erro esperado");
+
+  spy.mockRestore(); // restaura a implementação original
+});
+```
+
+`vi.spyOn` é o caminho pra "espionar sem mudar".
+O `mockRestore()` no final é importante pra não
+vazar o spy pra outros testes.
+
+**Setup e teardown com `beforeEach`/`afterEach`.**
+Pra código que se repete entre testes:
+
+```ts
+import { beforeEach, afterEach, describe, it, expect } from "vitest";
+
+describe("Carrinho", () => {
+  let carrinho: Carrinho;
+
+  beforeEach(() => {
+    // Roda antes de cada teste deste describe
+    carrinho = new Carrinho();
+  });
+
+  afterEach(() => {
+    // Roda depois de cada teste
+    localStorage.clear();
+  });
+
+  it("adiciona item", () => {
+    carrinho.adicionar({ id: "1", nome: "Camisa", preco: 50 });
+    expect(carrinho.itens).toHaveLength(1);
+  });
+
+  it("calcula total", () => {
+    carrinho.adicionar({ id: "1", nome: "Camisa", preco: 50 });
+    carrinho.adicionar({ id: "2", nome: "Calça", preco: 100 });
+    expect(carrinho.total()).toBe(150);
+  });
+});
+```
+
+`beforeAll`/`afterAll` rodam **uma vez** antes/depois
+de **todos** os testes do describe. `beforeEach`/
+`afterEach` rodam antes/depois de **cada** teste.
+
+**Coverage com `--coverage`.** Pra medir cobertura
+de linhas/branches/funções:
+
+```bash
+pnpm add -D @vitest/coverage-v8
+pnpm coverage
+```
+
+```ts
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: "v8", // ou "istanbul"
+      reporter: ["text", "html", "json"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+      thresholds: {
+        // Falha o build se cobertura ficar abaixo disso
+        branches: 70,
+        functions: 70,
+        lines: 70,
+        statements: 70,
+      },
+    },
+  },
+});
+```
+
+`thresholds` é o pulo do gato: define um mínimo de
+cobertura que **falha o CI** se não for atingido.
+Em time que está construindo a cultura de teste,
+é o "remédio" pra evitar regressão de cobertura.
+
+## Aprofundamento 🟡
+
+**Testando hooks React com `renderHook`.** Hooks
+são funções que precisam estar dentro de um
+componente pra rodar. O `renderHook` do
+`@testing-library/react` resolve:
+
+```tsx
+import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+import { useContador } from "./useContador";
+
+describe("useContador", () => {
+  it("inicia com valor inicial", () => {
+    const { result } = renderHook(() => useContador(0));
+    expect(result.current.valor).toBe(0);
+  });
+
+  it("incrementa o valor", () => {
+    const { result } = renderHook(() => useContador(0));
+
+    act(() => {
+      result.current.incrementar();
+    });
+
+    expect(result.current.valor).toBe(1);
+  });
+});
+```
+
+`renderHook` retorna `{ result }` - o `result.current`
+é o valor de retorno do hook no último render.
+`act()` envolve a ação que dispara re-render,
+garantindo que o React processou a atualização antes
+do `expect`.
+
+**Testando funções async com timers falsos.**
+Pra testar `setTimeout`, `setInterval`, `debounce`:
+
+```ts
+import { vi, describe, it, expect } from "vitest";
+
+describe("debounce", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("chama função apenas após 100ms sem chamadas", () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, 100);
+
+    debounced();
+    debounced();
+    debounced();
+    expect(fn).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+`vi.useFakeTimers()` substitui `setTimeout`/`Date`
+por versões controláveis. `vi.advanceTimersByTime(100)`
+avança o relógio 100ms - tudo que estava agendado
+roda. Sem isso, você teria que esperar 100ms reais
+em cada teste (lento) ou usar `done()` + `setTimeout`
+(frágil).
+
+**Testando promises com `vi.waitFor`.** Pra esperar
+algo acontecer (DOM atualizar, fetch resolver):
+
+```ts
+import { vi } from "vitest";
+
+it("mostra nome do usuário após fetch", async () => {
+  render(<Perfil userId="1" />);
+
+  // Tela mostra "Carregando..." inicialmente
+  expect(screen.getByText("Carregando...")).toBeInTheDocument();
+
+  // Espera o nome aparecer (até 1s, re-checa a cada 50ms)
+  await vi.waitFor(
+    () => {
+      expect(screen.getByText("Ana")).toBeInTheDocument();
+    },
+    { timeout: 1000, interval: 50 }
+  );
+});
+```
+
+`vi.waitFor` é o caminho padrão pra esperar
+condição assíncrona em teste. Alternativa do
+Testing Library é `findBy*`, que veremos no nó 3.
+
+**Snapshot testing: existe, evite pra component.**
+Snapshot é "salva a saída do componente e compara
+com a anterior":
+
+```tsx
+it("renderiza Botao corretamente", () => {
+  const { container } = render(<Botao>Clique</Botao>);
+  expect(container).toMatchSnapshot();
+});
+```
+
+Funciona pra estrutura simples. **Não use** pra
+componentes de UI: cada mudança de classe CSS,
+de texto, de ordem de elementos gera snapshot
+diff, e o time aprende a "aceitar tudo" com
+`--updateSnapshot`. É degradação de qualidade.
+
+Use snapshot **só** pra:
+- Saída de função pura determinística
+  (ex: `formatarHTML(input)` que retorna string).
+- Componentes de baixo nível sem estilo
+  (ex: geradores de código).
+
+**Matchers customizados com `expect.extend`.**
+Pra reusar asserções específicas do domínio:
+
+```ts
+expect.extend({
+  toBeValidCPF(received: string) {
+    const isValid = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(received);
+    return {
+      pass: isValid,
+      message: () => `expected ${received} to be a valid CPF`,
+    };
+  },
+});
+
+// Uso:
+expect("123.456.789-00").toBeValidCPF();
+```
+
+Útil em time grande com regras de negócio
+repetidas (CPF, CNPJ, telefone, UUID, etc).
+
+## Pra quem quer ir além 🔴
+
+**Vitest vs Jest em 2026.** Jest dominou até 2022.
+Vitest (lançado em 2021) tomou o espaço em 2024
+porque:
+
+- **ESM nativo** - Jest ainda transpila via
+  Babel. Vitest usa Vite, que entende ESM
+  direto. Menos config, menos dor com
+  `module.exports` vs `import`.
+- **Velocidade** - Vitest é 2-5x mais rápido
+  em suites grandes. Watch mode usa HMR do Vite.
+- **TypeScript first** - `expect()` é
+  type-checked, `vi.fn<T>()` é genérico.
+  Jest tem tipagem parcial e exige
+  `@types/jest`.
+- **Compatibilidade com Vite** - se você usa
+  Vite (Vite + React, TanStack Start, etc.),
+  a config do Vitest é zero.
+- **API quase idêntica** - se você sabe Jest,
+  sabe Vitest. Migração é `import { vi } from
+  "vitest"` em vez de `jest`.
+
+Hoje a única razão pra ainda usar Jest é
+projeto legado ou ferramentas que assumem Jest
+(alguns plugins Storybook antigos, alguns
+templates CRA).
+
+**Snapshot: por que evitar.** A comunidade de
+testing convergence em torno da posição do
+Kent C. Dodds: snapshot de UI é armadilha.
+Componentes mudam muito (classe CSS, ordem
+de elementos, whitespace), e cada diff vira
+"aceito sem ler" no PR. O time perde o sinal.
+
+Caminho melhor: testar **comportamento** com
+Testing Library (nó 3), e ignorar estrutura
+de DOM. Se precisar de visual regression,
+usar Playwright `toHaveScreenshot` (nó 4) -
+a baseline visual é explícita e revisada
+visualmente.
+
+**Mutation testing: o teste do teste.** Stryker
+(mutation testing framework) é a forma de saber
+se seus testes são efetivos. Ele faz mudanças
+aleatórias no código (`+` vira `-`, `>` vira
+`>=`), roda os testes, e conta quantas mutações
+sobreviveram (testes não pegaram). Se você tem
+100% de coverage mas 50% de mutation score,
+seus testes são fracos. Stryker para JS existe
+mas tem custo alto de CI (3-5x o tempo normal).
+Mencionado como aprofundamento - pertence a
+trilha de qualidade avançada.
+
+**Mock de fetch com MSW (referência).** No nó 3
+você vai ver que mockar `fetch` direto com
+`vi.spyOn(global, "fetch")` é frágil. O caminho
+padrão em 2026 é **MSW (Mock Service Worker)**:
+um service worker que intercepta requests de
+rede e devolve respostas mockadas. Funciona
+em Node (test) e em browser (dev). Detalhes
+no nó 3, mas se você já usa, é o caminho.
+
+**Leitura recomendada:**
+
+- [Vitest - Getting Started](https://vitest.dev/guide/) - a doc oficial, 5 minutos de leitura.
+- [Vitest - API](https://vitest.dev/api/) - todas as funções e matchers.
+- [Autonoma - Jest vs Vitest 2026](https://getautonoma.com/blog/jest-vs-vitest-2026) - comparativo direto com benchmarks.
+
+> Dica: o erro mais comum no começo é mockar
+> demais. Teste a função que você escreveu
+> usando a entrada/saída real. Só mock quando
+> há dependência **externa** (fetch, Date,
+> localStorage, ID random). Mockar lógica
+> interna "porque é difícil" é sinal de que
+> a função está fazendo coisa demais -
+> refatore em funções menores.
+
+No próximo nó, vamos subir pra **Testing Library**:
+testar componente React pelo que o usuário vê, com
+queries por papel ARIA, `userEvent`, async, e MSW
+pra mockar fetch.
+
+<Checkpoint
+  challenge="Implemente a função `aplicarDesconto(preco, percentual)` que retorna o preço com desconto aplicado, arredondado para 2 casas decimais. Depois, escreva testes Vitest que verificam: (1) 0% de desconto retorna o preço original, (2) 50% de desconto retorna metade, (3) 100% de desconto retorna 0, (4) arredondamento funciona pra 2 casas (ex: 99.99 com 33% = 66.99)."
+  starterCode={`// Implemente aplicarDesconto(preco, percentual) que retorna
+// o preco com desconto aplicado, arredondado para 2 casas decimais.
+// Ex: aplicarDesconto(100, 10) === 90
+// Ex: aplicarDesconto(99.99, 33) === 66.99 (arredondado)
+function aplicarDesconto(preco, percentual) {
+  return preco;
+}
+
+// Não edite abaixo - é o teste manual esperado.
+// Use console.log pra cada caso.
+const _c1 = aplicarDesconto(100, 0);
+const _c2 = aplicarDesconto(100, 50);
+const _c3 = aplicarDesconto(100, 100);
+const _c4 = aplicarDesconto(99.99, 33);
+
+console.log(JSON.stringify({ case: "zero_porcento",   preco: _c1 }));
+console.log(JSON.stringify({ case: "cinquenta_porcento", preco: _c2 }));
+console.log(JSON.stringify({ case: "cem_porcento",    preco: _c3 }));
+console.log(JSON.stringify({ case: "arredondamento",   preco: _c4 }));`}
+expected='{"case":"zero_porcento","preco":100}
+{"case":"cinquenta_porcento","preco":50}
+{"case":"cem_porcento","preco":0}
+{"case":"arredondamento","preco":66.99}'
+slug="testing-frontend"
+nodeId="vitest-unit"
+/>
+
+<Quiz
+  question="Qual a diferença prática entre `vi.fn()` e `vi.mock()` no Vitest?"
+  options={[
+    {
+      text: "vi.fn() cria uma função mock unitária; vi.mock() substitui um módulo inteiro antes dos imports serem resolvidos.",
+      correct: true,
+      explanation:
+        "vi.fn() é pra mockar uma função específica (callback, dependência injetada). vi.mock() é pra substituir um módulo inteiro - o Vitest aplica o mock antes dos imports serem carregados (hoisted), então quando seu código faz `import { foo } from \"./bar\"`, foo já é o mock. São complementares, não concorrentes.",
+    },
+    {
+      text: "vi.fn() é pra mocks síncronos, vi.mock() é pra mocks assíncronos.",
+      correct: false,
+      explanation:
+        "Não - a diferença é escopo (uma função vs. um módulo), não timing. vi.fn() pode retornar Promise; vi.mock() pode substituir um módulo de funções síncronas. É sobre o que você quer mockar, não quando.",
+    },
+    {
+      text: "São a mesma coisa, só nomes diferentes.",
+      correct: false,
+      explanation:
+        "Não - vi.fn() e vi.mock() têm usos diferentes. vi.fn() é o canivete de mockar função (inspecionar chamadas, retornar valores). vi.mock() é pra mockar módulo (substituir o que o import retorna). O caminho padrão é vi.fn() pra dependência injetada, vi.mock() pra módulo importado.",
+    },
+  ]}
+/>

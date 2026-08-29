@@ -1,0 +1,555 @@
+---
+id: testes-de-acessibilidade
+title: "Testes de acessibilidade: axe-core, jest-axe, pa11y em CI"
+resources:
+  - title: "axe-core Rules (oficial, EN)"
+    url: https://github.com/dequelabs/axe-core/blob/develop/doc/rule-descriptions.md
+    lang: en
+    type: doc
+    free: true
+  - title: "Deque University - Axe Rules (oficial, EN)"
+    url: https://dequeuniversity.com/rules/axe/html
+    lang: en
+    type: doc
+    free: true
+  - title: "WAI - Web Accessibility Tutorials (oficial, EN)"
+    url: https://www.w3.org/WAI/tutorials/
+    lang: en
+    type: doc
+    free: true
+---
+
+Acessibilidade (a11y) é o que faz seu app funcionar
+pra todo mundo: usuário com leitor de tela, navegação
+só por teclado, daltonismo, baixa visão, limitação
+motora, cognitiva. Boa parte da a11y é **automatizável**
+(50-60% dos problemas WCAG): botão sem label,
+imagem sem alt, contraste insuficiente, heading
+fora de ordem. O resto (significado de "voltar",
+fluxo de foco,文案 claro) precisa de humano.
+
+Este nó cobre o caminho automatizado: **axe-core**
+(ferramenta de fato), **jest-axe** (integração com
+Vitest) e **@axe-core/playwright** (E2E). O
+resto (manual) é mencionado e linkado.
+
+## O essencial 🟢
+
+**O que é automatizável.** WCAG tem ~80 critérios
+de sucesso. Axe-core cobre ~30-40 deles (boa
+parte do "perceptível" e "operável"):
+
+- ✅ **Labels e alternativas** - input sem label,
+  imagem sem alt, vídeo sem legendas.
+- ✅ **Contraste** - texto sobre fundo com ratio
+  < 4.5:1.
+- ✅ **Estrutura semântica** - `<div>` em vez de
+  `<button>`, heading fora de ordem (`<h1>` →
+  `<h4>`), `<table>` sem `<th>`.
+- ✅ **ARIA incorreto** - `aria-label` em elemento
+  sem papel, `role` inválido, contraste de
+  elementos com ARIA.
+- ❌ **Não automatizável** - "esse fluxo é confuso
+  pra usuário de leitor de tela", "essa cor é
+  difícil de distinguir pra daltônico específico"
+  (axe pega contraste geral, não simulação de
+  visão), "o文案 é técnico demais", "a navegação
+  por teclado fica presa nesse loop".
+
+Regra prática: **se axe-core passou, você
+resolveu 50-60% da a11y automatizável. Os outros
+40-50% precisam de humano + leitor de tela**.
+
+**axe-core: a ferramenta de fato.** Axe-core é
+um engine open-source de auditoria de a11y,
+mantido pela Deque (líder em a11y). É a engine
+por trás de:
+
+- Lighthouse (Chrome DevTools "Lighthouse"
+  panel).
+- eslint-plugin-jsx-a11y (lint de a11y em build).
+- jest-axe (integração com Vitest).
+- @axe-core/playwright (E2E).
+- pa11y (CLI).
+- NVDA / JAWS usam regras parecidas.
+
+A força do axe: **zero falso positivo nas regras
+implementadas**. Se axe-core reportar um problema,
+é um problema real. Se axe-core disser "tudo
+ok", você cobriu as regras que ele conhece -
+mas pode ter problema em regra que ele não cobre.
+
+**`jest-axe` com Vitest pra unit/component.** É
+o caminho padrão em projeto React:
+
+```bash
+pnpm add -D jest-axe
+```
+
+```ts
+// vitest.setup.ts
+import "jest-axe";
+// ou
+import { toHaveNoViolations } from "jest-axe";
+expect.extend(toHaveNoViolations);
+```
+
+```tsx
+// Botao.test.tsx
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+import { axe } from "jest-axe";
+import { Botao } from "./Botao";
+
+describe("Botao (a11y)", () => {
+  it("não tem violações de acessibilidade", async () => {
+    const { container } = render(<Botao>Salvar</Botao>);
+    const results = await axe(container);
+    expect(results).toHaveNoViolations();
+  });
+});
+```
+
+A função `axe(container)` recebe o DOM renderizado
+e roda todas as regras. Retorna um objeto com
+`violations` (problemas) e `passes` (regras que
+passaram). `toHaveNoViolations` falha o teste
+se `violations.length > 0`.
+
+**O que aparece no relatório.** Quando uma regra
+falha, o erro mostra:
+
+```
+Expected the HTML to have no violations, but got:
+  - image-alt (impact: serious)
+    - <img src="logo.png">
+    - Fix: Add an alt attribute to the img element
+  - label (impact: critical)
+    - <input type="email">
+    - Fix: Add a <label> for the input element
+```
+
+Cada violação tem:
+
+- **`id`** - código da regra (ex: `image-alt`).
+- **`impact`** - severidade (minor, moderate,
+  serious, critical). `critical` = bloqueia
+  usuário; `serious` = forte barreira;
+  `moderate` = barreira parcial; `minor` =
+  pequena inconveniência.
+- **`description`** - o que está errado.
+- **`help`** - link pra documentação da regra.
+- **`nodes`** - quais elementos têm o problema.
+
+A regra: **trate `serious` e `critical` como
+bloqueador pro merge**. `moderate` e `minor`
+vão pra backlog.
+
+**Ignorar regras específicas com `disableRules`.**
+Em alguns casos, axe-core reporta "problema" que
+é falso positivo no seu contexto (ex: você tem
+uma `<div>` que é intencionalmente um "botão
+customizado" mas axe reclama que `<div>` não tem
+papel). Pra desabilitar uma regra pontualmente:
+
+```ts
+const results = await axe(container, {
+  rules: {
+    // Desabilita "region" (aviso de conteúdo sem landmark)
+    "region": { enabled: false },
+  },
+});
+```
+
+Use com parcimônia. Cada `disableRules` deve ter
+comentário explicando por quê. Em time grande,
+considere criar um helper que centraliza as
+regras desabilitadas.
+
+**`@axe-core/playwright` pra E2E.** Pra rodar
+axe no app inteiro, num browser real:
+
+```bash
+pnpm add -D @axe-core/playwright
+```
+
+```ts
+// tests/a11y/home.spec.ts
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+test("home não tem violações de a11y", async ({ page }) => {
+  await page.goto("/");
+
+  const accessibilityScanResults = await new AxeBuilder({ page })
+    // Foca só nos padrões WCAG 2.1 AA (mais usado em produção)
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+
+  expect(accessibilityScanResults.violations).toEqual([]);
+});
+```
+
+`AxeBuilder` roda axe na **página inteira** (não
+só num elemento). As tags WCAG filtram as regras:
+`wcag2a` + `wcag2aa` cobre o nível AA (o mínimo
+legal em muitos países). `wcag21a` + `wcag21aa`
+adiciona o WCAG 2.1 (mais atual). Pra WAI-ARIA
+específico, adicione `wcag412` (1.2 = áudio,
+3.3 = erro).
+
+**Por padrão, axe roda só em `viewports` específicos
+(1024x768) e ignora iframes cross-origin**. Em CI,
+você tipicamente quer rodar em mobile também:
+
+```ts
+const accessibilityScanResults = await new AxeBuilder({ page })
+  .withTags(["wcag2a", "wcag2aa"])
+  .options({
+    runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] },
+    // Ignora regras que não fazem sentido em teste automatizado
+    rules: { "color-contrast": { enabled: true } },
+  })
+  .analyze();
+```
+
+**Bloquear merge com `critical` only.** Em CI,
+dá pra ser estratégico - bloquear só
+violações `critical` e `serious`:
+
+```ts
+test("home sem violações críticas", async ({ page }) => {
+  await page.goto("/");
+  const results = await new AxeBuilder({ page }).analyze();
+
+  const bloqueantes = results.violations.filter(
+    (v) => v.impact === "critical" || v.impact === "serious"
+  );
+
+  expect(bloqueantes).toEqual([]);
+});
+```
+
+Isso destrava o time pra lidar com `moderate`/`minor`
+sem bloquear merge. **Use com parcimônia** -
+quanto mais regras você bloqueia, mais barreira
+fica pra usuários reais.
+
+**`pa11y` como CLI pra audit pontual.** Pra
+rodar axe via terminal sem Playwright/Vitest:
+
+```bash
+pnpm add -D pa11y
+pa11y https://meu-app.com --standard WCAG2AA
+```
+
+Útil pra:
+- Audit pontual de uma URL em produção.
+- Rodar em CI como "smoke test" rápido
+  (sem subir browser, mais leve que Playwright).
+- Integração com report HTML (`pa11y-ci`).
+
+## Aprofundamento 🟡
+
+**Testando foco visível e navegação por teclado.**
+axe-core detecta **ausência** de foco visível,
+mas não a **qualidade** dele. Pra testar:
+
+```tsx
+it("tab navega pelos campos em ordem", async () => {
+  const user = userEvent.setup();
+  render(
+    <form>
+      <input type="text" aria-label="Nome" />
+      <input type="email" aria-label="Email" />
+      <button type="submit">Enviar</button>
+    </form>
+  );
+
+  const nome = screen.getByRole("textbox", { name: /nome/i });
+  nome.focus();
+  expect(nome).toHaveFocus();
+
+  await user.tab();
+  expect(screen.getByRole("textbox", { name: /email/i })).toHaveFocus();
+
+  await user.tab();
+  expect(screen.getByRole("button", { name: /enviar/i })).toHaveFocus();
+});
+```
+
+A asserção é o `toHaveFocus()`. O teste verifica
+que a **ordem de Tab** é lógica (campo 1 → campo
+2 → botão), sem pular nada.
+
+**Testando leitor de screen com `jest-axe`
+custom rules.** axe-core não testa como o leitor
+de tela **lê** a página. Pra isso, dá pra
+escrever regras customizadas que verificam a
+**estrutura semântica esperada**:
+
+```ts
+// Verifica que toda imagem decorativa tem aria-hidden
+function imagensDecorativas(container: HTMLElement) {
+  const imagens = container.querySelectorAll("img");
+  return Array.from(imagens).map((img) => ({
+    ruleId: "imagem-decorativa",
+    impact: "moderate",
+    description: "Imagens decorativas devem ter aria-hidden='true' ou alt=''",
+    nodes: [{ target: [img.tagName] }],
+    passa: img.getAttribute("alt") === "" || img.getAttribute("aria-hidden") === "true",
+  }));
+}
+```
+
+Essas regras são **heurísticas** - capturam padrões
+que costumam ser problemas, mas o ideal é humano
+revisar com leitor real.
+
+**`aria-live` em mensagens dinâmicas.** Mensagens
+de erro, "salvo com sucesso", e contadores de
+carrinho devem ser anunciadas pelo leitor de tela.
+O `aria-live` é como:
+
+```tsx
+function MensagemSucesso() {
+  return (
+    <div role="status" aria-live="polite">
+      Salvo com sucesso!
+    </div>
+  );
+}
+```
+
+Testar com axe-core: ele verifica que `aria-live`
+está presente. Não verifica se o conteúdo é
+anunciado de fato (isso é teste manual com NVDA
+ou VoiceOver).
+
+**Contraste e modo dark.** O axe-core valida
+contraste do que **está no DOM no momento do
+teste**. Em app com tema dark/light:
+
+```ts
+test("contraste OK em tema light", async () => {
+  document.documentElement.dataset.theme = "light";
+  // ...
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+
+test("contraste OK em tema dark", async () => {
+  document.documentElement.dataset.theme = "dark";
+  // ...
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+Cada tema é um teste separado. O axe-core não
+troca de tema sozinho.
+
+**Combinando axe + queries por papel.** Quando
+seu teste usa `getByRole` (Testing Library) e
+axe-core juntos:
+
+```tsx
+it("botão Salvar é clicável e acessível", async () => {
+  const { container } = render(<Botao>Salvar</Botao>);
+
+  // 1. Comportamento: usuário consegue clicar
+  const botao = screen.getByRole("button", { name: /salvar/i });
+  expect(botao).toBeInTheDocument();
+
+  // 2. a11y automatizada: passa nas regras axe
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+A primeira asserção valida que o usuário consegue
+**interagir** (botão existe com nome acessível).
+A segunda valida que **não tem regra de a11y
+violada** (botão tem contraste, não tem ARIA
+errado, etc). Os dois juntos = confiança.
+
+**`@axe-core/cli` em pipeline de pre-commit.** Pra
+rodar axe no **staged** antes do commit:
+
+```bash
+pnpm add -D @axe-core/cli
+npx @axe-core/cli http://localhost:3000 --tags wcag2a,wcag2aa
+```
+
+Útil pra rodar local antes do push, em vez de
+esperar CI. O custo é subir o app local
+(`pnpm dev` em paralelo), então tem trade-off.
+
+## Pra quem quer ir além 🔴
+
+**O que axe-core NÃO cobre (e como suprir).**
+Lista do que fica de fora da auditoria automatizada:
+
+- **Significado** - "esse botão 'OK' é claro
+  pro usuário?" (axe não lê intenção).
+- **Fluxo de foco** - "após submeter, o foco vai
+  pro lugar certo?" (axe checa se elementos
+  recebem foco, não se a ordem é lógica).
+- **Conteúdo dinâmico** - "modal abre com foco
+  preso dentro?" (axe roda em snapshot, não em
+  fluxo).
+- **Acessibilidade cognitiva** - "linguagem é
+  simples?", "instruções são claras?" (sem regra
+  automatizável).
+- **Teste com tecnologia assistiva real** - NVDA,
+  VoiceOver, JAWS, switch control, eye tracking.
+  Nenhum axe substitui isso.
+
+O caminho completo de a11y em produção:
+1. **axe-core em CI** (esse nó) - pega 50-60%.
+2. **Lighthouse** - relatório de auditoria completa.
+3. **Leitor de tela manual** - NVDA (Windows) ou
+   VoiceOver (Mac) - 1-2h por feature.
+4. **Usuário real com deficiência** - usability
+   test com pessoa que usa tecnologia assistiva
+   diariamente.
+5. **Auditoria externa** - empresa especializada
+   (Deque, TPG) emite relatório WCAG formal.
+
+**WCAG 2.2 (out 2023) - o que mudou.** O WCAG
+2.2 adicionou 9 critérios novos, focados em
+usuários com deficiência cognitiva e motora:
+
+- **2.4.11 Focus Not Obscured (Minimum)** - foco
+  não pode ficar escondido por outro elemento.
+- **2.4.12 Focus Not Obscured (Enhanced)** - AAA.
+- **2.4.13 Focus Appearance** - indicador de foco
+  com contraste mínimo.
+- **2.5.7 Dragging Movements** - alternativa a
+  drag (botão ou input).
+- **2.5.8 Target Size (Minimum)** - 24x24px mínimo.
+- **3.3.7 Redundant Entry** - não pedir info já
+  fornecida.
+- **3.3.8 Accessible Authentication (Minimum)** -
+  sem CAPTCHA cognitivo.
+- **3.3.9 Accessible Authentication (Enhanced)** -
+  AAA.
+
+axe-core adiciona regras pra esses aos poucos.
+Em 2026, a maioria já tem regra implementada.
+
+**`eslint-plugin-jsx-a11y` em build.** Pra pegar
+problemas de a11y **no momento de escrever o
+código**:
+
+```bash
+pnpm add -D eslint-plugin-jsx-a11y
+```
+
+```js
+// eslint.config.js
+import jsxA11y from "eslint-plugin-jsx-a11y";
+
+export default [
+  jsxA11y.configs.recommended,
+  // ...
+];
+```
+
+A regra `jsx-a11y/alt-text` reclama de `<img>`
+sem `alt` no momento do save. A regra `jsx-a11y/click-events-have-key-events`
+reclama de `<div onClick>` sem `onKeyDown`. Em
+projeto novo, **ative em modo `error`** desde o
+dia 1 - pega 80% dos problemas antes mesmo de
+chegar no CI.
+
+**Leitura recomendada:**
+
+- [axe-core Rules](https://github.com/dequelabs/axe-core/blob/develop/doc/rules.md) - lista das regras, com `id` e impacto.
+- [Deque University - Axe Rules](https://dequeuniversity.com/rules/axe/html) - o "porquê" do axe, com exemplos reais.
+- [WAI - Web Accessibility Tutorials](https://www.w3.org/WAI/tutorials/) - os tutoriais oficiais, escritos pelo W3C.
+
+> Dica: o erro mais comum é tratar `axe`
+> como "100% de a11y resolvida". Não é. Axe
+> pega regras técnicas automatizáveis. O
+> resto (significado, fluxo, contexto) é
+> humano. Use axe como **rede de segurança**,
+> não como **cobertura completa**.
+
+No próximo nó, vamos amarrar tudo isso num
+**pipeline de CI**: GitHub Actions, paralelização,
+cache de `node_modules` e de browsers, secrets,
+e o badge verde que prova "isso aqui foi
+testado".
+
+<Checkpoint
+  challenge="Implemente a função `filtrarViolacoesBloqueantes(violations)` que recebe uma lista de violações (cada uma com `id`, `impact`, `description`, `nodes`) e retorna apenas as que devem BLOQUEAR merge (`impact === 'critical'` ou `impact === 'serious'`). Cada violação bloqueante deve incluir um resumo `{ id, impact, qtdElementos, mensagem }` onde `qtdElementos` é o número de nodes afetados."
+  starterCode={`// Implemente filtrarViolacoesBloqueantes(violations) que:
+// 1. Filtra violacoes com impact === 'critical' OU impact === 'serious'
+// 2. Para cada bloqueante, retorna { id, impact, qtdElementos, mensagem }
+//    - id: a regra (ex: 'image-alt')
+//    - impact: 'critical' ou 'serious'
+//    - qtdElementos: violations.nodes.length
+//    - mensagem: violations.description
+function filtrarViolacoesBloqueantes(violations) {
+  return [];
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _violations = [
+  {
+    id: "image-alt",
+    impact: "critical",
+    description: "Images must have alternative text",
+    nodes: [{ target: ["img"] }, { target: ["img.x"] }],
+  },
+  {
+    id: "color-contrast",
+    impact: "serious",
+    description: "Elements must have sufficient color contrast",
+    nodes: [{ target: [".btn"] }],
+  },
+  {
+    id: "region",
+    impact: "moderate",
+    description: "All page content should be contained by landmarks",
+    nodes: [],
+  },
+  {
+    id: "tabindex",
+    impact: "minor",
+    description: "No element should have a positive tabindex",
+    nodes: [],
+  },
+];
+
+const _r = filtrarViolacoesBloqueantes(_violations);
+console.log(JSON.stringify({ qtd: _r.length, primeira: _r[0] }));`}
+expected='{"qtd":2,"primeira":{"id":"image-alt","impact":"critical","qtdElementos":2,"mensagem":"Images must have alternative text"}}'
+slug="testing-frontend"
+nodeId="testes-de-acessibilidade"
+/>
+
+<Quiz
+  question="Qual a porcentagem aproximada de problemas de a11y cobertos por ferramentas automatizadas como axe-core?"
+  options={[
+    {
+      text: "50-60% - o resto precisa de humano, leitor de tela e teste com usuário real.",
+      correct: true,
+      explanation:
+        "Axe-core cobre regras técnicas automatizáveis: label, alt, contraste, estrutura semântica, ARIA incorreto. Não cobre significado, fluxo de foco, conteúdo dinâmico, acessibilidade cognitiva. Para os 40-50% que faltam: leitor de tela manual, usuário real com deficiência, auditoria externa. Axe é rede de segurança, não cobertura completa.",
+    },
+    {
+      text: "100% - axe-core cobre toda a WCAG.",
+      correct: false,
+      explanation:
+        "Não. Axe-core é explícito sobre as regras que implementa (~30-40 dos 80 critérios WCAG). Significado, fluxo de foco, contexto - axe não lê intenção. WCAG é uma norma de UX, não só de código. A parte técnica é automatizável, a parte humana não é.",
+    },
+    {
+      text: "10-20% - axe é limitado e não vale o investimento.",
+      correct: false,
+      explanation:
+        "Não - axe pega muito mais que isso. 50-60% é a estimativa consensual da comunidade (Deque, W3C, WebAIM). O que axe não pega é o que NÃO é regra técnica: 'esse fluxo é confuso pro leitor de tela' - isso é humano. Mas regras como 'imagem sem alt' (100% automatizável e crítico) valem cada minuto de setup.",
+    },
+  ]}
+/>

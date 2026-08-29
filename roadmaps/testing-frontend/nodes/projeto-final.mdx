@@ -1,0 +1,305 @@
+---
+id: projeto-final
+title: "Projeto final: componente de UI com unit + component + a11y + E2E em CI"
+---
+
+Hora de unir tudo. Você vai construir um **componente
+de UI real** (botão acessível com variants) com
+5+ testes unit, 3+ testes de component, 1+ teste
+de a11y automatizado, 1+ teste E2E, e tudo rodando
+em GitHub Actions no PR. É o ciclo completo:
+escreve → testa local → sobe PR → CI verde →
+merge.
+
+Esse projeto não segue o esqueleto de 3 camadas
+dos outros nós. É um brief de projeto, no estilo
+de `projects/<slug>.mdx` do aprenda-community. Lê
+até o fim antes de começar.
+
+## O que você vai construir
+
+Um **componente Button** acessível, com variants
+(`primary`, `secondary`, `danger`), estados
+(`default`, `hover`, `disabled`, `loading`),
+suporte a `onClick`, `aria-label`, e
+`aria-busy` durante loading. É o tipo de
+componente que **todo design system tem** - simples
+o suficiente pra fazer em 1 dia, complexo o
+suficiente pra ter comportamento real (estado
+interno, eventos, a11y).
+
+A escolha do "domínio" (botão vs input vs
+modal) é sua. O esqueleto dado é o **caminho
+feliz**, desvie quando precisar e anote as
+decisões no `editorial-decisions.md` da trilha.
+
+## Objetivo
+
+- Consolidar Vitest + Testing Library + Playwright
+  + axe + CI num projeto real.
+- Praticar a pirâmide: muitos unit, alguns
+  component, 1-2 E2E, sem inversão.
+- Ver o **pipeline completo** rodando: PR
+  aberto → CI dispara → unit + component
+  + a11y + E2E em paralelo → verde → merge.
+- Configurar GitHub Actions com cache e
+  paralelização (matriz 3 browsers × 2 shards
+  = 6 jobs paralelos).
+- Subir o badge verde no README.
+
+## Requisitos (mínimo)
+
+Setup inicial:
+
+- [ ] `pnpm create vite@latest meu-button -- --template react-ts`
+- [ ] Instalar: `pnpm add -D vitest @vitest/coverage-v8
+  @testing-library/react @testing-library/jest-dom
+  @testing-library/user-event jest-axe jsdom
+  @playwright/test @axe-core/playwright`.
+- [ ] `pnpm exec playwright install --with-deps`.
+- [ ] Estrutura:
+  - `src/Button.tsx` (componente)
+  - `src/Button.test.tsx` (unit + component + a11y)
+  - `tests/e2e/button.spec.ts` (E2E)
+  - `playwright.config.ts` (config Playwright)
+  - `vitest.config.ts` (config Vitest)
+  - `vitest.setup.ts` (jest-dom matchers)
+  - `.github/workflows/test.yml` (CI)
+
+Componente `Button.tsx`:
+
+- [ ] Props: `variant: 'primary' | 'secondary' | 'danger'`,
+  `disabled: boolean`, `loading: boolean`,
+  `onClick: () => void`, `children: ReactNode`,
+  `ariaLabel?: string`.
+- [ ] Renderiza `<button>` com classes base +
+  classe do variant.
+- [ ] Quando `loading`: `aria-busy="true"`,
+  `disabled`, mostra "Carregando..." no
+  conteúdo (ou texto passado via `ariaLabel`).
+- [ ] Acessível: foco visível (CSS), label
+  sempre presente (children ou ariaLabel).
+- [ ] Suporte a `data-testid` (NÃO use como
+  query principal, mas pode estar lá pra
+  casos extremos).
+
+Unit tests (Vitest, `Button.test.tsx`):
+
+- [ ] Renderiza children corretamente.
+- [ ] Aplica classe do variant (`btn-primary`
+  vs `btn-secondary`).
+- [ ] Renderiza `aria-label` quando passado
+  (sem children).
+- [ ] Renderiza children quando passado (sem
+  aria-label).
+- [ ] Não chama `onClick` quando `disabled`.
+- [ ] Aplica `aria-busy="true"` quando `loading`.
+
+Component tests (Testing Library,
+`Button.test.tsx`):
+
+- [ ] Usuário clica → `onClick` é chamado.
+- [ ] Usuário clica em botão `disabled` → nada
+  acontece.
+- [ ] Tab move foco pro botão.
+- [ ] Enter dispara `onClick` (comportamento
+  padrão de `<button>`).
+
+A11y tests (jest-axe, `Button.test.tsx`):
+
+- [ ] Sem `aria-label` e sem children → axe-core
+  reporta violação `label` (esperado, teste
+  documenta o problema).
+- [ ] Com `aria-label` válido → axe-core passa
+  sem violações.
+- [ ] Com children válido → axe-core passa
+  sem violações.
+- [ ] Em estado `loading` → axe-core passa
+  (aria-busy é correto).
+
+E2E tests (Playwright, `button.spec.ts`):
+
+- [ ] Página com botão, usuário clica, vê
+  estado de "loading" e depois estado normal.
+- [ ] Tab pelo browser chega no botão (foco
+  visível).
+- [ ] Botão desabilitado não dispara ação.
+- [ ] axe-core na página passa sem violações
+  (com `@axe-core/playwright`).
+
+CI (`.github/workflows/test.yml`):
+
+- [ ] Trigger: `push` na `main` + `pull_request`.
+- [ ] Job 1: `lint + typecheck + unit + component
+  + a11y` (sequencial, ~2 min).
+- [ ] Job 2: `e2e` com matriz `[chromium, firefox]
+  x [shard 1/2, shard 2/2]` (paralelo, ~3 min).
+- [ ] Cache de `pnpm` (`cache: pnpm`).
+- [ ] Cache de Playwright browsers.
+- [ ] `concurrency` com `cancel-in-progress: true`.
+- [ ] `upload-artifact` em `failure()` com
+  `playwright-report/`.
+- [ ] Badge no README.
+
+Coverage (opcional mas recomendado):
+
+- [ ] Coverage configurado em `vitest.config.ts`
+  (`provider: 'v8'`, `reporter: ['text', 'html']`).
+- [ ] Threshold de 80% em branches/functions/lines
+  (quebra CI se não atingir).
+
+## Desafios extras (stretch goals)
+
+Se você terminou o mínimo e quer ir além:
+
+- [ ] **Visual regression com `toHaveScreenshot`**
+  no Playwright - screenshot de cada variant e
+  cada estado, com tolerância de 0.1.
+- [ ] **MSW pra mockar fetch** num teste de
+  component que faz chamada de API ao clicar.
+- [ ] **`storageState` no Playwright** pra
+  reutilizar sessão entre testes (login
+  uma vez, salva state, usa em outros).
+- [ ] **Coverage badge no README** - gera SVG
+  do coverage e commita no PR.
+- [ ] **PR comment com resultado do Playwright**
+  - usa `dorny/test-reporter` ou similar.
+- [ ] **`act` warning cleanup** - roda teste
+  em strict mode, garante 0 warnings.
+- [ ] **Storybook com Chromatic** - cada variant
+  vira uma story, Chromatic roda visual regression
+  no PR.
+- [ ] **`fail-fast: false` na matriz** - ver
+  todos os erros de uma vez, não cancelar
+  ao primeiro.
+- [ ] **Testar navegação por teclado completa**
+  - Tab, Shift+Tab, Enter, Space, Escape.
+- [ ] **axe-core em modo "serious only"** - só
+  bloqueia merge em violação séria, deixa
+  moderate/minor pra backlog.
+- [ ] **Migration pra Vitest 2** quando sair
+  (testa o caminho de upgrade).
+
+## Dicas
+
+**Por onde começar:**
+
+1. **Componente primeiro** - `Button.tsx` com
+   props mínimas. Sem teste ainda.
+2. **Unit + component tests** - cobre a lógica
+   e a interação. Sem a11y ainda.
+3. **A11y tests** - adiciona jest-axe e roda.
+   Conserta o que aparecer.
+4. **E2E test** - sobe o app, renderiza o botão
+   numa página, testa interação real.
+5. **CI** - workflow mínimo (1 job sequencial)
+   primeiro. Depois paraleliza.
+6. **Otimização** - cache, matriz, shards.
+
+**Armadilhas comuns:**
+
+- **Mockar demais em unit test** - teste unitário
+  é pra função pura. Componente com estado/evento
+  vai em **component test** (Testing Library), não
+  unit (Vitest sozinho). Misturar é fonte de teste
+  fraco.
+- **`getByTestId` em component test** - use
+  `getByRole("button", { name: /salvar/i })` em
+  vez. Mais robusto + força a11y.
+- **Snapshot de DOM** - evite. Use visual
+  regression (Playwright `toHaveScreenshot`)
+  se precisar de pixel-peeping.
+- **CI lento** - se o pipeline demora 20+ min,
+  ninguém roda. Paralelize (matriz), cacheie
+  (browsers, node_modules), otimize (shard).
+- **Flaky E2E** - locator por papel, auto-wait,
+  evitar `waitFor(1000)`. Se persiste,
+  `trace: "on-first-retry"` e debug o trace.
+- **axe-core bloqueando merge à toa** -
+  comece com `critical + serious` only, expanda
+  quando o time estiver acostumado.
+- **Não testar `disabled` em E2E** - é detalhe
+  de component, não de fluxo. Cobre em unit +
+  component, deixa E2E pro fluxo.
+- **Esquecer `cancel-in-progress`** - PR com
+  5 commits roda 5 pipelines em série. Sem
+  `concurrency`, é desperdício de runner-time.
+
+**Como validar que terminou:**
+
+- [ ] `pnpm test:run` roda sem warning, com
+  coverage > 80% em `Button.tsx`.
+- [ ] `pnpm exec playwright test` roda em ~30s
+  com 5+ testes E2E.
+- [ ] `pnpm test:e2e:ui` (ou `playwright test
+  --ui`) abre o report visual e você
+  consegue ver cada teste passando.
+- [ ] `pnpm dev` + abrir no browser + `pnpm
+  exec playwright test` local - funciona
+  offline.
+- [ ] Push na branch → CI dispara em <30s.
+- [ ] CI completa em <10 min (5 min ideal).
+- [ ] CI vermelho bloqueia merge (você força
+  isso em branch protection rule no GitHub).
+- [ ] CI verde mostra o badge no README.
+
+**Leituras que ajudam durante o projeto:**
+
+- [Vitest - Configuration](https://vitest.dev/config/) - opções de `defineConfig` que você vai usar.
+- [Playwright - Configuration](https://playwright.dev/docs/test-configuration) - `playwright.config.ts` a fundo.
+- [GitHub Actions - Matrix strategy](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) - paralelização.
+
+> O projeto final é onde a trilha vira
+> "sua". As escolhas de framework de teste
+> (Vitest vs Jest, Playwright vs Cypress),
+> de provider de CI (GitHub Actions vs
+> GitLab CI vs CircleCI), de profundidade de
+> a11y (axe-core strict vs só critical) são
+> todas suas. O esqueleto dado é o **caminho
+> feliz**, desvie quando precisar, e anote
+> as decisões no `editorial-decisions.md`
+> da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `calcularEstatisticas(testResults)` que recebe uma lista de resultados de teste (cada um com `name`, `status: 'passed'|'failed'|'skipped'`, `duration: number` em ms) e retorna um objeto com: `total` (número de testes), `passed` (quantos passaram), `failed` (quantos falharam), `skipped` (quantos foram pulados), `totalDuration` (soma de todas as durações), `successRate` (porcentagem 0-100 de passed/total, arredondada pra 2 casas)."
+  starterCode={`// Implemente calcularEstatisticas(testResults) que retorna:
+// {
+//   total: number,
+//   passed: number,
+//   failed: number,
+//   skipped: number,
+//   totalDuration: number,
+//   successRate: number (0-100, 2 casas decimais)
+// }
+//
+// Se a lista for vazia, retorne total/passed/failed/skipped = 0,
+// totalDuration = 0, e successRate = 0.
+function calcularEstatisticas(testResults) {
+  return {
+    total: 0, passed: 0, failed: 0, skipped: 0,
+    totalDuration: 0, successRate: 0,
+  };
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _c1 = calcularEstatisticas([
+  { name: "a", status: "passed", duration: 10 },
+  { name: "b", status: "passed", duration: 20 },
+  { name: "c", status: "failed", duration: 15 },
+]);
+console.log(JSON.stringify(_c1));
+
+const _c2 = calcularEstatisticas([
+  { name: "a", status: "passed", duration: 100 },
+  { name: "b", status: "skipped", duration: 0 },
+]);
+console.log(JSON.stringify(_c2));
+
+const _c3 = calcularEstatisticas([]);
+console.log(JSON.stringify(_c3));`}
+expected='{"total":3,"passed":2,"failed":1,"skipped":0,"totalDuration":45,"successRate":66.67}
+{"total":2,"passed":1,"failed":0,"skipped":1,"totalDuration":100,"successRate":50}
+{"total":0,"passed":0,"failed":0,"skipped":0,"totalDuration":0,"successRate":0}'
+slug="testing-frontend"
+nodeId="projeto-final"
+/>
