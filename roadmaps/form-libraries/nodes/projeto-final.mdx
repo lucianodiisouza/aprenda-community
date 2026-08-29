@@ -1,0 +1,312 @@
+---
+id: projeto-final
+title: "Projeto final: checkout completo com validação ponta a ponta"
+---
+
+Hora de unir tudo. Você vai construir um **checkout de
+3 steps** com validação compartilhada client/server,
+persistência local, integração com API mockada, e
+teste E2E mínimo. É o ciclo completo: schema único,
+form wizard, submit real, e validação de ponta a
+ponta.
+
+Esse projeto não segue o esqueleto de 3 camadas dos
+outros nós. É um brief de projeto, no estilo de
+`projects/<slug>.mdx` do aprenda-community. Lê até
+o fim antes de começar.
+
+## O que você vai construir
+
+Um app de **checkout de e-commerce** com 3 steps:
+**dados pessoais** (nome, email, telefone), **endereço
+de entrega** (CEP, rua, cidade, estado), e **pagamento**
+(número de cartão, validade, CVV - mockado, sem
+gateway real). Cada step valida antes de avançar.
+O user pode voltar e editar steps anteriores. O form
+persiste em `localStorage` se a aba fechar. O submit
+final vai pra uma API mockada que valida com o mesmo
+schema Zod.
+
+A escolha do "domínio" (e-commerce vs. cadastro
+longo vs. onboarding) é sua - o esqueleto dado é o
+**caminho feliz**, desvie quando precisar e anote
+as decisões no `editorial-decisions.md` da trilha.
+
+## Objetivo
+
+- Consolidar React Hook Form + Zod + ZodResolver
+  num app real de produção.
+- Praticar wizard de 3 steps com validação por
+  step e submit final.
+- Ver o **mesmo schema Zod** rodando no client
+  (via `zodResolver`) e no server (via
+  `safeParse` no handler da API).
+- Persistir o form em `localStorage` e recuperar
+  no reload.
+- Subir a API mockada local e ver o fluxo ponta
+  a ponta funcionando.
+
+## Requisitos (mínimo)
+
+Setup inicial:
+
+- [ ] `pnpm create vite@latest meu-checkout -- --template react-ts`
+  (ou Next.js se preferir, mas Vite é mais leve pra
+  este projeto).
+- [ ] Instalar: `pnpm add react-hook-form @hookform/resolvers zod`.
+- [ ] Instalar (server mock): `pnpm add -D json-server` ou
+  similar (ou um Express mínimo em `server.ts`).
+- [ ] Estrutura: `src/schemas/checkout.ts` (schema
+  compartilhado), `src/components/Wizard.tsx`
+  (pai), `src/components/Step1DadosPessoais.tsx`,
+  `src/components/Step2Endereco.tsx`,
+  `src/components/Step3Pagamento.tsx`, `src/components/Stepper.tsx`,
+  `src/api/checkout.ts` (fetch + setError),
+  `server/index.ts` (Express/Hono com `safeParse`).
+
+Schema (compartilhado client + server):
+
+- [ ] `src/schemas/checkout.ts` com schema Zod
+  completo (nome, email, telefone, cep, rua, cidade,
+  estado, numeroCartao, validade, cvv).
+- [ ] Mensagens de erro em PT-BR direto no schema.
+- [ ] Refine que checa `senha === confirmaSenha` (ou
+  outro campo duplicado relevante, ex: `estado`
+  pertence à lista de UFs).
+- [ ] Exporta `CheckoutData = z.infer<typeof checkoutSchema>`.
+
+Wizard (RHF + FormProvider):
+
+- [ ] `<Wizard />` (pai) com `useForm<CheckoutData>`,
+  `FormProvider`, e state `currentStep` (tipo
+  union de 3 strings).
+- [ ] 3 sub-componentes (Step1, Step2, Step3) usando
+  `useFormContext`.
+- [ ] `handleNext` valida com
+  `methods.trigger(stepFields[currentStep])` antes
+  de avançar.
+- [ ] `handleBack` volta pro step anterior.
+- [ ] Stepper visual com `aria-current="step"` no
+  step atual.
+- [ ] `<fieldset disabled={isSubmitting}>` no
+  form inteiro durante o submit.
+- [ ] Botão "Finalizar" só no step 3; chama
+  `handleSubmit(onSubmit)`.
+
+Persistência local:
+
+- [ ] `useEffect` com `methods.watch` salva o form
+  em `localStorage` a cada mudança.
+- [ ] `defaultValues` lê do `localStorage` se existir
+  (com fallback seguro pra SSR).
+- [ ] Limpa `localStorage` no submit bem-sucedido.
+
+API mockada (server):
+
+- [ ] `POST /api/checkout` que importa
+  `checkoutSchema` e roda `safeParse(req.body)`.
+- [ ] Em sucesso: `201` com `{ id, message: "Pedido
+  criado" }` (não persiste em banco real - é mock).
+- [ ] Em erro de validação: `400` com
+  `{ errors: result.error.flatten() }`.
+- [ ] CORS habilitado (ou Vite proxy pra
+  `localhost:3001`).
+
+Integração client:
+
+- [ ] `onSubmit` faz `fetch("/api/checkout", { method: "POST", ... })`.
+- [ ] Em `!response.ok`, lê `errorBody.errors.fieldErrors`
+  e mapeia pra `setError(field, { type: "server", message })`.
+- [ ] Em `response.status === 401` ou `>= 500`, usa
+  `setError("root", ...)` pra erro global.
+- [ ] Em sucesso, mostra tela de confirmação
+  (nome + ID do pedido).
+
+UX:
+
+- [ ] Loading state no botão ("Enviando..." com
+  `isSubmitting`).
+- [ ] Mensagem de erro global em destaque se
+  `errors.root`.
+- [ ] Erro por campo com `aria-invalid` e
+  `aria-describedby`.
+- [ ] Indicador de progresso (Step 1 de 3, etc).
+
+Testes:
+
+- [ ] **1 teste E2E mínimo** com Playwright:
+  preencher step 1 → avançar → preencher step 2
+  → avançar → preencher step 3 → submeter →
+  ver confirmação. (Opcional, mas conta como
+  stretch goal se você pular.)
+
+## Desafios extras (stretch goals)
+
+Se você terminou o mínimo e quer ir além:
+
+- [ ] **Recuperação de step via URL**: salvar
+  `currentStep` em `?step=2` e restaurar no mount
+  (use `useSearchParams` se Next, ou
+  `window.location` em SPA).
+- [ ] **Async validation no schema**: checar se
+  CEP existe via ViaCEP no schema (`superRefine`
+  async), com `isValidating` no RHF.
+- [ ] **Máscaras de input**: CPF, CEP, cartão de
+  crédito, data de validade. Use
+  `@react-input/mask` ou similar.
+- [ ] **Validação server-only** (email já existe):
+  refinar o schema no server com `superRefine`
+  async que consulta um "banco" mock (em memória).
+- [ ] **Optimistic UI no submit**: mostrar
+  "Processando..." com progress bar enquanto o
+  server responde.
+- [ ] **Resetar form depois de submit**:
+  `methods.reset()` + `localStorage.removeItem`
+  + redirecionar pra `/`.
+- [ ] **Validação cross-step**: usar `getValues`
+  pra validar step 3 em função de step 1 (ex: email
+  de pagamento precisa bater com email pessoal).
+- [ ] **i18n de mensagens de erro**: usar
+  `z.setErrorMap` pra trocar mensagens baseado em
+  idioma do user.
+- [ ] **Animações entre steps**: Framer Motion
+  pra fade/slide entre steps, com `AnimatePresence`.
+- [ ] **Dark mode no form**: suportar tema dark
+  com `next-themes` (Next) ou Context API (Vite).
+- [ ] **Sentry pra capturar erros de submit**:
+  1 linha no `onError` da mutation.
+- [ ] **Webhook de "pedido criado"** (mock):
+  no sucesso do server, fazer uma chamada
+  assíncrona pra uma URL mockada (não bloqueia
+  a response).
+
+## Dicas
+
+**Por onde começar:**
+
+1. **Schema primeiro**: `src/schemas/checkout.ts` com
+   todos os campos. Sem schema, não tem o que
+   tipar. Use `.min`, `.email`, `.regex` direto nas
+   mensagens em PT-BR.
+2. **Wizard skeleton**: `<Wizard />` com
+   `currentStep` (useState), `FormProvider`, e os
+   3 sub-componentes com `useFormContext`. Sem
+   validação por enquanto - só navegação.
+3. **Validação por step**: `methods.trigger(camposDoStep)`
+   no `handleNext`. Teste indo e voltando entre
+   steps.
+4. **Submit final**: `handleSubmit(onSubmit)` chama
+   `fetch`. Mapeie erros do `flatten()` pra
+   `setError`.
+5. **API mockada**: Express ou Hono num
+   `server/index.ts`, valida com o mesmo schema.
+   Rode em paralelo (Vite proxy ou porta separada).
+6. **Persistência**: `useEffect` + `methods.watch`
+   + `localStorage`. Limpa no submit.
+
+**Armadilhas comuns:**
+
+- **Esquecer o `key={field.id}` em field arrays.**
+  Se o form tiver lista de telefones, use `id`,
+  não `index`.
+- **Re-validar tudo no `handleNext`.** Use
+  `methods.trigger(stepFields[currentStep])` pra
+  validar só o step atual. Validar o form inteiro
+  mostra erro de campos que o user nem tocou.
+- **Tratar erros remotos como `alert()`.** Use
+  `setError(field, ...)` pra erro de campo, e
+  `setError("root", ...)` pra erro global. O
+  user precisa ver o erro **perto do campo**.
+- **Esquecer o `<fieldset disabled>`.** Sem ele,
+  o user pode clicar em outros botões do form
+  durante o submit. `<fieldset disabled={isSubmitting}>`
+  resolve.
+- **Validar no client só.** A validação do client
+  serve pra **UX**; o server **sempre** valida de
+  novo. Confiar no client é bug de segurança.
+- **Não desabilitar o form durante submit.** O
+  `isSubmitting` deve desabilitar o form inteiro
+  (fieldset) **e** o botão de submit.
+- **Esquecer de tratar 401/500.** O
+  `flatten()` cobre erro de validação (400). Pra
+  auth (401) ou erro de servidor (5xx), use
+  `setError("root", ...)`.
+- **CORS mal configurado no server mock.** Sem
+  CORS ou proxy, o fetch do client (porta 5173)
+  vai bater no server (porta 3001) e o browser
+  bloqueia. Use Vite proxy ou habilite CORS no
+  Express.
+- **Carregar `localStorage` no SSR (Next).** Em
+  Next, `localStorage` não existe no servidor.
+  Use `useEffect` pra carregar, ou `typeof window
+  !== "undefined"`.
+
+**Como validar que terminou:**
+
+- [ ] `pnpm dev` roda sem warning de hidratação
+  (se Next) nem de TS.
+- [ ] Preencher step 1 com dados inválidos
+  (nome vazio, email mal formatado) → clica
+  "Continuar" → erros aparecem nos campos certos.
+- [ ] Preencher válido → avança pro step 2.
+- [ ] Voltar pro step 1 → dados preenchidos
+  continuam lá.
+- [ ] Recarregar a página no step 2 → step 1 e
+  step 2 mantêm os dados (persistência).
+- [ ] Preencher step 3 → submete → tela de
+  confirmação.
+- [ ] No DevTools, ver o POST com payload JSON
+  bate com `CheckoutData`.
+- [ ] Ver o server mock respondendo 201 com
+  `{ id, message }`.
+- [ ] Tentar submeter com `numeroCartao` inválido
+  (14 dígitos em vez de 16) → erro do server
+  aparece no campo certo via `setError`.
+- [ ] Desligar o server mock e tentar submeter →
+  erro global aparece ("Erro no servidor").
+
+**Leituras que ajudam durante o projeto:**
+
+- [React Hook Form - FormProvider](https://react-hook-form.com/docs/formprovider) - o contexto que conecta os steps.
+- [Zod - Error Handling](https://zod.dev/?id=error-handling) - o `flatten()` que o server devolve pro client.
+- [Hono - Getting Started](https://hono.dev/docs/) - se você escolher Hono pro server mock.
+
+> O projeto final é onde a trilha vira "sua". As
+> escolhas de domínio (e-commerce vs. cadastro vs.
+> onboarding), de framework de server (Express vs.
+> Hono vs. Next route handler), de persistência
+> (`localStorage` vs. IndexedDB vs. cookie) são
+> todas suas. O esqueleto dado é o **caminho
+> feliz**, desvie quando precisar, e anote as
+> decisões no `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `interpretarResposta(response)` que recebe um objeto `Response`-like (com `status: number` e `body: any`) e retorna `{ ok: true, id: string }` se status for 201 (lendo `id` do body), ou `{ ok: false, error: string }` para qualquer outro status (lendo `message` do body ou um fallback)."
+  starterCode={`// Implemente interpretarResposta(response) que recebe
+// { status: number, body: { id?: string, message?: string } }.
+//
+// Retorne { ok: true, id: response.body.id } se status === 201.
+// Caso contrário, retorne { ok: false, error: <message do body> }
+// ou { ok: false, error: "Erro desconhecido" } se não tiver message.
+function interpretarResposta(response) {
+  return { ok: false, error: "não implementado" };
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _sucesso = interpretarResposta({ status: 201, body: { id: "PED-1" } });
+console.log(JSON.stringify(_sucesso));
+
+const _erroValidacao = interpretarResposta({
+  status: 400,
+  body: { message: "Email inválido" },
+});
+console.log(JSON.stringify(_erroValidacao));
+
+const _erroSemMensagem = interpretarResposta({ status: 500, body: {} });
+console.log(JSON.stringify(_erroSemMensagem));`}
+expected='{"ok":true,"id":"PED-1"}
+{"ok":false,"error":"Email inválido"}
+{"ok":false,"error":"Erro desconhecido"}'
+slug="form-libraries"
+nodeId="projeto-final"
+/>

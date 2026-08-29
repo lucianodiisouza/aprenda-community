@@ -1,0 +1,480 @@
+---
+id: react-hook-form-basico
+title: "React Hook Form: useForm, register, handleSubmit, errors"
+resources:
+  - title: "React Hook Form - useForm (oficial, API reference, EN)"
+    url: https://react-hook-form.com/docs/useform
+    lang: en
+    type: doc
+    free: true
+  - title: "React Hook Form - API (oficial, todos os métodos, EN)"
+    url: https://react-hook-form.com/docs
+    lang: en
+    type: doc
+    free: true
+  - title: "TkDodo - React Hook Form - Practical Guide (vídeo, EN)"
+    url: https://www.youtube.com/watch?v=R6Yy2tB5JR4
+    lang: en
+    type: video
+    free: true
+---
+
+O `useForm` é o hook que você vai chamar em todo componente
+de form. A assinatura parece grande - 30+ opções e 20+
+campos de retorno -, mas o uso no dia a dia usa uns 5 campos
+e 3 opções. Este nó é sobre dominar o mínimo viável: como
+registrar um input, submeter, ler erros, e tipar.
+
+Se você entende o ciclo `register → handleSubmit → onSubmit`
+e onde cada peça se encaixa, o resto da API vira "combinações
+dessas peças".
+
+## O essencial 🟢
+
+**O mínimo que você precisa saber pra começar.** O
+`useForm()` retorna um objeto com várias coisas. O uso
+básico usa 3:
+
+- **`register(name)`** - função que retorna props prontas
+  pra espalhar num input. Cuida do `name`, `onChange`,
+  `onBlur`, e `ref` do RHF.
+- **`handleSubmit(fn)`** - função que recebe o seu handler
+  de submit. Roda a validação, e só chama `fn` se tudo
+  passar.
+- **`formState`** - objeto com `errors`, `isSubmitting`,
+  `isDirty`, `isValid` e outros estados do form.
+
+```tsx
+import { useForm } from "react-hook-form";
+
+type FormData = {
+  nome: string;
+  email: string;
+};
+
+function Cadastro() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>();
+
+  const onSubmit = async (data: FormData) => {
+    // data é tipado como FormData. Sem cast, sem `any`.
+    await fetch("/api/cadastro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div>
+        <label htmlFor="nome">Nome</label>
+        <input
+          id="nome"
+          {...register("nome", { required: "Nome é obrigatório" })}
+        />
+        {errors.nome && <span role="alert">{errors.nome.message}</span>}
+      </div>
+
+      <div>
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          {...register("email", {
+            required: "Email é obrigatório",
+            pattern: { value: /^\S+@\S+$/, message: "Email inválido" },
+          })}
+        />
+        {errors.email && <span role="alert">{errors.email.message}</span>}
+      </div>
+
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Enviando..." : "Cadastrar"}
+      </button>
+    </form>
+  );
+}
+```
+
+Esse é o **caminho feliz**: o form funciona, tem validação
+básica via opções do `register`, e o submit só roda se
+tudo estiver válido. Sem `useState` por campo, sem
+gerenciar `loading` na mão, sem `errors` manual.
+
+**A anatomia do `register`.** O `register("nome")` é uma
+função que devolve um objeto com várias props. Você
+espalha no input com `{...register("nome")}`. Por baixo
+dos panos, RHF:
+
+- Seta o `name="nome"` no input.
+- Liga o `onChange` e `onBlur` ao estado interno do RHF.
+- Liga o `ref` pra que o RHF possa ler o valor via DOM.
+
+```tsx
+// O que {...register("nome")} faz, expandido:
+<input
+  name="nome"
+  onChange={(e) => /* atualiza o estado interno do RHF */}
+  onBlur={(e) => /* marca como "touched" */}
+  ref={(el) => /* registra o input na lib */}
+/>
+```
+
+Você quase nunca precisa pensar nisso. Mas quando der
+bug estranho ("o `defaultValue` não tá pegando", "o
+`setValue` não atualiza a UI"), vale lembrar que o
+registro é via ref + listeners.
+
+**Opções comuns do `register`.** Cada chamada aceita um
+segundo argumento com regras de validação built-in:
+
+```tsx
+register("campo", {
+  required: "Mensagem de erro se vazio",
+  minLength: { value: 3, message: "Mínimo 3 caracteres" },
+  maxLength: { value: 100, message: "Máximo 100 caracteres" },
+  min: { value: 18, message: "Idade mínima 18" },
+  max: { value: 120, message: "Idade máxima 120" },
+  pattern: { value: /regex/, message: "Formato inválido" },
+  validate: (value) => value !== "admin" || "Nome reservado",
+});
+```
+
+A regra `validate` é a mais flexível: recebe o valor
+atual e retorna `true` se válido, ou uma string com a
+mensagem de erro. Pra regras que dependem de outros
+campos, é o caminho:
+
+```tsx
+register("confirmarSenha", {
+  validate: (value, formValues) =>
+    value === formValues.senha || "Senhas não conferem",
+});
+```
+
+**`handleSubmit` valida antes de chamar seu handler.** O
+`handleSubmit` recebe o seu `onSubmit`. Antes de chamar,
+ele roda a validação (no modo `onSubmit` por padrão, que
+só valida quando o user clica no botão). Se algum campo
+falhar, o `onSubmit` **não** é chamado, e `formState.errors`
+é populado com as mensagens.
+
+```tsx
+// Validação só no submit. Antes do submit, errors fica vazio.
+<form onSubmit={handleSubmit(onSubmit)}>
+
+// Validação enquanto digita. errors atualiza a cada tecla.
+const { register, handleSubmit, formState: { errors } } = useForm({
+  mode: "onChange", // "onSubmit" | "onBlur" | "onChange" | "onTouched" | "all"
+});
+```
+
+O `mode` afeta quando a validação roda e quando a UI
+atualiza. Default é `onSubmit` - o user só vê erros
+quando clica em "Cadastrar" e algo falha. Pra UX mais
+agressiva (erro aparece enquanto digita), use `onChange`.
+Pra meio-termo (erro aparece quando sai do campo), use
+`onBlur`. Cada projeto tem sua preferência.
+
+**`formState` é onde mora a vida do form.** Esse objeto
+é o "estado reativo" do form. Os campos mais usados:
+
+- **`errors`** - objeto `{ nome?: FieldError, email?: FieldError }`.
+  Tem `type` (qual regra falhou: `required`, `pattern`, etc.)
+  e `message` (a string que você passou).
+- **`isSubmitting`** - `true` enquanto o `onSubmit` async
+  está rodando. Use pra desabilitar o botão.
+- **`isDirty`** - `true` se algum campo foi alterado desde
+  o default. Use pra "tem mudanças não salvas".
+- **`isValid`** - `true` se não tem erros (atual, não
+  futuro). Cuidado: é o estado atual, não "vai passar se
+  submeter agora".
+- **`dirtyFields`** - objeto com os campos sujos. Útil pra
+  "enviar só o que mudou" em PATCH.
+- **`touchedFields`** - objeto com os campos que já
+  receberam blur. Use pra "só mostra erro se o user
+  interagiu".
+- **`submitCount`** - quantas vezes o form foi submetido.
+  Útil pra "depois do primeiro submit, valida em todo
+  onChange".
+- **`isLoading`** (RHF v7.45+) - `true` enquanto o
+  `useForm` está inicializando (raro, com `defaultValues`
+  async).
+
+**Acessibilidade básica vem de graça.** Os erros do
+`formState.errors` podem ser lidos por leitores de tela
+se você marcar o input com `aria-invalid` e o erro com
+`role="alert"`. É o mínimo recomendado:
+
+```tsx
+<input
+  {...register("email", { required: true })}
+  aria-invalid={errors.email ? "true" : "false"}
+  aria-describedby={errors.email ? "email-error" : undefined}
+/>
+{errors.email && (
+  <span id="email-error" role="alert">
+    {errors.email.message}
+  </span>
+)}
+```
+
+Quem quiser aprofundar a11y (foco visível, navegação por
+teclado, leitor de tela em wizard) faz a trilha
+`acessibilidade-avancada` (issue #50). Aqui a gente
+cobre o mínimo que evita os bugs mais comuns.
+
+## Aprofundamento 🟡
+
+**`defaultValues` e `values` (form controlado por estado
+externo).** Por padrão, RHF lê o valor inicial do `ref`
+do input (que vem do DOM). Pra pre-preencher com dados
+de fora (API, store, props), use `defaultValues`:
+
+```tsx
+const { register, handleSubmit } = useForm({
+  defaultValues: {
+    nome: "",
+    email: usuario?.email ?? "",
+    aceitaTermos: false,
+  },
+});
+```
+
+`defaultValues` é setado **uma vez**, no mount. Pra
+atualizar depois (ex: user carrega perfil e o form
+pre-preenche), use `reset(values)`:
+
+```tsx
+useEffect(() => {
+  if (usuario) reset({ nome: usuario.nome, email: usuario.email });
+}, [usuario, reset]);
+```
+
+Alternativa moderna (RHF v7.43+): passe `values` no
+`useForm`. Diferente de `defaultValues`, `values`
+**reage** a mudanças e atualiza o form em tempo real
+(útil pra "form preenchido com dados do servidor que
+mudam via WebSocket").
+
+**`setValue`, `getValue`, `watch` pra ler/escrever
+valores sem re-render.** O `useForm` expõe métodos
+pra manipular o form sem precisar de input na tela:
+
+```tsx
+const { setValue, getValues, watch, reset, trigger } = useForm<FormData>();
+
+// Ler valor atual sem causar re-render
+const nomeAtual = getValues("nome");
+
+// Setar valor (atualiza o form e o input)
+setValue("nome", "Ana", { shouldValidate: true, shouldDirty: true });
+
+// Observar valor com re-render (a cada mudança do campo, re-renderiza)
+const nomeObservado = watch("nome");
+
+// Forçar validação de um campo específico
+const isEmailValido = await trigger("email");
+
+// Resetar form pro defaultValues
+reset();
+```
+
+A diferença entre `watch` e `getValues` confunde no
+começo. Resumo:
+
+- **`getValues`** - lê o valor atual, **sem** re-renderizar.
+  Use em handlers (onClick, onSubmit) quando precisa do
+  valor pontualmente.
+- **`watch`** - observa o valor, **com** re-render a cada
+  mudança. Use na render quando o JSX depende do valor
+  (preview de nome, conditional field baseado em outro
+  campo, etc).
+
+**`unregister` pra campos dinâmicos.** Quando um campo
+não está mais na tela (ex: checkbox desmarcado que
+esconde um grupo), RHF mantém o valor no estado dele
+por padrão. Pra remover de verdade:
+
+```tsx
+const { unregister } = useForm();
+unregister("campoOpcional");
+```
+
+Ou na config:
+
+```tsx
+useForm({ shouldUnregister: true }); // remove ao desmontar
+```
+
+Por padrão, `shouldUnregister: false` - o valor fica
+no estado do RHF mesmo se o input sai da tela. Isso
+evita perder dados quando o user desmarca um checkbox
+e marca de novo. Use `unregister` explícito quando
+precisa limpar o estado de verdade.
+
+**`mode: "onTouched"` e a UX de erro progressivo.** O
+default `onSubmit` mostra todos os erros quando o user
+clica em submit. A UX mais comum em produção é
+`onTouched`: erros só aparecem depois que o user
+**saiu** do campo (`blur`). Isso evita o "erro em
+vermelho" enquanto o user ainda está digitando.
+
+```tsx
+const {
+  register,
+  handleSubmit,
+  formState: { errors },
+} = useForm({ mode: "onTouched" });
+```
+
+O `onTouched` é equivalente a "valida no primeiro blur
+depois de mudança, e revalida em todo onChange
+subsequente". É o modo usado em 80% dos forms de
+produção.
+
+**`resetField` e `setFocus` pra UX de botão "limpar".**
+Além de `reset()` (form inteiro), tem `resetField("nome")`
+(um campo só). E pra mover o foco programaticamente
+(útil em wizard depois de avançar step):
+
+```tsx
+const { setFocus } = useForm();
+setFocus("nome"); // foca no input com name="nome"
+```
+
+**Composição com TS: generics do `useForm`.** O
+`useForm<FormData>()` é o caminho padrão. Mas o generic
+aceita mais coisa: `useForm<FormData, Context, FieldValues>`.
+O segundo e terceiro são pra `useFormContext` e tipos
+customizados de field. No dia a dia, o primeiro basta.
+
+```tsx
+// Mínimo: tipa o form inteiro
+const { register } = useForm<FormData>();
+
+// Com defaults tipados:
+useForm<FormData>({
+  defaultValues: { nome: "", email: "" } satisfies FormData,
+});
+```
+
+Se você usa Zod (nó 3), dá pra inferir o tipo do
+schema direto: `useForm<z.infer<typeof schema>>()`.
+Isso elimina divergência entre schema e type.
+
+## Pra quem quer ir além 🔴
+
+**A performance interna do RHF.** RHF usa `Proxy` em
+cima dos inputs (via `getEventListeners`) pra detectar
+mudanças sem precisar re-renderizar. O custo é baixo,
+mas tem limite: forms com 500+ campos podem ter
+overhead perceptível. Pra esses casos, TanStack Form
+ou até controlled com `useReducer` é melhor. É um
+edge case raro.
+
+**`useFormContext` pra forms compostos.** Quando o
+form é dividido em vários componentes (ex: `<Form
+fields={<DadosPessoais />} endereco={<Endereco />} />`),
+o `useFormContext` destrava o acesso a `useForm()`
+nos filhos, sem prop drilling:
+
+```tsx
+// Pai
+const methods = useForm<FormData>();
+return (
+  <FormProvider {...methods}>
+    <form onSubmit={methods.handleSubmit(onSubmit)}>
+      <DadosPessoais />
+      <Endereco />
+    </form>
+  </FormProvider>
+);
+
+// Filho
+import { useFormContext } from "react-hook-form";
+function DadosPessoais() {
+  const { register } = useFormContext<FormData>();
+  return <input {...register("nome")} />;
+}
+```
+
+É o padrão pra forms com muitos campos divididos em
+"seções" ou "steps". Detalhes no nó 5 (multi-step).
+
+**`useController` pra inputs controlados por libs de
+UI.** MUI, Chakra, Ant Design e várias outras libs
+de UI controlam o input internamente (passam `value`
+e `onChange` via prop). Pra integrar com RHF:
+
+```tsx
+import { Controller } from "react-hook-form";
+
+<Controller
+  name="cidade"
+  control={control}
+  render={({ field, fieldState }) => (
+    <TextField
+      {...field}
+      error={!!fieldState.error}
+      helperText={fieldState.error?.message}
+    />
+  )}
+/>
+```
+
+O `Controller` é a "ponte" entre RHF (uncontrolled) e
+a lib de UI (controlled). Detalhes no nó 4.
+
+**`useFormState` pra ler estado de fora do componente
+do form.** Em forms muito grandes ou com renderização
+condicional, o hook `useFormState` dá acesso a
+`errors`/`isDirty`/etc em componentes filhos sem
+re-renderizar o pai inteiro. É otimização de performance
+pra casos extremos.
+
+**Leitura recomendada:**
+
+- [React Hook Form - useForm (API)](https://react-hook-form.com/docs/useform) - a referência. Todas as opções documentadas.
+- [React Hook Form - API](https://react-hook-form.com/docs) - índice de todos os métodos e hooks.
+- [TkDodo - React Hook Form Practical Guide](https://www.youtube.com/watch?v=R6Yy2tB5JR4) - overview de 15 minutos.
+
+> Dica: o erro mais comum no começo é esquecer o generic
+> em `useForm<FormData>()`. Sem ele, `data` no
+> `onSubmit` vira `Record<string, any>` e você perde
+> type-safety. Use `useForm<FormData>()` desde o
+> primeiro componente, mesmo que `FormData` seja
+> pequeno.
+
+No próximo nó, vamos plugar o **Zod** no `useForm`
+via `zodResolver`, e ver como a inferência de tipo
+do schema (`z.infer<typeof Schema>`) elimina a
+duplicação entre "tipo do form" e "tipo validado".
+
+<Quiz
+  question="Qual a diferença entre `watch` e `getValues` no React Hook Form?"
+  options={[
+    {
+      text: "watch observa o valor com re-render a cada mudança; getValues lê o valor atual sem causar re-render.",
+      correct: true,
+      explanation:
+        "watch é pra usar no JSX - quando a render depende do valor, exibe o nome em tempo real. getValues é pra usar em handlers (onClick, onSubmit) - lê o valor na hora sem re-renderizar o componente. Misturar os dois é fonte comum de bug de performance: usar watch demais re-renderiza à toa, usar getValues em render perde reatividade.",
+    },
+    {
+      text: "watch é pra campos uncontrolled, getValues é pra campos controlled.",
+      correct: false,
+      explanation:
+        "Não. Os dois funcionam com qualquer campo registrado. A diferença é sobre reatividade (watch re-renderiza) vs leitura pontual (getValues não re-renderiza). Controlled/uncontrolled é outra dimensão.",
+    },
+    {
+      text: "São a mesma coisa, só nomes diferentes para a mesma função.",
+      correct: false,
+      explanation:
+        "São diferentes. watch é reativo (re-renderiza), getValues é pontual (não re-renderiza). Em forms grandes com watch demais, a performance cai. A regra: use watch no JSX quando precisa do valor em tempo real, getValues em handlers quando precisa do valor pontualmente.",
+    },
+  ]}
+/>

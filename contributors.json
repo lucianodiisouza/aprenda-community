@@ -47,6 +47,10 @@
           "title": "Estruturas de Dados"
         },
         {
+          "slug": "form-libraries",
+          "title": "Form Libraries: React Hook Form + Zod"
+        },
+        {
           "slug": "frontend",
           "title": "Frontend"
         },
