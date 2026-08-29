@@ -1,0 +1,598 @@
+---
+id: playwright-e2e
+title: "Playwright E2E: setup, locators, fixtures, traces, paralelização"
+resources:
+  - title: "Playwright - Getting Started (oficial, EN)"
+    url: https://playwright.dev/docs/intro
+    lang: en
+    type: doc
+    free: true
+  - title: "Playwright - Best Practices (oficial, EN)"
+    url: https://playwright.dev/docs/best-practices
+    lang: en
+    type: doc
+    free: true
+  - title: "Playwright - Trace Viewer (oficial, EN)"
+    url: https://playwright.dev/docs/trace-viewer
+    lang: en
+    type: doc
+    free: true
+---
+
+Testing Library valida um componente. Mas o usuário
+não usa "um componente" - ele usa **um app**, abrindo
+a home, navegando, clicando em botões, esperando
+fetch, vendo confirmação. Pra testar isso você
+precisa de um **browser de verdade**: o app inteiro
+rodando, JS executando, network funcionando. É o que
+o Playwright faz.
+
+A regra do Playwright: **o teste mais robusto é o
+que mais se parece com o usuário**. Por isso a
+filosofia de **locators por papel** (não por CSS)
+e **auto-wait** (não `waitFor` manual). O usuário
+não espera 5s pro botão aparecer - ele espera o
+máximo de paciência e desiste. O teste deve ter o
+mesmo comportamento.
+
+## O essencial 🟢
+
+**Setup em 3 passos.** Instala o Playwright e os
+browsers (Chromium, Firefox, WebKit):
+
+```bash
+pnpm create playwright@latest
+# ou
+pnpm add -D @playwright/test
+pnpm exec playwright install --with-deps
+```
+
+O `@create` scaffold cria:
+- `playwright.config.ts` - configuração central.
+- `tests/` - pasta de testes (você escolhe o nome).
+- `tests-examples/` - exemplos pra rodar e ver.
+
+**`playwright.config.ts` - a anatomia da config:**
+
+```ts
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "./tests/e2e",         // onde estão os testes
+  fullyParallel: true,            // roda em paralelo entre arquivos
+  forbidOnly: !!process.env.CI,   // bloqueia test.only em CI
+  retries: process.env.CI ? 2 : 0, // retry em CI (evita flake)
+  workers: process.env.CI ? 2 : undefined, // paralelismo
+  reporter: "html",              // report HTML com traces
+
+  use: {
+    baseURL: "http://localhost:3000", // URL base do app
+    trace: "on-first-retry",     // salva trace no primeiro retry
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox",  use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit",   use: { ...devices["Desktop Safari"] } },
+  ],
+
+  webServer: {
+    command: "pnpm dev",        // comando pra subir o app
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI, // local: usa o que tá rodando
+    timeout: 120_000,            // 2 min pro app subir
+  },
+});
+```
+
+A `webServer` é o pulo do gato: o Playwright sobe
+o app automaticamente antes dos testes e desliga
+depois. Em CI, ele sobe; em local, reusa o que
+você já tem rodando.
+
+**`test`, `expect`, `page.locator` - a anatomia
+do teste:**
+
+```ts
+import { test, expect } from "@playwright/test";
+
+test("home mostra o título do app", async ({ page }) => {
+  await page.goto("/");
+
+  // Locator por papel (acessibilidade-first)
+  const titulo = page.getByRole("heading", { name: /aprenda/i });
+
+  // Auto-wait: o Playwright espera o elemento aparecer/atualizar
+  await expect(titulo).toBeVisible();
+  await expect(titulo).toHaveText("Aprenda Community");
+});
+```
+
+Três peças:
+
+- **`test(name, fn)`** - define o teste. Recebe
+  um objeto `{}` com `page`, `context`, `request`,
+  etc. (fixtures).
+- **`page`** - o browser tab. Tem `goto`, `click`,
+  `fill`, `waitFor`, etc.
+- **`page.getByRole(...)`** - locator (não o
+  elemento ainda!). Locator é lazy - é "uma
+  promessa de onde o elemento está".
+
+A regra: **sempre prefira `getByRole`, `getByLabel`,
+`getByText`, `getByPlaceholder`** (em ordem). Só
+recaia pra `getByTestId` quando não tem outro jeito.
+
+**`locator` vs `element` - lazy evaluation.** O
+`page.getByRole("button")` **não** retorna o botão
+- retorna um `Locator`, que sabe **como achar** o
+botão. O botão só é procurado quando você age sobre
+ele (`click`, `fill`, `expect`):
+
+```ts
+// Isso NÃO procura o botão ainda
+const botao = page.getByRole("button", { name: /salvar/i });
+
+// Aqui o Playwright procura
+await botao.click();        // procura + clica
+await expect(botao).toBeVisible(); // procura + asserção
+
+// A vantagem: dá pra reusar o locator
+// "pega o botão Salvar que está dentro do modal de edição"
+const botaoNoModal = page.getByRole("dialog").getByRole("button", { name: /salvar/i });
+```
+
+O **auto-wait** é o que faz a robustez: quando você
+faz `botao.click()`, o Playwright espera
+**automaticamente** o elemento estar visível,
+estável, receber eventos, habilitado, e dentro da
+viewport. Não precisa de `waitFor` manual na
+maioria dos casos.
+
+**`expect` - matchers específicos do Playwright.**
+Além dos matchers do Jest, o Playwright adiciona
+matchers próprios que entendem a natureza do DOM:
+
+```ts
+// Visibilidade / estado
+await expect(page.getByText("Bem-vindo")).toBeVisible();
+await expect(page.getByText("Bem-vindo")).toBeHidden();
+await expect(page.getByText("Bem-vindo")).toBeEnabled();
+await expect(page.getByRole("button")).toBeDisabled();
+
+// Conteúdo
+await expect(page.getByRole("heading")).toHaveText("Título");
+await expect(page.getByRole("heading")).toContainText("Título");
+await expect(page.getByRole("heading")).toHaveId("hero");
+
+// Quantidade
+await expect(page.getByRole("listitem")).toHaveCount(5);
+
+// Página
+await expect(page).toHaveURL(/\/dashboard/);
+await expect(page).toHaveTitle("Aprenda");
+
+// Atributos / classe
+await expect(page.getByRole("button")).toHaveClass(/primary/);
+await expect(page.getByRole("button")).toHaveAttribute("aria-label", "Salvar");
+
+// Screenshots (veremos no nó 5)
+await expect(page).toHaveScreenshot("home.png");
+```
+
+A diferença do Jest: `toBeVisible` não checa só
+`display: none` - checa se o elemento está no DOM,
+tem tamanho > 0, opacidade > 0, e está visível na
+viewport. Cobertura completa de "o usuário vê".
+
+**`page.goto`, `fill`, `click`, `keyboard` - ações:**
+
+```ts
+test("login com credenciais válidas", async ({ page }) => {
+  await page.goto("/login");
+
+  // Preencher input
+  await page.getByLabel("Email").fill("ana@x.com");
+  await page.getByLabel("Senha").fill("12345678");
+
+  // Clicar botão
+  await page.getByRole("button", { name: /entrar/i }).click();
+
+  // Esperar navegação
+  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByText("Olá, Ana")).toBeVisible();
+});
+```
+
+`fill` é "limpa e digita" (substitui). Se quiser
+**adicionar** texto, use `pressSequentially` ou
+`type`. Pra simular teclas especiais (`Enter`,
+`Tab`, `Escape`), use `keyboard.press`:
+
+```ts
+await page.getByLabel("Email").press("Enter"); // submit form
+await page.keyboard.press("Tab");              // próximo foco
+```
+
+**Fixtures customizadas pra setup repetido.**
+Quando vários testes precisam do mesmo setup
+(login, navegação pra página específica), use
+fixtures:
+
+```ts
+// fixtures.ts
+import { test as base } from "@playwright/test";
+
+export const test = base.extend({
+  // Fixture: usuário logado. Disponível como `pageLogada` no teste.
+  pageLogada: async ({ page }, use) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill("ana@x.com");
+    await page.getByLabel("Senha").fill("12345678");
+    await page.getByRole("button", { name: /entrar/i }).click();
+    await page.waitForURL(/\/dashboard/);
+    await use(page);
+  },
+});
+
+// login.test.ts
+import { test, expect } from "./fixtures";
+
+test("dashboard mostra nome do usuário", async ({ pageLogada }) => {
+  // pageLogada já está logada, vai direto pro dashboard
+  await expect(pageLogada.getByText("Olá, Ana")).toBeVisible();
+});
+```
+
+Fixtures customizadas reduzem duplicação sem
+"compartilhar estado entre testes" (que é
+proibido no Playwright).
+
+**Auto-retry: testes flaky têm chance de passar.**
+Por padrão, o Playwright tem `retries: 0` em
+local e `retries: 2` em CI. Se um teste falha
+em CI, ele roda de novo antes de marcar como
+vermelho. Combinado com `trace: "on-first-retry"`,
+você tem o trace do retry que falhou pra debug.
+
+A regra: **se um teste é flaky, conserte a
+causa** (use auto-wait, locators robustos, etc).
+Retry mascara flake, não resolve.
+
+**`expect.configure` pra tempo de espera global.**
+Por padrão, `expect` espera 5s. Pra mudar:
+
+```ts
+test.use({ expect: { timeout: 10_000 } });
+// ou
+expect.configure({ timeout: 10_000 });
+```
+
+Útil pra testes de E2E com fetch lento ou ações
+que demoram.
+
+## Aprofundamento 🟡
+
+**Locators avançados: chaining, filtering, nth.**
+Locators podem ser compostos:
+
+```ts
+// Pega o 3º item de uma lista
+const item = page.getByRole("listitem").nth(2);
+
+// Filtra por texto dentro
+const itemFiltrado = page.getByRole("listitem").filter({ hasText: "Salvar" });
+
+// Combina: botão dentro do modal
+const botaoConfirmar = page
+  .getByRole("dialog")
+  .getByRole("button", { name: /confirmar/i });
+
+// Locator do pai
+const itemComBotao = page.getByRole("listitem").filter({
+  has: page.getByRole("button", { name: /remover/i }),
+});
+```
+
+`filter({ has: ... })` é "este item **tem** um
+elemento X dentro". Muito útil pra listas
+heterogêneas.
+
+**`request` fixture pra testar API direto.** Pra
+testar endpoint sem browser (mais rápido):
+
+```ts
+test("API retorna lista de usuários", async ({ request }) => {
+  const response = await request.get("/api/usuarios");
+  expect(response.ok()).toBeTruthy();
+
+  const usuarios = await response.json();
+  expect(usuarios).toHaveLength(3);
+  expect(usuarios[0]).toHaveProperty("nome");
+});
+```
+
+`request` compartilha cookies e storage state
+com `page`. Útil pra testar API antes/depois
+de UI ("criei via API, vejo na UI").
+
+**Trace Viewer - o "F12 do E2E".** Quando um teste
+falha, o trace mostra:
+
+- Timeline de ações (clique, navegação, espera).
+- Screenshot de cada step.
+- Network (request/response com headers/body).
+- Console do browser.
+- DOM snapshot de cada step.
+
+```bash
+pnpm exec playwright test --trace on
+# ou
+pnpm exec playwright show-trace test-results/test-login/trace.zip
+```
+
+O trace é a melhor ferramenta de debug de E2E
+que existe. Quando um teste falha em CI, baixa
+o trace, abre local, e reproduz o passo a passo.
+
+**`storageState` pra auth compartilhado.** Em vez
+de fazer login em cada teste (lento), faça login
+uma vez e salva o storage state:
+
+```ts
+// auth.setup.ts
+import { test as setup, expect } from "@playwright/test";
+
+const authFile = ".auth/user.json";
+
+setup("autenticar", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("ana@x.com");
+  await page.getByLabel("Senha").fill("12345678");
+  await page.getByRole("button", { name: /entrar/i }).click();
+  await page.waitForURL(/\/dashboard/);
+
+  // Salva cookies e localStorage no arquivo
+  await page.context().storageState({ path: authFile });
+});
+
+// playwright.config.ts
+export default defineConfig({
+  projects: [
+    { name: "setup", testMatch: /.*\.setup\.ts/ },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: ".auth/user.json", // usa o state salvo
+      },
+      dependencies: ["setup"], // roda setup antes
+    },
+  ],
+});
+```
+
+Resultado: testes que precisam de login pulam o
+passo de login (mais rápido) e o `auth.setup` roda
+**uma vez** no início da suite.
+
+**Page Object Model (POM) pra organizar testes
+grandes.** Em suite com 50+ testes, o
+`page.getByRole("button", { name: /salvar/i })` se
+repete. POM é encapsular a UI em classes:
+
+```ts
+// pages/LoginPage.ts
+export class LoginPage {
+  constructor(private page: Page) {}
+
+  async fazerLogin(email: string, senha: string) {
+    await this.page.getByLabel("Email").fill(email);
+    await this.page.getByLabel("Senha").fill(senha);
+    await this.page.getByRole("button", { name: /entrar/i }).click();
+  }
+}
+
+// tests/login.test.ts
+import { LoginPage } from "../pages/LoginPage";
+
+test("login com credenciais válidas", async ({ page }) => {
+  const loginPage = new LoginPage(page);
+  await page.goto("/login");
+  await loginPage.fazerLogin("ana@x.com", "12345678");
+  await expect(page).toHaveURL(/\/dashboard/);
+});
+```
+
+Vantagem: mudou o seletor do botão? Mexe só na
+`LoginPage`. Testes ficam mais legíveis
+(`fazerLogin(...)` em vez de 3 linhas de
+`getBy*`).
+
+**Headless vs headed: quando usar cada um.**
+Default em CI: headless (sem janela). Default
+em local: headed (você vê o browser).
+
+```bash
+# Modo headed (debug)
+pnpm exec playwright test --headed
+
+# Modo headed com slow motion (ver cada ação)
+pnpm exec playwright test --headed --slowMo=500
+```
+
+Pra debug, `headed + slowMo=500` é o melhor - você
+vê cada clique acontecendo.
+
+**Rodar em browser específico.** Default roda em
+todos os 3 (Chromium, Firefox, WebKit):
+
+```bash
+# Só Chromium
+pnpm exec playwright test --project=chromium
+
+# Só Firefox
+pnpm exec playwright test --project=firefox
+```
+
+CI roda em todos (cobre bugs específicos de
+browser). Local pode rodar só no seu principal
+(você usa Chrome, testa no Chrome).
+
+## Pra quem quer ir além 🔴
+
+**Playwright vs Cypress em 2026.** Cypress foi
+padrão entre 2018-2022. Playwright tomou o espaço
+em 2024 porque:
+
+- **Multi-browser nativo** - Playwright roda em
+  Chromium, Firefox, WebKit (Safari) sem config.
+  Cypress suporta Firefox e Edge, mas o suporte
+  a WebKit é parcial.
+- **Multi-tab e multi-origin** - Playwright
+  suporta abas, iframes, e origens diferentes
+  sem hack. Cypress precisa de plugins.
+- **Velocidade** - Playwright roda em paralelo
+  entre arquivos por padrão. Cypress roda em
+  série.
+- **Trace Viewer** - o trace do Playwright é
+  detalhado (timeline, network, screenshots).
+  Cypress tem snapshot mas menos rico.
+- **API mais ergonômica** - `getByRole` é
+  first-class no Playwright. Cypress tem
+  `cy.findByRole` via Testing Library, mas é
+  externo.
+- **Auto-wait** - Playwright espera
+  automaticamente. Cypress tem retry, mas é
+  menos robusto em interações complexas.
+
+Em 2026, Playwright é o default em projetos novos.
+Cypress ainda é usado em bases legadas, mas a
+migração vale a pena em suite grande.
+
+**Testes de API com Playwright (sem browser).**
+O `request` fixture (visto acima) é poderoso pra
+testes de integração de API. Pode rodar sem
+browser nenhum, com CI mais rápido que E2E:
+
+```ts
+test("GET /api/usuarios retorna lista", async ({ request }) => {
+  const r = await request.get("/api/usuarios", {
+    headers: { "Authorization": "Bearer ..." },
+  });
+  expect(r.ok()).toBeTruthy();
+});
+```
+
+A vantagem sobre `supertest` (que o `backend` usa):
+mesmo fixture que o E2E, mesmo auth, mesmo setup.
+Uma suite de testes pode misturar E2E e API sem
+duplicar config.
+
+**`globalSetup` e `globalTeardown` pra setup
+pesado.** Em projetos grandes, o setup (migrations,
+seed de DB, login) é caro. `globalSetup` roda
+**uma vez** antes de todos os testes:
+
+```ts
+// global-setup.ts
+import { request } from "@playwright/test";
+
+export default async () => {
+  // Sobe DB de teste, roda migrations, popula dados
+  // ...
+};
+```
+
+`globalTeardown` roda no final. Útil pra apps
+com setup pesado (Docker, migrations, seed).
+
+**Visual regression com Playwright `toHaveScreenshot`.**
+O Playwright tem visual regression **nativo**
+(`expect(page).toHaveScreenshot()`). Funciona bem
+em apps pequenos e médios. Pra design system
+grande com muitas variantes, Chromatic/Percy
+(nó 5) é melhor.
+
+**Leitura recomendada:**
+
+- [Playwright - Getting Started](https://playwright.dev/docs/intro) - 5 minutos, hands-on.
+- [Playwright - Best Practices](https://playwright.dev/docs/best-practices) - os conselhos oficiais, com exemplos.
+- [Playwright - Trace Viewer](https://playwright.dev/docs/trace-viewer) - como debug quando o teste falha em CI.
+
+> Dica: o erro mais comum no começo é usar
+> `page.locator(".btn-primary")` em vez de
+> `page.getByRole("button", { name: /salvar/i })`.
+> O primeiro quebra quando alguém muda a classe.
+> O segundo sobrevive. **Locators por papel** são
+> o investimento que mais paga em suite de E2E.
+
+No próximo nó, vamos ver **visual regression**:
+detectar mudanças CSS silenciosas (botão que
+mudou de cor, layout que quebrou em mobile) com
+screenshots baseline.
+
+<Checkpoint
+  challenge="Implemente a função `montarLocator(page, config)` que recebe `page` (objeto com métodos) e `config` ({ role, name, nth }), e retorna uma descrição legível do locator construído. A função deve formatar a saída como 'page.getByRole(role, { name: /name/i })' para nth=0, ou 'page.getByRole(role, { name: /name/i }).nth(N)' para nth>0. Se nth for negativo, lança erro."
+  starterCode={`// Implemente montarLocator(page, config) que retorna uma string
+// descrevendo o locator do Playwright.
+//
+// config = { role: "button"|"textbox"|..., name: string, nth: number }
+//
+// Regras:
+// - Se nth === 0: retorna 'page.getByRole(role, { name: /<name>/i })'
+// - Se nth > 0: retorna 'page.getByRole(role, { name: /<name>/i }).nth(<nth>)'
+// - Se nth < 0: lanca new Error("nth nao pode ser negativo: " + nth)
+// - Se role ausente: lanca new Error("role obrigatorio")
+// - Se name ausente: usa "" (vira /<vazio>/i, não falha)
+function montarLocator(page, config) {
+  return "";
+}
+
+const _page = {};
+
+// Não edite abaixo - é o teste manual esperado.
+const _c1 = montarLocator(_page, { role: "button", name: "Salvar", nth: 0 });
+console.log(JSON.stringify({ case: "primeiro", loc: _c1 }));
+
+const _c2 = montarLocator(_page, { role: "textbox", name: "Email", nth: 2 });
+console.log(JSON.stringify({ case: "terceiro", loc: _c2 }));
+
+const _c3 = montarLocator(_page, { role: "button", name: "ok", nth: -1 });
+console.log(JSON.stringify({ case: "negativo_throw", msg: _c3 }));
+
+const _c4 = montarLocator(_page, { name: "ok", nth: 0 });
+console.log(JSON.stringify({ case: "sem_role_throw", msg: _c4 }));`}
+expected='{"case":"primeiro","loc":"page.getByRole(\"button\", { name: /Salvar/i }).nth(0)"}
+{"case":"terceiro","loc":"page.getByRole(\"textbox\", { name: /Email/i }).nth(2)"}
+{"case":"negativo_throw","msg":"nth nao pode ser negativo: -1"}
+{"case":"sem_role_throw","msg":"role obrigatorio"}'
+slug="testing-frontend"
+nodeId="playwright-e2e"
+/>
+
+<Quiz
+  question="Por que `page.getByRole()` é preferido em vez de `page.locator('.btn')` no Playwright?"
+  options={[
+    {
+      text: "Porque é estável a refatoração de CSS/classe, e força o uso de HTML semântico (acessibilidade por construção).",
+      correct: true,
+      explanation:
+        "getByRole funciona pelo papel ARIA + nome acessível. Se o papel muda, ou se você usou <div onClick> em vez de <button>, o locator falha. Locator por CSS quebra quando alguém renomeia a classe. Bônus: força a11y - você não consegue testar sem antes tornar o componente acessível.",
+    },
+    {
+      text: "Porque é mais rápido em performance.",
+      correct: false,
+      explanation:
+        "A diferença de performance é desprezível. O ganho é semântico e de robustez. getByRole é a forma oficial recomendada pelo time do Playwright (mesma filosofia do Testing Library - Kent C. Dodds).",
+    },
+    {
+      text: "Porque é a única forma de localizar elementos no Playwright.",
+      correct: false,
+      explanation:
+        "Não - Playwright tem vários tipos de locator: getByRole, getByLabel, getByText, getByTestId, locator(css), locator(xpath), etc. A recomendação é usar getByRole por padrão, mas há casos onde outras queries são necessárias (ex: canvas, SVG complexo).",
+    },
+  ]}
+/>

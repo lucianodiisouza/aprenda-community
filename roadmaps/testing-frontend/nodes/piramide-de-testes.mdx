@@ -1,0 +1,374 @@
+---
+id: piramide-de-testes
+title: "Por que testar: pirâmide, ROI e trade-offs por camada"
+resources:
+  - title: "Kent C. Dodds - The Testing Trophy and Testing Classifications (artigo, EN)"
+    url: https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications
+    lang: en
+    type: artigo
+    free: true
+  - title: "Martin Fowler - The Practical Test Pyramid (artigo, EN)"
+    url: https://martinfowler.com/articles/practical-test-pyramid.html
+    lang: en
+    type: artigo
+    free: true
+  - title: "Google Testing Blog - Just Say No to More End-to-End Tests (artigo, EN)"
+    url: https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html
+    lang: en
+    type: artigo
+    free: true
+---
+
+Antes de escrever o primeiro teste, vale parar e entender
+o **porquê** de cada camada. Sem modelo mental, você cai
+em dois extremos: ou testa tudo com E2E (caro, lento,
+frágil) ou testa só unit (rápido, mas perde o "fluxo
+real"). A **pirâmide de testes** é o modelo clássico
+que te diz onde gastar o esforço de teste pra ter o
+maior retorno com o menor custo.
+
+Este nó é o mapa mental. Os próximos sete são as
+ferramentas de cada camada.
+
+## O essencial 🟢
+
+**Os três problemas que teste resolve.** Antes de
+"como testar", vale o "por que":
+
+- **Regressão** - você mudou uma coisa e quebrou
+  outra sem perceber. Sem teste, a única proteção
+  é "testar manualmente tudo antes de subir PR" -
+  impossível em apps grandes.
+- **Confiança pra refatorar** - sem teste, mexer
+  em código legado dá medo. Com teste, você
+  refatora sabendo que a "rede de segurança"
+  pega o que quebrou.
+- **Documentação executável** - um teste bem
+  escrito mostra **como** o código é usado
+  (input, expectativa, edge cases). É melhor
+  que muito comentário.
+
+**A pirâmide clássica.** Mike Cohn cunhou o termo
+em 2009. A ideia é simples: testes de baixo nível
+(unit) são muitos, baratos, e rápidos. Testes de
+alto nível (E2E) são poucos, caros, e lentos.
+A forma da pirâmide reflete a proporção ideal:
+
+<Mermaid
+  chart={`flowchart TB
+    subgraph Topo["Poucos, caros, lentos"]
+      E2E["E2E / Playwright<br/>~5-10 testes<br/>segundos a minutos cada<br/>cobrem fluxos de usuario"]
+    end
+    subgraph Meio["Poucos, medios"]
+      CT["Component / Testing Library<br/>~20-50 testes<br/>segundos cada<br/>cobrem UI e interacao"]
+    end
+    subgraph Base["Muitos, baratos, rapidos"]
+      UT["Unit / Vitest<br/>~100-1000 testes<br/>milissegundos cada<br/>cobrem logica e funcoes puras"]
+    end
+    E2E --> CT
+    CT --> UT
+    Topo ~~~ Meio
+    Meio ~~~ Base`}
+  caption="Piramide de testes: base larga de unit (muitos, rapidos, baratos), meio com component (alguns, medios), topo com E2E (poucos, lentos, caros)."
+/>
+
+A **proporção** é a chave. Se você tem 10 E2E e
+0 unit, a pirâmide está invertida - é o "ice cream
+cone", que custa caro pra rodar e pega pouco bug.
+Se tem 1000 unit e 0 E2E, a pirâmide está
+"achatada" - pega bugs isolados mas perde o fluxo
+de negócio.
+
+**As três camadas na vida real.** Cada uma tem um
+trabalho específico:
+
+- **Unit (base)** - testa **uma função ou um hook**
+  isolado. Sem DOM, sem rede, sem dependências
+  externas. Exemplo: `somar(1, 2) === 3`,
+  `formatarMoeda(99.9) === "R$ 99,90"`. Roda em
+  milissegundos. É onde fica a maior parte dos
+  testes.
+- **Component (meio)** - testa **um componente React**
+  renderizado. Simula o usuário clicando, digitando,
+  esperando. Exemplo: `render(<Botao>Bla</Botao>) →
+  userEvent.click(botao) → expect(mockFn).toHaveBeenCalled()`.
+  Roda em segundos. Onde fica a validação de UI e
+  interação.
+- **E2E (topo)** - testa **um fluxo de usuário
+  completo** num browser real. Abre a página, faz
+  login, navega, submete form. Exemplo: Playwright
+  abre a home → clica em "Entrar" → preenche form
+  → vê dashboard. Roda em segundos a minutos.
+  Onde fica a validação "isso funciona de verdade
+  pra um humano".
+
+**A versão moderna: o "Testing Trophy".** Kent C. Dodds
+propôs em 2018 uma variação que reflete melhor a
+prática de apps React modernos:
+
+- **Static** (TypeScript, ESLint) - base, é "teste
+  sem rodar código".
+- **Unit** - testes de função pura, rápidos.
+- **Integration** - testes de component + fluxo
+  (o que a pirâmide clássica chama de "component
+  test" - mas pensando no contexto do React, é
+  "integração de componentes entre si").
+- **E2E** - topo, poucos e preciosos.
+
+A diferença prática: o "testing trophy" dá mais
+peso a integration que a pirâmide clássica. Faz
+sentido em React, onde o valor de testar o
+componente isolado é menor que testar o
+componente + sua interação real com o resto.
+
+Em 2026, as duas metáforas coexistem. A pirâmide
+é a forma "didática" de começar, o trophy é a
+forma "refinada" depois que você já domina as
+camadas.
+
+**ROI por camada.** Cada teste tem um custo (tempo
+pra escrever + tempo pra rodar) e um benefício
+(quantos bugs ele pega). A regra prática:
+
+| Camada       | Custo/escrita | Custo/execução | Benefício           | Quando usar                                |
+| ------------ | ------------- | -------------- | ------------------- | ------------------------------------------ |
+| Unit         | Baixo         | ms             | Lógica isolada      | Funções puras, hooks, utils                |
+| Component    | Médio         | s              | UI e interação      | Componente React com estado/evento         |
+| E2E          | Alto          | s-min          | Fluxo de usuário    | Smoke test, fluxo crítico de negócio       |
+| Visual       | Médio         | s              | Mudança CSS         | Componentes de design system, hero pages   |
+| A11y         | Baixo-médio   | s              | Barreiras WCAG      | Toda página, todo componente interativo    |
+
+**Quando quebrar a pirâmide.** Tem casos legítimos
+onde a proporção inverte:
+
+- **App de 1 página** (landing, single-form) -
+  poucos unit, poucos component, e 1-2 E2E
+  cobrem tudo.
+- **App crítico de negócio** (banco, saúde) - o
+  ROI de E2E é maior porque o custo de um bug é
+  altíssimo. A pirâmide fica "mais gorda no topo".
+- **MVP descartável** (projeto de 2 semanas) -
+  foca em E2E e ignora unit. Não vale o
+  investimento em cobertura fina.
+
+A regra continua: **não inverta por preguiça**.
+"Tem 1000 E2E porque unit é chato de escrever" é
+sinal de alerta.
+
+**O que teste NÃO é.** Saber o que teste **não**
+faz é tão importante quanto saber o que faz:
+
+- **Não substitui QA humano** - teste pega bug
+  previsível (regra de negócio, edge case).
+  Teste não pega "esse fluxo confunde o usuário".
+- **Não substitui revisão de código** - code
+  review pega legibilidade, naming, design
+  ruim. Teste não.
+- **Não é prova de corretude** - 100% de
+  cobertura significa "todo código foi executado
+  em algum teste", não "todo código está
+  correto". Cobertura sem asserts é theater.
+- **Não é Performance** - teste não diz se o
+  app é rápido. Lighthouse / Core Web Vitals
+  dizem.
+
+## Aprofundamento 🟡
+
+**Custo real de E2E: por que poucos.** O E2E é
+a camada mais "sedutora" ("testa o app inteiro!")
+mas a mais cara. Razões:
+
+- **Flakiness** - E2E é sensível a timing
+  (clica antes do botão estar visível, fetch
+  não voltou, animação no meio). Cada teste
+  flake é um "ignore" ou um "retry" - degrada
+  a confiança.
+- **Velocidade** - 1 E2E de 5 segundos não é
+  problema. 50 E2E de 5s = 4 minutos só de
+  E2E, fora o resto. CI fica caro (tempo +
+  minutos de GH Actions).
+- **Custo de manutenção** - mudou a UI? Mexeu
+  no seletor? Quebrou o E2E. E2E precisa
+  ser "ancorado" em algo estável (papel ARIA,
+  test ID estável, sem classe CSS aleatória).
+- **Custo de debug quando falha** - E2E que
+  falhou no CI: você recebe "element not
+  found". Sem trace/screenshot, é caça ao
+  tesouro. Playwright resolveu isso com trace
+  viewer (veremos no nó 4).
+
+A regra: 5-10 E2E bem escolhidos, cobrindo os
+**fluxos críticos de negócio** (signup, login,
+checkout). O resto vai em unit e component.
+
+**Cobertura: o que medir.** Coverage é a métrica
+mais famosa e mais mal usada. "80% de coverage"
+não diz nada se os 20% que faltam são o caminho
+feliz. A forma útil de olhar:
+
+- **Line coverage** - % de linhas executadas.
+  Métrica padrão, fácil de medir. Mentirosa:
+  `if (x) { y }` pode ter 100% coberto sem
+  testar o `else`.
+- **Branch coverage** - % de branches (if/else,
+  ternário, switch). Mais útil: garante que
+  caminhos de erro foram exercitados.
+- **Function coverage** - % de funções chamadas.
+  Útil pra detectar "dead code".
+
+A regra prática: 70-80% de **branch** coverage
+em código novo é o alvo saudável. Não é dogma -
+times maduros ficam em 60%, times em crise
+precisam de 90% pra refatorar com segurança.
+
+Mais importante que o número: **o caminho crítico
+de negócio tem 100%**. Se o cálculo de imposto
+do checkout não tem teste, cobertura 95% não
+importa.
+
+**A regra "testa comportamento, não
+implementação".** O erro mais comum de quem
+começa a testar: testar **como** o código faz,
+em vez de **o que** ele faz.
+
+```ts
+// RUIM: testa a implementação
+test("useState é chamado com valor inicial", () => {
+  const setState = vi.fn();
+  // ... algo que verifica setState foi chamado ...
+});
+
+// BOM: testa o comportamento
+test("input mostra o valor digitado", () => {
+  render(<Input />);
+  const input = screen.getByRole("textbox");
+  await userEvent.type(input, "Ana");
+  expect(input).toHaveValue("Ana");
+});
+```
+
+O primeiro teste passa mesmo se o componente
+estiver com bug (a chamada foi feita, mas o
+valor não chegou no DOM). O segundo só passa
+se o usuário **vê** o que digitou. O segundo
+é o que importa.
+
+Isso é a base do "queries por papel" do Testing
+Library (nó 3) e do "locator por papel" do
+Playwright (nó 4) - testar pelo que o usuário
+vê/interage, não pela implementação.
+
+**Teste como documentação.** Um teste bem escrito
+é a melhor forma de mostrar como uma função/
+componente é usado:
+
+```ts
+describe("calcularDesconto", () => {
+  it("retorna 0 para valor zero", () => { /* ... */ });
+  it("retorna 10% para valor acima de 100", () => { /* ... */ });
+  it("retorna 20% para valor acima de 500", () => { /* ... */ });
+  it("arredonda pra 2 casas decimais", () => { /* ... */ });
+});
+```
+
+Quem lê esse teste entende o comportamento da
+função sem ler o código. Compare com a doc
+tradicional (que pode mentir se o código mudar
+e ninguém atualizar).
+
+## Pra quem quer ir além 🔴
+
+**A história em uma linha.** Programação estruturada
+ganhou "unit test" no Smalltalk nos anos 70. Java
+popularizou JUnit (~2000). A "pirâmide de testes"
+veio com Mike Cohn em 2009 (Succeeding with Agile).
+A comunidade JS pulou de QUnit (2008) → Mocha (2011)
+→ Jest (2014) → Vitest (2021). Em React, Enzyme
+dominou até 2020; Testing Library tomou o lugar
+(~2018, foco em "queries por papel"). Em E2E,
+Selenium foi rei por ~10 anos; Cypress (2017) e
+Playwright (2020) mudaram o jogo. Em 2026, Vitest
++ Testing Library + Playwright é o stack padrão
+em React.
+
+**Testing trophy vs. testing pyramid: a
+diferença real.** O trophy de Kent C. Dodds dá
+mais peso a "integration" (no sentido de React:
+componentes + dependências + fluxo curto). A
+pirâmide clássica dá mais peso a unit. Em prática:
+
+- Se sua app é **80% lógica + 20% UI** (SaaS
+  com muita regra de negócio), a pirâmide
+  clássica funciona.
+- Se sua app é **80% UI + 20% lógica** (e-commerce,
+  dashboard), o trophy funciona melhor - testar
+  o componente + sua interação pega mais bugs
+  do que testar a função pura de cálculo.
+
+**Por que 100% coverage é má ideia.** Os
+engenheiros do Google publicaram (em 2019, no
+blog de testing deles) que 100% coverage **não**
+vale o esforço. A partir de ~80% de branch
+coverage, o retorno marginal é baixo: você está
+gastando tempo escrevendo teste de `if (debug)`
+e de getters triviais, e não de fluxo de negócio.
+O tempo seria melhor investido em E2E do fluxo
+crítico, ou em testes de acessibilidade, ou em
+reduzir flakiness de E2E existente.
+
+**Mutation testing: o teste do teste.** Stryker
+(e antes, PIT pra Java) é uma meta-técnica:
+muda uma linha do código de propósito (uma
+mutação - ex: `+` vira `-`, `>` vira `>=`),
+roda os testes, e vê se algum teste pega. Se
+nenhum teste falha com a mutação, o teste não
+está cobrindo aquela lógica. É o jeito de saber
+se "100% coverage" significa algo. Custo alto
+de CI (3-5x o tempo de teste normal), e a
+configuração inicial é chata. Mencionado como
+"próximo passo" - pertence a uma trilha futura
+de qualidade avançada.
+
+**Leitura recomendada:**
+
+- [Kent C. Dodds - The Testing Trophy](https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications) - o manifesto do testing trophy, com exemplos.
+- [Martin Fowler - The Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html) - a versão canônica da pirâmide.
+- [Google Testing Blog - Just Say No to More E2E Tests](https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html) - por que E2E em excesso é mau.
+
+> Dica: o erro mais comum de quem começa a
+> testar é inverter a pirâmide - escrever
+> E2E primeiro porque "testa tudo". O caminho
+> certo é o oposto: começa com unit (mais
+> rápido de feedback, mais fácil de manter),
+> sobe pra component quando a lógica fica
+> interativa, e termina com E2E nos fluxos
+> críticos. Cada camada existe por um motivo.
+
+No próximo nó, vamos abrir o **Vitest** de verdade:
+o test runner padrão em 2026, com setup, matchers,
+mocks, e o mínimo pra testar uma função pura
+e um hook React.
+
+<Quiz
+  question="Qual é a ordem da pirâmide de testes, do mais rápido/barato pro mais lento/caro?"
+  options={[
+    {
+      text: "Unit (base) -> Component (meio) -> E2E (topo). Unit é o mais rápido e o mais barato, E2E é o mais lento e o mais caro.",
+      correct: true,
+      explanation:
+        "A pirâmide tem unit na base larga (muitos testes, ms cada), component no meio (alguns, s cada), e E2E no topo estreito (poucos, s-min cada). A proporção reflete o ROI: quanto mais alto, mais caro, então menos testes. Inverter (muito E2E, pouco unit) é o 'ice cream cone' - caro e fraco.",
+    },
+    {
+      text: "E2E (base) -> Component (meio) -> Unit (topo). E2E cobre mais, então é o caminho padrão.",
+      correct: false,
+      explanation:
+        "É o oposto - e o erro mais comum. E2E no topo (poucos, caros) é o caminho certo. Colocar E2E na base é o 'ice cream cone' (também chamado de 'testing pyramid inverted'): poucos testes, caros, frágeis, e a maioria dos bugs passa.",
+    },
+    {
+      text: "Não importa a ordem - o que importa é ter muitos testes.",
+      correct: false,
+      explanation:
+        "A ordem importa porque o custo é muito diferente. 1 E2E pode custar o mesmo que 100 unit. Sem proporção, você gasta orçamento em E2E caro quando unit barato pegaria o mesmo bug. A regra é ter MAIS unit e MENOS E2E.",
+    },
+  ]}
+/>

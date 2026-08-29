@@ -1,0 +1,436 @@
+---
+id: visual-regression
+title: "Visual regression: Chromatic, Percy, toHaveScreenshot do Playwright"
+resources:
+  - title: "Playwright - Screenshots (oficial, EN)"
+    url: https://playwright.dev/docs/screenshots
+    lang: en
+    type: doc
+    free: true
+  - title: "Chromatic - Visual Testing for Storybook (oficial, EN)"
+    url: https://www.chromatic.com/docs/
+    lang: en
+    type: doc
+    free: true
+  - title: "BrowserStack Percy - Visual Testing Basics (oficial, EN)"
+    url: https://www.browserstack.com/docs/percy/overview/visual-testing-basics
+    lang: en
+    type: doc
+    free: true
+---
+
+E2E garante que o **fluxo** funciona. Unit garante
+que a **lógica** funciona. Mas existe um buraco no
+meio: **a aparência**. Você muda um CSS, o teste
+passa (porque o botão ainda responde ao clique),
+mas o botão agora está roxo em vez de azul, ou o
+layout quebrou em mobile, ou a fonte sumiu. **Visual
+regression testing** preenche esse buraco: compara
+screenshots do app com uma baseline aprovada e
+detecta mudanças visuais.
+
+A regra: visual regression **não substitui** E2E.
+É uma camada extra que pega o que o E2E não vê.
+Use em componentes de UI críticos (design system,
+hero pages, formulários), não em toda página.
+
+## O essencial 🟢
+
+**O que é visual regression.** Você tira um
+screenshot do app, e compara com um screenshot
+anterior (a "baseline"). Se forem diferentes
+(acima de um threshold), o teste falha:
+
+```ts
+// E2E normal: checa comportamento
+await expect(page.getByRole("button")).toBeVisible();
+
+// Visual: checa aparência
+await expect(page).toHaveScreenshot("home.png");
+```
+
+A diferença: o primeiro passa se o botão está
+na tela (não importa a cor). O segundo falha
+se a **imagem** do botão mudou em pixels.
+
+**Quando usar.** A regra do "onde vale a pena":
+
+- ✅ **Sim** - Design system (componentes reutilizáveis
+  com muitas variantes).
+- ✅ **Sim** - Páginas com identidade visual forte
+  (hero, landing, página de produto).
+- ✅ **Sim** - Páginas de marketing/brand.
+- ❌ **Não** - Dashboards densos com dados
+  dinâmicos (cada screenshot é diferente, baseline
+  vira lixo).
+- ❌ **Não** - Páginas com conteúdo variável
+  (anúncios, feed de notícias, recomendação
+  personalizada).
+- ❌ **Não** - Apps com tema dark/light múltiplo
+  (cada tema precisa de suite separada).
+
+A heurística: **se mudar 1 pixel no CSS te
+preocupa em produção, vale screenshot**. Se
+muda toda hora e ninguém reclama, não vale.
+
+**Os 3 caminhos pra visual regression em 2026:**
+
+1. **Chromatic** (Storybook-driven) - publica
+   Storybook na nuvem da Chromatic, screenshot
+   de cada story, baseline versionada, review
+   visual inline. Pago (tem free tier limitado).
+2. **Percy** (BrowserStack) - similar ao
+   Chromatic, independente de Storybook, com
+   SDKs pra várias plataformas. Pago.
+3. **Playwright `toHaveScreenshot`** (nativo) -
+   integrado ao Playwright, self-hosted, free.
+   Funciona bem em apps pequenos/médios.
+
+A escolha depende do tamanho do design system
+e do orçamento. App pequeno: Playwright
+nativo. Design system grande: Chromatic.
+Múltiplas plataformas: Percy.
+
+**Setup com `toHaveScreenshot` do Playwright.**
+É o caminho mais simples - já vem com o
+Playwright:
+
+```ts
+// tests/visual/home.spec.ts
+import { test, expect } from "@playwright/test";
+
+test("home tem aparência esperada", async ({ page }) => {
+  await page.goto("/");
+
+  // Tira screenshot da página inteira
+  await expect(page).toHaveScreenshot("home.png");
+});
+```
+
+Primeira execução: cria a baseline em
+`tests/visual/home.spec.ts-snapshots/home.png`.
+Execuções seguintes: compara com a baseline.
+
+**Quando falha.** Se alguém mudou o CSS da home
+sem querer:
+
+```
+Error: expect(page).toHaveScreenshot("home.png")
+
+  Expected: tests/visual/home.spec.ts-snapshots/home.png
+  Received: tests/visual/home.spec.ts-snapshots/home-actual.png
+  Diff:      tests/visual/home.spec.ts-snapshots/home-diff.png
+```
+
+O Playwright gera 3 imagens: **expected** (baseline),
+**received** (atual), **diff** (diferença em
+vermelho). Você abre o diff no preview, vê o que
+mudou, e decide:
+- **Mudança intencional** (`--update-snapshots`
+  ou `-u`) - atualiza a baseline.
+- **Mudança não intencional** - conserta o CSS.
+
+```bash
+# Atualiza baselines após mudança aprovada
+pnpm exec playwright test --update-snapshots
+```
+
+**Comparação por elemento, não página inteira.**
+Screenshot de página inteira é barulhento (uma
+mudança num footer quebra 20 testes de páginas
+diferentes). O Playwright destrava screenshot de
+**elemento específico**:
+
+```ts
+test("botão Salvar tem aparência esperada", async ({ page }) => {
+  await page.goto("/login");
+
+  const botao = page.getByRole("button", { name: /salvar/i });
+  await expect(botao).toHaveScreenshot("botao-salvar.png");
+});
+```
+
+Agora cada componente tem seu screenshot. Mudou
+o footer da home? Não quebra o teste do botão.
+
+**`mask` pra dados dinâmicos.** Tem partes da
+página que mudam toda hora (data, hora, avatar,
+publicidade). Pra evitar falso positivo:
+
+```ts
+await expect(page).toHaveScreenshot("home.png", {
+  mask: [page.locator(".data-dinamica"), page.locator(".anuncio")],
+  // Anima a região: tira 1px de tolerância em mudanças pequenas
+  maxDiffPixels: 100,
+});
+```
+
+`mask` pinta a região de cor sólida antes de
+comparar. `maxDiffPixels` é tolerância - 100 pixels
+de diferença passa (anti-aliasing, sub-pixel
+rounding).
+
+**Threshold de similaridade.** Por padrão, o
+Playwright exige **100% de match** (qualquer
+pixel diferente falha). Pra permitir pequena
+variação:
+
+```ts
+await expect(page).toHaveScreenshot("home.png", {
+  // Tolerância: 0.2% de pixels podem ser diferentes
+  maxDiffPixelRatio: 0.002,
+  // Threshold por pixel: RGB pode variar até 10/255
+  threshold: 0.1,
+});
+```
+
+A regra: `threshold: 0.1` cobre anti-aliasing
+(variação de sub-pixel por causa do rendering).
+`maxDiffPixelRatio: 0.002` (0.2%) cobre mudanças
+imperceptíveis. Acima disso, é mudança real.
+
+## Aprofundamento 🟡
+
+**Chromatic: setup com Storybook.** O Chromatic
+roda dentro do Storybook:
+
+```bash
+pnpm add -D chromatic
+pnpm exec chromatic --project-token=<token>
+```
+
+Workflow:
+1. Storybook tem `*.stories.tsx` pra cada
+   componente.
+2. Chromatic faz screenshot de cada story em
+   diferentes viewports.
+3. Diff visual no dashboard da Chromatic.
+4. Você aprova/rejeita mudanças inline.
+5. CI bloqueia merge se tem mudança visual
+   não aprovada.
+
+Vantagem do Chromatic: **review visual por
+ser humano**. Você vê o diff no browser, não
+só "pixels mudaram". Ideal pra design system
+grande com muitas variantes (10+ botões,
+5+ inputs, etc).
+
+**Percy: setup com CLI.** O Percy é independente
+de Storybook:
+
+```bash
+pnpm add -D @percy/cli @percy/playwright
+```
+
+```ts
+import { test } from "@playwright/test";
+import percySnapshot from "@percy/playwright";
+
+test("home", async ({ page }) => {
+  await page.goto("/");
+  await percySnapshot(page, "Home");
+});
+```
+
+Percy faz upload pro BrowserStack, gerencia
+baseline na nuvem, mostra diff visual. Vantagem
+sobre Playwright nativo: **dashboards prontos**,
+**integração com PR comment** (bot do Percy
+posta o diff no PR), e **multi-platform**
+(Chrome, Firefox, Safari, mobile).
+
+**Screenshot por viewport (responsive).** Em
+2026, mobile é 60%+ do tráfego. Screenshots
+em 3 viewports capturam regressão visual
+em diferentes tamanhos:
+
+```ts
+test.use({ viewport: { width: 375, height: 667 } });  // iPhone SE
+test("home mobile", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveScreenshot("home-mobile.png");
+});
+```
+
+Ou em Playwright projects:
+
+```ts
+// playwright.config.ts
+projects: [
+  { name: "desktop-chrome", use: { ...devices["Desktop Chrome"] } },
+  { name: "mobile-safari", use: { ...devices["iPhone 13"] } },
+],
+```
+
+**Screenshot por estado (interação).** Pra
+capturar **estados** do componente (hover,
+disabled, loading):
+
+```ts
+test("botão em diferentes estados", async ({ page }) => {
+  await page.goto("/form");
+
+  // Estado normal
+  const botao = page.getByRole("button", { name: /salvar/i });
+  await expect(botao).toHaveScreenshot("botao-default.png");
+
+  // Estado hover
+  await botao.hover();
+  await expect(botao).toHaveScreenshot("botao-hover.png");
+
+  // Estado disabled
+  await page.getByLabel("Nome").fill("Ana"); // preenche pra desabilitar
+  await expect(botao).toHaveScreenshot("botao-disabled.png");
+});
+```
+
+Cada estado vira um arquivo de baseline.
+Mudou só o hover? Só o `botao-hover.png` precisa
+ser aprovado.
+
+**Animação e `animations: "disabled"`.** Por
+padrão, o Playwright **não desabilita animações**
+em screenshot. Pra screenshot estável:
+
+```ts
+test.use({
+  // Desabilita animações de CSS (transform, opacity, transition)
+  // em vez de esperar elas acabarem
+  use: {
+    ...devices["Desktop Chrome"],
+    // Não é nativo - requer config extra:
+  },
+});
+
+// Ou no contexto do teste:
+test("home sem animações", async ({ page }) => {
+  await page.goto("/");
+
+  // Injeta CSS que desabilita animações
+  await page.addStyleTag({
+    content: `*, *::before, *::after { animation: none !important; transition: none !important; }`,
+  });
+
+  await expect(page).toHaveScreenshot("home.png");
+});
+```
+
+Sem isso, screenshot pode pegar o componente
+"no meio" da animação (fade a 50%, scale 0.8,
+etc) e dar falso positivo.
+
+**Gerenciamento de baselines em time.** Em
+projeto com 3+ devs, baselines viram problema:
+dev A aprova mudança, dev B não atualizou local,
+CI falha. Soluções:
+
+- **CI atualiza sozinho** em merge na main
+  (Chromatic faz isso).
+- **PR comment** com diff visual (Percy faz).
+- **Re-run on main** - Playwright re-roda na
+  main após merge, atualiza baseline se a
+  mudança foi mergeada.
+
+Em projeto pequeno (1-2 devs), `git diff` na
+pasta `*-snapshots/` é suficiente.
+
+## Pra quem quer ir além 🔴
+
+**A "dívida" do visual regression: baselines
+frágeis.** O problema mais comum em projeto com
+visual regression maduro: as baselines viram
+"sagradas" e qualquer mudança visual vira
+"atualizar baseline" sem pensar. Aí você perde
+o sinal (mudanças visuais ruins passam) e ganha
+trabalho braçal.
+
+A solução cultural: **visual regression não é
+"o que o app parece hoje"**. É "o que o time
+decidiu que o app deveria parecer". Cada baseline
+é uma decisão de design que precisa ser aprovada
+explicitamente.
+
+Em time com boa cultura de design, isso funciona
+bem. Em time sem designer dedicado, vira mais
+trabalho do que valor.
+
+**Visual regression com IA: Applitools.** Applitools
+usa IA pra comparar screenshots com "tolerância
+semântica" - ignora mudanças cosméticas (fonte
+renderizou diferente no Linux) mas pega mudanças
+de layout reais (botão que estava no centro foi
+pra esquerda). Vale o preço em design system
+grande. Em app pequeno, é overkill.
+
+**Snapshot vs visual regression: o que cada
+um pega.** Confusão comum:
+
+- **Snapshot de DOM** (Jest/Vitest) - captura
+  a estrutura HTML/CSS class. Não pega mudança
+  visual se a estrutura é a mesma (ex: cor
+  mudou mas a classe é a mesma).
+- **Visual regression** (Playwright/Chromatic) -
+  captura pixels. Pega qualquer mudança visual,
+  mesmo com a mesma estrutura.
+
+Recomendação em 2026: **evite snapshot de DOM
+de componente** (vira teatro, como vimos no nó 2).
+Use **visual regression pra UI crítica** (design
+system, hero pages). O resto, teste com Testing
+Library (comportamento).
+
+**Playwright + Chromatic: o combo.** Time grande
+costuma usar **ambos**:
+
+- **Playwright E2E** - fluxos de usuário, "isso
+  funciona de verdade".
+- **Chromatic/Percy** - visual regression, "isso
+  parece certo".
+- **Testing Library** - component test, "esse
+  componente interage certo".
+- **Vitest** - unit, "essa função calcula certo".
+
+Cada ferramenta tem um papel. Misturar é
+produtivo, não redundante.
+
+**Leitura recomendada:**
+
+- [Playwright - Screenshots](https://playwright.dev/docs/screenshots) - a doc oficial, com exemplos de `toHaveScreenshot`.
+- [Chromatic - Documentation](https://www.chromatic.com/docs/) - se você tem Storybook, vale o tour.
+- [BrowserStack Percy - Visual Testing Basics](https://www.browserstack.com/docs/percy/overview/visual-testing-basics) - o "all-in-one" visual regression.
+
+> Dica: visual regression **não substitui**
+> revisão humana. O Playwright diz "pixels
+> mudaram", mas o humano diz "essa mudança
+> é boa ou ruim?". Em time sem designer,
+> use com parcimônia - o custo de manter
+> baseline pode ser maior que o valor.
+
+No próximo nó, vamos ver **testes de acessibilidade
+automatizados**: axe-core, jest-axe, pa11y - e
+o que essas ferramentas **não** pegam (porque
+a11y vai além de regras automatizáveis).
+
+<Quiz
+  question="Quando vale a pena usar visual regression testing?"
+  options={[
+    {
+      text: "Em componentes de UI críticos (design system, hero pages) onde mudar 1 pixel no CSS importa em produção.",
+      correct: true,
+      explanation:
+        "Visual regression pega mudanças visuais que E2E não vê. Vale em UI crítica (design system, landing, página de produto). NÃO vale em dashboards com dados dinâmicos, feed com conteúdo variável, ou páginas com anúncios - a baseline vira lixo porque cada screenshot é diferente.",
+    },
+    {
+      text: "Em toda página da app, pra ter cobertura visual completa.",
+      correct: false,
+      explanation:
+        "É o oposto do caminho certo. Visual regression em 100% das páginas custa caro (manutenção de baseline, CI time) e gera muito falso positivo (uma mudança num header quebra 50 testes). Comece com 5-10 componentes críticos, não 100 páginas.",
+    },
+    {
+      text: "Em qualquer projeto - é a forma mais barata de garantir qualidade visual.",
+      correct: false,
+      explanation:
+        "Não é a forma mais barata. Em projeto pequeno, o custo de manter baseline supera o valor. E em apps com muito conteúdo dinâmico, é praticamente inviável (cada screenshot é diferente). Vale em design system grande, UI crítica, e apps com identidade visual forte. Em outros contextos, E2E + Testing Library cobrem 90% do que importa.",
+    },
+  ]}
+/>
