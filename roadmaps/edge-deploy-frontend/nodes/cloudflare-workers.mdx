@@ -1,0 +1,683 @@
+---
+id: cloudflare-workers
+title: "Cloudflare Workers: V8 isolate, KV, R2, D1, Durable Objects"
+resources:
+  - title: "Cloudflare Workers - Get Started (EN)"
+    url: https://developers.cloudflare.com/workers/get-started/guide/
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare Workers - KV (EN)"
+    url: https://developers.cloudflare.com/workers/runtime-apis/cache/
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare Durable Objects (EN)"
+    url: https://developers.cloudflare.com/durable-objects/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce ja' entende o pipeline (build →
+output → runtime → CDN). Agora **a
+implementacao pratica**: como deployar
+**edge functions** em **Cloudflare
+Workers** - o runtime V8 isolate, **KV**
+(key-value store), **R2** (object
+storage), **D1** (SQLite on edge), e
+**Durable Objects** (stateful). **Esse
+no cobre Cloudflare Workers em
+profundidade**.
+
+Cloudflare Workers e' **o edge runtime
+mais usado** em 2026. **Diferenca
+crucial** vs serverless (Lambda):
+**V8 isolate** (NAO container) =
+**cold start < 5ms**, **scale
+infinita**, **custo 1/3** do Lambda.
+**Limitacao**: **CPU max 10-50ms**
+(boa pra I/O, ruim pra CPU heavy).
+
+Voce sai de "edge = boa ideia" pra
+"deployo edge function com KV, R2,
+D1, Durable Objects".
+
+## O essencial 🟢
+
+**Wrangler - a CLI do Cloudflare.**
+
+```bash
+# Install
+pnpm add -g wrangler
+
+# Login
+wrangler login
+
+# Init
+wrangler init meu-worker
+# Cria: src/index.ts, wrangler.toml, package.json
+
+# Dev
+wrangler dev
+# Local em http://localhost:8787
+
+# Deploy
+wrangler deploy
+# Deploy no edge global
+```
+
+**`wrangler.toml` - config do Worker.**
+
+```toml
+name = "meu-worker"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV namespace
+[[kv_namespaces]]
+binding = "MY_KV"
+id = "abc123..."
+
+# R2 bucket
+[[r2_buckets]]
+binding = "MY_BUCKET"
+bucket_name = "meu-bucket"
+
+# D1 database
+[[d1_databases]]
+binding = "DB"
+database_name = "meu-db"
+database_id = "xyz789"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "COUNTER"
+class_name = "Counter"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Counter"]
+```
+
+**Hello World - Worker basico.**
+
+```ts
+// src/index.ts
+export interface Env {
+  MY_KV: KVNamespace;
+  MY_BUCKET: R2Bucket;
+  DB: D1Database;
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/api/hello") {
+      return new Response(JSON.stringify({ message: "Hello from edge!" }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+
+    return new Response("Not found", { status: 404 });
+  },
+};
+```
+
+**Bindings - "conectar" servicos no
+Worker.** **Bindings** sao **variaveis
+globais** que dao acesso a KV, R2, D1,
+etc. **Voce NAO** cria credenciais -
+**o Worker e' trusted** (Cloudflare
+autentica via `wrangler.toml`).
+
+**KV - key-value store global.**
+
+```ts
+// PUT
+await env.MY_KV.put("user:123", JSON.stringify({ name: "Ana" }));
+await env.MY_KV.put("user:123", value, { expirationTtl: 3600 }); // 1h TTL
+
+// GET
+const value = await env.MY_KV.get("user:123");
+const data = JSON.parse(value);
+
+// LIST (com prefix)
+const list = await env.MY_KV.list({ prefix: "user:" });
+// [{ key: "user:123" }, { key: "user:456" }, ...]
+
+// DELETE
+await env.MY_KV.delete("user:123");
+```
+
+**KV use cases**: session storage,
+feature flags, rate limiting, config,
+cache de API responses. **Latencia**:
+**eventually consistent** (~60s
+global), **low latency reads** (cache
+em edge). **NAO** use pra: dados
+criticos que precisam ser
+imediamente consistentes global
+(use D1 ou Durable Objects).
+
+**R2 - object storage (S3-compat).**
+
+```ts
+// PUT
+await env.MY_BUCKET.put("uploads/image.png", imageBuffer, {
+  httpMetadata: { contentType: "image/png" },
+});
+
+// GET
+const object = await env.MY_BUCKET.get("uploads/image.png");
+if (object) {
+  return new Response(object.body, {
+    headers: {
+      "content-type": object.httpMetadata?.contentType || "application/octet-stream",
+    },
+  });
+}
+
+// LIST
+const list = await env.MY_BUCKET.list({ prefix: "uploads/" });
+// { objects: [{ key, size, uploaded }], truncated: false }
+```
+
+**R2 use cases**: uploads de user,
+imagens, videos, backups, arquivos
+estaticos. **S3-compatible** (migre
+facil). **Egress gratis** (diferenca
+de S3).
+
+**D1 - SQLite on the edge.**
+
+```ts
+// Query
+const result = await env.DB.prepare(
+  "SELECT * FROM users WHERE id = ?"
+).bind(123).first();
+
+// Multi-row
+const { results } = await env.DB.prepare(
+  "SELECT * FROM users WHERE country = ?"
+).bind("BR").all();
+
+// Insert
+await env.DB.prepare(
+  "INSERT INTO users (id, name) VALUES (?, ?)"
+).bind(123, "Ana").run();
+
+// Migration
+wrangler d1 migrations create meu-db create_users_table
+wrangler d1 migrations apply meu-db
+```
+
+**D1 use cases**: app data, user
+profiles, content (blog posts, products).
+**SQLite** (NAO Postgres). **Read-
+replica global** (5 replicas, 1
+writer). **Latencia**: reads < 10ms
+(edge), writes < 100ms (central).
+
+**Durable Objects - stateful no edge.**
+
+```ts
+// Counter como Durable Object
+export class Counter {
+  state: DurableObjectState;
+  value: number = 0;
+
+  constructor(state: DurableObjectState) {
+    this.state = state;
+    // Restore de storage (1x na init)
+    this.state.blockConcurrencyWhile(async () => {
+      this.value = (await this.state.storage.get("value")) || 0;
+    });
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    if (request.url.endsWith("/increment")) {
+      this.value++;
+      await this.state.storage.put("value", this.value);
+      return new Response(this.value.toString());
+    }
+    if (request.url.endsWith("/get")) {
+      return new Response(this.value.toString());
+    }
+    return new Response("Not found", { status: 404 });
+  }
+}
+```
+
+**Durable Objects use cases**:
+**coordenacao** (locks, semaforos),
+**WebSocket stateful**, **CRDTs** (real-
+time collab), **rate limiters**,
+**counter**. **Unico Durable Object por
+"id"** (ex: 1 DO por user, 1 DO por
+sala). **State consistente** dentro
+do DO.
+
+**Crons (Triggers).**
+
+```toml
+[triggers]
+crons = ["0 */6 * * *"]  # every 6 hours
+```
+
+```ts
+export default {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    // Run cleanup, generate report, etc
+    await env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(Date.now()).run();
+  },
+};
+```
+
+**Use**: cleanup, scheduled reports,
+periodic sync.
+
+**Queues (Async processing).**
+
+```ts
+// Producer
+await env.QUEUE.send({ userId: 123, action: "send-email" });
+
+// Consumer
+export default {
+  async queue(batch: MessageBatch, env: Env) {
+    for (const msg of batch.messages) {
+      await processMessage(msg.body, env);
+      msg.ack();
+    }
+  },
+};
+```
+
+**Use**: processamento async (envio
+de email, webhook, image processing).
+
+**Workers AI - LLM no edge.**
+
+```ts
+import { run } from "@cloudflare/ai";
+
+// Llama 3, Mistral, etc rodando no edge
+const response = await run(
+  "@cf/meta/llama-3-8b-instruct",
+  { prompt: "Explain quantum computing in 1 sentence" }
+);
+```
+
+**Use**: chatbot, completion,
+embeddings **sem precisar de OpenAI
+API**. **Custo**: included em Workers
+AI tier.
+
+**Workers Analytics Engine - metricas
+custom.**
+
+```ts
+// Write data point
+env.ANALYTICS.writeDataPoint({
+  blobs: [userId, country],
+  doubles: [lcp, cls, inp],
+  indexes: [country],
+});
+```
+
+**Use**: custom metrics (RUM,
+analytics, business events).
+
+**Secrets.**
+
+```bash
+wrangler secret put API_KEY
+# Type the secret
+```
+
+```ts
+const apiKey = env.API_KEY;  // доступна
+```
+
+**NAO** hardcode secrets. **Use**
+`wrangler secret`.
+
+**KV consistencia eventual.** KV
+tem **eventual consistency**: PUT
+em SP, GET em Tokyo em < 60s pode
+retornar valor antigo. **Use D1 ou
+Durable Objects** se precisa de
+**strong consistency**.
+
+**D1 read replication.** D1 tem
+**5 read replicas globais**. Reads
+sao rapidos no edge, writes vao pro
+**primary** (central). **Latencia
+de write**: 50-200ms (cross-region).
+
+**Limites de Worker.**
+
+- **CPU time:** 10ms (free) a 30s
+  (paid).
+- **Memory:** 128MB.
+- **Request size:** 100MB.
+- **Response size:** sem limite
+  (streaming).
+- **Subrequests:** 50-1000 por
+  request.
+
+**Se excede CPU**, Worker **mata**.
+**Sem** 'unlimited CPU' como Node.
+**Use** pra I/O bound (fetch, KV, R2).
+
+**`nodejs_compat` - rodar codigo
+Node.** **Limitado**: Workers **NAO**
+suportam **todas** Node APIs. APIs
+basicas (Buffer, URL, fetch) sim.
+APIs avancadas (fs, child_process)
+nao. **Test sempre**.
+
+**Local dev com `wrangler dev`.**
+
+```bash
+wrangler dev
+# Local em http://localhost:8787
+# Roda em Node.js local (NAO Workers)
+# Bindings locais (KV, R2) sao simulados
+```
+
+**`wrangler dev --remote`** - usa
+bindings reais (KV, R2, D1) **mas roda
+localmente**.
+
+## Aprofundamento 🟡
+
+**Edge patterns: BFF (Backend for
+Frontend).** **BFF** = camada de
+edge entre **client** e **backend**.
+**Client nao chama** backend
+diretamente; chama **edge function**
+que agrega, valida, e **cachea**.
+
+```ts
+export default {
+  async fetch(request: Request, env: Env) {
+    const token = request.headers.get("Authorization");
+    const userId = await verifyToken(token, env);
+
+    // Aggrega 3 endpoints backend
+    const [profile, orders, prefs] = await Promise.all([
+      fetch(`${env.API_URL}/users/${userId}`).then((r) => r.json()),
+      fetch(`${env.API_URL}/users/${userId}/orders`).then((r) => r.json()),
+      fetch(`${env.API_URL}/users/${userId}/prefs`).then((r) => r.json()),
+    ]);
+
+    return new Response(JSON.stringify({ profile, orders, prefs }), {
+      headers: { "content-type": "application/json" },
+    });
+  },
+};
+```
+
+**BFF benefits**: auth centralizada,
+agregacao, cache, customizacao por
+cliente (mobile vs web).
+
+**Auth check no edge - latencia
+minima.** **User request** → **edge
+verifica JWT** (10ms) → se OK, **proxy
+pra backend**. **Latencia**: 10-30ms
+no edge + backend. **Sem edge**: 100-
+200ms (backend recebe request,
+verifica auth, processa).
+
+**A/B testing no edge.**
+
+```ts
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const variant = await env.MY_KV.get(`user:${userId}:variant`) || "control";
+    // ou random hash
+    // const variant = hash(userId) % 2 === 0 ? "A" : "B";
+
+    if (variant === "A") {
+      // logica A
+    } else {
+      // logica B
+    }
+
+    return new Response(/* response */);
+  },
+};
+```
+
+**Geo-redirect no edge.**
+
+```ts
+export default {
+  async fetch(request: Request, env: Env) {
+    const country = request.cf?.country || "US";
+
+    if (country === "BR") {
+      return Response.redirect("https://meusite.com/br/");
+    }
+    if (country === "DE") {
+      return Response.redirect("https://meusite.com/de/");
+    }
+    return fetch(request);  // proxy default
+  },
+};
+```
+
+**`request.cf`** tem **geolocation
+data**: country, city, continent,
+region, latitude/longitude, ASN, colo
+(datacenter).
+
+**Rate limiting com Durable Objects.**
+
+```ts
+export class RateLimiter {
+  requests: number[] = [];
+
+  constructor(state: DurableObjectState) {
+    this.state = state;
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const now = Date.now();
+    // Sliding window: 1 minute
+    this.requests = this.requests.filter((t) => now - t < 60_000);
+
+    if (this.requests.length >= 100) {
+      return new Response("Too many requests", { status: 429 });
+    }
+
+    this.requests.push(now);
+    return new Response("OK");
+  }
+}
+```
+
+**Rate limit** consistente **por
+user** ou **por IP**, escala
+globalmente.
+
+**Workers logs e observability.**
+
+```bash
+wrangler tail
+# Real-time logs do Worker em prod
+```
+
+**Workers Logs** (2024+) -
+**structured logs** searchable, free
+**30 days retention**. **Sentry**
+integration via SDK custom.
+
+**Custo de Cloudflare Workers.**
+
+- **Free tier:** 100K requests/dia.
+- **Paid:** $0.30/M requests +
+  $0.02/M CPU-ms.
+- **KV:** 100K reads/dia free.
+- **R2:** 10GB storage, 1M reads/dia
+  free. **Egress gratis** (vs S3).
+- **D1:** 5GB storage, 5B reads/dia
+  free, 50M writes/dia free.
+
+**Em 2026**, Workers e' **mais barato**
+que Lambda pra maioria dos casos
+(mesma escala, 1/3 do preco).
+
+## Pra quem quer ir mais alem 🔴
+
+**Workers for Platforms (multi-tenant).**
+**Cloudflare for Platforms** da'
+espaco pra deployar Workers de **multiplos
+tenants** (seus customers). Cada
+tenant tem **seu proprio Worker**
+**isolado**. Use pra: **SaaS
+platforms** que dao edge functions
+pros users.
+
+**Smart Placement (Workers
+2024+).** **Cloudflare** decide
+**automaticamente** em qual edge
+location rodar o Worker baseado em
+**latencia observada**. **Smart
+Placement** pode reduzir latencia
+em **30-50%** em apps com chamadas
+backend pesadas.
+
+**Hyperdrive (database proxy).**
+**Hyperdrive** e' **proxy de banco**
+que **cachea queries** no edge.
+**Postgres** + **Hyperdrive** =
+**reads 5-10x mais rapidos** em
+edge apps. **Use** pra apps com
+DB central (NAO D1).
+
+**Vectorize (vector database).**
+**Vectorize** = **vector DB** no
+edge pra **embeddings** (RAG, search,
+recommendation). **Use** com Workers
+AI pra **RAG apps** sem backend
+separado.
+
+**Pages (static + functions).**
+**Cloudflare Pages** = **Vercel-like**:
+**Git push** → **build** → **deploy**
+**static + functions**. **Excelente**
+pra **SPA + edge function** sem
+configurar CI manualmente.
+
+**Leitura recomendada:**
+
+- [Cloudflare Workers - Get Started](https://developers.cloudflare.com/workers/get-started/guide/) - setup basico, wrangler, primeiro deploy.
+- [Cloudflare Workers - KV](https://developers.cloudflare.com/workers/runtime-apis/cache/) - cache e KV namespace, limits, patterns.
+- [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) - stateful compute, coordination, WebSocket stateful.
+
+> Dica: o erro mais comum em Cloudflare
+> Workers e' **tratar como Node
+> server**. Workers **NAO** sao Node -
+> **V8 isolate** com **APIs limitadas**
+> (sem fs, sem child_process, sem
+> algumas libs). **`nodejs_compat`**
+> ajuda mas **nao e' Node completo**.
+> Antes de portar codigo Node pra
+> Worker, **leia** as **APIs
+> suportadas** e **teste local** com
+> `wrangler dev`. **Edge** = **tradeoff
+> latencia vs limitacoes**. **Use pra
+> I/O bound** (auth check, A/B test,
+> BFF, geo-redirect). **NAO use** pra
+> CPU heavy (ML, image processing).
+
+No proximo no, vamos **Vercel Edge**:
+Edge runtime do Vercel, ISR, on-demand
+revalidation, e como deployar **SPA
++ edge function** com **`vercel.json`**.
+
+<Checkpoint
+  challenge="Implemente a função `configurarWorker(opcoes)` que monta o objeto de bindings do Cloudflare Workers a partir das opcoes. Recebe: opcoes = { kv: string[] (nomes de KV namespaces, ex: ['USER_CACHE', 'SESSION']), r2: string[] (nomes de R2 buckets, ex: ['UPLOADS']), d1: string[] (nomes de D1 databases, ex: ['MAIN_DB']), durableObjects: string[] (nomes de Durable Objects, ex: ['COUNTER']) }. Retorna: { bindings: [{ type, name }] }. Regras: cada nome de kv vira { type: 'kv_namespace', name }; cada r2 vira { type: 'r2_bucket', name }; cada d1 vira { type: 'd1', name }; cada durableObject vira { type: 'durable_object_namespace', name }. Mantem a ordem dos arrays."
+  starterCode={`// Implemente configurarWorker(opcoes) que monta o objeto de
+// bindings do Cloudflare Workers a partir das opcoes.
+//
+// Schema de entrada:
+//   opcoes = {
+//     kv?: string[],
+//     r2?: string[],
+//     d1?: string[],
+//     durableObjects?: string[]
+//   }
+//
+// Schema de saida:
+//   { bindings: [{ type: string, name: string }] }
+//
+// Regras:
+// - cada string em kv vira { type: 'kv_namespace', name: string }
+// - cada string em r2 vira { type: 'r2_bucket', name: string }
+// - cada string em d1 vira { type: 'd1', name: string }
+// - cada string em durableObjects vira { type: 'durable_object_namespace', name: string }
+//
+// Mantem a ordem dos arrays.
+function configurarWorker(opcoes) {
+  return { bindings: [] };
+}
+
+const _r1 = configurarWorker({
+  kv: ['USER_CACHE', 'SESSION'],
+  r2: ['UPLOADS'],
+  d1: ['MAIN_DB'],
+  durableObjects: ['COUNTER']
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarWorker({
+  kv: ['CONFIG']
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = configurarWorker({});
+console.log(JSON.stringify(_r3));
+
+const _r4 = configurarWorker({
+  r2: ['ASSETS'],
+  durableObjects: ['PRESENCE']
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"bindings":[{"type":"kv_namespace","name":"USER_CACHE"},{"type":"kv_namespace","name":"SESSION"},{"type":"r2_bucket","name":"UPLOADS"},{"type":"d1","name":"MAIN_DB"},{"type":"durable_object_namespace","name":"COUNTER"}]}
+{"bindings":[{"type":"kv_namespace","name":"CONFIG"}]}
+{"bindings":[]}
+{"bindings":[{"type":"r2_bucket","name":"ASSETS"},{"type":"durable_object_namespace","name":"PRESENCE"}]}'
+  slug="edge-deploy-frontend"
+  nodeId="cloudflare-workers"
+/>
+
+<Quiz
+  question="Por que Cloudflare Workers (V8 isolate) tem cold start < 5ms enquanto AWS Lambda (container) tem 50-500ms, e quando isso importa?"
+  options={[
+    {
+      text: "V8 isolate = codigo roda em processo V8 pre-inicializado, sem criar container novo por request. Lambda = cria container novo (ou inicializa) por request = cold start. V8 isolate < 5ms, Lambda 50-500ms. Importa pra: latencia < 50ms (chat, real-time, auth), escala zero (apps com trafego esporadico), alto volume (custo). NAO importa pra: apps com warm container sempre (Lambda provisioned), CPU/memoria alta (V8 isolate limitado), Node APIs (V8 isolate NAO suporta tudo).",
+      correct: true,
+      explanation:
+        "A diferenca central: **V8 isolate** (Cloudflare Workers) e' **V8 sandbox compartilhado** entre todos os requests do mesmo worker type. **NAO cria container novo** - apenas **executa codigo no V8 pre-inicializado**. **Lambda** (AWS) **cria novo container** (ou inicializa) por request = **cold start 50-500ms**. **Vantagem V8 isolate**: cold start < 5ms, **custo 1/3** de Lambda, **scale infinita** (millions de requests simultaneos). **Limitacao V8 isolate**: CPU max 10-50ms, memoria 128MB, **sem Node APIs** completas, max duration 30s. **Quando importa**: (1) **latencia < 50ms** (chat, real-time, auth check), (2) **apps com trafego esporadico** (cold start mata UX), (3) **alto volume** (custo). **Quando NAO importa**: (1) apps **CPU/memoria alta** (ML, image processing) - V8 isolate nao aguenta, (2) **Node APIs** (libs que usam fs, child_process), (3) apps com **provisioned concurrency** (Lambda warm, cold start mitigated). **Use a ferramenta certa** pro caso. **V8 isolate** = **I/O bound, latencia critica**. **Lambda** = **CPU/memoria alta, Node APIs**.",
+    },
+    {
+      text: "Cold start nao importa - users nao percebem 200ms a mais.",
+      correct: false,
+      explanation:
+        "Falso. **Cold start importa** pra latencia < 100ms: (1) **real-time** (chat, collab) - 200ms e' **perceptivel** (UX ruim), (2) **first impression** (LCP, INP) - 200ms atrasa metricas de performance, (3) **mobile em 3G** - 200ms vira 1s. **Estudos** mostram que **100ms a mais** de latencia reduz **conversion em 7%** (Amazon, Google). **Cold start** nao e' so' performance tecnica - **impacta business**. **Use edge** quando latencia importa (chat, real-time, auth), **use Lambda** quando CPU/memoria pesada.",
+    },
+    {
+      text: "V8 isolate e' sempre mais rapido que Lambda - use V8 isolate pra tudo.",
+      correct: false,
+      explanation:
+        "Falso. **V8 isolate** e' **mais rapido em cold start** mas **mais limitado** em CPU/memoria/duracao. **Lambda** com **provisioned concurrency** tem **cold start 0ms** (warm). **Casos de uso diferentes**: (1) **I/O bound, latencia critica** = V8 isolate. (2) **CPU/memoria alta** = Lambda/EC2. (3) **Long-running** (>5min) = Lambda ou Node server. (4) **Node APIs** = Lambda ou Node server. (5) **Stateful** = Durable Objects ou Node server. **'Use V8 isolate pra tudo'** = **forcar fit** onde nao cabe. **Tradeoff real** = **velocidade de cold start** vs **limites de CPU/memoria**. **Use a ferramenta certa** pro caso.",
+    },
+  ]}
+/>

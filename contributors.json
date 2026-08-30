@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 31,
+        "trilhas": 32,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 44
+        "total": 45
       },
       "trilhas": [
         {
@@ -41,6 +41,10 @@
         {
           "slug": "docker-fundamentos",
           "title": "Docker Fundamentos"
+        },
+        {
+          "slug": "edge-deploy-frontend",
+          "title": "Edge Deploy Frontend: build, runtime, Cloudflare Workers, Vercel Edge, image opt, preview envs, atomic deploys"
         },
         {
           "slug": "engenharia-ia",

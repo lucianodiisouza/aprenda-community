@@ -1,0 +1,545 @@
+---
+id: image-optimization
+title: "Image optimization: Next/Image, Cloudflare Images, formato moderno, lazy"
+resources:
+  - title: "Next.js - Image Optimization (EN)"
+    url: https://nextjs.org/docs/app/building-your-application/optimizing/images
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Image Optimization (EN)"
+    url: https://web.dev/articles/image-optimization
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare Images (EN)"
+    url: https://developers.cloudflare.com/images/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce fez deploy, app rapido, mas LCP
+esta' **acima de 4s**. Investigando,
+**a imagem hero** = **3MB JPEG**.
+Usuario em 3G demora 8s pra baixar.
+**Esse no cobre image optimization**:
+**Next/Image**, **Cloudflare Images**,
+**formato moderno (WebP, AVIF)**, e
+**lazy loading** pra LCP < 2.5s.
+
+**Imagens sao 50%+ do peso total** de
+uma pagina web media. **Otimizar
+imagens = maior impacto em
+performance**. **3 simples otimizacoes**
+(serve WebP, **lazy load**, **responsive
+sizes**) cortam **peso em 70-90%** e
+**LCP em 50%+**.
+
+Voce sai de "imagem = baixar" pra
+"imagem = servir formato certo, tamanho
+certo, com lazy loading".
+
+## O essencial 🟢
+
+**Os 3 problemas de imagem.**
+
+1. **Formato:** PNG/JPEG sao
+   ineficientes. **WebP** e' **30%
+   menor**, **AVIF** e' **50% menor**.
+2. **Tamanho:** Imagem 4K servida pra
+   mobile = **4x maior** que precisa.
+   **Responsive** serve tamanho
+   certo.
+3. **Loading:** Imagem "below the
+   fold" carrega **antes do user ver**
+   = wasted bandwidth. **Lazy load**
+   so carrega quando vai aparecer.
+
+**Next/Image - a forma mais facil.**
+
+```tsx
+import Image from "next/image";
+
+<Image
+  src="/hero.jpg"
+  alt="Hero"
+  width={1200}
+  height={600}
+  priority  // hero = LCP, sem lazy
+/>
+
+<Image
+  src="/product.jpg"
+  alt="Product"
+  width={400}
+  height={400}
+  // lazy por default
+/>
+```
+
+**Next/Image** faz **automatic**:
+- **Gera WebP/AVIF** (se browser
+  suporta).
+- **Serve tamanho responsivo** via
+  srcset.
+- **Lazy load** by default.
+- **Preload** com `priority` pra
+  LCP.
+- **Placeholder blur** durante load.
+
+**Cloudflare Images - servico gerenciado.**
+
+```tsx
+<img
+  src="https://meusite.com/cdn-cgi/image/width=800,quality=80,format=auto/hero.jpg"
+  alt="Hero"
+/>
+```
+
+**Cloudflare Images** transforma
+**on-the-fly**: `width`, `quality`,
+`format`. **CDN global** + **AVIF/
+WebP automatic**. **Preco**: $5/mes
+basico, 100K transforms.
+
+**Formatos: WebP vs AVIF.**
+
+- **JPEG:** universal, 100% suporte,
+  baseline. **Ineficiente**.
+- **WebP:** **2014**, suporte
+  universal (Chrome, Firefox, Edge,
+  Safari 14+). **30% menor** que
+  JPEG. Lossless + lossy.
+- **AVIF:** **2019**, suporte
+  crescente (Chrome, Firefox,
+  Safari 16+). **50% menor** que
+  JPEG. Melhor qualidade visual.
+- **PNG:** lossless, fotos ineficientes.
+  Use so pra **logos, screenshots**.
+
+**Strategy**: serve AVIF se browser
+suporta, senao WebP, senao JPEG. **Use
+`<picture>` element**.
+
+```html
+<picture>
+  <source srcset="hero.avif" type="image/avif" />
+  <source srcset="hero.webp" type="image/webp" />
+  <img src="hero.jpg" alt="Hero" />
+</picture>
+```
+
+**`next/image` faz isso automatic.**
+
+**Responsive images - srcset.**
+
+```html
+<img
+  srcset="
+    hero-400.jpg 400w,
+    hero-800.jpg 800w,
+    hero-1200.jpg 1200w,
+    hero-2000.jpg 2000w
+  "
+  sizes="(max-width: 600px) 100vw, 50vw"
+  alt="Hero"
+/>
+```
+
+**Browser** escolhe o tamanho certo
+baseado em:
+- **Viewport width** (sizes).
+- **DPR** (device pixel ratio).
+- **Network** (SaveData).
+
+**Mobile 400px + DPR 1** = baixa
+`hero-400.jpg` (100KB).
+**Desktop 1920px + DPR 2** = baixa
+`hero-2000.jpg` (500KB).
+
+**Lazy loading - "load so quando
+precisa".**
+
+```html
+<img src="hero.jpg" loading="lazy" alt="Hero" />
+```
+
+**Browser** so carrega quando
+**imagem esta' perto da viewport**
+(scroll). **Padrao em Next/Image**.
+
+**`fetchpriority="high"` - "esta
+imagem e' importante".**
+
+```html
+<img src="hero.jpg" fetchpriority="high" alt="Hero" />
+```
+
+**Browser** prioriza **download**.
+**Use** pra **LCP image** (hero,
+above-the-fold).
+
+**Lazy load com placeholder blur.**
+
+```tsx
+<Image
+  src="/hero.jpg"
+  alt="Hero"
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRg..."  // tiny base64
+  width={1200}
+  height={600}
+/>
+```
+
+**Placeholder blur** = "LQIP" (low-
+quality image placeholder). **User
+ve blur → imagem real carrega** =
+**perceived performance melhor**.
+
+**CLS (Cumulative Layout Shift) - por
+que `width`/`height` importam.**
+
+```tsx
+// ❌ Sem width/height = layout shift
+<img src="hero.jpg" alt="Hero" />
+
+// ✅ Com width/height = aspect ratio fixo
+<Image src="/hero.jpg" alt="Hero" width={1200} height={600} />
+```
+
+**Sem aspect ratio**, browser **nao
+sabe quanto espaco reservar** =
+**conteudo pula** quando imagem
+carrega = **CLS ruim** (Google Core
+Web Vital). **Sempre** declare
+`width` e `height`.
+
+**Lazy load iframe (YouTube, etc).**
+
+```html
+<iframe
+  src="https://www.youtube.com/embed/xyz"
+  loading="lazy"
+  title="Video"
+></iframe>
+```
+
+**YouTube embed** = **1MB+ de JS**.
+**Lazy load** = so carrega quando
+user scroll ate video.
+
+**`decoding="async"` - nao bloqueia
+render.**
+
+```html
+<img src="hero.jpg" decoding="async" alt="Hero" />
+```
+
+**Decoding async** = browser **decodifica
+em background**, nao bloqueia render.
+**Default em Next/Image**.
+
+**Compression: qualidade vs tamanho.**
+
+- **JPEG q=80:** ~50% menor que
+  q=100, **diferenca visual minima**.
+- **JPEG q=60:** ~70% menor, alguma
+  perda visivel.
+- **WebP q=80:** ~30% menor que JPEG
+  q=80, mesma qualidade.
+
+**Sweet spot**: **q=75-80**. Use
+**MochiJPG** (Mozilla), **Sharp**,
+**Squoosh** (Google) para
+comprimir.
+
+**Preconnect/preload - "dica o que
+importa".**
+
+```html
+<head>
+  <link rel="preload" href="hero.jpg" as="image" />
+  <link rel="preconnect" href="https://cdn.exemplo.com" />
+</head>
+```
+
+**Preload** = browser baixa **antes
+de descobrir**. **Use** pra LCP image.
+**Preconnect** = browser abre
+conexao TCP antes.
+
+**CDN image optimization.**
+
+- **Cloudflare Images:** $5/mes, 100K
+  transforms. AVIF/WebP automatic.
+- **Cloudinary:** free tier generoso.
+  Transformations complexas.
+- **imgix:** enterprise, real-time
+  transforms.
+- **Vercel Image Optimization:** built-in
+  em Next.js, automatic.
+- **Next.js Image Optimization:** built-in,
+  self-hosted.
+
+**Por que Cloudflare Images > Vercel
+Image**: **edge cache** (transforma
+**uma vez**, cacheia **global**).
+Vercel: cada request = transform
+(pode ser caro em volume).
+
+**SVG para logos e icones.**
+
+```html
+<img src="logo.svg" alt="Logo" width="100" height="50" />
+```
+
+**SVG** = **vetorial**, **escala
+perfeita**, **peso minimo** (1-5KB
+vs 50KB+ pra PNG). **Use** pra logos,
+icones, illustrations. **NUNCA** pra
+fotos (use WebP/AVIF).
+
+**Imagens responsivas com art direction.**
+
+```html
+<picture>
+  <source media="(max-width: 600px)" srcset="hero-mobile.jpg" />
+  <source media="(min-width: 601px)" srcset="hero-desktop.jpg" />
+  <img src="hero.jpg" alt="Hero" />
+</picture>
+```
+
+**Mobile**: imagem **cropped** (foco
+no centro). **Desktop**: imagem
+**full**. **Art direction** = imagem
+diferente por viewport, NAO so
+tamanho.
+
+**Lighthouse image audit.**
+
+```bash
+# Chrome DevTools > Lighthouse > Performance
+# Audit "Properly size images" e "Serve images in next-gen formats"
+# Mostra imagens nao otimizadas
+```
+
+**Lighthouse** mostra exatamente quais
+imagens otimizar e quanto economiza.
+
+## Aprofundamento 🟡
+
+**AVIF vs WebP - quando cada um.**
+
+- **AVIF** = **+20% menor** que WebP,
+  melhor qualidade visual. **Suporte**:
+  Chrome 85+, Firefox 93+, Safari
+  16+ (2022). Em 2026, **~95%
+  suporte**.
+- **WebP** = **+30% menor** que JPEG.
+  Suporte universal (Safari 14+,
+  2020). Em 2026, **~98% suporte**.
+
+**Use AVIF** se **95%+ users** em
+browsers modernos. **Use WebP** pra
+max compat. **Fallback JPEG** sempre.
+
+**Image format detection - `Accept`
+header.**
+
+```http
+Accept: image/avif, image/webp, image/jpeg, */*
+```
+
+**Server** (Cloudflare, Vercel,
+Cloudinary) detecta `Accept` e serve
+formato certo. **Nao precisa** de
+`<picture>` se server e'
+inteligente.
+
+**`<img srcset>` vs `<picture>`.**
+**`<img srcset>`** = mesma imagem,
+tamanhos diferentes. **`<picture>`**
+= imagens **diferentes** (art
+direction). **Use `<picture>`** se
+mobile precisa de crop diferente.
+
+**Lazy load + Intersection Observer
+(custom).**
+
+```ts
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      const img = entry.target as HTMLImageElement;
+      img.src = img.dataset.src!;
+      observer.unobserve(img);
+    }
+  });
+});
+
+document.querySelectorAll("img[data-src]").forEach((img) => observer.observe(img));
+```
+
+**Custom lazy load** se `loading="lazy"`
+nao basta (ex: lazy load so apos
+user scroll 200px).
+
+**Image sprites ainda importam?** **Nao
+mais**. Use **HTTP/2 multiplexing**
+(many requests em 1 connection) +
+**SVG** (icons) + **CSS sprites**
+(mobile only). **Image sprites**
+(combined image com CSS positioning)
+= **legacy**. **HTTP/2 resolve**.
+
+**Image budget.** **Regra pratica**:
+**pagina total < 1.5MB** (mobile 3G
+em 5s). **Imagens < 800KB**. Cada
+imagem **< 200KB** apos optimization.
+**Use Lighthouse** pra auditar.
+
+**PNG vs SVG - "qual pra que".**
+
+- **Logo simples (geometrico):**
+  **SVG** (escala perfeita).
+- **Logo complexo (fotos, gradients
+  complexos):** **PNG/WebP** (SVG
+  nao suporta bem fotos).
+- **Icones (UI):** **SVG** (escala,
+  cor via CSS).
+- **Screenshots:** **PNG** (lossless,
+  texto fica legivel).
+- **Fotos:** **WebP/AVIF** (compressao
+  maxima).
+
+**Compressao automatica em CI.**
+
+```yaml
+# GitHub Actions
+- name: Compress images
+  run: |
+    pnpm add -D sharp
+    node scripts/compress-images.js
+```
+
+```ts
+// scripts/compress-images.js
+import sharp from "sharp";
+import { glob } from "glob";
+
+const files = await glob("public/images/**/*.{jpg,png}");
+
+for (const file of files) {
+  await sharp(file)
+    .webp({ quality: 80 })
+    .toFile(file.replace(/\.(jpg|png)$/, ".webp"));
+}
+```
+
+**CI comprime** cada imagem **na
+build** = bundle otimizado.
+
+**`placeholder="blur"` requer
+`blurDataURL`.** Next/Image gera
+automatic com `plaiceholder` lib,
+ou **inline base64** tiny JPEG.
+
+**Leitura recomendada:**
+
+- [Next.js - Image Optimization](https://nextjs.org/docs/app/building-your-application/optimizing/images) - Next/Image API, props, optimization.
+- [web.dev - Image Optimization](https://web.dev/articles/image-optimization) - best practices, formatos, lazy load.
+- [Cloudflare Images](https://developers.cloudflare.com/images/) - transformacoes on-the-fly, pricing, AVIF/WebP.
+
+> Dica: o erro mais comum em
+> performance e' **imagem nao
+> otimizada**. 1 imagem 3MB JPEG =
+> 8s em 3G. **3 fixes** (formato
+> moderno, responsive, lazy load) =
+> **LCP < 2.5s**. **Use Next/Image**
+> ou **Cloudflare Images** - **faz
+> automatic**. **Nao** esqueca de
+> **width/height** (CLS) e
+> **`priority`** na LCP image.
+> **Auditoria mensal** com Lighthouse
+> = **garante** performance mantida.
+
+No proximo no, vamos **preview
+environments**: como **cada PR** ganha
+**URL unica** pra review visual, ephemeral
+envs, e **branch URLs** sem checkout
+local.
+
+<Checkpoint
+  challenge="Implemente a função `configurarImagem(opcoes)` que monta o objeto de props do Next/Image a partir das opcoes. Recebe: opcoes = { src: string, alt: string, width: number, height: number, priority: boolean (default false), qualidade: number (default 80), formatos: string[] (ex: ['avif', 'webp', 'jpg']) }. Retorna: { src, alt, width, height, priority: opcoes.priority ?? false, quality: opcoes.qualidade ?? 80, formats: opcoes.formatos.length > 0 ? opcoes.formatos : ['avif', 'webp'] }."
+  starterCode={`// Implemente configurarImagem(opcoes) que monta o objeto
+// de props do Next/Image a partir das opcoes.
+//
+// Schema de entrada:
+//   opcoes = {
+//     src: string,
+//     alt: string,
+//     width: number,
+//     height: number,
+//     priority?: boolean,    // default false
+//     qualidade?: number,    // default 80
+//     formatos?: string[]    // default ['avif', 'webp']
+//   }
+//
+// Schema de saida:
+//   {
+//     src: opcoes.src,
+//     alt: opcoes.alt,
+//     width: opcoes.width,
+//     height: opcoes.height,
+//     priority: opcoes.priority ?? false,
+//     quality: opcoes.qualidade ?? 80,
+//     formats: opcoes.formatos.length > 0 ? opcoes.formatos : ['avif', 'webp']
+//   }
+function configurarImagem(opcoes) {
+  return { src: '', alt: '', width: 0, height: 0, priority: false, quality: 80, formats: ['avif', 'webp'] };
+}
+
+const _r1 = configurarImagem({ src: '/hero.jpg', alt: 'Hero', width: 1200, height: 600 });
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarImagem({ src: '/product.jpg', alt: 'Product', width: 400, height: 400, priority: true, qualidade: 90 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = configurarImagem({ src: '/icon.svg', alt: 'Icon', width: 32, height: 32, formatos: ['svg'] });
+console.log(JSON.stringify(_r3));
+
+const _r4 = configurarImagem({ src: '/banner.jpg', alt: 'Banner', width: 1600, height: 400, priority: true });
+console.log(JSON.stringify(_r4));`}
+  expected='{"src":"/hero.jpg","alt":"Hero","width":1200,"height":600,"priority":false,"quality":80,"formats":["avif","webp"]}
+{"src":"/product.jpg","alt":"Product","width":400,"height":400,"priority":true,"quality":90,"formats":["avif","webp"]}
+{"src":"/icon.svg","alt":"Icon","width":32,"height":32,"priority":false,"quality":80,"formats":["svg"]}
+{"src":"/banner.jpg","alt":"Banner","width":1600,"height":1600,"priority":false,"quality":80,"formats":["avif","webp"]}'
+  slug="edge-deploy-frontend"
+  nodeId="image-optimization"
+/>
+
+<Quiz
+  question="Quais as 3 otimizacoes de imagem com maior impacto em LCP e bundle size?"
+  options={[
+    {
+      text: "(1) Formato moderno (WebP/AVIF em vez de JPEG) = 30-50% menor, (2) Responsive images (srcset com varios tamanhos) = serve tamanho certo por viewport, (3) Lazy loading (loading='lazy' ou Next/Image default) = so carrega imagens visiveis. Combinadas: LCP cai 50%+, bundle cai 70%+. Use Next/Image ou Cloudflare Images pra fazer automatic.",
+      correct: true,
+      explanation:
+        "As 3 otimizacoes com **maior impacto**: (1) **Formato moderno** (WebP 30% menor que JPEG, AVIF 50% menor). Browser suporta em **98%** (WebP) e **95%** (AVIF) em 2026. **Fallback JPEG** sempre. (2) **Responsive images** (`srcset` + `sizes`) = **mesma imagem, varios tamanhos**. Browser escolhe o tamanho certo baseado em viewport + DPR. Mobile 400px = imagem 100KB. Desktop 1920px = imagem 500KB. (3) **Lazy loading** (`loading='lazy'` ou Next/Image default) = **imagens below the fold** so carregam quando user scroll perto. **Economia**: 70-90% do peso de imagens. **LCP cai 50%+** (imagem hero e' 50% menor + lazy load nao atrasa outras requests). **Use Next/Image** (automatic) ou **Cloudflare Images** (on-the-fly transform). **Nao esqueca**: **width/height** (CLS), **priority** na LCP image, **decoding='async'**, **preload** da LCP.",
+    },
+    {
+      text: "JPEG e' suficiente - nao precisa de WebP/AVIF.",
+      correct: false,
+      explanation:
+        "Falso. **JPEG e' de 1986**. **WebP** (2014) e' **30% menor** com **mesma qualidade visual**. **AVIF** (2019) e' **50% menor** com **qualidade visual superior**. **Em 2026**: WebP tem **~98% suporte** (Safari 14+ 2020), AVIF tem **~95%** (Safari 16+ 2022). **Use WebP/AVIF com fallback JPEG**: <picture> element ou server-side detection via Accept header. **Por que importa**: 1 imagem 3MB JPEG = 8s em 3G. 1 imagem 1MB WebP = 3s. **LCP cai 50%**. **Em apps media-heavy** (e-commerce, blog), **JPEG sozinho** = **bundle 3x maior** = **LCP 3x pior**. **Use formato moderno** - custo zero, beneficio enorme.",
+    },
+    {
+      text: "Lazy loading e' ruim - user ve layout quebrado ate imagem carregar.",
+      correct: false,
+      explanation:
+        "Falso. **Lazy loading** NAO causa layout quebrado - **imagens SEM width/height** causam. **Lazy loading** so carrega **imagens below the fold** quando user scroll perto. **Imagens above-the fold** (hero, LCP) **NAO** sao lazy load (use `priority` em Next/Image). **Com `width/height` declarados**, browser **reserva espaco** = **zero layout shift** (CLS 0). **Lazy load** = **viewport detection** (IntersectionObserver) + `loading='lazy'` HTML attribute. **Browser** so carrega quando **imagem esta' ~200px** de aparecer. **User scroll = imagem carrega**. **Sem lazy load**: todas imagens carregam em paralelo = bandwidth wasted, LCP atrasado. **Com lazy load**: imagem hero carrega rapido, outras carregam sob demanda = **LCP 50% melhor**.",
+    },
+  ]}
+/>
