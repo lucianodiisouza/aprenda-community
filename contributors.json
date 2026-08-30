@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 28,
+        "trilhas": 29,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 41
+        "total": 42
       },
       "trilhas": [
         {
@@ -65,6 +65,10 @@
         {
           "slug": "html",
           "title": "HTML"
+        },
+        {
+          "slug": "i18n",
+          "title": "i18n / l10n: Intl APIs, ICU MessageFormat, RTL, translation workflow e pseudo-localization"
         },
         {
           "slug": "kubernetes",
