@@ -5,6 +5,7 @@
   "difficulty": "iniciante",
   "outcome": "Ao terminar, você constrói e faz deploy de aplicações web completas: interfaces acessíveis e responsivas em React + TypeScript, com formulários validados ponta a ponta, server state gerenciado, renderização no servidor com Next.js, cobertura de testes, orçamento de performance, e hardening de segurança — tudo versionado no Git e publicado na edge. Sai pronto pra uma vaga de frontend junior.",
   "estimate": "7 meses",
+  "intro_video": { "url": "https://www.youtube.com/watch?v=tt--wtbqkHE" },
   "creators": [{ "name": "Luciano dii Souza", "github": "lucianodiisouza" }],
   "modules": [
     { "trilha": "programacao-do-zero", "description": "Ponto de partida pra quem nunca programou: pensamento computacional, lógica e o primeiro contato com código." },

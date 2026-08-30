@@ -6,6 +6,15 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.27.0] - 2026-08-30
+
+### Adicionado
+
+- 🎬 **Vídeo de apresentação no bootcamp Desenvolvedor Frontend**
+  (`bootcamps/desenvolvedor-frontend`): campo `intro_video` apontando pro
+  vídeo de apresentação no YouTube, exibido na página do bootcamp (mesmo
+  padrão `intro_video` já usado pelas trilhas).
+
 ## [1.26.0] - 2026-08-30
 
 ### Adicionado
