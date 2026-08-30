@@ -6,6 +6,28 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.26.0] - 2026-08-30
+
+### Adicionado
+
+- 🎨 **Bootcamp Desenvolvedor Frontend**
+  (`bootcamps/desenvolvedor-frontend`, 24 módulos): currículo curado
+  zero-to-hero pra quem começa sem nunca ter programado até sair pronto
+  pra uma vaga de frontend junior. Junta os fundamentos que faltavam
+  (`programacao-do-zero`, `terminal-para-devs`, `git`, `html`,
+  `css-fundamentos`, `css-layout`, `frontend`, `typescript`) com 9 das
+  trilhas de produção do pacote da issue #41 (`form-libraries`,
+  `tanstack-query`, `nextjs`, `testing-frontend`, `performance-web`,
+  `acessibilidade-web`, `seguranca-frontend`, `edge-deploy-frontend`,
+  `engenharia-ia`) e 7 projetos intercalados. Nível iniciante, ~7 meses.
+  Bootcamps não têm conteúdo próprio: só curadoria de trilhas e projetos
+  existentes.
+
+### Créditos
+
+- Bootcamp curado por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
+
 ## [1.25.0] - 2026-08-30
 
 ### Adicionado
