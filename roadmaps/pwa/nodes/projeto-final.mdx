@@ -1,0 +1,385 @@
+---
+id: projeto-final
+title: "Projeto final: app offline-first instalavel com sync ao reconectar"
+---
+
+Hora de unir tudo. Voce vai construir um
+**app offline-first instalavel** (notes
+ou kanban simples), com **Service Worker
++ Cache strategies + IndexedDB + Background
+Sync + Push notifications**, tudo num app
+real que **instala no celular** e **funciona
+offline**. E' o ciclo completo: install
+prompt, pre-cache do app shell, estrategias
+de cache por tipo de recurso, CRUD em
+IndexedDB, sync automatico quando volta
+online, push de notificacoes.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes
+de comecar.
+
+## O que voce vai construir
+
+Um **PWA completo** (notes ou kanban),
+entregue como:
+
+- **App funcional** que **instala no
+  celular** (Add to Home Screen).
+- **Funciona offline** (cria/edita/deleta
+  sem rede).
+- **Sincroniza** acoes quando volta
+  online.
+- **Recebe push notifications** (opcional,
+  mas recomendado).
+- **Manifesto + Service Worker + Cache +
+  IndexedDB** configurados corretamente.
+
+Stack obrigatoria:
+
+- **Frontend:** Vite + React (ou Vue/Svelte,
+  sua escolha).
+- **Service Worker:** Workbox (via
+  `vite-plugin-pwa`).
+- **Banco local:** Dexie (wrapper de
+  IndexedDB).
+- **Backend:** Express/Node (simples, com
+  rotas REST).
+- **Push:** `web-push` (Node).
+- **HTTPS:** Vercel/Netlify/Cloudflare (ou
+  ngrok em dev).
+
+## Objetivo
+
+- Praticar **ciclo completo de PWA**:
+  install prompt, manifest, SW, cache,
+  IndexedDB, background sync, push.
+- Construir um app que **funciona offline
+  de verdade** (cria nota sem rede, sync
+  automatico).
+- Aplicar **cache strategies certas** pra
+  cada tipo de recurso.
+- Configurar **push** com VAPID e
+  subscription management.
+- **Instalar no celular** e testar
+  (incluindo offline real: aviao ligado).
+
+## Requisitos (minimo)
+
+Manifesto + Install:
+
+- [ ] `manifest.webmanifest` com name,
+  short_name, icons 192+512 (maskable),
+  start_url, display: "standalone",
+  theme_color.
+- [ ] `<link rel="manifest">` no HTML.
+- [ ] `beforeinstallprompt` capturado +
+  botao custom de "Instalar app".
+- [ ] App instala com sucesso em
+  Chrome/Edge Android.
+
+Service Worker + Cache:
+
+- [ ] `vite-plugin-pwa` configurado com
+  Workbox.
+- [ ] **App shell pre-cacheado** (HTML,
+  CSS, JS, fonts, icons).
+- [ ] **Stale-While-Revalidate** pra
+  assets de build (JS, CSS).
+- [ ] **Cache First** pra imagens
+  (icon-512, screenshots).
+- [ ] **Network First** pra API (com
+  timeout 3s).
+- [ ] **`/offline.html`** pre-cacheado
+  (pagina de fallback).
+
+IndexedDB (Dexie):
+
+- [ ] Schema Dexie com tabela `notes`:
+  `++id, title, content, createdAt, updatedAt, syncStatus`.
+- [ ] CRUD completo: `add`, `get`, `put`,
+  `delete`, `where("syncStatus").equals("pending")`.
+- [ ] Indices em `createdAt` e `syncStatus`.
+
+Background Sync:
+
+- [ ] Workbox `BackgroundSyncPlugin`
+  configurado pra POST `/api/notes`.
+- [ ] Quando offline, criar nota salva
+  em IndexedDB com `syncStatus: "pending"`.
+- [ ] Quando volta online, sync replay →
+  PUT no server, atualiza `syncStatus:
+  "synced"`.
+- [ ] **Fallback `online` event** pra
+  browsers sem Sync API (Firefox).
+
+Push Notifications:
+
+- [ ] VAPID keys geradas (public no
+  frontend, private no server).
+- [ ] Botao "Ativar notificacoes" na UI.
+- [ ] Subscribe via `pushManager.subscribe`
+  → POST subscription pro server.
+- [ ] Server com `web-push` que manda push
+  em algum trigger (ex: "Bem-vindo!" apos
+  primeira nota).
+- [ ] SW exibe notification no `push`
+  event.
+- [ ] Click na notification abre a nota
+  especifica.
+
+Validacao:
+
+- [ ] Instalar PWA no celular (Android
+  Chrome).
+- [ ] Testar **offline real** (modo aviao):
+  criar nota, desligar aviao, ver nota
+  pendente, religar, ver sync automatico.
+- [ ] Testar push: clicar "Ativar
+  notificacoes", ver notification nativa
+  do SO.
+- [ ] Lighthouse PWA score: 100.
+- [ ] Manifest valido (validator do Chrome
+  DevTools).
+
+## Estrutura do relatorio (`pwa-hardening.md`)
+
+```markdown
+# PWA Hardening - [nome-do-app]
+
+## TL;DR
+
+- App: [link pra deploy]
+- Lighthouse PWA score: 100
+- Bundle inicial gzipped: X KB
+- Funciona offline: sim
+- Sync automatico: sim
+- Push notifications: sim
+
+## Arquitetura
+
+### Frontend
+
+- Vite + React
+- vite-plugin-pwa (Workbox)
+- Dexie (IndexedDB)
+- Push subscription (VAPID)
+
+### Backend
+
+- Express + Node
+- /api/notes (CRUD)
+- /api/subscriptions (POST/DELETE)
+- web-push library
+
+### Cache strategies
+
+| Recurso | Estrategia | Justificativa |
+| ------- | ---------- | ------------- |
+| HTML/CSS/JS (build) | SWR | Build artifacts podem mudar entre deploys |
+| Imagens estaticas | Cache First | Imutaveis, cache vence |
+| API /api/notes | Network First | Frescor importante, cache fallback |
+| Offline fallback | Cache Only | /offline.html sempre do cache |
+
+## Fluxo offline
+
+1. Usuario cria nota offline.
+2. IndexedDB: `notes.add({ ..., syncStatus: "pending" })`.
+3. Workbox BackgroundSync: POST /api/notes falha, salva na queue.
+4. Volta online: SW `sync` event dispara.
+5. Replay do POST: sucesso → atualiza
+   `syncStatus: "synced"`.
+6. UI re-renderiza (via useLiveQuery ou
+   refetch).
+
+## Push flow
+
+1. Usuario clica "Ativar notificacoes".
+2. Browser pede permissao.
+3. pushManager.subscribe → POST
+   subscription pro server.
+4. Server guarda subscription.
+5. Server dispara push (cron ou trigger).
+6. Push service entrega pro browser.
+7. SW `push` event → showNotification.
+8. Click → openWindow(nota URL).
+
+## Resultados
+
+- Lighthouse PWA: 100
+- Bundle inicial: X KB
+- Time to installable: Y ms
+- Sync success rate: Z%
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Notification com action buttons** -
+  "Ver" e "Dispensar" como actions.
+- [ ] **Background fetch** - push inicia
+  download de arquivo em background.
+- [ ] **Periodic Background Sync** -
+  sincronizar feed a cada 24h.
+- [ ] **Web Share Target** - aceitar
+  share de outras apps (foto, texto) pra
+  criar nota.
+- [ ] **App Shortcuts** - long-press no
+  icon abre menu "Nova nota", "Buscar".
+- [ ] **Web Lock API** - evitar conflito
+  entre abas em IndexedDB.
+- [ ] **IndexedDB encryption** - criptografar
+  notas sensiveis com Web Crypto.
+- [ ] **PWA install prompt A/B test** -
+  medir conversion em diferentes UX.
+- [ ] **Migration de SW v1 → v2** -
+  testar upgrade de schema de cache.
+- [ ] **iOS PWA testing** - Add to Home
+  Screen no Safari iOS, testar limitacoes
+  (push so com PWA instalado).
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Setup minimo:** Vite + React + `vite-plugin-pwa` com
+   `registerType: 'autoUpdate'`. Build, abra
+   no browser, DevTools > Application >
+   Service Workers. Deve aparecer "activated
+   and running".
+2. **Manifesto:** adicione 192+512 icons.
+   Lighthouse > PWA category deve passar.
+3. **Install prompt:** adicione o listener
+   `beforeinstallprompt`, mostre botao
+   custom.
+4. **Offline basico:** desligue network no
+   DevTools, recarregue. App shell tem que
+   carregar.
+5. **IndexedDB:** crie a tabela Dexie, faca
+   CRUD basico.
+6. **Background Sync:** Workbox
+   `BackgroundSyncPlugin` configurado.
+   Teste offline → online.
+7. **Push:** VAPID keys, subscribe, server
+   `web-push`, click na notification.
+
+**Armadilhas comuns:**
+
+- **HTTPS em dev.** Service Worker nao
+  registra em HTTP. Use localhost (que
+  conta como seguro) ou ngrok para teste
+  em device.
+- **`event.waitUntil` esquecido.** No
+  `install` e `activate` do SW, **sempre**
+  `event.waitUntil(...)`. Sem isso, install
+  termina antes do cache estar pronto.
+- **IndexedDB no SSR.** Next.js quebra se
+  Dexie for importado fora de `useEffect`.
+  Use dynamic import ou guard `typeof
+  window !== 'undefined'`.
+- **VAPID private key no frontend.**
+  Aparece no bundle, atacante usa pra
+  mandar push. **NUNCA** commit no repo.
+- **Nao tratar 410 Gone no server.** Quando
+  usuario uninstalla, subscription vira
+  invalida. Sem cleanup, fica lixo no DB
+  e manda push pra lugar nenhum.
+- **Install prompt em iOS Safari.** iOS
+  nao mostra prompt automatico - usuario
+  precisa ir em Share > Add to Home Screen
+  **manualmente**. Documente.
+- **Cache sem TTL.** Cache cresce ate
+  estourar quota. **Sempre**
+  `ExpirationPlugin` com `maxEntries` e
+  `maxAgeSeconds`.
+- **POST em cache.** `NetworkFirst` ou
+  `NetworkOnly` - nunca `CacheFirst` pra
+  POST. Mutacoes **nao** devem ser
+  servidas de cache.
+- **Range requests quebrados.** Video/audio
+  usam range requests. SW nao suporta
+  streaming - **deixa passar** esses
+  requests sem interceptar.
+
+**Como validar que terminou:**
+
+- [ ] Lighthouse PWA score: 100.
+- [ ] Manifest valido (Chrome DevTools
+  mostra 0 erros).
+- [ ] SW ativo e controlando (DevTools >
+  Application > SW).
+- [ ] Install prompt aparece (Chrome/Edge
+  Android).
+- [ ] App shell carrega offline (modo
+  aviao, recarregar).
+- [ ] CRUD em IndexedDB funciona offline.
+- [ ] Sync automatico quando volta online
+  (network throttling + re-testar).
+- [ ] Push notification chega (subscribe
+  + trigger).
+- [ ] Click na notification abre a nota
+  certa.
+
+**Leituras que ajudam durante o projeto:**
+
+- [vite-plugin-pwa docs](https://vite-pwa-org.netlify.app/) - setup completo, com Workbox.
+- [Workbox strategies](https://developer.chrome.com/docs/workbox/modules/workbox-strategies) - patterns de cache.
+- [web.dev - Offline cookbook](https://web.dev/articles/offline-cookbook) - patterns de UX offline.
+
+> O projeto final e' onde a trilha vira
+> "sua". A escolha de **qual app** construir
+> (notes, kanban, lista de compras) e' o
+> **caminho feliz**. Os principios - manifest,
+> SW, cache strategies, IndexedDB, background
+> sync, push - aplicam a qualquer app. O
+> esqueleto dado e' o caminho feliz, desvie
+> quando precisar e anote as decisoes no
+> `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarPWA(manifesto, sw, cache, offline, push)` que recebe um objeto com chaves booleanas representando os criterios essenciais de um PWA instalavel e offline-capable, e retorna { score: 0-100, completo: boolean, problemas: string[] } - score e' a porcentagem de criterios ativos (cada um vale 20 pontos), completo e' true se score=100, problemas lista o nome dos criterios faltando. Use os nomes: 'manifesto valido', 'service worker ativo', 'cache strategies configuradas', 'offline funcional', 'push notifications'."
+  starterCode={`// ImplementeavaliarPWA(manifesto, sw, cache, offline, push) que recebe:
+//
+// { manifesto: boolean,
+//   sw: boolean,
+//   cache: boolean,
+//   offline: boolean,
+//   push: boolean }
+//
+// E retorna { score, completo, problemas }.
+//
+// Regras:
+// - 5 criterios, cada um ativo vale 20 pontos (100/5).
+// - Calcular score somando os pontos dos criterios ativos.
+// - problemas: nomes dos criterios com valor false.
+// - completo: true se score === 100.
+// - Nomes: 'manifesto valido', 'service worker ativo',
+//   'cache strategies configuradas', 'offline funcional',
+//   'push notifications'.
+function avaliarPWA(manifesto, sw, cache, offline, push) {
+  return { score: 0, completo: false, problemas: [] };
+}
+
+const _r1 = avaliarPWA(true, true, true, true, true);
+console.log(JSON.stringify(_r1));
+
+const _r2 = avaliarPWA(true, true, true, true, false);
+console.log(JSON.stringify(_r2));
+
+const _r3 = avaliarPWA(false, false, false, false, false);
+console.log(JSON.stringify(_r3));
+
+const _r4 = avaliarPWA(true, true, false, false, true);
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":100,"completo":true,"problemas":[]}
+{"score":80,"completo":false,"problemas":["push notifications"]}
+{"score":0,"completo":false,"problemas":["manifesto valido","service worker ativo","cache strategies configuradas","offline funcional","push notifications"]}
+{"score":60,"completo":false,"problemas":["cache strategies configuradas","offline funcional"]}'
+  slug="pwa"
+  nodeId="projeto-final"
+/>

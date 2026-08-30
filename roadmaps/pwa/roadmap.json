@@ -1,0 +1,83 @@
+{
+  "slug": "pwa",
+  "title": "PWA: Service Workers, estrategias de cache, IndexedDB, background sync e offline-first",
+  "description": "Trilha sobre Progressive Web Apps: o que e PWA (manifesto, instalacao, criterios), Service Workers (ciclo de vida, registro, escopo, atualizacao), estrategias de cache (cache first, network first, stale-while-revalidate, Workbox), IndexedDB (API nativa, Dexie, queries, indices, migrations), background sync (Sync API, periodic sync, fallback), notificacoes push (Web Push, VAPID, subscription management). Foco em apps que funcionam sem rede e instalam no device.",
+  "difficulty": "intermediario",
+  "skills": [
+    "pwa",
+    "service-worker",
+    "manifest",
+    "workbox",
+    "cache-strategy",
+    "cache-first",
+    "network-first",
+    "stale-while-revalidate",
+    "indexeddb",
+    "dexie",
+    "idb",
+    "offline-first",
+    "background-sync",
+    "web-push",
+    "vapid",
+    "service-worker-lifecycle",
+    "install-prompt",
+    "precaching"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "pwa-o-que-e",
+      "title": "PWA: o que e, manifesto, instalacao, criterios",
+      "type": "topic",
+      "recommended": true,
+      "children": ["service-workers"]
+    },
+    {
+      "id": "service-workers",
+      "title": "Service Workers: ciclo de vida, registro, escopo, atualizacao",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estrategias-de-cache"]
+    },
+    {
+      "id": "estrategias-de-cache",
+      "title": "Estrategias de cache: cache first, network first, SWR, Workbox",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["indexeddb"]
+    },
+    {
+      "id": "indexeddb",
+      "title": "IndexedDB: API nativa, Dexie, queries, indices, migrations",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["background-sync"]
+    },
+    {
+      "id": "background-sync",
+      "title": "Background sync: Sync API, periodic sync, fallback online-first",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["notificacoes-push"]
+    },
+    {
+      "id": "notificacoes-push",
+      "title": "Notificacoes push: Web Push API, VAPID, subscription management",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: app offline-first instalavel com sync ao reconectar",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

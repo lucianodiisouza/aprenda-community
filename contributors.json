@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 26,
+        "trilhas": 27,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 39
+        "total": 40
       },
       "trilhas": [
         {
@@ -93,6 +93,10 @@
         {
           "slug": "prompt-engineering",
           "title": "Prompt Engineering"
+        },
+        {
+          "slug": "pwa",
+          "title": "PWA: Service Workers, estrategias de cache, IndexedDB, background sync e offline-first"
         },
         {
           "slug": "seguranca-frontend",
