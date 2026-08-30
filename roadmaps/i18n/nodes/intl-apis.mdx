@@ -1,0 +1,594 @@
+---
+id: intl-apis
+title: "Intl APIs: NumberFormat, DateTimeFormat, Collator, ListFormat"
+resources:
+  - title: "MDN - Intl.NumberFormat (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Intl.DateTimeFormat (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat
+    lang: en
+    type: doc
+    free: true
+  - title: "Format.JS - Guides (EN)"
+    url: https://formatjs.io/docs/intl
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce **internacionalizou** o codigo: extraiu
+strings, definiu locales. Agora vem a
+parte **sutil**: formatar numeros, datas,
+moedas, listas - tudo de forma
+**locale-aware**, sem reinventar a roda.
+**Esse no cobre o `Intl.*` do JS**:
+namespace nativo do browser/Node que
+faz formatacao correta pra **qualquer
+locale** baseado nos dados do **CLDR**
+(Unicode Common Locale Data Repository).
+
+O `Intl.*` e' o **cavalo de batalha** da
+i18n. Sem ele, voce faria tabelas
+gigantescas de formatacao por locale
+("em pt-BR usa virgula, em en-US usa
+ponto, em de-DE usa ponto, em fr-FR usa
+espaco..."). Com `Intl`, **uma chamada**,
+resultado correto pro locale. **Zero
+dependencies, zero dados, suportado em
+100% dos browsers modernos** (ES2018+).
+
+Voce sai de "template literal com virgula
+fixa" pra "formatacao que respeita o
+idioma do usuario automaticamente".
+
+## O essencial 🟢
+
+**`Intl.NumberFormat` - numeros, moedas,
+porcentagens.** O **mais usado** da familia
+Intl:
+
+```ts
+// Numero basico
+new Intl.NumberFormat("pt-BR").format(1234.5);
+// "1.234,5" (pt-BR usa . pra milhar, , pra decimal)
+
+new Intl.NumberFormat("en-US").format(1234.5);
+// "1,234.5" (en-US inverte)
+
+new Intl.NumberFormat("de-DE").format(1234.5);
+// "1.234,5" (alemão igual pt-BR mas sem 2 casas)
+
+// Moeda
+new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+}).format(99.9);
+// "R$ 99,90"
+
+new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+}).format(99.9);
+// "$99.90"
+
+new Intl.NumberFormat("ja-JP", {
+  style: "currency",
+  currency: "JPY",
+}).format(99.9);
+// "¥100" (JPY nao tem centavos!)
+
+// Porcentagem
+new Intl.NumberFormat("pt-BR", {
+  style: "percent",
+}).format(0.25);
+// "25%"
+
+new Intl.NumberFormat("tr-TR", {
+  style: "percent",
+}).format(0.25);
+// "%25" (turco coloca % antes do numero!)
+
+// Casas decimais
+new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+}).format(99.9);
+// "$100"
+
+// Notacao cientifica
+new Intl.NumberFormat("en-US", { notation: "scientific" }).format(123456);
+// "1.235E5"
+```
+
+**`Intl.DateTimeFormat` - datas
+locale-aware.** Datas tem **infinitos**
+formatos (MM/DD/YYYY, DD/MM/YYYY,
+YYYY年MM月DD日, etc):
+
+```ts
+new Intl.DateTimeFormat("pt-BR").format(new Date("2026-12-25"));
+// "25/12/2026"
+
+new Intl.DateTimeFormat("en-US").format(new Date("2026-12-25"));
+// "12/25/2026"
+
+new Intl.DateTimeFormat("ja-JP").format(new Date("2026-12-25"));
+// "2026/12/25" (japones usa YYYY/MM/DD)
+
+new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "long",
+}).format(new Date("2026-12-25"));
+// "25 de dezembro de 2026"
+
+new Intl.DateTimeFormat("en-US", {
+  dateStyle: "full",
+}).format(new Date("2026-12-25"));
+// "Friday, December 25, 2026"
+
+// Com hora
+new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeStyle: "short",
+}).format(new Date("2026-12-25T14:30:00"));
+// "25/12/2026 14:30"
+
+// Timezone
+new Intl.DateTimeFormat("en-US", {
+  timeStyle: "long",
+  timeZone: "America/New_York",
+}).format(new Date());
+// "2:30:00 PM EST"
+
+// Componentes especificos
+new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long",
+  hour: "2-digit",
+  minute: "2-digit",
+}).format(new Date());
+// "Friday, December 25, 2026 at 02:30 PM"
+```
+
+**`Intl.Collator` - sort e busca
+locale-aware.** Sort de strings **nao e'
+trivial** quando tem acentos, caracteres
+compostos, ou scripts diferentes:
+
+```ts
+const items = ["Zebra", "Äpfel", "Apfel", "Banana"];
+
+// ❌ Sort default (Unicode code points)
+items.sort();
+// ["Apfel", "Banana", "Zebra", "Äpfel"]  (Ä vai pro fim em Unicode)
+
+// ✅ Sort com Collator alemao
+items.sort(new Intl.Collator("de-DE").compare);
+// ["Äpfel", "Apfel", "Banana", "Zebra"]  (Ä vem antes de A em alemao)
+
+// Compare com locale especifico
+const collatorPt = new Intl.Collator("pt-BR", { sensitivity: "base" });
+collatorPt.compare("Maça", "MACA");
+// 0 (case-insensitive + accent-insensitive)
+```
+
+**`Intl.ListFormat` - "A, B e C" em qualquer
+idioma.** Ingles: "A, B, and C". Frances:
+"A, B et C". Japones: "A、B、C":
+
+```ts
+new Intl.ListFormat("en", { style: "long", type: "conjunction" })
+  .format(["Ana", "Bruno", "Carla"]);
+// "Ana, Bruno, and Carla"
+
+new Intl.ListFormat("pt-BR", { style: "long", type: "conjunction" })
+  .format(["Ana", "Bruno", "Carla"]);
+// "Ana, Bruno e Carla"
+
+new Intl.ListFormat("en", { style: "long", type: "disjunction" })
+  .format(["Ana", "Bruno", "Carla"]);
+// "Ana, Bruno, or Carla"
+
+new Intl.ListFormat("ja", { style: "narrow", type: "unit" })
+  .format(["10kg", "20kg", "30kg"]);
+// "10kg、20kg、30kg"
+```
+
+**A maquina de decisao: qual Intl usar.**
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Preciso formatar dado locale-aware?]
+    Start -->|Numero, moeda, porcentagem| NF[Intl.NumberFormat]
+    Start -->|Data/hora| DTF[Intl.DateTimeFormat]
+    Start -->|Lista de items| LF[Intl.ListFormat]
+    Start -->|Sort ou comparacao| Coll[Intl.Collator]
+    Start -->|Plural rules only| PR[Intl.PluralRules]
+    Start -->|Duracao relativa| RTF[Intl.RelativeTimeFormat]
+    Start -->|Nome de lingua/pais| DN[Intl.DisplayNames]
+    Start -->|Segmentar texto| Seg[Intl.Segmenter]
+
+    NF --> Q1{Tem currency?}
+    Q1 -->|Sim| Cur[style: 'currency', currency: 'BRL']
+    Q1 -->|Nao| Perc{Eh porcentagem?}
+    Perc -->|Sim| Pct[style: 'percent']
+    Perc -->|Nao| Dec[style: 'decimal']
+
+    DTF --> Q2{Qual granularidade?}
+    Q2 -->|Dia, mes, ano| DS[dateStyle: 'short'|'long'|'full']
+    Q2 -->|Especifico| Comps[year, month, day, hour, minute]
+
+    LF --> Q3{Conjuncao ou disjuncao?}
+    Q3 -->|E - and| Conj[type: 'conjunction']
+    Q3 -->|Ou - or| Disj[type: 'disjunction']
+
+    Cur --> Done[OK]
+    Pct --> Done
+    Dec --> Done
+    DS --> Done
+    Comps --> Done
+    Coll --> Done
+    Conj --> Done
+    Disj --> Done
+    PR --> Done
+    RTF --> Done
+    DN --> Done
+    Seg --> Done`}
+  caption="Decision tree: qual Intl formatter usar pra cada caso. Regra pratica: 90% dos casos cai em NumberFormat (numeros/moedas), DateTimeFormat (datas), ou ListFormat (listas). Collator e' essencial pra sort correto; PluralRules e' o motor por tras do ICU pluralization."
+/>
+
+**`Intl.PluralRules` - o motor por tras do
+ICU plural.** Antes de chamar ICU, voce
+precisa saber **qual** a regra de plural
+do locale:
+
+```ts
+new Intl.PluralRules("en-US").select(1);    // "one"
+new Intl.PluralRules("en-US").select(5);    // "other"
+new Intl.PluralRules("pl-PL").select(1);    // "one"
+new Intl.PluralRules("pl-PL").select(5);    // "many" (5-21 em polones!)
+new Intl.PluralRules("pl-PL").select(22);   // "few"  (22-25)
+new Intl.PluralRules("pl-PL").select(100);  // "many" (26+)
+new Intl.PluralRules("ar-EG").select(1);    // "one"
+new Intl.PluralRules("ar-EG").select(2);    // "two"
+new Intl.PluralRules("ar-EG").select(10);   // "many"
+new Intl.PluralRules("ar-EG").select(100);  // "other"
+```
+
+**`Intl.RelativeTimeFormat` - "5 minutos
+atras" sem dor.** Sabe aquele `5min ago`
+em ingles, `há 5 min` em PT, `5分前` em
+japones? Faca certo:
+
+```ts
+new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" }).format(-5, "minute");
+// "há 5 minutos"
+
+new Intl.RelativeTimeFormat("en-US", { numeric: "auto" }).format(-5, "minute");
+// "5 minutes ago"
+
+new Intl.RelativeTimeFormat("pt-BR").format(1, "day");
+// "em 1 dia"
+
+new Intl.RelativeTimeFormat("en-US", { numeric: "always" }).format(-1, "day");
+// "1 day ago"  (numeric: 'always' = sempre com numero)
+```
+
+**`Intl.DisplayNames` - nome de linguas/
+paises.** Mostrar "esse conteudo ta'
+disponivel em Ingles" **na lingua nativa**:
+
+```ts
+const dn = new Intl.DisplayNames(["pt-BR"], { type: "language" });
+dn.of("en");    // "inglês"
+dn.of("ja");    // "japonês"
+dn.of("pt-BR"); // "português (Brasil)"
+
+const dnRegion = new Intl.DisplayNames(["pt-BR"], { type: "region" });
+dnRegion.of("US"); // "Estados Unidos"
+dnRegion.of("BR"); // "Brasil"
+```
+
+**`Intl.Segmenter` - quebrar texto em
+palavras/grafemas.** Especialmente util
+em linguas sem espacos (chines, japones,
+tailandes):
+
+```ts
+const segmenter = new Intl.Segmenter("ja-JP", { granularity: "word" });
+const text = "こんにちは世界";
+[...segmenter.segment(text)].map((s) => s.segment);
+// ["こんにちは", "世界"]
+```
+
+**Performance: reuse a instancia.** Criar
+um `Intl.NumberFormat` tem **custo** (carrega
+CLDR data). **Crie uma vez, reuse**:
+
+```ts
+// ❌ Cria instancia nova a cada format
+function formatPrice(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
+
+// ✅ Cria uma vez, cache
+const priceFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
+function formatPrice(value) {
+  return priceFormatter.format(value);
+}
+
+// Em React, use useMemo ou um singleton
+const useFormatter = (locale, options) =>
+  useMemo(() => new Intl.NumberFormat(locale, options), [locale, JSON.stringify(options)]);
+```
+
+**Detectar locale do user.** A escolha do
+locale vem de varias fontes:
+
+```ts
+function getUserLocale(): string {
+  // 1. URL (mais comum em apps com i18n)
+  const urlLocale = new URLSearchParams(window.location.search).get("lang");
+  if (urlLocale) return urlLocale;
+
+  // 2. localStorage (escolha do user)
+  const stored = localStorage.getItem("preferred-locale");
+  if (stored) return stored;
+
+  // 3. Browser (Accept-Language)
+  return navigator.language; // "pt-BR", "en-US", etc
+}
+```
+
+## Aprofundamento 🟡
+
+**Performance real: `Intl.NumberFormat` e
+lento na primeira chamada.** O primeiro
+`new Intl.NumberFormat("ar-SA")` pode levar
+**5-50ms** (carrega CLDR data praquele
+locale). Chamadas subsequentes sao
+**sub-millisecond**. Solucao em apps com
+muitos locales: **preload** os mais comuns
+no boot:
+
+```ts
+// preload no boot
+["pt-BR", "en-US", "es-ES", "ja-JP"].forEach((locale) => {
+  new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" });
+});
+// primeira format real fica rapida
+```
+
+**`Intl.NumberFormat` options avancadas.**
+
+```ts
+new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  currencyDisplay: "code",     // "BRL 99,90" em vez de "R$ 99,90"
+  currencyDisplay: "symbol",   // "R$ 99,90" (default)
+  currencyDisplay: "narrowSymbol", // "R$99,90" sem espaco (compact)
+  useGrouping: "min2",         // agrupa so com >=2 casas
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  minimumSignificantDigits: 1, // 1-3 digitos significativos
+  maximumSignificantDigits: 3,
+  localeMatcher: "best fit",   // ou "lookup"
+  roundingMode: "halfEven",    // banker's rounding
+}).format(99.9);
+```
+
+**`notation: 'compact'` - 1.2K, 3.4M.**
+
+```ts
+new Intl.NumberFormat("en-US", { notation: "compact" }).format(1234);
+// "1.2K"
+
+new Intl.NumberFormat("en-US", { notation: "compact" }).format(1234567);
+// "1.2M"
+
+new Intl.NumberFormat("pt-BR", { notation: "compact" }).format(1234);
+// "1,2 mil"
+```
+
+**`unit` - unidades de medida.** Formatar
+distancias, pesos, etc com a unidade
+**traduzida**:
+
+```ts
+new Intl.NumberFormat("en-US", {
+  style: "unit",
+  unit: "kilometer",
+  unitDisplay: "long",
+}).format(5);
+// "5 kilometers"
+
+new Intl.NumberFormat("pt-BR", {
+  style: "unit",
+  unit: "kilometer",
+  unitDisplay: "long",
+}).format(5);
+// "5 quilometros"
+
+new Intl.NumberFormat("pt-BR", {
+  style: "unit",
+  unit: "celsius",
+  unitDisplay: "short",
+}).format(25);
+// "25 °C"
+```
+
+**ICU MessageFormat vs Intl.** Sao
+**diferentes** mas **complementares**:
+
+- **Intl**: **formatacao** de valores
+  (numeros, datas, listas).
+- **ICU MessageFormat**: **mensagens
+  inteiras** com placeholders, plural,
+  selecao ("voce tem 5 items" / "voce
+  nao tem items" / "voce tem 1 item").
+
+Use **Intl** pra formatar valores
+isolados. Use **ICU** pra mensagens
+compostas que incluem plural e selecao.
+
+## Pra quem quer ir mais alem 🔴
+
+**`Intl.NumberFormat` v3 - novidades 2024+
+(ES2023).** Stage 4 e' **Rounding Modes**
+(`halfEven`, `halfExpand`, etc), e
+**`useGrouping: "min2" | "always" | "auto"`
+granular** (era boolean). Stage 3
+inclui **enum API** (`Intl.supportedValuesOf("calendar")`),
+**`Intl.Locale` enhancements** (extractor
+de time zone, calendario, numbering
+system da BCP 47 tag).
+
+**`Intl.DurationFormat` - "1h 30min 15s".**
+**Experimental** (Chrome 129+, Safari
+parcial). Formata duracoes ISO 8601 em
+formato human-readable, com pluralizacao
+e traducao automatica.
+
+**`Intl.Segmenter` para truncamento
+inteligente.** "Ler mais..." em ingles.
+Cortar na **fronteira de palavra/grafema**
+correta (nao no meio de emoji ou
+caracter composto):
+
+```ts
+const segmenter = new Intl.Segmenter("pt-BR", { granularity: "word" });
+function truncate(text, maxChars) {
+  let result = "";
+  for (const s of segmenter.segment(text)) {
+    if ((result + s.segment).length > maxChars) break;
+    result += s.segment;
+  }
+  return result + "...";
+}
+```
+
+**Polyfill: `Intl.PluralRules` em Node
+10- (sem suporte nativo).** Em 2026,
+suporte e' **universal** (Node 18+,
+todos browsers). Polyfills so' pra apps
+legados.
+
+**Carregar CLDR customizado.** Se voce
+quer usar **regras de plural
+customizadas** (raro), use a lib
+[`intl-pluralrules`](https://formatjs.io/docs/polyfills/intl-pluralrules/)
+(FormatJS polyfill) que aceita regras
+custom via CLDR data files.
+
+**`Intl.Locale` - introspeccao de tags.**
+
+```ts
+const loc = new Intl.Locale("pt-BR");
+loc.language;      // "pt"
+loc.region;        // "BR"
+loc.baseName;      // "pt-BR"
+loc.calendar;      // "gregory"
+loc.numberingSystem; // "latn"
+loc.getWeekInfo(); // { firstDay: 7, weekend: [6, 0] } (BR: semana comeca domingo)
+```
+
+Use pra **detectar configuracao do locale**
+automaticamente e adaptar UI.
+
+**Leitura recomendada:**
+
+- [MDN - Intl.NumberFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat) - referencia completa com todas as options.
+- [MDN - Intl.DateTimeFormat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat) - todas as opcoes de data/hora.
+- [Format.JS - Guides](https://formatjs.io/docs/intl) - guias praticos, polyfills, e integracao com React.
+
+> Dica: o erro mais comum em Intl e'
+> **criar instancia nova a cada format**.
+> `new Intl.NumberFormat(...)` carrega
+> CLDR data e tem custo de 5-50ms na
+> primeira vez. Em loops (ex: render
+> 1000 rows de tabela com precos), isso
+> **trava** a UI. **Sempre** reuse: crie
+> o formatter uma vez, use `.format()`
+> em loop. Em React, use `useMemo` ou um
+> singleton. **Cache a nivel de modulo**
+> e' o padrao.
+
+No proximo no, vamos **ICU MessageFormat**:
+a linguagem de **pluralizacao, selecao, e
+argumentos** que resolve "1 item" / "2
+items" / "5 items" / "22 items" /
+"items" em qualquer idioma. Cobre a
+parte de **mensagens compostas**.
+
+<Checkpoint
+  challenge="Implemente a função `configurarFormatador(tipo, locale, opcoes)` que retorna o objeto de configuracao para `Intl.NumberFormat` ou `Intl.DateTimeFormat` ou `Intl.ListFormat` baseado no tipo. Recebe: tipo ('moeda' | 'percentual' | 'data' | 'lista' | 'numero'), locale (string), opcoes (objeto com chaves variaveis por tipo). Regras: tipo 'moeda' retorna { locale, style: 'currency', currency: opcoes.moeda, ...resto }; tipo 'percentual' retorna { locale, style: 'percent', ...resto }; tipo 'data' retorna { locale, dateStyle: opcoes.estilo || 'short', ...resto }; tipo 'lista' retorna { locale, style: opcoes.estilo || 'long', type: 'conjunction', ...resto }; tipo 'numero' retorna { locale, style: 'decimal', ...resto }. 'resto' = outras chaves de opcoes que nao sejam as usadas no tipo especifico."
+  starterCode={`// Implemente configurarFormatador(tipo, locale, opcoes) que
+// retorna o objeto de configuracao para Intl formatters.
+//
+// Regras por tipo:
+// - 'moeda': { locale, style: 'currency', currency: opcoes.moeda, ...resto }
+//   onde resto = outras chaves de opcoes (excluindo 'moeda')
+// - 'percentual': { locale, style: 'percent', ...resto }  (resto = opcoes inteiro)
+// - 'data': { locale, dateStyle: opcoes.estilo || 'short', ...resto } (excluindo 'estilo')
+// - 'lista': { locale, style: opcoes.estilo || 'long', type: 'conjunction', ...resto }
+// - 'numero': { locale, style: 'decimal', ...resto }
+//
+// "resto" = opcoes sem as chaves consumidas pelo tipo.
+function configurarFormatador(tipo, locale, opcoes) {
+  return { locale };
+}
+
+const _r1 = configurarFormatador('moeda', 'pt-BR', { moeda: 'BRL' });
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarFormatador('percentual', 'en-US', { maximumFractionDigits: 1 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = configurarFormatador('data', 'ja-JP', { estilo: 'long' });
+console.log(JSON.stringify(_r3));
+
+const _r4 = configurarFormatador('lista', 'pt-BR', { estilo: 'narrow' });
+console.log(JSON.stringify(_r4));`}
+  expected='{"locale":"pt-BR","style":"currency","currency":"BRL"}
+{"locale":"en-US","style":"percent","maximumFractionDigits":1}
+{"locale":"ja-JP","dateStyle":"long"}
+{"locale":"pt-BR","style":"narrow","type":"conjunction"}'
+  slug="i18n"
+  nodeId="intl-apis"
+/>
+
+<Quiz
+  question="Por que `Intl.NumberFormat` e' melhor que template literals pra formatar numeros/moedas em apps i18n?"
+  options={[
+    {
+      text: "Intl.NumberFormat usa o CLDR (Unicode Common Locale Data Repository), garantindo formatacao correta pra qualquer locale: separador decimal (',' vs '.'), milhar, simbolo de moeda (R$, $, €, ¥, posicionamento), casas decimais (JPY nao tem centavos, KWD tem 3), e regras locais (turco poe % antes do numero). Template literals produzem formatacao fixa que quebra em outros locales.",
+      correct: true,
+      explanation:
+        "A razao central: CLDR. O `Intl.NumberFormat` consulta o **CLDR** (database Unicode com regras de formatacao por locale) e produz saida correta em qualquer idioma. Pontos criticos: (1) **Separador decimal**: pt-BR usa virgula (1.234,5), en-US usa ponto (1,234.5), de-DE usa ponto (1.234,5). Template literal \\`${n.toFixed(2)}\\` produz '1234.50' sempre - quebra em pt-BR. (2) **Moeda**: JPY nao tem centavos (¥100 nao ¥100.00), KWD tem 3 casas (1.234 KWD nao 1.23). Hardcoded quebra. (3) **Posicionamento do simbolo**: R$ vem antes em pt-BR (R$ 99,90), 99,90 € vem depois em de-DE. (4) **Porcentagem em turco**: 25% em PT, %25 em tr-TR. (5) **Milhar**: en-US usa virgula, de-DE e pt-BR usam ponto. Sem CLDR, cada caso e' um bug. Intl resolve todos automaticamente.",
+    },
+    {
+      text: "Intl.NumberFormat e' mais rapido que template literals porque e' implementado em C++ nativo.",
+      correct: false,
+      explanation:
+        "Falso. `Intl.NumberFormat` e' **mais lento** que template literal na maioria dos casos - a primeira chamada carrega CLDR data (5-50ms). Template literal e' simples, sub-millisecond. A vantagem de Intl nao e' velocidade - e' **correctude locale-aware**. Use Intl quando o locale importa (cliente de outro pais); use template so' pra logs de dev ou formato fixo conhecido (API key, ID).",
+    },
+    {
+      text: "Intl.NumberFormat funciona so' em navegadores, nao em Node.js.",
+      correct: false,
+      explanation:
+        "Falso. `Intl.NumberFormat` funciona em **Node.js** desde a versao 1.x (com full-icu data desde 7.x). Em 2026, Node 18+ e 20+ ja' vem com CLDR completo embutido - nenhum polyfill necessario. Funciona identicamente em browser e Node. Em React Native, requer polyfill (`intl` package).",
+    },
+  ]}
+/>

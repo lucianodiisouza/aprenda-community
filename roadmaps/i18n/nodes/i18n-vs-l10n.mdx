@@ -1,0 +1,359 @@
+---
+id: i18n-vs-l10n
+title: "i18n vs l10n: o que e cada, separacao codigo/conteudo, Locale vs Language"
+resources:
+  - title: "MDN - Intl (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl
+    lang: en
+    type: doc
+    free: true
+  - title: "W3C - Internationalization (EN)"
+    url: https://www.w3.org/International/
+    lang: en
+    type: doc
+    free: true
+  - title: "ICU - International Components for Unicode (EN)"
+    url: https://icu.unicode.org/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce ja' mandou o app pra staging e o
+**product manager** pede: "agora pra
+ingles, espanhol e japones". Ate aqui,
+seu codigo tem strings hardcoded em
+PT-BR. Voce **troca o texto** e acha que
+terminou. Ate o usuario japones reclamar
+que **"10,5" e' 10.5** (separador decimal
+invertido), o **plural ta errado** ("1
+item" / "2 items" em ingles funciona, em
+**polones** e' 1 forma, **"5 items"** e'
+**outra** forma, **"22 items"** e' outra
+forma), e o layout quebra porque o
+**arabes** le da direita pra esquerda. **Esse
+no cobre a diferenca entre "traduzir" e
+"internacionalizar de verdade"**.
+
+**i18n** (internacionalizacao) e' o
+processo de **preparar o codigo** pra
+servir multiplas linguas e regioes. **l10n**
+(localizacao) e' o ato de **adaptar o
+conteudo** pra uma regiao especifica.
+**i18n vem primeiro** (no codigo); l10n
+vem depois (no conteudo). Trocar texto e'
+**l10n** - mas se o codigo nao foi
+preparado (i18n), l10n quebra.
+
+Voce sai de "trocar strings pra ingles"
+pra "arquitetura que serve qualquer
+locale sem retrabalho".
+
+## O essencial 🟢
+
+**i18n vs l10n em uma frase:**
+
+- **i18n (internacionalizacao):** o codigo
+  **suporta** multiplas linguas/regioes
+  (abstracoes, sem strings hardcoded,
+  formatacao locale-aware).
+- **l10n (localizacao):** o **conteudo
+  especifico** de uma regiao (traducoes,
+  imagens locais, formato de data/moeda).
+
+**Analogia:** i18n e' construir uma casa
+com **encanamento que aguente agua quente
+e fria** (infraestrutura). l10n e'
+**escolher a temperatura** em cada comodo
+(conteudo). Casa sem i18n = so' agua
+fria, e' impossivel "localizar" pra agua
+quente sem quebrar tudo.
+
+**Exemplos praticos:**
+
+| i18n (codigo)                                 | l10n (conteudo)                    |
+| --------------------------------------------- | ---------------------------------- |
+| Extrair strings pra arquivos de traducao     | Traduzir "Salvar" pra "Save"       |
+| Usar `Intl.NumberFormat` em vez de template   | Escolher formato USD vs BRL        |
+| Implementar pluralizacao com ICU              | Escrever "1 item" / "2 items"      |
+| Suporte a RTL via CSS logical properties     | Adicionar layout arabe/hebraico    |
+| Detectar locale do user                       | Escolher qual dos 12 idiomas servir |
+
+**Codigo com i18n ruim vs bom:**
+
+```ts
+// ❌ i18n ruim: hardcoded
+const mensagem = `Voce tem ${count} items no carrinho`;
+// Quebra em polones (1 forma vs 5 vs 22),
+// arabe (RTL), japones (sem plural simples)
+
+// ✅ i18n bom: extraido, formatado, plural-aware
+const mensagem = t("cart.items", { count });
+// ICU decide plural correto pro locale
+// t() carrega de arquivo de traducao
+```
+
+**Locale vs Language - a diferenca que
+causa bug.** **Language** = idioma
+(`pt`, `en`, `ja`). **Locale** = idioma +
+**regiao** + variacoes (`pt-BR`, `en-US`,
+`en-GB`, `zh-Hant-TW`). `pt-BR` usa
+**R$**, **dd/MM/yyyy**. `pt-PT` usa
+**€**, **dd-MM-yyyy**. Ingles americano
+e britanico divergem em **datashort**,
+**numero** (1,000.50 vs 1.000,50), e ate
+**ortografia** (color vs colour).
+
+**Language tags seguem BCP 47:**
+`<lang>-<script>-<region>-<variant>`.
+
+```text
+pt-BR          # portugues, Brasil
+pt-PT          # portugues, Portugal
+en-US          # ingles, EUA
+en-GB          # ingles, Reino Unido
+zh-Hans-CN     # chines simplificado, China
+zh-Hant-TW     # chines tradicional, Taiwan
+ar             # arabe (sem regiao, default Egypt)
+sr-Latn-RS     # serbio, script latino, Serbia
+```
+
+**Por que importa?** Quando o user define
+`Accept-Language: pt-BR`, o servidor
+negocia e serve o locale mais proximo.
+Quando o **codigo cliente** formata
+datas, usa `pt-BR` pra escolher Intl, e
+o usuario ve "25/12/2026" - e nao
+"12/25/2026".
+
+**Separacao de concerns: 3 camadas.**
+
+```text
+1. Codigo: extrai strings, usa Intl, formata com ICU
+2. Conteudo: arquivos JSON/YAML com traducoes por locale
+3. Cultura: imagens, cores, simbolos (nao traduziveis, mas locais)
+```
+
+**Exemplo de extracao:**
+
+```ts
+// ❌ Antes: string hardcoded
+function botaoSalvar() {
+  return <button>Salvar</button>;
+}
+
+// ✅ Depois: chave de traducao
+function botaoSalvar() {
+  const { t } = useTranslation();
+  return <button>{t("common.save")}</button>;
+}
+
+// Arquivo: locales/pt-BR/common.json
+// { "common": { "save": "Salvar" } }
+
+// Arquivo: locales/en/common.json
+// { "common": { "save": "Save" } }
+```
+
+**Quando NAO precisa de i18n:**
+
+- App **interno** de uma empresa so' em
+  portugues, sem plano de expansao.
+- **Landing page** de evento unico.
+- **Demo/MVP** descartavel.
+
+**Mesmo assim**, **separar strings do
+codigo** e' boa pratica. **i18n mal
+implementado** custa 10x mais pra
+**adicionar depois** do que **fazer
+certo desde o inicio**.
+
+**A linha do tempo real de um projeto
+i18n-ready:**
+
+```text
+1. Dia 1: estrutura de pastas, Intl desde o inicio, t() everywhere
+2. Dia 30: PM pede novo idioma → adiciona en.json, 1 commit
+3. Dia 60: PM pede formato japones → ICU ja' cobre plural
+4. Dia 90: usuario arabe → RTL ja' funciona, so' traduzir
+```
+
+**Vs. o caminho sem i18n (real, dolorido):**
+
+```text
+1. Dia 1: strings hardcoded em PT-BR
+2. Dia 60: PM pede "ingles" → 6h grep+replace, quebra testes
+3. Dia 120: "e arabe" → reescrever plural, layout quebra
+4. Dia 180: "e chines com data local" → 3 semanas de trabalho
+```
+
+## Aprofundamento 🟡
+
+**Os 3 problemas que i18n resolve que
+"trocar texto" nao resolve.** Sao esses:
+
+1. **Pluralizacao.** Ingles: 1 item /
+   2 items. **Polones:** 1 forma / 2-4 /
+   5-21 / 22-25 / 26+... **5 formas de
+   plural diferentes**. **Arabe:** 6
+   formas. Ingles so' tem 2 (`one` /
+   `other`). **Trocar texto** nao
+   resolve - precisa de **ICU** ou
+   `Intl.PluralRules`.
+2. **Formatacao nao-trivial.** Datas,
+   numeros, moedas, listas, **ordem de
+   sort** ("ä" vem depois de "z" em
+   alemao, mas na logica de sorting de
+   Unicode). **Intl** resolve, mas voce
+   precisa **usar** Intl em vez de
+   template literals.
+3. **Direcao de layout.** LTR (ingles,
+   PT) vs RTL (arabe, hebraico). CSS
+   `direction: rtl` **nao basta** -
+   precisa de **logical properties**
+   (`margin-inline-start` em vez de
+   `margin-left`), e **icones espelhados**
+   (seta pra direita → seta pra esquerda).
+
+**Locale negotiation - como o servidor
+escolhe o locale.** Quando o browser
+manda `Accept-Language: pt-BR,en-US;q=0.9,en;q=0.8`,
+o servidor faz **quality value matching**:
+
+```text
+User quer: pt-BR (q=1.0), en-US (q=0.9), en (q=0.8)
+Server tem: pt-BR, en-GB, es
+Match: pt-BR (perfeito), en-GB (q=0.8 do en)
+Servido: pt-BR
+```
+
+**Quality values** (`q=0.X`) vao de 0 a 1.
+Default e' 1.0. Quanto menor, menos o
+user prefere. **Server-side i18n
+libraries** (Next.js i18n, Rails i18n)
+fazem isso automaticamente.
+
+**CLDR - Unicode Common Locale Data
+Repository.** Onde vem os dados de
+"como formatar data em japones" ou
+"como pluralizar em arabe". O **CLDR**
+e' o database usado pelo `Intl.*` do
+JS, Java, Python, etc. Atualizado
+anualmente - alguma coisa muda entre
+versoes (ex: novo locale, regra de
+plural nova).
+
+**i18n nao e' "traducao".** Traducao e' o
+**conteudo** de uma l10n. i18n e' o
+**codigo** que suporta trocar o conteudo
+sem mudar o codigo. Confundir os 2 e'
+comum, mas a distincao importa: voce
+**internacionaliza** primeiro (extrai
+strings, usa Intl), depois **localiza**
+(traduz).
+
+**Cultura nao se traduz - se adapta.**
+Maozinha de "OK" (👌) e' **ofensiva** no
+Brasil (mesmo sentido), e em **partes da
+Europa** = "zero" (insulto). Bandeira
+americana em 1776 e em 2026 sao
+diferentes. **Cores** tem significado
+cultural (branco = luto no Japao, branco
+= pureza no Brasil). i18n cobre **texto**;
+**adaptacao cultural** e' um trabalho
+separado (design review por mercado).
+
+## Pra quem quer ir mais alem 🔴
+
+**CLDR data por tras do Intl.** Quando
+voce faz `new Intl.NumberFormat("ar-EG")`,
+o JS consulta o **CLDR** embutido no
+runtime (V8/SpiderMonkey). **Cada versao
+do Node/browser** traz uma versao
+diferente do CLDR - se voce precisa de
+**consistencia exata** entre runtime
+diferentes (Node 18 vs Node 22), use
+[full-icu](https://github.com/icu-project/icu) ou
+polyfills. Em 2026, CLDR 47 e' o
+atual.
+
+**MessageFormat 2 (MF2) - o futuro.**
+**ICU MessageFormat 1.x** (o que i18next
+usa) tem limitacoes (sintaxe verbosa,
+dificil de aninhar). **MF2** (2024+) e'
+a nova versao: **sintaxe mais limpa**,
+**type-safe**, **compilador**. Em 2026,
+**ainda em rollout** - use MF2 so' em
+projetos novos se quiser; migracao e'
+trabalhoso.
+
+**`Intl.Segmenter` - avancado.** Quebra
+texto em **grafemas**, palavras, frases
+de forma **locale-aware**. Use pra
+**word count** correto em chines
+(caractere vs palavra) ou **truncamento**
+("Ler mais...") sem cortar no meio de
+emoji ou caracter composto.
+
+**`Intl.RelativeTimeFormat` - "5 minutos
+atras"**. Sabe aquela formatacao que
+todo app faz errado (`5min ago`,
+`há 5 min`)? **RelativeTimeFormat**
+faz certo pra qualquer locale, com
+pluralizacao automatica.
+
+**`Intl.DisplayNames` - nomes de
+linguas/paises**. `DisplayNames.of({type:
+"language"}).of("pt-BR")` → "Brazilian
+Portuguese" (en) ou "portugues brasileiro"
+(pt-BR). Use pra mostrar "esse conteudo
+esta' disponivel em: Ingles, Espanhol,
+Japones".
+
+**Leitura recomendada:**
+
+- [MDN - Intl](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl) - referencia completa do namespace Intl.
+- [W3C Internationalization](https://www.w3.org/International/) - standards, artigos, best practices.
+- [ICU - International Components for Unicode](https://icu.unicode.org/) - base do MessageFormat, CLDR, e Intl do JS.
+
+> Dica: o erro mais comum em i18n e'
+> **"traduzir" e achar que terminou**.
+> i18n vai muito alem de texto: **formatacao
+> de numeros**, **pluralizacao** (5 formas
+> em polones), **direcao de layout**
+> (RTL), e **adaptacao cultural**. Comece
+> com **Intl + ICU** desde o dia 1 do
+> projeto - custa 5% a mais de effort
+> inicial, mas **evita 80% de retrabalho**
+> no futuro.
+
+No proximo no, vamos **Intl APIs**: o
+namespace `Intl.*` do JS (nativo,
+zero-dependency) pra formatar numeros,
+datas, listas, e fazer sort correto em
+qualquer locale. Cobre a parte de
+**formatacao locale-aware**.
+
+<Quiz
+  question="Qual a diferenca fundamental entre i18n e l10n?"
+  options={[
+    {
+      text: "i18n e' o processo de preparar o CODIGO pra suportar multiplas linguas/regioes (extrair strings, usar Intl, implementar pluralizacao). l10n e' o ato de adaptar o CONTEUDO pra uma regiao especifica (traduzir texto, escolher formato de data/moeda, ajustar imagens). i18n vem primeiro; l10n depois.",
+      correct: true,
+      explanation:
+        "i18n (internacionalizacao) e' trabalho de **engenheiro**: abstrair strings, usar Intl, implementar ICU, suportar RTL via CSS. l10n (localizacao) e' trabalho de **tradutor/localizador**: pegar os arquivos JSON e traduzir, ajustar imagens, escolher formato de moeda. **Sem i18n primeiro**, l10n quebra: voce traduz '5 items' mas o codigo faz template literal com 0 items = '0 items' (sem plural). **i18n sem l10n** e' um app em ingles com estrutura multi-linguas mas sem traducoes - funciona, so' nao serve outros idiomas. **A ordem importa**: i18n → l10n. Trocar texto sem preparar codigo e' o erro #1 de i18n mal feito.",
+    },
+    {
+      text: "i18n e' traducao; l10n e' formatacao de numeros/datas.",
+      correct: false,
+      explanation:
+        "Falso. **Traducao** e' parte de l10n (conteudo), nao i18n. i18n e' o **codigo preparado pra troca de conteudo** - abstrair strings, formatar numeros com Intl, implementar pluralizacao, suportar RTL. l10n inclui **traducao + formatacao** do conteudo. A frase inverte os papeis: formatacao de numeros **e' i18n** (codigo), nao l10n. 'i18n = codigo, l10n = conteudo' e' a forma certa de lembrar.",
+    },
+    {
+      text: "i18n e' desnecessario se voce tem l10n bem feito - basta traduzir tudo.",
+      correct: false,
+      explanation:
+        "Falso. l10n **depende** de i18n. Se o codigo tem strings hardcoded ('Voce tem 5 items'), l10n (traduzir) nao resolve: em polones, 5 items tem forma diferente de 1 item, e 22 items tem forma diferente de 5. **Sem ICU/Intl.PluralRules no codigo** (i18n), a l10n (traducao) quebra. O exemplo real: 2010, GitHub localizou pra alemao (l10n), mas em alemao '1 commit' / '5 commits' / '22 Commits' sao formas diferentes - sem i18n (pluralizacao), a l10n produzia gramatica errada. **i18n vem antes de l10n. sempre.**",
+    },
+  ]}
+/>

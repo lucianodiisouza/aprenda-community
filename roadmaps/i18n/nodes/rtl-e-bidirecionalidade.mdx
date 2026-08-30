@@ -1,0 +1,544 @@
+---
+id: rtl-e-bidirecionalidade
+title: "RTL e bidirecionalidade: dir, icones espelhados, logical properties"
+resources:
+  - title: "MDN - dir attribute (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/dir
+    lang: en
+    type: doc
+    free: true
+  - title: "CSS - Logical Properties and Values (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values
+    lang: en
+    type: doc
+    free: true
+  - title: "W3C - Structural markup and RTL text in HTML (EN)"
+    url: https://www.w3.org/International/questions/qa-html-dir.en.html
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce internacionalizou **texto** (Intl,
+ICU, traducoes). Mas o app vai pra
+**arabe** e **hebraico** (RTL - right to
+left), e o **layout quebra**: texto
+invertido, icones de seta apontando pro
+lado errado, botoes desalinhados,
+scrollbar do lado errado. **Esse no
+cobre RTL e bidirecionalidade**: o que
+muda na sua UI quando o idioma **le da
+direita pra esquerda**, e como tornar o
+layout **agnostico de direcao** com CSS
+**logical properties**.
+
+**Bidirecionalidade** (bidi) e' a
+capacidade de misturar texto LTR (ingles)
+e RTL (arabe) na mesma linha - o browser
+faz automaticamente, mas **layout** (botoes,
+icones, margens) precisa ser feito
+**manualmente** com `dir` e logical
+properties. **Sem isso**, arabe fica
+ilegivel e icones apontam pro lado
+errado.
+
+Voce sai de "quebra em arabe" pra
+"layout funciona em qualquer idioma".
+
+## O essencial 🟢
+
+**O que e' RTL.** A maioria dos idiomas
+(Latim, Cirilico, Grego) sao **LTR** (left
+to right). **Arabe**, **hebraico**,
+**persa**, **urdu** sao **RTL** (right to
+left). O texto flui da **direita pra
+esquerda**, e o **layout inteiro** se
+**espelha**: botoes vao pra direita, scroll
+bars vao pra esquerda, icones de "voltar"
+apontam pra direita.
+
+**`dir` attribute - o "ligar" de RTL.** Em
+HTML, o atributo `dir` controla a direcao:
+
+```html
+<!-- Padrao LTR (ingles, PT, etc) -->
+<html lang="pt-BR" dir="ltr">
+
+<!-- Conteudo arabe -->
+<html lang="ar-SA" dir="rtl">
+
+<!-- Conteudo hebraico -->
+<html lang="he-IL" dir="rtl">
+
+<!-- Mixed (browser detecta automaticamente) -->
+<p dir="auto">Texto misto 123 ABC</p>
+```
+
+**Efeito imediato:** com `dir="rtl"`, o
+texto flui da direita pra esquerda,
+**inverte a ordem** dos elementos
+block-level, e o scroll bar vai pra
+esquerda. **CSS muda** com base no
+`dir` do elemento ou do parent.
+
+**Logical properties - CSS agnóstico de
+direcao.** A **maneira moderna** de
+escrever CSS que **automaticamente** se
+adapta a LTR/RTL:
+
+```css
+/* ❌ Errado: hardcoded left/right */
+.card {
+  margin-left: 16px;
+  padding-right: 8px;
+  border-left: 2px solid blue;
+  text-align: left;
+}
+
+/* ✅ Certo: logical properties */
+.card {
+  margin-inline-start: 16px;   /* esquerda em LTR, direita em RTL */
+  padding-inline-end: 8px;     /* direita em LTR, esquerda em RTL */
+  border-inline-start: 2px solid blue;  /* esquerda em LTR, direita em RTL */
+  text-align: start;           /* esquerda em LTR, direita em RTL */
+}
+```
+
+**Mapeamento logical → physical:**
+
+| Logical property        | LTR (esquerda→direita)  | RTL (direita→esquerda) |
+| ----------------------- | ----------------------- | ---------------------- |
+| `inline-start`          | left                    | right                  |
+| `inline-end`            | right                   | left                   |
+| `block-start`           | top                     | top                    |
+| `block-end`             | bottom                  | bottom                 |
+| `text-align: start`     | left                    | right                  |
+| `float: inline-start`   | left                    | right                  |
+| `inset-inline-start`    | left                    | right                  |
+| `border-inline-start`   | left border             | right border           |
+
+**Logical properties suportadas** (todos
+browsers modernos): `margin-inline`,
+`padding-inline`, `border-inline`,
+`inset-inline`, `text-align: start|end`,
+`float: inline-start|inline-end`,
+`width/height: min-content|max-content`.
+
+**Trocando `top`/`bottom` por `block-start`/
+`block-end`.** Em linguas que escrevem
+**vertical** (japones, chines tradicional),
+**ou em layouts "verticais"** (sidebar no
+top, nao na esquerda), use `block-start`/
+`block-end`:
+
+```css
+.toast {
+  position: fixed;
+  inset-block-start: 16px;  /* top em LTR, bottom em LTR (vertical) */
+  inset-inline-end: 16px;   /* right em LTR, left em RTL */
+}
+```
+
+**Icones espelhados - "back arrow".** O
+**"voltar"** aponta pra **direita** em
+arabe, nao pra esquerda. CSS:
+
+```css
+/* Use transform: scaleX(-1) em RTL */
+[dir="rtl"] .icon-back {
+  transform: scaleX(-1);
+}
+
+/* Ou use logical properties pra icones */
+.icon-arrow-forward {
+  transform: scaleX(var(--dir, 1));  /* 1 em LTR, -1 em RTL */
+}
+```
+
+**Ou em SVG, use `transform="scale(-1, 1)"`
+condicional.**
+
+**`unicode-bidi` e `direction` CSS - bidi
+inline.** Quando texto LTR (ingles) aparece
+**dentro** de paragrafo RTL (arabe), o
+browser faz **bidi algorithm** automaticamente.
+Problemas comuns:
+
+```html
+<!-- Texto arabe com numero LTR -->
+<p dir="rtl" lang="ar">
+  العنوان: 123 شارع الرئيسي  <!-- 123 fica entre arabe - ok -->
+</p>
+
+<!-- URL dentro de arabe -->
+<p dir="rtl" lang="ar">
+  زر هذا الرابط: <a href="https://example.com">https://example.com</a>
+  <!-- URL em LTR, link clicavel, ok -->
+</p>
+```
+
+**`unicode-bidi: isolate`** - isola um
+elemento do bidi context (util pra
+**username**, **codigo**, **numeros**):
+
+```css
+.username {
+  unicode-bidi: isolate;  /* username: "ahmed_2025" nao vira "ahmed_0252" */
+}
+```
+
+**`unicode-bidi: bidi-override`** - forca
+direcao (ultimo recurso, raramente
+necessario).
+
+**`bdo` (bidirectional override) - force
+direcao absoluta.** `<bdo dir="rtl">forca
+rtl</bdo>`. **Raramente** usado.
+
+**Detectar RTL com CSS.**
+
+```css
+/* Apply so em RTL */
+:dir(rtl) {
+  .icon-back {
+    transform: scaleX(-1);
+  }
+}
+
+/* Apply so em LTR */
+:dir(ltr) {
+  .icon-back {
+    transform: none;
+  }
+}
+```
+
+**Detectar RTL com JS.**
+
+```ts
+function isRTL(): boolean {
+  const dir = document.documentElement.getAttribute("dir")
+    || getComputedStyle(document.documentElement).direction;
+  return dir === "rtl";
+}
+
+// ou via Intl
+const locale = "ar-SA";
+const isRtl = new Intl.Locale(locale).getTextInfo?.()?.direction === "rtl";
+// ou
+const rtlLocales = ["ar", "he", "fa", "ur", "ps", "sd", "yi"];
+const lang = locale.split("-")[0];
+const isRtl = rtlLocales.includes(lang);
+```
+
+**Auto-direction com `dir="auto"`.** O
+browser detecta a direcao baseado no
+**primeiro caractere forte** do texto:
+
+```html
+<p dir="auto">
+  Este paragrafo comeca com LTR.
+  <!-- dir = ltr -->
+</p>
+
+<p dir="auto">
+  هذا فقرة بالعربية.
+  <!-- dir = rtl (detectado do primeiro char arabe) -->
+</p>
+```
+
+**Limitacao de `dir="auto"`:** so' funciona
+com **texto puro**. Se o paragrafo comeca
+com **numero** ou **simbolo**, nao detecta
+(both sao "neutros"). **Use `dir` explicito**
+pra casos conhecidos.
+
+**Icones que NAO se espelham.** Nem todo
+icone vira ao contrario. Ex: icone de
+"play" (▶) - "play forward" e igual em
+LTR e RTL. **"play backward"** (◀) nao
+se espelha. **"Seta de voltar"** se
+espelha. **"Seta de proximo"** se
+espelha.
+
+**Regra pratica:**
+
+| Icone                  | Espelha em RTL? |
+| ---------------------- | --------------- |
+| "Voltar" / "Back"      | SIM             |
+| "Avancar" / "Forward"  | SIM             |
+| "Seta esquerda"        | SIM             |
+| "Seta direita"         | SIM             |
+| Play (▶)               | NAO             |
+| Play backward (◀)      | NAO             |
+| Check (✓)              | NAO             |
+| Close (✕)              | NAO             |
+| "Loading" (spinner)    | NAO             |
+| "Quote" (aspas)        | SIM (aspas invertem) |
+
+**`writing-mode` - vertical text.** Em
+japones, chines tradicional, e coreano, texto
+pode fluir **vertical** (top to bottom).
+Use `writing-mode: vertical-rl` (right to
+left horizontal flow, ou top to bottom
+vertical):
+
+```css
+.vertical-text {
+  writing-mode: vertical-rl;  /* top to bottom, lines flow right to left */
+}
+```
+
+**Para a maioria dos apps** (PT/EN/es),
+`writing-mode` nao importa. Mas se voce
+faz app pra **japones** ou **chines
+tradicional**, e' relevante.
+
+## Aprofundamento 🟡
+
+**Logical properties - lista completa
+(W3C).**
+
+```css
+/* Margin */
+margin-inline-start: 16px;
+margin-inline-end: 16px;
+margin-inline: 16px 8px;  /* shorthand */
+margin-block-start: 8px;
+margin-block-end: 8px;
+
+/* Padding */
+padding-inline-start: 16px;
+padding-inline-end: 16px;
+padding-block-start: 8px;
+padding-block-end: 8px;
+
+/* Border */
+border-inline-start: 1px solid;
+border-inline-end: 1px solid;
+border-block-start: 1px solid;
+border-block-end: 1px solid;
+
+/* Position */
+inset-inline-start: 0;
+inset-inline-end: 0;
+inset-block-start: 0;
+inset-block-end: 0;
+inset-inline: 0 16px;  /* shorthand */
+
+/* Size */
+inline-size: 200px;  /* width em LTR horizontal, height em vertical */
+block-size: 100px;   /* height em LTR horizontal, width em vertical */
+
+/* Text */
+text-align: start;   /* left em LTR, right em RTL */
+text-align: end;
+
+/* Float */
+float: inline-start;
+float: inline-end;
+clear: inline-start;
+clear: inline-end;
+
+/* Overflow */
+overflow-inline: auto;
+overflow-block: auto;
+
+/* Resize */
+resize: inline;
+resize: block;
+```
+
+**Logical properties + LTR: zero overhead.**
+`margin-inline-start: 16px` em LTR **=**
+`margin-left: 16px`. **Sem custo de
+performance**. Use sempre logical.
+
+**Migration: `margin-left` → `margin-inline-start`.**
+Substituicao mecanica em CSS:
+
+```css
+/* Antes */
+.foo {
+  margin-left: 16px;
+  padding-right: 8px;
+  border-left: 1px solid;
+  float: left;
+  text-align: left;
+}
+
+/* Depois */
+.foo {
+  margin-inline-start: 16px;
+  padding-inline-end: 8px;
+  border-inline-start: 1px solid;
+  float: inline-start;
+  text-align: start;
+}
+```
+
+**Ferramentas pra ajudar:** `stylelint`
+com plugin `stylelint-plugin-logical`
+automatiza. `postcss` com
+`postcss-logical` (ou
+`postcss-preset-env` stage 2) faz
+automaticamente.
+
+**HTML `lang` attribute + `dir`.** Sempre
+juntos: `<html lang="ar-SA" dir="rtl">`.
+`lang` afeta speech synthesis, hyphenation,
+font selection, **e direction heuristic**.
+`dir` afeta layout. **Os dois** sao
+necessarios.
+
+**RTL em CSS frameworks.** Tailwind, MUI,
+Chakra, Ant Design, Bootstrap 5+ ja' tem
+suporte RTL **built-in** (use `dir="rtl"`
+no html, e o framework espelha). **Verifique**
+se seu framework suporta - senao, fazer
+RTL do zero e' **trabalho**.
+
+**`direction: rtl` em CSS vs `dir="rtl"` em
+HTML.** Ambos funcionam, mas:
+
+- **HTML `dir`**: afeta **heranca** e
+  layout completo.
+- **CSS `direction`**: afeta so' o
+  elemento atual.
+
+**Use `dir` no HTML** (raiz ou section),
+**CSS** apenas em casos especificos.
+
+**Bidirecionalidade em formulários.** Inputs
+em arabe tem **cursor na direita**, **placeholder
+alinhado a direita**, **placeholder em arabe**.
+**Cuidado** com `text-align: left` - isso
+**forca** LTR mesmo em RTL. Use `text-align:
+start`.
+
+**Numeros em arabe.** Arabe usa **2 sistemas
+de numerais**: **arabic** (٠١٢٣) e
+**eastern arabic** (٠١٢٣ - persao/urdu).
+O CLDR controla isso:
+
+```ts
+new Intl.NumberFormat("ar-EG").format(123);
+// "١٢٣" (arabic-Indic digits)
+
+// Forcar latin
+new Intl.NumberFormat("ar-EG", { numberingSystem: "latn" }).format(123);
+// "123"
+```
+
+**Right-to-left em emails/notificacoes.**
+Em **plain text** (email), RTL nao tem
+suporte completo. Em HTML email, use
+`dir="rtl"`. Em **push notifications**,
+depende do device/OS.
+
+## Pra quem quer ir mais assim 🔴
+
+**CSP e RTL.** Content Security Policy nao
+tem nada especifico pra RTL - funciona
+normal.
+
+**RTL em SVG.** `<svg dir="rtl">` espelha o
+SVG. Em arabe, texto dentro de SVG flui
+direita-pra-esquerda. **Cuidado** com
+icones: use `transform: scaleX(-1)` ou
+duplicar SVG.
+
+**Testing RTL.** **Playwright** suporta
+RTL test - use `await page.emulateMedia`
+ou setar `dir` no html antes do teste.
+**Testing Library** (React) tem
+`render(ui, { wrapper: withRtl })`. **Visual
+regression** com Percy/Chromatic ja' captura
+diferencas LTR vs RTL automaticamente.
+
+**`unicode-bidi: plaintext`** (Stage 4, ES2022) -
+**detecao automatica melhorada** de direcao
+por linha. `<p dir="auto">` agora usa
+`plaintext` heuristic que lida melhor com
+texto misto (numero, simbolo, ltr, rtl).
+
+**`Intl.Locale` com `textInfo`** (Stage 3,
+ES2024) - extrai `direction` da tag:
+
+```ts
+new Intl.Locale("ar-SA").getTextInfo();
+// { direction: "rtl" }
+
+new Intl.Locale("en-US").getTextInfo();
+// { direction: "ltr" }
+```
+
+Use pra **decidir `dir` automaticamente**
+baseado no locale.
+
+**Logical properties + animations.** Em
+keyframes, use logical properties:
+
+```css
+@keyframes slide-in {
+  from {
+    inset-inline-start: -100%;
+  }
+  to {
+    inset-inline-start: 0;
+  }
+}
+```
+
+Animacao flui da esquerda em LTR, da
+direita em RTL - **automaticamente**.
+
+**Leitura recomendada:**
+
+- [MDN - dir attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/dir) - HTML global attribute, valores, exemplos.
+- [MDN - CSS Logical Properties](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_logical_properties_and_values) - referencia completa, lista de properties.
+- [W3C - Structural markup and RTL text](https://www.w3.org/International/questions/qa-html-dir.en.html) - best practices de markup bidi-aware.
+
+> Dica: o erro mais comum em RTL e' **CSS
+> com `left`/`right` hardcoded**. Quando
+> arabe troca `dir="rtl"`, o `margin-left`
+> continua esquerda (nao espelha).
+> **Solucao: logical properties**. `margin-
+> inline-start` espelha automaticamente.
+> Em 2026, **todos browsers** suportam -
+> nao ha desculpa pra hardcoded. Se voce
+> ja' tem codigo legado, use `postcss-
+> logical` ou `stylelint-plugin-logical`
+> pra migrar.
+
+No proximo no, vamos **translation
+workflow**: como organizar **arquivos de
+traducao** por locale, integrar com
+**i18next** ou **FormatJS**, e usar
+**Locize** ou **Crowdin** pra gerenciar
+traducoes com o time. Cobre o workflow
+**real** de um app i18n em producao.
+
+<Quiz
+  question="Por que CSS logical properties (margin-inline-start, padding-inline-end) sao melhores que margin-left/padding-right pra apps multi-idioma?"
+  options={[
+    {
+      text: "Logical properties espelham automaticamente quando `dir=rtl` e' aplicado, sem precisar de CSS separado pra RTL. margin-left em arabe continua esquerda (quebra layout); margin-inline-start vira direita em RTL automaticamente. Resultado: 1 arquivo CSS funciona em LTR e RTL.",
+      correct: true,
+      explanation:
+        "O ponto: `dir=rtl` **nao** espelha `margin-left` - ele so muda a direcao do texto e ordem de elementos block. **Logical properties** (`margin-inline-start`, `padding-inline-end`, `border-inline-start`) espelham **automaticamente** com base no `dir` do parent. Resultado: mesmo CSS funciona em ingles, arabe, hebraico, sem precisar de `body.rtl .foo { margin-right: 16px }`. Migracao: `margin-left` → `margin-inline-start` (1:1). Suporte universal em 2026 (todos browsers modernos). Use **sempre** logical em CSS novo.",
+    },
+    {
+      text: "Logical properties sao mais rapidas que physical porque o browser otimiza.",
+      correct: false,
+      explanation:
+        "Falso. Logical e physical tem **mesma performance** - o browser resolve logical pra physical (left/right) baseado no `dir` do parent, internamente. **Zero overhead**. A razao pra usar logical nao e' performance - e' **manutenibilidade**: 1 CSS funciona em todos idiomas.",
+    },
+    {
+      text: "Logical properties funcionam so em Chrome/Edge, nao em Firefox/Safari.",
+      correct: false,
+      explanation:
+        "Falso. Logical properties tem suporte **universal** desde 2021 (Chrome 89+, Firefox 66+, Safari 13.1+). Em 2026, nao ha restricao de browser. Pode usar sem polyfill. Cobre 100% dos users.",
+    },
+  ]}
+/>

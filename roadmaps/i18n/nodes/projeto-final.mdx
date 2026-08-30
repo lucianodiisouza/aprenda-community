@@ -1,0 +1,444 @@
+---
+id: projeto-final
+title: "Projeto final: app multi-idioma com ICU, RTL e formatacao locale-aware"
+resources:
+  - title: "i18next - Getting started (EN)"
+    url: https://www.i18next.com/overview/getting-started
+    lang: en
+    type: doc
+    free: true
+  - title: "Format.JS - react-intl (EN)"
+    url: https://formatjs.io/docs/react-intl
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Intl (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl
+    lang: en
+    type: doc
+    free: true
+---
+
+Hora de unir tudo. Voce vai construir um
+**app multi-idioma completo** integrando
+os 6 nos da trilha: **Intl APIs** pra
+formatar numeros/datas, **ICU
+MessageFormat** pra pluralizacao, **RTL
++ logical properties** pra layout bidi,
+**translation workflow** com i18next, e
+**pseudo-localization em CI** pra pegar
+bugs antes da traducao real. E' o ciclo
+completo de i18n em producao: deteccao
+de locale, formatacao locale-aware,
+pluralizacao correta, layout RTL
+funcional, e CI com pseudo-locale.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes de
+comecar.
+
+## O que voce vai construir
+
+Um **app web multi-idioma** (e-commerce
+ou dashboard), entregue como:
+
+- **3 locales funcionando**: `pt-BR`,
+  `en-US`, `ar-SA` (RTL).
+- **Deteccao automatica** de locale
+  (localStorage > navegador > fallback).
+- **Formatacao locale-aware**: precos com
+  `Intl.NumberFormat`, datas com
+  `Intl.DateTimeFormat`, listas com
+  `Intl.ListFormat`.
+- **Pluralizacao ICU** pra "1 item" /
+  "5 items" / "22 items" (ingles e
+  polones).
+- **Layout RTL** funcional com logical
+  properties CSS.
+- **Pseudo-localization** rodando em CI,
+  detectando bugs de i18n automaticamente.
+
+Stack obrigatoria:
+
+- **Frontend:** Vite + React (ou Vue/Svelte,
+  sua escolha).
+- **i18n:** i18next + react-i18next +
+  i18next-icu.
+- **CSS:** Logical properties (sem
+  `margin-left` hardcoded).
+- **CI:** GitHub Actions (ou similar).
+- **Pseudo-locale:** `en-XA` (LTR) + 
+  `en-XB` (RTL).
+
+## Objetivo
+
+- Praticar **ciclo completo de i18n**:
+  extracao de strings, deteccao, Intl,
+  ICU, RTL, pseudo-locale.
+- Construir app que funciona em **LTR e
+  RTL** com mesmo codigo.
+- Aplicar **logical properties** pra
+  layout agnostico de direcao.
+- Configurar **CI com pseudo-locale** pra
+  pegar bugs antes de traducao.
+- **Medir expansao** de UI em diferentes
+  idiomas (en-US, de-DE, ja-JP).
+
+## Requisitos (minimo)
+
+Estrutura:
+
+- [ ] 3 namespaces: `common`, `cart`,
+  `checkout` (ou 3 areas equivalentes).
+- [ ] 3 locales: `pt-BR`, `en-US`, `ar-SA`.
+- [ ] Arquivos JSON separados por locale
+  em `src/i18n/locales/<locale>/<namespace>.json`.
+- [ ] **Zero strings hardcoded** no JSX
+  (verificado por `eslint-plugin-i18next`
+  ou similar).
+
+Deteccao e Switching:
+
+- [ ] `i18next-browser-languagedetector`
+  configurado com ordem: `localStorage` >
+  `navigator` > `cookie`.
+- [ ] `fallbackLng: 'en-US'`.
+- [ ] Botao de **language switcher** no
+  header (troca locale e salva em
+  localStorage).
+- [ ] `<html lang>` e `<html dir>`
+  atualizam ao trocar locale.
+
+Intl Formatacao:
+
+- [ ] Preco formatado com
+  `Intl.NumberFormat` (BRL, USD, SAR).
+- [ ] Data com `Intl.DateTimeFormat`
+  (curto e longo).
+- [ ] Lista de items com `Intl.ListFormat`.
+- [ ] Sort com `Intl.Collator` (catalogo
+  de produtos).
+
+ICU MessageFormat:
+
+- [ ] Pluralizacao de items no carrinho
+  ("1 item" / "5 items" / "22 items" em
+  ingles, com ICU).
+- [ ] Select por genero em mensagem de
+  boas-vindas ("Bem-vindo" / "Bem-vinda"
+  / "Bem-vinde").
+- [ ] ICU funcionando em **pelo menos 2
+  idiomas** (ingles + outro).
+
+RTL:
+
+- [ ] `<html dir="rtl">` quando locale
+  for `ar-SA` (ou outro RTL).
+- [ ] Layout **inteiro** com logical
+  properties (sem `margin-left` /
+  `padding-right`).
+- [ ] **Icones espelhados** em RTL
+  (seta de voltar, seta de proximo).
+- [ ] Texto mixto (ingles em pagina arabe)
+  funciona (bidi algorithm).
+
+Pseudo-localization em CI:
+
+- [ ] GitHub Action roda `en-XA` (LTR) e
+  `en-XB` (RTL) em todo PR.
+- [ ] Build falha se aparecer string
+  hardcoded (sem brackets do pseudo).
+- [ ] Teste visual: scroll horizontal em
+  pseudo = 0.
+- [ ] Screenshot em `en-XB` mostra
+  layout espelhado corretamente.
+
+Validacao:
+
+- [ ] Trocar locale atualiza **toda** a
+  UI em < 100ms.
+- [ ] **Zero strings concatenadas** em
+  PT-BR ("[Sàvé] Order" nao aparece).
+- [ ] Zero `width: <px>` fixo em botoes
+  (testa com pseudo expansao).
+- [ ] Preco `R$ 1.234,56` em pt-BR,
+  `$1,234.56` em en-US, `ر.س. ١٬٢٣٤٫٥٦`
+  em ar-SA (com arabic-Indic digits).
+- [ ] Layout em arabe espelhado
+  (sidebar na direita, icones invertidos).
+- [ ] CI falha com pseudo-locale bug
+  simulado (ex: `width: 80px` num botao
+  + `en-XA`).
+
+## Estrutura do relatorio (`i18n-ready.md`)
+
+```markdown
+# i18n Ready - [nome-do-app]
+
+## TL;DR
+
+- Locales suportados: pt-BR, en-US, ar-SA
+- Namespaces: 3 (common, cart, checkout)
+- Strings traduzidas: 100% (3/3 locales)
+- ICU MessageFormat: ativo
+- RTL: funcional (ar-SA testado)
+- Pseudo-locale em CI: sim (en-XA + en-XB)
+- Build size por locale: X KB (en), Y KB
+  (ar - 30% maior em CSS)
+
+## Arquitetura
+
+### Frontend
+
+- Vite + React
+- i18next + react-i18next
+- i18next-icu (MessageFormat)
+- i18next-browser-languagedetector
+- CSS logical properties (sem left/right)
+
+### CI
+
+- GitHub Actions
+- Pseudo-locale en-XA + en-XB
+- Screenshot regression (Percy)
+
+## Fluxo de locale
+
+1. User abre app.
+2. i18next verifica `localStorage.i18nextLng`.
+3. Se nao tem, verifica `navigator.language`.
+4. Se nao bate, usa `fallbackLng: 'en-US'`.
+5. Carrega translations do namespace.
+6. Renderiza com `<html lang="..." dir="...">`.
+
+## Fluxo de formatacao
+
+- Preco: `new Intl.NumberFormat(locale, { style: 'currency', currency })`.
+- Data: `new Intl.DateTimeFormat(locale, { dateStyle: 'long' })`.
+- Plural: `t('cart.items', { count })` com ICU.
+
+## Resultados
+
+- Build size en-US: X KB
+- Build size ar-SA: Y KB (30% maior)
+- Tempo de troca de locale: Z ms
+- CI tempo (com pseudo): W min
+- Bugs de i18n pegos em CI: N (no periodo)
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Traducao automatica via Claude API**
+  - gerar rascunho inicial de novos
+  locales.
+- [ ] **Locize integration** - translation
+  management SaaS, tradutor edita em UI.
+- [ ] **Number skeletons** - formatacao
+  avancada de numeros inline em ICU.
+- [ ] **DateTime picker locale-aware** -
+  MUI ou react-datepicker com locale.
+- [ ] **i18n em emails transacionais** -
+  template i18n com MJML ou react-email.
+- [ ] **Plural + offset** - "Voce e 4 outros
+  amigos" (count inclui voce).
+- [ ] **`Intl.RelativeTimeFormat`** - "ha 5
+  min" / "5 min ago" em qualquer idioma.
+- [ ] **`Intl.DisplayNames`** - "esse
+  conteudo ta' disponivel em Ingles" na
+  lingua nativa.
+- [ ] **Currency display variants** -
+  "R$" vs "BRL 99,90" vs "BRL99.90"
+  (narrow).
+- [ ] **`writing-mode: vertical-rl`** -
+  testar layout vertical pra japones.
+- [ ] **`Intl.Segmenter`** - word count
+  correto em japones/chines.
+- [ ] **CLDR rules custom** - regra de
+  plural especifica do produto.
+- [ ] **Timezone handling** - "2h atras" com
+  timezone do user (nao do server).
+- [ ] **i18n em PWA** - cache de
+  translations pra offline.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Setup minimo:** Vite + React +
+   `i18next` + `react-i18next` +
+   `i18next-browser-languagedetector`.
+   1 namespace (`common`), 1 locale
+   (`en-US`). 1 string funcionando com
+   `t("hello")`.
+2. **2 locales:** Adicione `pt-BR` com
+   traducao basica. Botao de switch
+   funcional. `<html lang>` atualiza.
+3. **Intl:** `Intl.NumberFormat` no preco.
+   `Intl.DateTimeFormat` em datas.
+4. **ICU:** Instale `i18next-icu`. Plural
+   de "items" funcionando.
+5. **RTL:** Adicione `ar-SA`. Use
+   `logical properties` no CSS. `<html dir>`
+   atualiza. Icone de voltar espelhado.
+6. **Pseudo-locale:** Adicione `en-XA` no
+   array de locales. Veja strings
+   acentuadas e expandidas. Force um bug
+   (adicione `width: 80px` num botao) e
+   veja o CI falhar.
+7. **CI:** GitHub Action roda build com
+   pseudo-locale. Falha se aparecer
+   string hardcoded.
+
+**Armadilhas comuns:**
+
+- **`margin-left` no CSS.** Esqueca e o
+  layout quebra em arabe. **Use logical
+  properties desde o dia 1**: `margin-
+  inline-start`, `padding-inline-end`,
+  etc. `stylelint` com plugin
+  `stylelint-plugin-logical` automatiza.
+- **Strings concatenadas.** `"Ola " +
+  nome` quebra i18n. Use `t("hello",
+  { name })` com placeholder.
+- **Plural hardcoded em ingles.** `count
+  === 1 ? "item" : "items"` quebra em
+  polones. Use ICU MessageFormat.
+- **`<html lang>` nao atualiza.** Trocar
+  locale e nao atualizar `<html lang>`
+  = screen reader pronuncia errado. Use
+  `i18n.on('languageChanged', lng => {
+  document.documentElement.lang = lng;
+  document.documentElement.dir = isRtl(lng) ? 'rtl' : 'ltr';
+  })`.
+- **Date em UTC vs local.** Servidor
+  retorna ISO `2026-12-25T00:00:00Z`,
+  user em Brasil ve "24/12/2026 21:00".
+  Use `timeZone: 'America/Sao_Paulo'` no
+  Intl.DateTimeFormat, ou converta
+  server-side pra timezone do user.
+- **Pseudo-locale em prod.** `en-XA` nao
+  deve ir pra prod. Use `if (process.env
+  .NODE_ENV === 'development')` ou
+  variavel de ambiente.
+- **Bundles por locale nao separados.**
+  Se voce importa `locales/pt-BR/...
+  json` direto, **todo locale** vai
+  pro bundle. Use **dynamic import**
+  por namespace: `i18n.loadNamespaces
+  (['cart'])`.
+- **Moeda hardcoded.** `BRL` no codigo
+  em vez de vir do produto. Use
+  `product.currency` do backend.
+- **Cultura nao adaptada.** Imagens
+  mostram "bandeira americana" sendo
+ 爱国主义的. Em RTL, layout espelha mas
+  bandeira nao. **Cuidado** com
+  simbolos/iconografia cultural.
+- **`Intl.NumberFormat` sem cache.** Criar
+  instancia a cada format = 5-50ms cada.
+  **Sempre** reuse (singleton, useMemo).
+- **i18n routing em SSR.** Em Next.js /
+  Remix, configure i18n routing com
+  `[locale]` no path, ou use middleware
+  pra redirecionar baseado em
+  `Accept-Language`.
+
+**Como validar que terminou:**
+
+- [ ] 3 locales funcionando (pt-BR,
+  en-US, ar-SA).
+- [ ] Language switcher salva em
+  localStorage e restaura.
+- [ ] Preco formatado diferente em cada
+  locale (R$ / $ / ر.س.).
+- [ ] Plural "1 item" / "5 items" / "22
+  items" correto.
+- [ ] Layout em arabe totalmente
+  espelhado, sem quebrar.
+- [ ] Icone de voltar espelhado em RTL.
+- [ ] CI falha com `en-XA` se string
+  hardcoded existir.
+- [ ] CI falha com `en-XB` se layout nao
+  espelha.
+- [ ] Lighthouse i18n score: 100.
+- [ ] Zero strings concatenadas
+  (validado por `eslint-plugin-i18next`).
+
+**Leituras que ajudam durante o projeto:**
+
+- [i18next Getting Started](https://www.i18next.com/overview/getting-started) - setup basico, exemplos React/Vue/Node.
+- [Format.JS - react-intl](https://formatjs.io/docs/react-intl) - alternativa React-first, type-safe.
+- [MDN - Intl](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl) - referencia completa do namespace Intl.
+
+> O projeto final e' onde a trilha vira
+> "sua". A escolha de **qual app
+> construir** (e-commerce, dashboard,
+> social) e' o **caminho feliz**. Os
+> principios - Intl + ICU + RTL + logical
+> properties + pseudo-locale em CI -
+> aplicam a qualquer app multi-idioma.
+> O esqueleto dado e' o caminho feliz,
+> desvie quando precisar e anote as
+> decisoes no `editorial-decisions.md`
+> da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `construirConfigI18N(opcoes)` que monta o objeto de configuracao do i18next. Recebe: opcoes = { locales: string[] (ex: ['pt-BR', 'en-US']), padrao: string (locale default, ex: 'pt-BR'), detectar: string[] (ordem de deteccao, ex: ['localStorage', 'navigator']), namespaces: string[] (ex: ['common', 'cart']) }. Retorna: { fallbackLng: opcoes.padrao, supportedLngs: [...opcoes.locales], defaultNS: primeiro de opcoes.namespaces (ou 'common' se vazio/ausente), ns: [...opcoes.namespaces] (ou ['common'] se vazio/ausente), detection: { order: [...opcoes.detectar] }, interpolation: { escapeValue: false } }."
+  starterCode={`// Implemente construirConfigI18N(opcoes) que monta o objeto
+// de configuracao do i18next a partir das opcoes.
+//
+// Schema de entrada:
+//   opcoes = {
+//     locales: string[],      // ex: ['pt-BR', 'en-US']
+//     padrao: string,         // locale default, ex: 'pt-BR'
+//     detectar: string[],     // ordem de deteccao, ex: ['localStorage']
+//     namespaces: string[],   // ex: ['common', 'cart']
+//   }
+//
+// Schema de saida:
+//   {
+//     fallbackLng: opcoes.padrao,
+//     supportedLngs: [...opcoes.locales],
+//     defaultNS: primeiro de opcoes.namespaces (ou 'common' se vazio/ausente),
+//     ns: [...opcoes.namespaces] (ou ['common'] se vazio/ausente),
+//     detection: { order: [...opcoes.detectar] },
+//     interpolation: { escapeValue: false }
+//   }
+function construirConfigI18N(opcoes) {
+  return { fallbackLng: '' };
+}
+
+const _r1 = construirConfigI18N({
+  locales: ['pt-BR', 'en-US'],
+  padrao: 'pt-BR',
+  detectar: ['localStorage'],
+  namespaces: ['common', 'cart']
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = construirConfigI18N({
+  locales: ['en-US', 'ja-JP', 'ar-SA'],
+  padrao: 'en-US',
+  detectar: ['navigator'],
+  namespaces: []
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = construirConfigI18N({
+  locales: ['pt-BR'],
+  padrao: 'pt-BR',
+  detectar: []
+});
+console.log(JSON.stringify(_r3));`}
+  expected='{"fallbackLng":"pt-BR","supportedLngs":["pt-BR","en-US"],"defaultNS":"common","ns":["common","cart"],"detection":{"order":["localStorage"]},"interpolation":{"escapeValue":false}}
+{"fallbackLng":"en-US","supportedLngs":["en-US","ja-JP","ar-SA"],"defaultNS":"common","ns":["common"],"detection":{"order":["navigator"]},"interpolation":{"escapeValue":false}}
+{"fallbackLng":"pt-BR","supportedLngs":["pt-BR"],"defaultNS":"common","ns":["common"],"detection":{"order":[]},"interpolation":{"escapeValue":false}}'
+  slug="i18n"
+  nodeId="projeto-final"
+/>
