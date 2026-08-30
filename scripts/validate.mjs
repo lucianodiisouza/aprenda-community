@@ -11,6 +11,7 @@
 //  - todo projects/<slug>.mdx tem frontmatter válido
 //  - `slug` do frontmatter do projeto bate com o nome do arquivo
 //  - `trilhas` referenciadas em projetos existem em roadmaps/
+//  - todo projeto tem `published: YYYY-MM-DD` (ou `draft: true` como waiver)
 //
 // Sem dependências externas. Roda com `node scripts/validate.mjs`.
 
@@ -269,6 +270,15 @@ async function validateProject(slug, knownRoadmapSlugs) {
   }
   if (!["iniciante", "intermediario", "avancado"].includes(fm.difficulty)) {
     err(`  ${relative(ROOT, path)}: difficulty deve ser iniciante|intermediario|avancado (recebido: ${fm.difficulty})`);
+  }
+  // `published` é o que ativa o selo "novo" no app. Aceita waiver explícito
+  // via `draft: true` para projetos em construção que ainda não devem ser
+  // promovidos. Sem nenhum dos dois, o projeto passa a estrutura mas some
+  // do destaque - o que é exatamente o sintoma que esta regra evita.
+  if (fm.published === undefined && fm.draft !== true) {
+    err(`  ${relative(ROOT, path)}: frontmatter precisa de "published" (YYYY-MM-DD) ou "draft: true" (waiver explícito)`);
+  } else if (fm.published !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(fm.published)) {
+    err(`  ${relative(ROOT, path)}: "published" deve ser data ISO YYYY-MM-DD (recebido: ${fm.published})`);
   }
   if (fm.skills !== undefined && !Array.isArray(fm.skills)) {
     err(`  ${relative(ROOT, path)}: frontmatter "skills" deve ser uma lista`);
