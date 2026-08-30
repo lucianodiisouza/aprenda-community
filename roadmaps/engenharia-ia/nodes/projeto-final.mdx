@@ -1,0 +1,432 @@
+---
+id: projeto-final
+title: "Projeto final: feature completa com IA no loop, diffs auditaveis, PR limpo"
+resources:
+  - title: "Claude Code - Workflows (EN)"
+    url: https://docs.claude.com/en/docs/claude-code/common-workflows
+    lang: en
+    type: doc
+    free: true
+  - title: "Cursor - Best practices (EN)"
+    url: https://docs.cursor.com/guides/best-practices
+    lang: en
+    type: doc
+    free: true
+  - title: "Conventional Commits (EN)"
+    url: https://www.conventionalcommits.org/
+    lang: en
+    type: doc
+    free: true
+---
+
+Hora de unir tudo. Voce vai construir
+uma **feature completa** com **IA no
+loop**: decomposicao, geracao, audit,
+test, commit, review, PR. **O ciclo
+real** de "AI-assisted development" em
+producao: **patterns corretos**, **diffs
+auditaveis**, **prompts reproduziveis**,
+**tests que pegam bugs**, **PR com
+checklist AI-aware** aceito por reviewer
+em 30 min.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes de
+comecar.
+
+## O que voce vai construir
+
+Uma **feature completa de UI** com **IA
+no loop**, entregue como:
+
+- **Spec** (1-2 paginas) antes de
+  pedir codigo.
+- **Decomposicao** em **3-5 sub-tarefas**
+  (cada uma com teste).
+- **IA gera** cada sub-tarefa
+  (com prompt explicito).
+- **Voce audita** com checklist
+  (seguranca, performance, edge cases).
+- **Tests** que **pegam bugs** (Stryker
+  mutation score 80%+).
+- **5-10 commits atomicos** com prompt
+  no commit message.
+- **PR descritivo** com **AI_NOTES.md**
+  e **prompts reproduziveis**.
+- **Reviewer** aprova em **30 min**
+  (nao 2h).
+
+Stack obrigatoria:
+
+- **AI tool:** Claude Code, Cursor, ou
+  Copilot.
+- **Linguagem:** TypeScript (rede de
+  seguranca).
+- **Tests:** Vitest + Stryker (mutation
+  testing).
+- **Lint:** ESLint + Prettier.
+- **CI:** GitHub Actions (lint, test,
+  type check).
+
+## Objetivo
+
+- Praticar **ciclo completo de AI-
+  assisted development**: spec, decom-
+  posicao, geracao, audit, test, commit.
+- Construir feature com **diffs
+  auditaveis** (cada PR explica o que
+  IA gerou, o que voce escreveu,
+  o que voce revisou).
+- Aplicar **patterns corretos**:
+  decomposicao, prompts reproduziveis,
+  mutation testing, AI_NOTES.md.
+- **Medir tempo** economizado por IA
+  e **bugs pegos** pelo review.
+
+## Requisitos (minimo)
+
+Spec e decomposicao:
+
+- [ ] **Spec de 1-2 paginas** antes de
+  pedir codigo (objetivo, casos de
+  uso, constraints, edge cases).
+- [ ] **Decomposicao** em 3-5 sub-tarefas
+  com dependencia clara.
+- [ ] Cada sub-tarefa tem **acceptance
+  criteria** testavel.
+- [ ] Cada sub-tarefa tem **teste
+  escrito primeiro** (TDD).
+
+Prompts e geracao:
+
+- [ ] Cada sub-tarefa tem **prompt
+  explicito** salvo em arquivo
+  (`prompts/<sub-tarefa>.md`) ou no
+  commit message.
+- [ ] **Tool de IA** (Claude Code,
+  Cursor, ou Copilot) usado pra cada
+  sub-tarefa.
+- [ ] **Output da IA** commitado com
+  **prompt visivel** (`🤖 Generated
+  with [tool]` no commit).
+- [ ] **Nenhum codigo de auth/payment/
+  crypto** gerado por IA (so
+  boilerplate).
+
+Audit e revisao:
+
+- [ ] **Checklist AI-aware** aplicado a
+  cada sub-tarefa (16 itens do node
+  anterior).
+- [ ] **Stryker mutation score >= 70%**.
+- [ ] **TypeScript strict mode** sem
+  `any` (ou com justificativa).
+- [ ] **ESLint + Prettier** passam
+  sem warnings.
+- [ ] **Test coverage >= 80%**.
+- [ ] **Performance** verificada
+  (Big O aceitavel, sem memory
+  leak).
+- [ ] **Edge cases** cobertos (null,
+  vazio, Unicode, boundary).
+
+Tests e CI:
+
+- [ ] Tests **unitarios** + **integration**
+  + (opcional) **e2e**.
+- [ ] **Mutation testing** (Stryker)
+  roda em CI.
+- [ ] **Visual diff** se UI (Playwright
+  screenshot).
+- [ ] CI falha se mutation score <
+  threshold.
+
+PR e review:
+
+- [ ] **PR description** com:
+  - O que foi feito.
+  - Por que foi feito.
+  - **AI_NOTES.md** com:
+    - Codigo gerado por IA (lista).
+    - Codigo escrito manualmente (lista).
+    - Checklist de review aplicada.
+  - **Prompts** usados (reproduziveis).
+- [ ] **Commits atomicos** (1 sub-tarefa
+  = 1-2 commits).
+- [ ] **Conventional Commits** format.
+- [ ] **Reviewer** aprova em **30 min**
+  (nao 2h).
+
+Validacao:
+
+- [ ] **Tempo economizado por IA**:
+  medir (sem IA vs com IA, feature
+  equivalente).
+- [ ] **Bugs pegos** pelo review
+  (1+ bug por feature, "achamos
+  isso graas ao checklist").
+- [ ] **Mutation score** >= 70% em
+  cada sub-tarefa.
+- [ ] **Zero bugs** em prod na
+  primeira semana.
+
+## Estrutura do relatorio (`ai-loop-report.md`)
+
+```markdown
+# AI Loop Report - [nome-da-feature]
+
+## TL;DR
+
+- Feature: [nome]
+- AI tool: Claude Code / Cursor / Copilot
+- Tempo economizado: X horas (vs sem IA)
+- Sub-tarefas: 5
+- Prompts: 5 (em prompts/)
+- AI_NOTES.md: incluido no PR
+- Mutation score: 85%
+- Bugs pegos em review: 3
+
+## Spec (resumo)
+
+- **Objetivo:** [1 linha]
+- **Casos de uso:** 3 principais
+- **Constraints:** [lista]
+- **Edge cases:** 5 cobertos
+
+## Decomposicao
+
+1. Sub-tarefa 1 (3h)
+   - Acceptance: [criteria]
+   - Tests: [quantidade]
+   - Prompt: prompts/sub-1.md
+2. Sub-tarefa 2 (2h)
+   - ...
+3. ...
+
+## Prompts
+
+(prompts/sub-1.md, prompts/sub-2.md, ...)
+
+## AI_NOTES.md
+
+```markdown
+# AI Notes
+
+## What was generated
+- src/feature/Component.tsx (full)
+- src/feature/types.ts (full)
+- tests/feature/Component.test.tsx (partial)
+
+## What I wrote manually
+- src/feature/config.ts (env vars)
+- src/feature/secret-handling.ts (security)
+
+## What I reviewed
+- [x] Read all generated code
+- [x] Audited with checklist
+- [x] Tests run locally
+- [x] Type check passes
+- [x] ESLint passes
+- [x] Stryker mutation score 80%+
+- [x] Security review (auth/payment)
+- [x] Performance check
+```
+
+## Resultados
+
+- Tempo economizado: 4h (de 8h pra 4h)
+- Bugs pegos em review: 3
+- Mutation score: 85%
+- Coverage: 92%
+- Zero bugs em prod (1 semana)
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **2-pass review com 2 LLMs** (Claude
+  gera, GPT revisa, ou vice-versa).
+- [ ] **AI_NOTES.md** auto-gerado por
+  ferramenta (Cursor/Claude Code).
+- [ ] **Property-based testing** com
+  fast-check.
+- [ ] **Visual regression** com Playwright.
+- [ ] **Storybook** com stories geradas
+  por IA.
+- [ ] **Documentation** auto-gerada
+  (typedoc, JSDoc) por IA.
+- [ ] **Performance profiling** (Sentry
+  profiling) - IA ajuda a identificar
+  hot paths.
+- [ ] **MCP integration** (DB query, file
+  system access).
+- [ ] **Self-hosted LLM** pra feature
+  privacity-sensitive.
+- [ ] **Test plan generation** - IA
+  gera test plan antes de codigo.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Escolher feature pequena.** Algo
+   que daria 4-8h sem IA. **Evite
+   feature grande** (refactor de
+   auth, novo sistema de pagamento)
+   pra primeiro projeto.
+2. **Escrever spec.** 1-2 paginas
+   com objetivo, casos de uso,
+   constraints, edge cases. **Sem
+   spec, IA gera generico**.
+3. **Decompor em 3-5 sub-tarefas.**
+   Cada uma com acceptance criteria
+   testavel.
+4. **Escrever testes primeiro** (TDD).
+   Pra cada sub-tarefa, escreva
+   teste vermelho, depois peca IA
+   pra implementar.
+5. **Salvar prompt em arquivo.**
+   `prompts/sub-1.md` etc. **Auditavel**.
+6. **Auditar cada sub-tarefa** com
+   checklist.
+7. **Commits atomicos.** 1 sub-tarefa
+   = 1-2 commits. Prompt no commit
+   message.
+8. **PR com AI_NOTES.md** e
+   checklist completo.
+
+**Armadilhas comuns:**
+
+- **Spec vaga** = IA gera generico.
+  **Solucao**: spec detalhada com
+  exemplos.
+- **Decomposicao em 1 feature
+  monolitica** = IA falha em algum
+  lugar. **Solucao**: 3-5 sub-tarefas.
+- **Teste escrito por IA sem
+  validacao** = "teatro". **Solucao**:
+  mutation testing.
+- **Prompt nao salvo** = impossivel
+  reproduzir/audit. **Solucao**:
+  sempre `prompts/<sub-tarefa>.md` ou
+  no commit.
+- **AI_NOTES.md ausente** = reviewer
+  nao sabe o que revisar. **Solucao**:
+  sempre incluir.
+- **Commit "feat: add feature"** =
+  impossivel auditar o que IA
+  fez. **Solucao**: prompt no
+  commit message.
+- **Review "LGTM"** = perde bugs.
+  **Solucao**: checklist AI-aware,
+  30-60 min.
+- **Vibe coding** (aceitar tudo) =
+  AI slop. **Solucao**: TDD +
+  decomposicao + audit.
+
+**Como validar que terminou:**
+
+- [ ] Spec existe e' detalhada.
+- [ ] 3-5 sub-tarefas cada uma com
+  teste, prompt, AI_NOTES.
+- [ ] Mutation score >= 70%.
+- [ ] Coverage >= 80%.
+- [ ] Type check + ESLint passam.
+- [ ] PR com AI_NOTES.md e prompts.
+- [ ] Reviewer aprovou em <= 30 min.
+- [ ] Zero bugs em prod (1 semana).
+- [ ] Tempo economizado: feature
+  equivalente em 50% do tempo sem
+  IA (medicao informal).
+
+**Leituras que ajudam durante o projeto:**
+
+- [Claude Code - Workflows](https://docs.claude.com/en/docs/claude-code/common-workflows) - patterns comuns, sub-tasks, multi-file.
+- [Cursor - Best practices](https://docs.cursor.com/guides/best-practices) - composer, agent, codebase context.
+- [Conventional Commits](https://www.conventionalcommits.org/) - format de commit message.
+
+> O projeto final e' onde a trilha
+> vira "sua". A escolha de **qual
+> feature** e' o caminho feliz. Os
+> principios - spec, decomposicao,
+> prompts reproduziveis, audit,
+> tests, AI_NOTES - aplicam a
+> qualquer feature AI-assisted. O
+> esqueleto dado e' o caminho feliz,
+> desvie quando precisar e anote as
+> decisoes no `editorial-decisions.md`
+> da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarFluxoIA(checklist)` que avalia se um workflow de AI-assisted development segue os patterns corretos. Recebe: checklist = { temSpec: boolean, decomposicaoEmSubTarefas: boolean, testesPorSubTarefa: boolean, promptsSalvos: boolean, aiNotes: boolean, mutationScore: number (0-100, ou 0 se nao mediu), commitsAtomicos: boolean, reviewComChecklist: boolean }. Calcule score baseado em: cada boolean true = 10 pontos, mutationScore (0-100) = 1 ponto por % (cap 25). max(0, min(100, score)). Retorna: { score, qualidade: 'excelente' | 'boa' | 'media' | 'fraca' }. qualidade: score >= 90 'excelente', >= 70 'boa', >= 50 'media', senao 'fraca'. Apenas inclua chaves para criterios presentes no input."
+  starterCode={`// ImplementeavaliarFluxoIA(checklist) que avalia se um workflow
+// de AI-assisted development segue os patterns corretos.
+//
+// Schema de entrada:
+//   checklist = {
+//     temSpec?: boolean,
+//     decomposicaoEmSubTarefas?: boolean,
+//     testesPorSubTarefa?: boolean,
+//     promptsSalvos?: boolean,
+//     aiNotes?: boolean,
+//     mutationScore?: number,
+//     commitsAtomicos?: boolean,
+//     reviewComChecklist?: boolean
+//   }
+//
+// Schema de saida:
+//   { score: number, qualidade: 'excelente' | 'boa' | 'media' | 'fraca' }
+//
+// Calculo:
+// - Cada boolean true: +10 pontos
+// - mutationScore (0-100): 1 ponto por % (max 25)
+// - max(0, min(100, score))
+//
+// Qualidade:
+// - score >= 90: 'excelente'
+// - score >= 70: 'boa'
+// - score >= 50: 'media'
+// - senao: 'fraca'
+functionavaliarFluxoIA(checklist) {
+  return { score: 0, qualidade: 'fraca' };
+}
+
+const _r1 =avaliarFluxoIA({
+  temSpec: true, decomposicaoEmSubTarefas: true, testesPorSubTarefa: true,
+  promptsSalvos: true, aiNotes: true, mutationScore: 85, commitsAtomicos: true,
+  reviewComChecklist: true
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 =avaliarFluxoIA({
+  temSpec: true, decomposicaoEmSubTarefas: true, testesPorSubTarefa: true,
+  promptsSalvos: false, aiNotes: false, mutationScore: 60, commitsAtomicos: true,
+  reviewComChecklist: true
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 =avaliarFluxoIA({
+  temSpec: false, decomposicaoEmSubTarefas: false, testesPorSubTarefa: false,
+  promptsSalvos: false, aiNotes: false, mutationScore: 0, commitsAtomicos: false,
+  reviewComChecklist: false
+});
+console.log(JSON.stringify(_r3));
+
+const _r4 =avaliarFluxoIA({
+  temSpec: true, decomposicaoEmSubTarefas: true, testesPorSubTarefa: false,
+  promptsSalvos: true, aiNotes: true, mutationScore: 50, commitsAtomicos: true,
+  reviewComChecklist: false
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":100,"qualidade":"excelente"}
+{"score":65,"qualidade":"media"}
+{"score":0,"qualidade":"fraca"}
+{"score":75,"qualidade":"boa"}'
+  slug="engenharia-ia"
+  nodeId="projeto-final"
+/>

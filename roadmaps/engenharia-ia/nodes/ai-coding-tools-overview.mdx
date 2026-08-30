@@ -1,0 +1,427 @@
+---
+id: ai-coding-tools-overview
+title: "AI coding tools overview: Claude Code, Cursor, Copilot, Cody, Continue"
+resources:
+  - title: "Claude Code - Overview (EN)"
+    url: https://docs.claude.com/en/docs/claude-code/overview
+    lang: en
+    type: doc
+    free: true
+  - title: "Cursor - Docs (EN)"
+    url: https://docs.cursor.com/welcome
+    lang: en
+    type: doc
+    free: true
+  - title: "GitHub Copilot - Docs (EN)"
+    url: https://docs.github.com/en/copilot
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce quer **usar IA no desenvolvimento
+cotidiano** mas nao sabe por onde comecar.
+**Claude Code, Cursor, GitHub Copilot,
+Cody, Continue** - cada um com propostas
+diferentes. **Esse no cobre o
+comparativo**: o que cada ferramenta
+faz bem, onde falha, quanto custa, e
+**como escolher** pra seu workflow.
+
+Em 2026, **AI coding** e' **commodity** -
+qualquer dev usa alguma ferramenta. A
+diferenca nao e' **"usar IA"** (todos
+usam) - e' **como usar sem perder
+qualidade**. Esse no da o mapa. Os
+proximos 7 nos cobrem os **patterns**:
+dividir tarefas, auditar, testar,
+refatorar, **quando NAO usar**, code
+review, e o projeto final.
+
+Voce sai de "qual ferramenta?" pra "sei
+o que cada uma faz, escolho a minha,
+e sei os patterns".
+
+## O essencial 🟢
+
+**Os 5 principais AI coding tools em
+2026.**
+
+1. **Claude Code (Anthropic, CLI).**
+   **Linha de comando**. Roda no
+   terminal, edita arquivos via
+   ferramentas (Read, Edit, Bash, Grep).
+   **Multi-file edit**, **agent mode**,
+   **MCP (Model Context Protocol)** pra
+   integrar com ferramentas externas.
+   **Forca**: code review, refactor
+   grande, agent workflow, long context.
+   **Plano**: $20/mes (Pro), $100/mes
+   (Max).
+
+2. **Cursor (IDE fork do VSCode).**
+   **Editor nativo** com IA embutida.
+   **Tab autocomplete**, **Cmd+K** pra
+   editar, **Composer** pra multi-file.
+   **Forca**: UX integrada, contexto
+   amplo do projeto, agent mode.
+   **Plano**: $20/mes (Pro), $40/mes
+   (Business).
+
+3. **GitHub Copilot (Microsoft).**
+   **Extension** pra VSCode, JetBrains,
+   etc. **Autocomplete inline** + **Chat**
+   + **Copilot Workspace** (agent
+   mode). **Forca**: integracao com
+   GitHub (PR review, Actions),
+   ecossistema Microsoft. **Plano**:
+   $10/mes (Individual), $19/mes
+   (Business).
+
+4. **Cody (Sourcegraph).**
+   **Extension** multi-IDE. **Forca**:
+   **codebase context** (Sourcegraph
+   indexa repo grande). **Code Graph**,
+   **commands customizados**. **Plano**:
+   $9/mes (Free tier generoso), $19/mes
+   (Pro).
+
+5. **Continue.dev.** **Open source** IDE
+   extension. **Local-first** (LLM roda
+   local, sem mandar codigo pra
+   cloud). **Self-hosted**. **Forca**:
+   privacidade, customizacao, **BYO
+   model**. **Plano**: gratis (BYO LLM).
+
+**Comparativo detalhado.**
+
+| Feature                  | Claude Code      | Cursor          | Copilot        | Cody         | Continue       |
+| ------------------------ | ---------------- | --------------- | -------------- | ------------ | -------------- |
+| **Tipo**                 | CLI              | IDE (VSCode)    | Extension      | Extension    | Extension     |
+| **Modelo**               | Claude Sonnet/Opus | GPT-4, Claude   | GPT-4          | Claude/GPT   | BYO (local)    |
+| **Multi-file edit**      | sim (agent)      | sim (Composer)  | sim (Workspace)| sim          | sim            |
+| **Agent mode**           | sim (avancado)   | sim             | sim (basico)   | sim          | sim            |
+| **Context window**       | 200K (Sonnet)    | varia           | varia          | varia        | varia          |
+| **Codebase context**     | file-by-file     | full (index)    | file-by-file   | full (index) | local          |
+| **Autocomplete**         | nao (CLI)        | sim (Tab)       | sim (Tab)      | sim (Tab)    | sim (Tab)      |
+| **Chat interface**       | terminal         | sidebar         | sidebar        | sidebar      | sidebar        |
+| **Self-hosted/LLM local**| nao              | nao             | nao            | nao          | sim (Ollama)   |
+| **Open source**          | nao              | nao             | nao            | parcial      | sim            |
+| **Preco (Pro)**          | $20/mes          | $20/mes         | $10/mes        | $9/mes       | gratis (BYO)   |
+| **Free tier**            | limitado         | 2 semanas       | 30 dias trial  | generoso     | total          |
+
+**Qual escolher?**
+
+- **Cursor** se quer **IDE com IA
+  embutida** e melhor UX integrada.
+  **Mais popular** em startups e
+  frontend.
+- **Claude Code** se prefere **CLI**,
+  **agent workflow**, e **multi-file
+  edit robusto**. **Mais popular** em
+  backend/devops.
+- **GitHub Copilot** se ja' esta' no
+  ecossistema **GitHub** e quer
+  integracao nativa (PR review,
+  Actions).
+- **Cody** se precisa de **codebase
+  context** forte (repo grande,
+  monorepo).
+- **Continue** se precisa de **LLM
+  local** (privacidade, custo zero,
+  offline).
+
+**Em 2026**, a **escolha mais comum** e'
+**Cursor** (devs que preferem IDE) ou
+**Claude Code** (devs que preferem
+terminal). Copilot mantem base
+instalada por **integracao GitHub**.
+
+**A escolha certa nao importa muito.**
+**Patterns** (auditar, dividir tarefas,
+testar, revisar) **sao os mesmos**.
+**Trocar de ferramenta** e' mais facil
+que **trocar de habito**. Escolha,
+experimente, e foque em **processo**.
+
+**Como IA aparece no dev workflow.**
+
+```text
+1. Autocomplete (Tab): IA completa linha
+   enquanto voce digita. Mais usado,
+   mais sutil.
+2. Inline edit (Cmd+K / Ctrl+I): selecione
+   codigo, IA edita in-place.
+3. Chat: pergunta "como faco X?", IA
+   responde com codigo + explicacao.
+4. Agent mode: IA le varios arquivos,
+   planeja, edita, roda testes, corrige.
+   **Mais poderoso**, **mais arriscado**.
+5. Code review: IA revisa seu diff
+   antes de PR.
+6. PR review no GitHub: IA revisa PR
+   de outros (Copilot, Claude Code).
+```
+
+**Os 4 cenarios onde IA brilha.**
+
+1. **Codigo boilerplate** (CRUD,
+   validacao, test setup). IA gera
+   80% do codigo, voce ajusta 20%.
+2. **Refactor mecanico** (rename,
+   extract function, move file). IA
+   faz em 30s, voce em 5min.
+3. **Exploracao de codigo** ("o que
+   essa funcao faz?", "onde X e'
+   usado?"). IA le codigo e
+   resume.
+4. **Traducao de "como faco"** ("como
+   faco paginacao em React?" → IA
+   gera codigo + explica).
+
+**Os 4 cenarios onde IA falha (e voce
+precisa saber).**
+
+1. **API/framework novo** que o modelo
+   nao conhece (alucinacao). Ex:
+   "use a nova API do React 19" →
+   modelo inventa metodo.
+2. **Codigo de seguranca** (auth,
+   crypto, payment). Erro aqui e'
+   **vulnerabilidade**. IA gera
+   patterns que parecem certos mas
+   tem falhas.
+3. **Refactor grande** sem testes. IA
+   quebra comportamento sem voce
+   perceber.
+4. **Logica de negocio especifica** do
+   seu dominio. IA nao sabe as
+   regras do seu negocio, gera
+   "generico" que parece OK.
+
+**Os 3 conceitos que importam mais que
+ferramenta.**
+
+1. **Context is king.** IA gera
+   melhor codigo com mais contexto
+   (docs, codigo relacionado, testes).
+   **Invista tempo** em dar contexto.
+2. **Iterate, nao generate.** 1 prompt
+   perfeito e' **raro**. Refine
+   prompt, especifique, **repita**.
+3. **Human-in-the-loop.** IA **sugere**,
+   **voce decide**. **NUNCA** aceito
+   codigo sem ler.
+
+**Vibe coding - o anti-pattern.** "Vibe
+coding" = pedir pra IA "faz um app de
+todo" e aceitar o output. **Funciona pra
+demo**, **falha em prod**. **Sem
+entender** o codigo gerado, voce nao
+consgue **debugar, evoluir, ou
+responsabilizar**. **Use IA como
+parceiro**, nao como **gerador
+automatico**.
+
+**MCP (Model Context Protocol).** Padrao
+**Anthropic** pra IA acessar
+**ferramentas externas** (file system,
+GitHub, DB). **Claude Code** suporta
+MCP nativamente. **Cursor, Copilot**
+estao adicionando suporte. **Em 2026**,
+MCP e' **early** mas vale conhecer.
+
+## Aprofundamento 🟡
+
+**Preco real das ferramentas.** **API
+cost** (BYO model) vs **subscription**
+(all-in).
+
+- **Subscription** (Claude Code,
+  Cursor, Copilot): $10-20/mes, **ilimitado
+  ou quota generosa**, **privacidade**
+  varia (codigo vai pra servidor).
+- **API** (BYO model em Continue ou
+  similar): $0.003-0.015/1K tokens.
+  Custo **varia** com uso. **100
+  prompts/dia** = ~$10-30/mes se usar
+  Opus. **Mais barato** se usar Haiku
+  ou local.
+- **Local** (Ollama + Continue): $0
+  operacional, mas **GPU** pra rodar
+  (RTX 3090+ recomendado). **Privacidade
+  total**, **velocidade varia**.
+
+**Privacy e codigo.** AI coding tools
+**enviam codigo pro servidor** (a
+menos que local). **Em 2026**:
+
+- **Claude Code, Cursor, Copilot:**
+  codigo vai pra cloud. **Opt-out** de
+  training disponivel (mas ainda vai
+  pro servidor).
+- **Cody, Continue local:** codigo
+  fica local.
+- **Self-hosted LLMs:** 100% privado.
+
+**Em empresas** com codigo sensivel
+(fintech, healthcare), **local LLM** ou
+**self-hosted** e' **obrigatorio**.
+
+**Quando cada ferramenta brilha.**
+
+- **Cursor:** UX integrada, refactor
+  inline, agent mode suave. **Forca**:
+  **composer** (multi-file edit) +
+  **tab** autocomplete. Use pra:
+  feature nova, refactor com testes.
+- **Claude Code:** CLI, agent
+  workflow, long context. **Forca**:
+  **multi-file refactor grande**,
+  **code review**, **CLI scripting**
+  (automatizar tarefas). Use pra:
+  refactor de arquivo grande, geracao
+  de codigo a partir de spec, code
+  review antes de PR.
+- **Copilot:** GitHub native, **PR
+  review no GitHub**. **Forca**:
+  integracao com **Actions**, **PR
+  description generation**. Use pra:
+  GitHub-centric workflow.
+- **Cody:** codebase context forte,
+  commands custom. Use pra: monorepo,
+  codebase legado grande.
+- **Continue:** open source, BYO
+  model, local-first. Use pra:
+  privacidade, customizacao, custo
+  zero.
+
+**Custo x beneficio real.** Em 2026,
+**$20/mes** (Cursor Pro, Claude Code
+Pro) **se paga** em 1-2 horas de
+trabalho (mesmo dev junior). **Estudos
+** mostram **+30-50% produtividade** em
+tarefas de codigo. **Nao** ter AI
+coding em 2026 = desvantagem
+significativa.
+
+**Benchmarks publicos.** **SWE-bench**
+(Princeton) mede IA em **resolucao
+real** de bugs de GitHub. Claude
+Sonnet 4 resolve ~70% dos bugs em
+2026. **HumanEval** (OpenAI) mede
+coding em problemas academicos. **Nao
+sao perfeitos** mas dao ideia.
+
+## Pra quem quer ir mais alem 🔴
+
+**AI agents - alem do autocomplete.**
+Agent mode = IA planeja, edita
+multiplos arquivos, roda testes,
+**corrige erros**, repete ate dar
+certo. **Claude Code agent mode**,
+**Cursor Composer**, **Copilot
+Workspace** sao os mais usados.
+**Poderoso** mas **arriscado** - IA
+pode **editar arquivos errados**,
+**rodar comandos perigosos** (delete
+arquivos, force push). **Sempre
+revise** o que agente fez.
+
+**MCP (Model Context Protocol).** Padrao
+**Anthropic** (2024) pra IA acessar
+**ferramentas externas**. Define
+**schema JSON** de tools (file system,
+GitHub API, Postgres query, browser
+automation). **Claude Code**
+suporta nativamente. **Em 2026**,
+**+50 servers MCP**公开发o
+(github.com/modelcontextprotocol/servers).
+**Vale explorar** pra workflows
+custom (DB query, browser automation,
+code analysis).
+
+**Self-hosted LLM pra code.** Ollama +
+Continue.dev + modelo code (CodeLlama,
+DeepSeek Coder, Qwen 2.5 Coder).
+**Privacidade total**, **custo zero**,
+**velocidade local**. **Trade-off**:
+modelo menor (7B-13B params) vs
+proprietario (Claude Opus 4, GPT-5).
+**Bons** pra autocomplete, **medianos**
+pra agent. Em 2026, **Qwen 2.5 Coder
+32B** e **DeepSeek V3** sao
+**surpreendentemente bons** local.
+
+**Fine-tuning de modelo pra codigo
+proprio.** Caro ($10K+), trabalhoso,
+**raramente vale**. **RAG** (Retrieval-
+Augmented Generation) com seu
+codebase + LLM generico = **mesmo
+resultado**, **10x mais barato**.
+
+**AI + TDD (Test-Driven Development).**
+**Excelente** combo. **TDD** define
+o **comportamento esperado** (teste),
+IA gera **codigo que passa o teste**,
+voce revisa. **Output mais confiavel**
+que "IA gera tudo".
+
+**AI em code review.** **GitHub Copilot
+Review**, **Claude Code review**,
+**Coderabbit** - IA revisa PR antes
+de reviewer humano. **Pega** bugs
+basicos, **falha** em design
+decisions. Use como **primeira linha**,
+nao substituto.
+
+**Leitura recomendada:**
+
+- [Claude Code Overview](https://docs.claude.com/en/docs/claude-code/overview) - capabilities, agent mode, MCP, CLI workflow.
+- [Cursor Docs](https://docs.cursor.com/welcome) - Composer, tab autocomplete, agent, codebase context.
+- [GitHub Copilot Docs](https://docs.github.com/en/copilot) - Copilot Workspace, PR review, integrations.
+
+> Dica: o erro mais comum em AI coding
+> e' **"escolher a ferramenta perfeita"
+> antes de comecar**. Time gasto
+> comparando Claude Code vs Cursor vs
+> Copilot = **1-2 dias**. **Instale 2
+> (Cursor + Claude Code)**, use por
+> 1 semana, decida. **Patterns** (como
+> auditar, como dividir tarefas) sao
+> **mais importantes** que ferramenta.
+> **A ferramenta certa** muda a cada
+> 6 meses. **O processo certo** dura
+> anos.
+
+No proximo no, vamos **dividir tarefas
+pra IA**: quando uma tarefa cabe num
+**prompt direto**, quando precisa de
+**plano multi-step**, e como **decompor**
+problemas complexos em **sub-tarefas**
+que IA resolve melhor. Cobre o **meta-
+pattern** de "como pensar com IA".
+
+<Quiz
+  question="Qual a diferenca fundamental entre Claude Code, Cursor, GitHub Copilot, Cody, e Continue.dev, e como escolher pra seu workflow?"
+  options={[
+    {
+      text: "Claude Code = CLI com agent mode forte (multi-file refactor grande, code review, long context). Cursor = IDE com UX integrada (Tab, Cmd+K, Composer). Copilot = extension com integracao GitHub. Cody = codebase context forte (monorepo). Continue = open source local-first (privacidade). Escolha baseada em workflow, nao em feature list - todos resolvem o mesmo problema de formas diferentes.",
+      correct: true,
+      explanation:
+        "Os 5 tools resolvem **o mesmo problema** (gerar/editar codigo) de **formas diferentes**: (1) **Claude Code** = **CLI puro**, agent workflow avancado, **multi-file refactor grande** e code review, **forca** em tarefas de longo contexto. (2) **Cursor** = **IDE completo** (fork VSCode) com **Tab autocomplete**, **Cmd+K inline edit**, **Composer** multi-file. **Forca** em UX integrada e 'pair programming' continuo. (3) **Copilot** = **extension** com integracao **GitHub** (PR review, Actions). **Forca** em ecossistema Microsoft/GitHub. (4) **Cody** = **codebase context** forte (Sourcegraph indexa repo). **Forca** em monorepo grande. (5) **Continue** = **open source**, **BYO model** (Ollama, vLLM). **Forca** em privacidade e customizacao. **Escolha**: CLI pref (Claude Code), IDE pref (Cursor), GitHub-centric (Copilot), monorepo (Cody), privacy (Continue). **A escolha certa muda** - todos funcionam, **patterns** sao os mesmos.",
+    },
+    {
+      text: "Claude Code e' sempre melhor que Cursor porque Claude e' o melhor LLM.",
+      correct: false,
+      explanation:
+        "Falso. **Claude** (modelo) e **Claude Code** (ferramenta) sao **diferentes**. Claude Code usa Claude (modelo), mas Cursor **tambem suporta Claude** (alem de GPT-4). **Melhor ferramenta** depende de **workflow**: Claude Code brilha em **CLI scripting**, **multi-file refactor**, **code review**. Cursor brilha em **UX integrada**, **Tab autocomplete**, **Composer**. **Benchmark** nao resolve - **use por 1 semana** cada. **A ferramenta 'melhor' muda** - em 2024 era Copilot, em 2025-26 Cursor e Claude Code. Em 2027, sera outra.",
+    },
+    {
+      text: "Ferramenta de AI coding e' so' autocomplete - nao muda muito entre ferramentas.",
+      correct: false,
+      explanation:
+        "Falso. **Autocomplete** e' so' a ponta do iceberg. **Claude Code** tem agent mode que planeja, edita 10+ arquivos, roda testes, **corrige sozinho** ate dar certo. **Cursor Composer** faz multi-file edit com **preview de diffs**. **Cody** indexa codebase grande e responde com **contexto cross-file**. **Continue** roda **LLM local** (privacidade total). **A diferenca** entre ferramentas esta' em **agent mode**, **codebase context**, **privacy**, **integracao com GitHub** - muito alem de autocomplete.",
+    },
+  ]}
+/>

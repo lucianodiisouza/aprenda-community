@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 30,
+        "trilhas": 31,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 43
+        "total": 44
       },
       "trilhas": [
         {
@@ -41,6 +41,10 @@
         {
           "slug": "docker-fundamentos",
           "title": "Docker Fundamentos"
+        },
+        {
+          "slug": "engenharia-ia",
+          "title": "Engenharia assistida por IA: Claude Code, Cursor, Copilot, audit, testes e refactor"
         },
         {
           "slug": "estruturas-de-dados",
