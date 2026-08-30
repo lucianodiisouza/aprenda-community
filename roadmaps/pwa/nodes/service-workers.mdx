@@ -1,0 +1,687 @@
+---
+id: service-workers
+title: "Service Workers: ciclo de vida, registro, escopo, atualizacao"
+resources:
+  - title: "MDN - Service Worker API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Service Worker lifecycle (oficial, EN)"
+    url: https://web.dev/articles/service-worker-lifecycle
+    lang: en
+    type: doc
+    free: true
+  - title: "Workbox - Google (oficial, EN)"
+    url: https://developer.chrome.com/docs/workbox
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce montou o manifesto. Agora vem o **cerebro
+do PWA**: o **Service Worker** (SW). E' um
+arquivo JS que o browser roda em **background**,
+**separado da pagina**, e pode **interceptar
+todos os requests** que a pagina faz. E' o que
+destrava offline (intercepta fetch, serve do
+cache), push notifications (escuta push event),
+e background sync (escuta sync event).
+
+O SW tem um **ciclo de vida proprio** - nao e'
+"so JS que roda na pagina". Ele **instala**,
+**espera**, **ativa**, e serve **requests**.
+Entender esse ciclo e' a chave pra PWA
+funcionar (e pra debugar quando quebra).
+
+Se voce entende o ciclo de vida do SW (installing
+→ waiting → activating → activated), como
+registrar com escopo correto, e como
+**atualizar o SW sem quebrar a app em
+producao** (skipWaiting + clients.claim),
+voce sai de "instalei o SW e ele nao funciona"
+pra "deploy de SW novo com zero downtime".
+
+## O essencial 🟢
+
+**Service Worker em uma frase: arquivo JS
+que o browser roda em background thread
+separada, com capacidade de interceptar
+requests, cachear, e responder offline.**
+E' o **proxy programavel** entre a pagina
+e a rede.
+
+Diferencas chave vs JS normal:
+
+- **Roda em thread separada** - nao bloqueia
+  a UI.
+- **Roda em escopo proprio** - nao tem acesso
+  ao `window`, `document`, `localStorage`.
+  Tem acesso a `fetch`, `Cache`, `IndexedDB`.
+- **Persiste entre paginas** - enquanto a app
+  estiver instalada, o SW vive.
+- **Nao tem acesso a DOM** - por seguranca
+  (impede XSS via SW).
+- **So funciona em HTTPS** ou `localhost`.
+
+**O ciclo de vida do SW (a parte critica).**
+Diferente do JS da pagina (que e' "fire and
+forget"), o SW tem 5 estados que voce
+**escuta** com eventos:
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Installing: register()
+    Installing --> Installed: install event
+    Installing --> Redundant: install error
+    Installed --> Waiting: waitUntil + skipWaiting=false<br/>outro SW ativo
+    Installed --> Activating: waitUntil + skipWaiting=false<br/>sem outro SW
+    Waiting --> Activating: skipWaiting() chamado<br/>ou todos clients fecham
+    Activating --> Activated: activate event
+    Activating --> Redundant: activate error
+    Activated --> [*]: controlando requests
+    Redundant --> [*]: removido pelo browser`}
+  caption="Ciclo de vida do Service Worker: 5 estados (installing, installed/waiting, activating, activated, redundant). Eventos: install (cachear assets), activate (limpar caches antigos, claim clients), fetch (interceptar requests), message (comunicar com pagina)."
+/>
+
+Voce escuta **3 eventos principais**:
+
+```ts
+// sw.js (Service Worker)
+const CACHE_NAME = "app-v1";
+const ASSETS = ["/", "/app.js", "/styles.css", "/icon-512.png"];
+
+// 1. install - chamado uma vez quando SW e' instalado
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  // Quando install termina, SW entra em "waiting" (se ja tem SW ativo)
+  // ou "activating" direto.
+});
+
+// 2. activate - chamado quando SW assume controle
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))  // limpa caches antigos
+      )
+    )
+  );
+  // Garante que o SW controla todos os clients (abas) imediatamente
+  self.clients.claim();
+});
+
+// 3. fetch - chamado em CADA request que a pagina faz
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request);
+    })
+  );
+});
+```
+
+**O evento `install` - "pre-cachear".** Roda
+**uma vez** quando o SW e' registrado pela
+primeira vez. O uso classico: **pre-cachear
+os assets criticos** (app shell) pra o app
+funcionar offline:
+
+```ts
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open("app-shell-v1").then((cache) => {
+      return cache.addAll([
+        "/",
+        "/index.html",
+        "/app.js",
+        "/styles.css",
+        "/icon-192.png",
+        "/icon-512.png",
+        "/offline.html",
+      ]);
+    })
+  );
+});
+```
+
+`event.waitUntil` diz ao browser "nao marque
+install como completo ate a promise resolver".
+Se o cache falhar, install **falha** e SW nao
+ativa. Util pra garantir que app shell
+**sempre** esteja em cache antes de ativar.
+
+**O evento `activate` - "limpar e assumir
+controle".** Roda quando o SW assume controle.
+2 responsabilidades:
+
+1. **Limpar caches antigos** (do SW
+   anterior, com versao antiga).
+2. **`clients.claim()`** - assume controle
+   de **todas as abas abertas** imediatamente
+   (sem isso, o SW so controla **novas
+   abas**).
+
+```ts
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      // 1. Limpar caches antigos
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key !== "app-shell-v1")
+          .map((key) => caches.delete(key))
+      );
+
+      // 2. Assumir controle de todas as abas
+      await self.clients.claim();
+    })()
+  );
+});
+```
+
+Sem `clients.claim()`, o SW novo so controla
+novas abas. Com `claim()`, controla ate
+abas ja abertas. Util em dev (testar novo
+SW sem reload), mas em prod pode causar
+"flash" se o SW novo tem bugs.
+
+**O evento `fetch` - "o coracao do offline".**
+Roda em **todo request** que a pagina faz.
+Aqui voce decide: serve do cache, da rede,
+ou combina os dois.
+
+```ts
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+
+  // So interceptar GET (POST/PUT nao faz sentido cachear)
+  if (request.method !== "GET") return;
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      return cached || fetch(request).then((response) => {
+        // Cachear novos responses
+        return caches.open("runtime-v1").then((cache) => {
+          cache.put(request, response.clone());
+          return response;
+        });
+      });
+    })
+  );
+});
+```
+
+Esse e' o pattern **cache first with network
+fallback**. Estrategias mais avancadas
+(cache first, network first, SWR) cobertas
+em `estrategias-de-cache`.
+
+**Registrar o SW - do lado da pagina.** O
+SW vive em arquivo separado. A pagina
+**registra** o SW no `main.tsx`/`main.js`:
+
+```ts
+// main.tsx (ou main.js)
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => console.log("SW registered:", reg.scope))
+      .catch((err) => console.error("SW registration failed:", err));
+  });
+}
+```
+
+O `if ("serviceWorker" in navigator)` checa
+suporte. O listener de `load` espera a pagina
+carregar antes de registrar (evita competir
+por banda com o app). O escopo e' **automatico**
+= o diretorio do SW.
+
+**Escopo do SW - onde ele intercepta.** O
+escopo do SW e' o diretorio onde o SW esta'
+servido. Se o SW esta' em `/sw.js`, o escopo
+e' `/`. Se esta' em `/pages/sw.js`, o escopo
+e' `/pages/`. **Sempre coloque em `/sw.js`**
+(raiz) pra escopo total.
+
+```ts
+// Forcar escopo custom (raro)
+navigator.serviceWorker.register("/sw.js", {
+  scope: "/app/",  // SW controla so /app/*
+});
+```
+
+**`skipWaiting` - a atualizacao forcada.** O
+estado `waiting` acontece quando um SW novo
+e' instalado mas o SW antigo ainda controla
+clientes. Por padrao, o SW novo **espera** ate
+todas as abas do SW antigo fecharem. Pra
+forcar ativacao imediata:
+
+```ts
+// No novo SW (sw.js v2):
+self.addEventListener("install", (event) => {
+  self.skipWaiting();  // pula o estado "waiting", vai direto pra "activating"
+  // ... pre-cache
+});
+```
+
+Combinado com `clients.claim()` no activate,
+o novo SW assume controle **imediatamente**.
+Util pra **atualizacoes criticas** (seguranca,
+bug fix). **Cuidado**: pode causar "flash" se
+o SW novo tem bugs. Em prod, combine com um
+prompt "Nova versao disponivel, recarregar?"
+
+**A mensagem entre pagina e SW.** O SW
+roda em thread separada. Pra trocar
+mensagens, use `postMessage`:
+
+```ts
+// Pagina → SW
+navigator.serviceWorker.controller.postMessage({
+  type: "SKIP_WAITING",
+});
+
+// SW → Pagina
+self.addEventListener("message", (event) => {
+  if (event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+```
+
+Pattern classico: pagina detecta nova
+versao (`updatefound` event), pergunta "recarregar?",
+se sim, manda `SKIP_WAITING`.
+
+**`updateViaCache` - quem atualiza o SW.** Por
+default, o SW e' **cacheado pelo browser** com
+politica `imports` - nao re-baixado por 24h
+(mesmo com HTTP cache headers). Pra forcar
+atualizacao **imediata**:
+
+```ts
+navigator.serviceWorker.register("/sw.js", {
+  updateViaCache: "none",  // sempre checa versao nova
+});
+```
+
+Util em dev (cada reload = SW novo). Em prod,
+`"imports"` (default) e' OK.
+
+## Aprofundamento 🟡
+
+**Workbox - a biblioteca canonica do
+Google.** Escrever SW do zero e' educativo
+mas verboso em prod. **Workbox** abstrai
+90%:
+
+```bash
+pnpm add workbox-window workbox-precaching workbox-routing workbox-strategies
+```
+
+```ts
+// sw.ts (usando Workbox)
+import { precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import {
+  CacheFirst,
+  NetworkFirst,
+  StaleWhileRevalidate,
+} from "workbox-strategies";
+
+// 1. Pre-cachear app shell
+precacheAndRoute(self.__WB_MANIFEST);  // injetado pelo build
+
+// 2. Cache first pra imagens
+registerRoute(
+  ({ request }) => request.destination === "image",
+  new CacheFirst({
+    cacheName: "images",
+    plugins: [{
+      expiration: { maxEntries: 50, maxAgeSeconds: 30 * 24 * 60 * 60 },
+    }],
+  })
+);
+
+// 3. Network first pra API
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/api/"),
+  new NetworkFirst({
+    cacheName: "api",
+    plugins: [{
+      expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
+    }],
+  })
+);
+
+// 4. SWR pra assets de build
+registerRoute(
+  ({ request }) =>
+    request.destination === "script" || request.destination === "style",
+  new StaleWhileRevalidate({ cacheName: "assets" })
+);
+```
+
+Workbox abstrai:
+- **Precaching** (cachear build artifacts).
+- **Routing** (matchear URLs).
+- **Strategies** (cache first, network first,
+  SWR, cache only, network only).
+- **Plugins** (expiration, cacheable response,
+  background sync).
+
+**`vite-plugin-pwa` usa Workbox por baixo.**
+Quando voce configura `VitePWA({ workbox: {...} })`,
+o plugin gera o SW com Workbox por baixo.
+**Voce nao precisa escrever o SW** - so
+configurar.
+
+**O padrao "new version available" - prompt
+de atualizacao.** Em prod, voce quer
+**perguntar** ao usuario antes de ativar
+o novo SW (evita flash):
+
+```ts
+// main.tsx
+navigator.serviceWorker.register("/sw.js").then((reg) => {
+  reg.addEventListener("updatefound", () => {
+    const newWorker = reg.installing;
+    newWorker.addEventListener("statechange", () => {
+      if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+        // Novo SW instalado, mas SW antigo ainda controla
+        // Mostre um toast: "Nova versao disponivel, recarregar?"
+        showUpdateToast(() => {
+          newWorker.postMessage({ type: "SKIP_WAITING" });
+        });
+      }
+    });
+  });
+});
+```
+
+UX classico: toast "Nova versao disponivel"
+com botao "Atualizar". Click → SW novo assume
+controle → reload automatico.
+
+**`BackgroundSync` no SW - retry automatico
+de requests falhados.** Quando offline, o
+fetch **falha**. Sem retry, o usuario perde
+a acao. Com BackgroundSync, o SW registra
+a acao e re-tenta quando voltar online:
+
+```ts
+// sw.js
+const bgSync = new BackgroundSyncPlugin("queue", {
+  maxRetentionTime: 24 * 60,  // 24 horas em minutos
+});
+
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/api/"),
+  new NetworkOnly({
+    plugins: [bgSync],
+  }),
+  "POST"
+);
+```
+
+Quando o usuario faz POST offline, o SW
+guarda o request. Quando volta online,
+**re-executa automaticamente**. Cobre em
+`background-sync`.
+
+**`workbox-window` - instalacao declarativa
+na pagina.** Em vez de `navigator.serviceWorker.register(...)`,
+use `workbox-window`:
+
+```ts
+import { Workbox } from "workbox-window";
+
+if ("serviceWorker" in navigator) {
+  const wb = new Workbox("/sw.js");
+
+  wb.addEventListener("waiting", () => {
+    // Novo SW esperando
+    showUpdateToast(() => wb.messageSkipWaiting());
+  });
+
+  wb.addEventListener("controlling", () => {
+    // SW novo assumiu controle - recarrega
+    window.location.reload();
+  });
+
+  wb.register();
+}
+```
+
+Mais ergonomico que a API nativa, com eventos
+declarativos.
+
+**`navigationPreload` - SW responde
+requests em paralelo com fetch.** O SW
+**so intercepta requests depois de instalado**.
+Antes disso, requests vao direto pra rede.
+`navigationPreload` faz o browser **iniciar
+o fetch em paralelo** com a instalacao do SW,
+e o SW **substitui** o resultado se tiver em
+cache. **Reduz TTI em 100-500ms** no primeiro
+load.
+
+```ts
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.navigationPreload.enable());
+});
+
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    (async () => {
+      // Tentar preload primeiro
+      const preload = await event.preloadResponse;
+      if (preload) return preload;
+
+      // Fallback: cache → network
+      const cached = await caches.match(event.request);
+      return cached || fetch(event.request);
+    })()
+  );
+});
+```
+
+Util pra **primeira visita** (sem cache
+previamente), o caso mais lento.
+
+## Pra quem quer ir mais alem 🔴
+
+**`ServiceWorkerContainer.getRegistration()`
+e a "redeploy" automatica.** O browser
+detecta SW novo comparando o **byte do
+arquivo** (nao URL). Mesmo URL, bytes
+diferentes = SW novo. O browser verifica
+**a cada navigation** (top-level) ou via
+`registration.update()`:
+
+```ts
+// Forcar check de atualizacao
+navigator.serviceWorker.getRegistration().then((reg) => {
+  reg?.update();
+});
+```
+
+Pattern "check for update" periodicamente
+(a cada 1h, por exemplo) em apps com
+usuarios que ficam logados muito tempo
+(CRMs, dashboards).
+
+**`Service-Worker-Allowed` header pra
+estender escopo.** Por padrao, o escopo do
+SW e' o diretorio do SW. Pra ter escopo
+`/` com SW em `/sw.js` (raiz), funciona. Mas
+pra escopo custom (ex: SW em `/static/sw.js`
+com escopo `/`), precisa do header:
+
+```http
+Service-Worker-Allowed: /
+```
+
+No server, adicione esse header pro arquivo
+SW. Sem ele, o browser **rejeita** o escopo
+custom.
+
+**`PeriodicBackgroundSync` - SW roda mesmo
+com app fechado.** API experimental
+(Chrome 80+, Firefox em implementacao) que
+libera o SW rodar em **intervalos regulares**
+mesmo com a app fechada. Util pra:
+- Sincronizar emails offline.
+- Atualizar feed em background.
+- Limpar caches antigos.
+
+```ts
+// sw.js
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "sync-feed") {
+    event.waitUntil(syncFeed());
+  }
+});
+
+// main.tsx
+const reg = await navigator.serviceWorker.ready;
+const status = await navigator.permissions.query({
+  name: "periodic-background-sync",
+});
+if (status.state === "granted") {
+  reg.periodicSync.register("sync-feed", {
+    minInterval: 24 * 60 * 60 * 1000,  // 24h
+  });
+}
+```
+
+**Limitacao**: o browser decide quando rodar
+(combina com bateria, conexao). Nao e'
+garantia de tempo exato. iOS nao suporta.
+
+**`ServiceWorker` no Workbox vs vanilla.** A
+escolha:
+
+- **Vanilla SW:** educacional, controle total,
+  ~50 linhas pra SW basico. Bom pra apps
+  simples.
+- **Workbox:** industria, abstrai boilerplate,
+  plugins prontos. **Default em 2026** pra
+  apps com mais que 1 cache strategy.
+- **`vite-plugin-pwa`:** Workbox configurado
+  via Vite. **Default em 2026** se voce usa
+  Vite.
+
+**Regra pratica**: use `vite-plugin-pwa` (ou
+equivalente Next.js/Remix). So escreva SW
+vanilla se tiver caso muito especifico
+(limitacoes de Workbox, compliance, etc).
+
+**Por que `self.clients.claim()` nao e'
+default.** O browser assume que **SW novo
+pode quebrar a app em clientes ativos**.
+Default: SW novo espera todos os clientes
+fecharem. `clients.claim()` **forca** o SW
+novo a assumir controle. Use so quando:
+- Fix de seguranca critico.
+- Bug fix urgente.
+- Dev (testar atualizacao sem reload).
+
+Em outros casos, **deixe o default** (mais
+seguro pro usuario).
+
+**Leitura recomendada:**
+
+- [MDN - Service Worker API](https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API) - doc oficial MDN.
+- [web.dev - Service Worker lifecycle](https://web.dev/articles/service-worker-lifecycle) - o lifecycle a fundo.
+- [Workbox docs](https://developer.chrome.com/docs/workbox) - doc oficial da biblioteca.
+
+> Dica: o erro mais comum em Service Workers
+> e' **esquecer `event.waitUntil`**. Sem ele,
+> o SW **ativa antes do cache estar pronto**,
+> e os primeiros requests nao usam o cache.
+> Resultado: "funciona em dev, falha em prod".
+> Sempre `event.waitUntil(caches.open(...).then(...))`
+> no install e activate. **E o segundo erro
+> mais comum e' `clients.claim()` esquecido
+> em prod** - o SW novo so controla **novas
+> abas**, nao as existentes. Teste com
+> aba ja aberta.
+
+No proximo no, vamos **estrategias de
+cache**: cache first vs network first vs
+stale-while-revalidate, quando usar cada
+uma, e como configurar com Workbox pra
+diferentes tipos de recurso (assets imutaveis,
+API data, user content).
+
+<Checkpoint
+  challenge="Implemente a função `decidirEstadoSW(estadoAnterior, instalacaoOk, claimed)` que simula o ciclo de vida do Service Worker. Recebe: estadoAnterior ('installed' | 'waiting' | 'activating' | 'activated'), instalacaoOk (boolean - se install succeeded), claimed (boolean - se clients.claim foi chamado). Retorna o proximo estado: 'activated' se instalacaoOk E (claimed OU estadoAnterior === 'activating'), 'redundant' se !instalacaoOk, 'activating' se estadoAnterior === 'installed' OU 'waiting' E instalacaoOk E !claimed, senao retorna o mesmo estadoAnterior."
+  starterCode={`// Implemente decidirEstadoSW(estadoAnterior, instalacaoOk, claimed).
+//
+// Regras:
+// - Se instalacaoOk === false: retorna 'redundant' (instalacao falhou).
+// - Se estadoAnterior === 'installed' OU 'waiting' E instalacaoOk E !claimed:
+//   retorna 'activating' (SW novo precisa esperar clientes fecharem OU
+//   skipWaiting + claim).
+// - Se instalacaoOk E (claimed OU estadoAnterior === 'activating'):
+//   retorna 'activated' (SW assumiu controle).
+// - Caso contrario: retorna o estadoAnterior (sem mudanca).
+function decidirEstadoSW(estadoAnterior, instalacaoOk, claimed) {
+  return estadoAnterior;
+}
+
+const _r1 = decidirEstadoSW("installed", true, true);
+console.log(JSON.stringify(_r1));
+
+const _r2 = decidirEstadoSW("installed", true, false);
+console.log(JSON.stringify(_r2));
+
+const _r3 = decidirEstadoSW("activating", true, true);
+console.log(JSON.stringify(_r3));
+
+const _r4 = decidirEstadoSW("installed", false, true);
+console.log(JSON.stringify(_r4));
+
+const _r4 = decidirEstadoSW("installed", false, true);
+console.log(JSON.stringify(_r4));`}
+  expected='"activated"
+"activating"
+"activated"
+"redundant"'
+  slug="pwa"
+  nodeId="service-workers"
+/>
+
+<Quiz
+  question="Por que `event.waitUntil()` e' obrigatorio no install event do Service Worker?"
+  options={[
+    {
+      text: "Porque sem waitUntil, o browser marca install como completo ANTES do cache estar pronto. Resultado: o SW ativa mas o cache esta vazio, e o app falha offline.",
+      correct: true,
+      explanation:
+        "O install event e' fire-and-forget por padrao: o browser dispara o evento, nao espera, marca install como completo, e segue pro activate. Sem waitUntil(cache.addAll(...)), o SW pode ativar com cache vazio. Resultado classico: SW ativa, primeiro fetch dispara, cache miss, vai pra rede, e se estiver offline - falha. waitUntil diz ao browser 'nao marque install como completo ate a promise resolver'. Quando a promise resolve, ai sim install termina. Se rejeitar, install falha e SW nao ativa.",
+    },
+    {
+      text: "Porque waitUntil e' obrigatorio pela spec do W3C - sem ele, o Service Worker nao registra.",
+      correct: false,
+      explanation:
+        "Nao. waitUntil e' recomendado, mas o Service Worker registra sem ele. O que acontece sem waitUntil e' que o install termina IMEDIATAMENTE (sem garantir que o cache foi populado). O SW ainda ativa. O problema e' funcional (cache pode estar vazio), nao 'nao registra'. WaitUntil e' a forma de garantir que o install termine SO apos o trabalho assincrono terminar.",
+    },
+    {
+      text: "Porque sem waitUntil o Service Worker nao intercepta requests.",
+      correct: false,
+      explanation:
+        "Nao. O Service Worker intercepta requests pelo evento fetch, nao pelo install. waitUntil e' sobre CONTROLAR QUANDO o install/activate termina. Sem waitUntil, install termina imediatamente - mas o SW ainda funciona (fetch event ainda intercepta). O problema e' que o cache (caches.open + addAll no install) pode nao estar pronto. waitUntil e' sobre timing do install, nao sobre interceptacao de requests.",
+    },
+  ]}
+/>

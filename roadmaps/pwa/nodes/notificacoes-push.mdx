@@ -1,0 +1,558 @@
+---
+id: notificacoes-push
+title: "Notificacoes push: Web Push API, VAPID, subscription management"
+resources:
+  - title: "web.dev - Push notifications (oficial, EN)"
+    url: https://web.dev/articles/push-notifications-overview
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Push API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Push_API
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Web Push Protocol (oficial, EN)"
+    url: https://web.dev/articles/push-notifications-web-push-protocol
+    lang: en
+    type: doc
+    free: true
+---
+
+Ate agora, o PWA **funciona offline** (SW +
+Cache + IndexedDB) e **sincroniza
+acoes** (Background Sync). Mas falta
+uma coisa: **re-engajar o usuario**
+quando ele **nao esta na app**. Push
+notification no celular, mesmo com app
+fechada. "Voce tem 3 mensagens novas",
+"seu pedido foi enviado", "fulano curtiu
+seu post".
+
+**Web Push API** destrava PWA receber
+**push notifications nativas** (como
+apps nativos), mesmo com a app **fechada**.
+A push vem de um **push service** (Mozilla,
+Google, Apple), e o SW **escuta** o evento
+`push` e exibe a notification. Em 2026,
+**40-50% dos usuarios** estao em browsers
+com Web Push (Chrome, Edge, Firefox, Safari
+16.4+).
+
+Se voce entende o **Push API** (subscribe
+no browser, VAPID pra auth, push service
+distribui, SW exibe notification), **VAPID
+keys** (como o server se identifica pro
+push service), e o **subscription
+management** (guardar subscription no
+server, permitir unsubscribe, re-engajar
+em novo device), voce sai de "app web
+normal" pra "app que notifica usuarios
+como nativo".
+
+## O essencial 🟢
+
+**Web Push em uma frase: protocolo que
+destrava o **server** enviar mensagens
+para o browser do usuario, mesmo com o
+PWA fechado. O Service Worker recebe a
+mensagem e exibe notification nativa.**
+
+3 papeis:
+
+- **App (frontend):** pede permissao,
+  cria subscription, manda pro server.
+- **Push Service** (Mozilla, Google, Apple):
+  receiver central. Guarda subscriptions,
+  entrega pushes.
+- **Server (backend):** manda push pro
+  Push Service, que entrega pro browser.
+
+Fluxo end-to-end:
+
+1. App pede permissao (`Notification.requestPermission`).
+2. Browser gera **subscription** (endpoint
+   URL + chaves).
+3. App **manda subscription pro server**
+   (fetch POST /subscriptions).
+4. Server guarda subscription.
+5. Quando algo acontece, **server manda
+   push** pro Push Service (endpoint da
+   subscription).
+6. Push Service entrega pro browser.
+7. Browser acorda o Service Worker.
+8. SW exibe notification (`self.registration.showNotification`).
+
+**1. Pedir permissao e criar subscription.**
+Do lado da pagina:
+
+```ts
+// main.tsx
+async function subscribeToPush() {
+  // 1. Pedir permissao
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    console.log("Usuario negou notificacoes");
+    return;
+  }
+
+  // 2. Pegar service worker registration
+  const reg = await navigator.serviceWorker.ready;
+
+  // 3. Criar subscription
+  const subscription = await reg.pushManager.subscribe({
+    userVisibleOnly: true,  // obrigatorio: sempre mostra notification
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+  });
+
+  // 4. Mandar pro server
+  await fetch("/api/subscriptions", {
+    method: "POST",
+    body: JSON.stringify(subscription),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+```
+
+`applicationServerKey` e' a **VAPID public
+key** do seu server. E' como o server se
+identifica pro push service. (VAPID = Voluntary
+Application Server Identification).
+
+**2. Service Worker recebe o push.** O SW
+escuta o evento `push` quando o push
+service entrega a mensagem:
+
+```ts
+// sw.js
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  // data = { title, body, icon, url, ... }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: "/badge-72.png",
+      data: { url: data.url },  // custom data pra click handler
+    })
+  );
+});
+```
+
+`showNotification` exibe a notification
+**nativa do SO** (Notification Center no
+macOS, notification no Android, etc). O
+usuario ve a notification **mesmo com a
+app fechada**.
+
+**3. Click na notification.** Quando o
+usuario clica na notification, o SW
+escuta `notificationclick`:
+
+```ts
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data.url;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window" }).then((clients) => {
+      // Se ja tem aba aberta, foca
+      for (const client of clients) {
+        if (client.url === url && "focus" in client) {
+          return client.focus();
+        }
+      }
+      // Senao, abre nova aba
+      return self.clients.openWindow(url);
+    })
+  );
+});
+```
+
+UX classico: usuario clica na notification
+→ se a app ja ta aberta, foca. Se nao,
+abre nova aba na URL especifica.
+
+**VAPID - a "assinatura" do seu server.**
+VAPID (RFC 8292) e' o padrao que identifica
+o **push service** saber **quem** ta
+mandando o push. Sem VAPID, push service
+rejeita.
+
+```bash
+# Gerar par VAPID
+npx web-push generate-vapid-keys
+# Public Key: BLc4xRzKlKORKi...
+# Private Key: abc123...
+```
+
+- **Public key:** vai pro **frontend**
+  (subscribe, identifica o server).
+- **Private key:** fica **so no server**
+  (assina os pushes, prova que e' voce).
+
+**NUNCA** commite a private key. **NUNCA**
+a exponha no frontend.
+
+**Server-side: enviar push.** Com `web-push`
+(Node.js):
+
+```bash
+pnpm add web-push
+```
+
+```ts
+// server.ts
+import webpush from "web-push";
+
+webpush.setVapidDetails(
+  "mailto:dev@example.com",
+  process.env.VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!,
+);
+
+// Quando algo acontece (novo comentario, etc):
+async function sendPush(subscription, payload) {
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify(payload)
+    );
+  } catch (err) {
+    if (err.statusCode === 404 || err.statusCode === 410) {
+      // Subscription invalida (usuario uninstalled)
+      // Remove do banco
+      await db.subscriptions.delete(subscription.id);
+    }
+  }
+}
+```
+
+**410 Gone** = subscription **invalida**
+(usuario uninstalled, ou desabilitou
+push). **Sempre** remova subscriptions
+que retornam 410.
+
+**Subscription object - o que tem.** A
+subscription retornada por
+`pushManager.subscribe()` tem 3 campos
+principais:
+
+```json
+{
+  "endpoint": "https://fcm.googleapis.com/fcm/send/abc123...",
+  "keys": {
+    "p256dh": "base64...",
+    "auth": "base64..."
+  },
+  "expirationTime": null
+}
+```
+
+- **`endpoint`:** URL do push service
+  (Google, Mozilla, Apple).
+- **`keys.p256dh`:** chave publica pra
+  criptografar o payload.
+- **`keys.auth`:** token de autenticacao.
+- **`expirationTime`:** data de expiracao
+  (raro).
+
+**Manda esse objeto inteiro pro server**.
+Server guarda e usa pra mandar pushes.
+
+**Notification com action buttons.**
+Notifications podem ter **botoes de
+acao** ("Ver", "Dispensar", "Responder"):
+
+```ts
+self.registration.showNotification("Nova mensagem", {
+  body: "Fulano enviou uma mensagem",
+  icon: "/icon-192.png",
+  actions: [
+    { action: "view", title: "Ver", icon: "/icon-view.png" },
+    { action: "dismiss", title: "Dispensar" },
+  ],
+  data: { messageId: 123 },
+});
+
+self.addEventListener("notificationclick", (event) => {
+  const action = event.action;
+  if (action === "view") {
+    // Abre mensagem
+  } else if (action === "dismiss") {
+    event.notification.close();
+  } else {
+    // Click no body (nao em action)
+  }
+});
+```
+
+Botoes de acao tornam notifications
+**interativas** - usuario responde sem
+abrir a app.
+
+**Permission UI - o "permission prompt".**
+Quando voce chama
+`Notification.requestPermission()`, o
+browser mostra um prompt nativo. **NUNCA**
+chame sem contexto - o usuario **nega**.
+
+Pattern moderno: button "Ativar notificacoes"
+na UI. Click no button = pedir permissao.
+Sem button = nao pedir. Isso garante que o
+usuario **entende** o que ta autorizando.
+
+```jsx
+function NotificationOptIn() {
+  return (
+    <button onClick={subscribeToPush}>
+      🔔 Ativar notificacoes
+    </button>
+  );
+}
+```
+
+**Tag e renotify.** Notifications com
+mesmo `tag` sao **agrupadas** (nao
+empilham 10 notifications):
+
+```ts
+self.registration.showNotification("Mensagem", {
+  body: "Nova mensagem",
+  tag: "messages",  // agrupa por tag
+  renotify: true,  // vibra mesmo se agrupada
+});
+```
+
+Util pra feeds, comments, etc - usuario
+ve 1 notification "5 novas mensagens" ao
+inves de 5 notifications separadas.
+
+**Silent push - atualizacao sem
+notification.** Push **sem** mostrar
+notification - util pra **atualizar dados
+em background**:
+
+```ts
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  const data = event.data.json();
+  if (data.silent) {
+    // Atualizar cache, IndexedDB, etc
+    event.waitUntil(updateLocalData(data));
+    return;  // sem showNotification
+  }
+  // ... showNotification normal
+});
+```
+
+Use pra "limpar cache", "atualizar
+configuracao", "pre-fetch de dados".
+**Usuario nao ve notification**, mas app
+fica atualizado quando abre.
+
+## Aprofundamento 🟡
+
+**`expirationTime` e re-subscribe.** A
+subscription pode expirar (push service
+rotaciona chaves, ou usuario troca de
+device). `subscription.expirationTime`
+indica quando. Pattern:
+
+```ts
+// main.tsx
+const reg = await navigator.serviceWorker.ready;
+const sub = await reg.pushManager.getSubscription();
+if (sub && sub.expirationTime && Date.now() > sub.expirationTime - 86400000) {
+  // Expira em < 1 dia - re-subscribe
+  await sub.unsubscribe();
+  await subscribeToPush();
+}
+```
+
+Re-subscribe proativamente antes de
+expirar. Sem isso, o server empurra pushes
+que **nunca chegam** (subscription invalida).
+
+**VAPID vs push services de terceiros.** Alem
+de VAPID puro, voce pode usar **push
+services gerenciados** (Firebase Cloud
+Messaging, OneSignal, Pushpad). Eles
+abstraem:
+- Geracao de VAPID keys.
+- Multi-push-service routing (Chrome usa FCM,
+  Firefox usa Mozilla, Safari usa APNs).
+- Analytics (delivery rate, open rate).
+- Targeting (segmentacao de usuarios).
+
+Para apps em escala (>10k usuarios), push
+service gerenciado **vale a pena** -
+abstrai infra que voce nao quer manter.
+Para apps pequenos, VAPID direto e'
+suficiente.
+
+**`Push API` com `Web Crypto` - encryption
+end-to-end.** Push payload e' **criptografado**
+pelo server usando `p256dh` key, e
+**descriptografado** pelo browser. **E2EE**
+- push service **nao ve** o conteudo. A
+criptografia usa **ECDH** + **AES-GCM** -
+implementado em Web Crypto API:
+
+```ts
+// Server (Node, com web-push - ja abstrai)
+await webpush.sendNotification(sub, payload);
+// web-push cuida da criptografia
+
+// Browser (no SW) - descriptografa
+self.addEventListener("push", (event) => {
+  const data = event.data.json();  // ja descriptografado
+  // ...
+});
+```
+
+**Limitacao**: o tamanho do payload e'
+**limitado** (~4KB). Pra payloads
+grandes, use **fetch** regular em vez de
+push. Push e' pra **notificacoes**, nao
+pra **dados**.
+
+**Background fetch + push.** Combine push
+com **Background Fetch API** (Chrome em
+progress): push notifica, SW inicia
+background fetch pra **download de arquivo
+grande** (ex: video enviado por amigo).
+Usuario ve notification "Video de Fulano
+recebido - toque para ver". Click → SW
+exibe video ja baixado em background.
+
+**Push e privacy (LGPD/GDPR).** Push
+subscription e' **PII** (identifica
+usuario). Trate como tal:
+- Criptografe no DB.
+- Permita unsubscribe facil.
+- Documente em privacy policy.
+- Nao compartilhe subscription com
+  terceiros.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que iOS 16.4+ ainda tem limitacoes
+mesmo suportando Web Push.** O iOS Safari
+16.4+ (marco 2023) adicionou Web Push
+**mas com 2 limitacoes criticas**:
+(1) **PWA precisa estar instalada** no
+home screen (nao funciona em Safari
+"regular", so em "Add to Home Screen").
+(2) Push **nao funciona em Private
+Browsing**. Resultado: em iOS, push
+funciona so em PWA instalado por usuarios
+"comprometidos" com a app. **80%+ dos
+usuarios iOS** usam Safari regular - push
+e invisivel pra eles. Em 2026, Apple
+restringiu ainda mais: `expirationTime`
+max 4 semanas (forca re-subscribe).
+
+**`silent push` vs `data push` (iOS).**
+Apple trata pushes com `content-available: 1`
+e **sem notification** como "silent
+push" - entrega sem alerta. Util pra
+sync em background. Android/Chrome trata
+similar. Mas **iOS limita silent push**:
+se muito frequentes, iOS **bloqueia**.
+**Rate limit**: 1 silent push por hora
+em media. Use com cuidado.
+
+**`Push API` vs `Notifications API` -
+são diferentes.** Confusao comum:
+- **`Notifications API`:** exibir notification
+  (sem push, sem server). `new Notification("...")`.
+- **`Push API`:** receber pushes do server,
+  que o SW exibe via `showNotification`.
+
+**Web Push usa ambas**:
+- `Push API` (`pushManager.subscribe`) -
+  recebe pushes.
+- `Notifications API` (`showNotification` no
+  SW) - exibe notifications.
+
+**Pattern comum de erro**: developers usam
+**so** `Notifications API` (notification
+local) achando que e' push. Nao e' - push
+precisa do **subscription** + **push
+service** + **server**.
+
+**VAPID custom claims.** Alem de VAPID
+basico, voce pode adicionar **claims**
+customizados no JWT:
+
+```ts
+webpush.setVapidDetails(
+  "mailto:dev@example.com",
+  VAPID_PUBLIC_KEY,
+  VAPID_PRIVATE_KEY,
+  {
+    // Custom claims - aparece no push service
+    audience: "https://fcm.googleapis.com",
+    expiration: Math.floor(Date.now() / 1000) + 12 * 60 * 60,  // 12h
+  }
+);
+```
+
+`expiration` e' **TTL** do JWT. Use 12-24h.
+Push service **rejeita** JWT expirado.
+
+**Leitura recomendada:**
+
+- [web.dev - Push notifications overview](https://web.dev/articles/push-notifications-overview) - a introducao do Google.
+- [MDN - Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API) - referencia MDN.
+- [web.dev - VAPID](https://web.dev/articles/vapid) - explicacao do VAPID, com exemplos.
+
+> Dica: o erro mais comum em Web Push e'
+> **assumir que o usuario vai aceitar
+> notificacoes**. **Menos de 30%** dos
+> usuarios aceitam prompts de notificacao
+> quando vem na primeira visita. **Sempre**
+> use **opt-in via button** ("Ativar
+> notificacoes" na UI) - contextual, com
+> explicacao do valor. Outro erro: **assumir
+> que subscription dura pra sempre**.
+> Subscription expira, usuario troca de
+> device, uninstall. **Sempre** cleanup
+> subscriptions invalidas (410 Gone) e
+> re-subscribe proativamente.
+
+No proximo no, vamos ao **projeto final**:
+construir um app offline-first instalavel
+(notes ou kanban simples), com Service
+Worker, cache strategies, IndexedDB,
+background sync, e push notifications.
+Tudo num app real que o aluno pode
+instalar no celular.
+
+<Quiz
+  question="Qual o papel de VAPID em Web Push?"
+  options={[
+    {
+      text: "VAPID e' o padrao (RFC 8292) que identifica o server que ta mandando o push. O server assina pushes com private key, o push service verifica com public key. Garante que pushes vem do app legitimo, nao de attacker.",
+      correct: true,
+      explanation:
+        "VAPID (Voluntary Application Server Identification) e' como o push service sabe QUEM ta mandando o push. O server assina o push com a private VAPID key; o push service verifica com a public key. Sem VAPID, push service rejeita. E' a 'identidade' do seu app no ecosystem de push. Public key vai no frontend (subscribe); private key fica so no server. E' similar a como TLS usa certs: chave publica identifica, chave privada assina. Sem VAPID, pushes vem 'anonimos' - push service nao sabe se vem de voce ou de attacker se passando por voce. RFC 8292 desde 2018, suportado em todos os push services.",
+    },
+    {
+      text: "VAPID criptografa o payload do push end-to-end, impedindo o push service de ler.",
+      correct: false,
+      explanation:
+        "Nao exatamente. A criptografia do payload e' feita via ECDH + AES-GCM usando a chave p256dh da subscription - e' E2EE entre server e browser, mas e' independente do VAPID. VAPID serve pra IDENTIFICAR o server (autenticacao), nao pra criptografar o payload (que usa p256dh). Sao 2 mecanismos separados. VAPID = quem ta mandando. p256dh = codificacao do conteudo.",
+    },
+    {
+      text: "VAPID e' o sistema de delivery (FCM, Mozilla, Apple) que entrega pushes pros browsers.",
+      correct: false,
+      explanation:
+        "Nao. VAPID e' o schema de IDENTIFICACAO do server, NAO o sistema de delivery. Os sistemas de delivery sao os Push Services: FCM (Google, usado por Chrome/Android), Mozilla AutoPush (Firefox), APNs (Apple, usado por Safari). VAPID e' o 'cartao de visita' que o server apresenta pro Push Service. Push Service decide se aceita o push (assinatura VAPID valida) e entrega pro browser. Sao papeis diferentes: VAPID = identidade, Push Service = correio.",
+    },
+  ]}
+/>

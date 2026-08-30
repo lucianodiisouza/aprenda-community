@@ -1,0 +1,628 @@
+---
+id: background-sync
+title: "Background sync: Sync API, periodic sync, fallback online-first"
+resources:
+  - title: "web.dev - Two-way communication with service workers (oficial, EN)"
+    url: https://web.dev/articles/two-way-communication-guide
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - SyncManager (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/SyncManager
+    lang: en
+    type: doc
+    free: true
+  - title: "Workbox - Background Sync (oficial, EN)"
+    url: https://developer.chrome.com/docs/workbox/modules/workbox-background-sync
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce montou o offline (Service Worker +
+Cache), e dados persistentes (IndexedDB).
+Mas ha um **gap critico**: o que acontece
+quando o usuario faz uma **acao que precisa
+ir pro servidor** (POST de comentario,
+sync de draft, upload de foto) **enquanto
+esta offline**? Sem background sync, a
+acao **falha e se perde**. O usuario
+escreveu 500 palavras num comentario, foi
+pro metro, e **perdeu tudo**.
+
+**Background Sync** e' a API que resolve:
+o SW **guarda o request que falhou**, e
+quando o browser detecta que voltou
+online, **re-executa automaticamente**. O
+usuario **nunca perde uma acao offline**.
+Twitter, WhatsApp Web, e Gmail offline
+usam isso.
+
+Se voce entende a **Sync API** (registrar
+sync, escutar evento, retry automatico), o
+**Workbox BackgroundSyncPlugin** que
+abstrai 90% do trabalho, e o **fallback
+online-first** (manual queue) pra browsers
+que nao suportam, voce sai de "POST offline
+= perda de dados" pra "POST offline =
+replay automatico quando online".
+
+## O essencial 🟢
+
+**Background Sync em uma frase: o browser
+**detecta quando o usuario volta online**,
+e re-executa requests que falharam
+offline. Zero intervencao do usuario.**
+
+O fluxo classico:
+
+1. Usuario faz POST `/api/comments` offline.
+2. SW intercepta o request, fetch **falha**
+   (sem rede).
+3. SW **guarda o request** em IndexedDB
+   (fila).
+4. SW **registra um sync tag** ("sync-comments").
+5. Usuario volta online.
+6. Browser dispara **`sync` event** no SW.
+7. SW le a fila, **re-executa os requests**.
+8. Server recebe. Comentario publicado.
+9. SW limpa a fila.
+
+**O usuario nunca viu falha**. So publicou
+quando voltou online.
+
+**Suporte de browser.** Background Sync
+e' **Chromium-only** (Chrome, Edge, Opera,
+Brave) e iOS 16.4+ Safari (limitado). Firefox
+ainda nao suporta. Em browsers sem
+suporte, o `sync` event nunca dispara - e
+o request fica na fila **pra sempre**.
+
+Por isso, **sempre tenha fallback**: use
+Workbox BackgroundSyncPlugin (com
+fallback de **fila manual**), ou implemente
+fila + retry via `online` event.
+
+**A API: registrar e escutar sync.** 2
+partes: **registrar** (do lado da pagina)
+e **escutar** (no SW).
+
+```ts
+// main.tsx (pagina)
+async function commentAction(content: string) {
+  try {
+    await fetch("/api/comments", {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    });
+    // Sucesso - comentario publicado
+  } catch {
+    // Falhou - registra sync
+    const reg = await navigator.serviceWorker.ready;
+    await reg.sync.register("sync-comments");
+    // Mostra "Comentario sera publicado quando online"
+  }
+}
+```
+
+```ts
+// sw.js
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-comments") {
+    event.waitUntil(replayFailedRequests());
+  }
+});
+
+async function replayFailedRequests() {
+  // Re-executa requests da fila
+  const queue = await getQueueFromIndexedDB();
+  for (const req of queue) {
+    try {
+      await fetch(req);
+      await removeFromQueue(req);
+    } catch (err) {
+      // Continua tentando - SW nao marca sync como completo
+      throw err;  // Browser vai re-tentar mais tarde
+    }
+  }
+}
+```
+
+**`event.waitUntil` no sync event e' a chave.**
+Se a promise rejeitar, o browser sabe que
+o sync **nao terminou** e re-tenta mais
+tarde (com backoff exponencial: 1min, 5min,
+15min, 1h, 6h, 24h). Se a promise resolver,
+sync **terminou** com sucesso.
+
+**Workbox BackgroundSyncPlugin - 5 linhas
+pra tudo.** Implementar fila + replay
+manualmente e' chato. Workbox abstrai:
+
+```ts
+import { BackgroundSyncPlugin } from "workbox-background-sync";
+import { registerRoute } from "workbox-routing";
+import { NetworkOnly } from "workbox-strategies";
+
+const bgSync = new BackgroundSyncPlugin("comments-queue", {
+  maxRetentionTime: 24 * 60,  // 24 horas em minutos
+});
+
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/api/comments"),
+  new NetworkOnly({
+    plugins: [bgSync],
+  }),
+  "POST"
+);
+```
+
+**So isso.** Workbox:
+- Intercepta requests POST `/api/comments`.
+- Se fetch falhar, **guarda** o request
+  (com body, headers, tudo) em IndexedDB.
+- Registra sync automaticamente.
+- No `sync` event, **re-executa** os
+  requests guardados.
+- Se sucesso, remove da fila.
+- Se falha, **re-tenta** (sync event dispara
+  novamente).
+- Apos 24h (maxRetentionTime), descarta.
+
+**Por que NetworkOnly?** Em cache (SWR,
+NetworkFirst), o request **nao chega
+online** - o SW serve do cache. Pra
+mutacoes (POST/PUT/DELETE), voce quer
+**sempre** ir pra rede. Workbox combina
+NetworkOnly com BackgroundSync.
+
+**`maxRetentionTime` - por quanto tempo
+guardar.** O request pode ficar na fila
+ate **maxRetentionTime minutos** (default
+7 dias = 10080 min). Apos isso, e'
+descartado. Use:
+
+- **Minutos (curto):** likes, reactions
+  (data importuna apos 1h).
+- **Horas (medio):** comentarios, posts
+  (data importuna apos 24h).
+- **Dias (longo):** uploads, drafts
+  (data importuna apos 7 dias).
+
+**`online` event - o fallback manual.** Em
+browsers **sem** Background Sync (Firefox,
+alguns mobiles), o Workbox nao dispara
+sync automaticamente. Mas o **`online`
+event** no window funciona em **todos**
+browsers:
+
+```ts
+// main.tsx (pagina)
+window.addEventListener("online", () => {
+  if ("serviceWorker" in navigator && "SyncManager" in window) {
+    // Browser com Sync API - SW vai disparar sync
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.sync.register("comments-queue");
+    });
+  } else {
+    // Browser sem Sync - dispara fila manualmente
+    navigator.serviceWorker.controller?.postMessage({
+      type: "REPLAY_QUEUE",
+      queue: "comments-queue",
+    });
+  }
+});
+```
+
+Pattern **universo**: tentar Sync API
+primeiro, cair pra `online` event +
+postMessage como fallback.
+
+**Periodic Background Sync - rodar
+periodicamente.** API **experimental**
+(Chrome 80+, mas **requer permission
+prompt**). Permite o SW rodar em
+intervalos regulares (ex: sincronizar
+feed a cada 24h):
+
+```ts
+// main.tsx
+const reg = await navigator.serviceWorker.ready;
+const status = await navigator.permissions.query({
+  name: "periodic-background-sync",
+});
+
+if (status.state === "granted") {
+  try {
+    await reg.periodicSync.register("sync-feed", {
+      minInterval: 24 * 60 * 60 * 1000,  // 24h
+    });
+  } catch (err) {
+    // Usuario negou ou browser nao suporta
+  }
+}
+```
+
+```ts
+// sw.js
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "sync-feed") {
+    event.waitUntil(syncFeed());
+  }
+});
+```
+
+**Limitacao**: o browser decide **quando**
+rodar (baseado em bateria, conexao, etc).
+Nao e' garantia de tempo exato. **E
+requer permission** - usuario precisa
+aceitar. iOS **nao** suporta.
+
+**O queue no IndexedDB - estrutura
+tipica.** Workbox guarda requests em
+IndexedDB (DB `workbox-background-sync`).
+Cada request e' um objeto com:
+
+```ts
+interface QueuedRequest {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: string | Blob;
+  timestamp: number;  // quando foi enfileirado
+  metadata?: any;  // info custom
+}
+```
+
+**`maxRetentionTime` e' por item**: items
+mais velhos que `maxRetentionTime` sao
+automaticamente descartados.
+
+**Background sync + IndexedDB - a
+combinacao offline-first classica.**
+Pattern:
+
+```ts
+// 1. Usuario faz POST offline
+const comment = { content: "Lorem ipsum" };
+await fetch("/api/comments", { method: "POST", body: JSON.stringify(comment) }).catch(
+  async () => {
+    // 2. Falhou - salva em IndexedDB local
+    await db.comments.add({
+      ...comment,
+      id: `local-${Date.now()}`,
+      status: "pending",
+    });
+  }
+);
+
+// 3. Quando voltar online:
+// - Workbox BackgroundSync replay → POST real
+// - Em paralelo, ouve o sync event e atualiza UI
+self.addEventListener("message", (event) => {
+  if (event.data.type === "COMMENT_SYNCED") {
+    // Atualizar UI: comment "pending" → "published"
+  }
+});
+```
+
+App mostra comentarios com status
+"pending sync" ate que o sync event
+confirme. **Usuario ve o estado real**.
+
+## Aprofundamento 🟡
+
+**Workbox `BackgroundSyncPlugin` com
+custom callbacks.** O plugin tem hooks
+`onSync` (apos cada replay):
+
+```ts
+const bgSync = new BackgroundSyncPlugin("queue", {
+  onSync: async ({ queue }) => {
+    let entry;
+    while ((entry = await queue.shiftRequest())) {
+      try {
+        await fetch(entry.request.clone());
+        await queue.unshiftRequest(entry);  // ou delete
+      } catch (err) {
+        await queue.unshiftRequest(entry);
+        throw err;
+      }
+    }
+    // Notificar pagina
+    self.clients.matchAll().then((clients) => {
+      clients.forEach((client) =>
+        client.postMessage({ type: "SYNC_COMPLETE" })
+      );
+    });
+  },
+});
+```
+
+`onSync` libera logica custom: retries
+especiais, logging, retry com backoff, etc.
+
+**`Queue` API do Workbox (avancado).** Alem
+do plugin, voce pode usar a `Queue` API
+diretamente:
+
+```ts
+import { Queue } from "workbox-background-sync";
+
+const queue = new Queue("my-queue", {
+  maxRetentionTime: 24 * 60,
+  onSync: async ({ queue }) => {
+    let entry;
+    while ((entry = await queue.shiftRequest())) {
+      try {
+        await fetch(entry.request);
+      } catch (err) {
+        await queue.unshiftRequest(entry);
+        throw err;
+      }
+    }
+  },
+});
+
+// Adicionar request manualmente
+queue.pushRequest({ request: new Request("/api/...") });
+```
+
+Util pra **fila custom** (ex: retry com
+exponential backoff, fila com prioridade).
+
+**Retry com exponential backoff customizado.**
+Default do Workbox: o browser cuida do
+backoff (1min, 5min, 15min, 1h, 6h, 24h).
+Pra **backoff custom**:
+
+```ts
+let attempts = 0;
+const MAX_ATTEMPTS = 5;
+const BASE_DELAY = 1000;  // 1s
+
+async function replayWithBackoff(req) {
+  while (attempts < MAX_ATTEMPTS) {
+    try {
+      await fetch(req);
+      return;  // sucesso
+    } catch {
+      attempts++;
+      const delay = BASE_DELAY * 2 ** attempts;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  // Max attempts - descarta ou alerta usuario
+}
+```
+
+**Cuidado**: backoff custom **pode
+interferir com** sync event. Em prod, use
+o default do browser e customize so se
+necessario.
+
+**`BroadcastChannel` entre SW e paginas.**
+Quando um sync completa, a pagina deve
+saber. Alem de `postMessage`, use
+BroadcastChannel:
+
+```ts
+// sw.js
+self.addEventListener("sync", async (event) => {
+  if (event.tag === "comments-queue") {
+    event.waitUntil(replayAndNotify());
+  }
+});
+
+async function replayAndNotify() {
+  // ... replay
+  const channel = new BroadcastChannel("sync-events");
+  channel.postMessage({ type: "COMMENTS_SYNCED", count: 3 });
+}
+
+// main.tsx (pagina)
+const channel = new BroadcastChannel("sync-events");
+channel.addEventListener("message", (event) => {
+  if (event.data.type === "COMMENTS_SYNCED") {
+    // Atualizar UI
+    showToast(`${event.data.count} comentarios sincronizados`);
+  }
+});
+```
+
+BroadcastChannel funciona entre **multiplas
+abas** (todas ouvem o mesmo canal).
+**Sem polling**.
+
+**Conflict resolution - server rejeita
+por outro motivo.** E se o servidor ja
+tem um comment com mesmo ID? Ou se o
+usuario deletou? O retry pode causar
+**conflitos**. Strategies:
+
+- **Idempotency keys** (header `Idempotency-Key`):
+  server dedup requests com mesmo key.
+- **Last-write-wins** (timestamp do client
+  vence se mais recente).
+- **Server-side merge** (CRDT ou
+  operational transform).
+
+**Background sync + autenticação.** O SW
+faz o request replay, **mas o cookie de
+sessao pode ter expirado** durante a
+offline window. Se o server retorna 401,
+o request fica na fila pra sempre (loop
+infinito). Solução:
+
+```ts
+async function replayWithAuth(req) {
+  try {
+    const response = await fetch(req);
+    if (response.status === 401) {
+      // Limpa queue, notifica pagina
+      await queue.delete();
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((c) => c.postMessage({ type: "AUTH_EXPIRED" }));
+      });
+      return;
+    }
+    // ...
+  } catch { /* network error - retry */ }
+}
+```
+
+**Detectar 401, parar retry, notificar
+usuario** ("Sua sessao expirou, faca login
+de novo").
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que Background Sync e' Chromium-only
+e a discussao sobre cross-browser.** O
+Chromium implementou Background Sync em
+2017. **Firefox ainda nao suporta** (issue
+aberta ha 8 anos). **Safari** adicionou
+em 2023 mas com limitacoes. **Por que**:
+Background Sync requer **coordenacao entre
+browser e OS** (decidir quando o SW pode
+rodar). Chromium tem controle fino; Safari
+e mais restritivo (battery, privacy). Em
+2026, **60-70% dos usuarios** estao em
+browsers com Background Sync. **Fallback
+online event cobre os outros 30-40%**.
+
+**`SyncManager.getTags()` - listar tags
+registradas.** Pra UI que mostra "pending
+sync" status:
+
+```ts
+const reg = await navigator.serviceWorker.ready;
+const tags = await reg.sync.getTags();
+console.log("Pending syncs:", tags);
+// ["comments-queue", "uploads-queue", ...]
+```
+
+Util em apps com **multiplas filas** (uma
+por tipo de recurso).
+
+**BaaS com offline-first built-in.** Se
+voce nao quer implementar tudo isso,
+**Firebase Realtime Database** e **Firestore**
+tem **offline persistence built-in**:
+writes offline sao enfileirados, sincronizam
+quando volta online. **Supabase** tbm
+(adicionou em 2024). Trade-off: lock-in
+com vendor. Pra apps que ja usam Firebase,
+**nao reinvente** - use o suporte nativo.
+
+**`register()` retorna PermissionStatus.**
+Em Periodic Sync, o `register()` pode
+**falhar por permissao negada** ou
+**rate limit do browser** (chrome limita
+periodic syncs a 1 por dia pra economizar
+bateria). **Sempre** envolva em try/catch:
+
+```ts
+try {
+  await reg.periodicSync.register("sync-feed", { minInterval: 24 * 60 * 60 * 1000 });
+} catch (err) {
+  console.warn("Periodic sync nao disponivel:", err);
+  // Fallback: dispara sync manual via online event
+}
+```
+
+**Leitura recomendada:**
+
+- [web.dev - Background Sync](https://web.dev/articles/background-sync) - a doc oficial do Google.
+- [MDN - SyncManager](https://developer.mozilla.org/en-US/docs/Web/API/SyncManager) - referencia MDN.
+- [Workbox - Background Sync](https://developer.chrome.com/docs/workbox/modules/workbox-background-sync) - doc oficial do plugin.
+
+> Dica: o erro mais comum em background sync
+> e' **tentar usar sem fallback**. Firefox e
+> Safari limitado = ate 40% dos usuarios
+> **nunca** veem o sync rodar. Pattern
+> canonico: **Workbox BackgroundSyncPlugin
+> (faz o maximo que o browser suporta) +
+> `online` event fallback (cobre o resto)**.
+> E sempre **limpe a queue** apos 24h
+> (maxRetentionTime) - senao fica lixo pra
+> sempre. Pattern "fila sem TTL" e' o
+> segundo erro mais comum.
+
+No proximo no, vamos **notificacoes push**:
+Web Push API, VAPID keys, subscription
+management, e o que da pra fazer
+(notification com acao, badge, vibrate).
+Cobertura final da stack PWA.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarSync(situacao)` que recebe um objeto com { online: boolean, swSuportado: boolean, syncApiSuportada: boolean, queueSize: number, maxRetries: number } e retorna { estrategia: 'sync-api' | 'online-event' | 'queue-local' | 'descartar', razao: string }. Regras: online=true e queueSize=0 → 'descartar' (nada a fazer). online=true e queueSize>0 → 'sync-api' se suportada, senao 'online-event'. online=false e queueSize=0 → 'descartar'. online=false e queueSize>0 e queueSize<maxRetries → 'queue-local' (guarda mais). online=false e queueSize>=maxRetries → 'descartar' (limite atingido)."
+  starterCode={`// ImplementeavaliarSync(situacao) que recebe:
+//
+// { online: boolean,
+//   swSuportado: boolean,
+//   syncApiSuportada: boolean,
+//   queueSize: number,
+//   maxRetries: number }
+//
+// E retorna { estrategia, razao } - a decisao de sync.
+//
+// Regras:
+// - online=true E queueSize=0: 'descartar' (nada a fazer, fila vazia).
+// - online=true E queueSize>0:
+//   - syncApiSuportada=true: 'sync-api' (browser dispara sync event).
+//   - syncApiSuportada=false: 'online-event' (pagina dispara replay manual).
+// - online=false E queueSize=0: 'descartar'.
+// - online=false E queueSize>0 E queueSize<maxRetries:
+//   'queue-local' (guarda mais no IndexedDB, tenta sync depois).
+// - online=false E queueSize>=maxRetries: 'descartar' (limite atingido).
+function avaliarSync(situacao) {
+  return { estrategia: "queue-local", razao: "" };
+}
+
+const _r1 = avaliarSync({ online: true, swSuportado: true, syncApiSuportada: true, queueSize: 3, maxRetries: 10 });
+console.log(JSON.stringify(_r1));
+
+const _r2 = avaliarSync({ online: true, swSuportado: true, syncApiSuportada: false, queueSize: 3, maxRetries: 10 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = avaliarSync({ online: false, swSuportado: true, syncApiSuportada: true, queueSize: 5, maxRetries: 10 });
+console.log(JSON.stringify(_r3));
+
+const _r4 = avaliarSync({ online: false, swSuportado: true, syncApiSuportada: true, queueSize: 10, maxRetries: 10 });
+console.log(JSON.stringify(_r4));
+
+const _r5 = avaliarSync({ online: true, swSuportado: true, syncApiSuportada: true, queueSize: 0, maxRetries: 10 });
+console.log(JSON.stringify(_r5));`}
+  expected='{"estrategia":"sync-api","razao":"Online com requests pendentes - usar Sync API"}
+{"estrategia":"online-event","razao":"Online com requests pendentes - usar online event fallback"}
+{"estrategia":"queue-local","razao":"Offline - guardar mais no IndexedDB"}
+{"estrategia":"descartar","razao":"Limite de retries atingido"}
+{"estrategia":"descartar","razao":"Nada a fazer, fila vazia"}'
+  slug="pwa"
+  nodeId="background-sync"
+/>
+
+<Quiz
+  question="Por que Background Sync precisa de fallback com `online` event?"
+  options={[
+    {
+      text: "Porque Background Sync so funciona em Chromium-based browsers (Chrome, Edge, Brave) e iOS 16.4+ Safari. Firefox ainda nao suporta. Sem fallback, 30-40% dos usuarios perdem os requests offline.",
+      correct: true,
+      explanation:
+        "Background Sync e' Chromium-only (Chrome, Edge, Opera, Brave) e iOS 16.4+ Safari limitado. Firefox NAO suporta. Significa 30-40% dos usuarios em Firefox/some mobile browsers SEM background sync. Sem fallback, requests offline ficam na fila pra sempre. Pattern canonico: usar BackgroundSyncPlugin do Workbox (maximo que o browser suporta) + listener de `online` event que faz postMessage pro SW disparar replay manual. Assim, TODOS os browsers funcionam - Chromium usa Sync API nativa, outros usam online event. Workbox 7+ ja abstrai isso, mas o pattern 'online event + postMessage' continua sendo o fallback seguro.",
+    },
+    {
+      text: "Porque `online` event e' mais rapido que Background Sync.",
+      correct: false,
+      explanation:
+        "Nao. Background Sync e' o 'padrao ouro' - browser cuida do timing, retry com backoff, etc. Online event e' 'imediato quando detecta online' mas SEM retry automatico. Sao complementares, nao alternativos. Background Sync e' melhor quando suportado; online event e' o fallback quando nao suportado. Nao e' questao de velocidade - e' questao de suporte de browser.",
+    },
+    {
+      text: "Porque `online` event e' deprecated.",
+      correct: false,
+      explanation:
+        "Nao. `online` event e' parte da API Network Information desde 2017, totalmente suportada em todos os browsers. Nao e' deprecated. E' o complemento de Background Sync: enquanto Background Sync depende de browser support, `online` event funciona em qualquer browser. Por isso e' o fallback classico.",
+    },
+  ]}
+/>

@@ -1,0 +1,557 @@
+---
+id: pwa-o-que-e
+title: "PWA: o que e, manifesto, instalacao, criterios"
+resources:
+  - title: "web.dev - Progressive Web Apps (oficial, EN)"
+    url: https://web.dev/articles/install-criteria
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Web App Manifest (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/Manifest
+    lang: en
+    type: doc
+    free: true
+  - title: "vite-plugin-pwa - GitHub (oficial, EN)"
+    url: https://vite-pwa-org.netlify.app/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou o `frontend` e o
+`performance-web`. A landing page e'
+rapida, otimizada, e roda no browser.
+Mas **e quando o usuario perde a conexao
+no metro?** Ou quer **instalar o app no
+celular** sem ir na app store? Ou quer
+**receber push** quando tem novidade?
+
+Em 2015, o Google cunhou o termo
+**Progressive Web App (PWA)**: apps web
+que **se comportam como nativos** - offline,
+instalaveis, com push, e rapidos. Hoje
+(2026), PWAs sao o **default moderno**
+pra apps mobile-first sem precisar de
+React Native/Flutter. Twitter Lite, Uber,
+Starbucks, Pinterest Lite - todos PWA.
+
+Se voce entende o que torna um app "PWA"
+(manifesto + Service Worker + HTTPS), os
+3 criterios de instalabilidade, e o
+`vite-plugin-pwa` que faz 80% do trabalho
+em 2026, voce sai de "app web normal" pra
+"app que instala no celular e funciona
+offline".
+
+## O essencial 🟢
+
+**PWA em uma frase: app web que se
+comporta como nativo.** Especificamente:
+
+1. **Instalavel** no device (home screen,
+   sem app store).
+2. **Funciona offline** (Service Worker
+   intercepta requests, serve do cache).
+3. **Re-engajavel** (push notifications).
+4. **Linkavel e instalavel sem friccao**
+   (URL, sem instalador).
+
+Em 2026, a combinacao de **HTTPS +
+Service Worker + Web App Manifest** ativa
+**todos** os 3 capacidades. E' o "minimo
+viavel" pra ser PWA.
+
+**Os 3 pilares tecnicos.** Pra ser PWA,
+voce precisa de:
+
+1. **HTTPS (ou localhost em dev).**
+   Service Workers exigem conexao segura
+   (exceto localhost pra dev). Sem HTTPS,
+   o browser **se recusa a registrar o
+   Service Worker**.
+2. **Service Worker** - arquivo JS que o
+   browser roda em background, separado
+   da pagina. Pode interceptar fetch,
+   cachear responses, etc. Coberto em
+   profundidade no proximo no.
+3. **Web App Manifest** - arquivo JSON
+   que diz ao browser "esse app e'
+   instalavel", com icones, nome, cor
+   de tema, e URL inicial.
+
+Os 3 sao **obrigatorios** - sem qualquer
+um deles, voce nao tem PWA.
+
+**O `manifest.webmanifest` - a "identidade"
+do seu app.** O manifesto e' um JSON que
+o browser usa pra instalar o app. Os
+campos essenciais:
+
+```json
+{
+  "name": "Meu App - Versao Completa",
+  "short_name": "MeuApp",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "description": "O melhor app do mundo",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+```
+
+- **`name`:** nome completo (na home screen,
+  splash screen, app switcher).
+- **`short_name`:** nome curto (quando
+  pouco espaco, ex: launcher do Android).
+- **`start_url`:** URL aberta quando o
+  usuario clica no icone.
+- **`display: "standalone"`:** esconde a
+  barra de URL do browser (parece app
+  nativo). Outras opcoes: `fullscreen`,
+  `minimal-ui`, `browser`.
+- **`theme_color`:** cor da barra de
+  status.
+- **`background_color`:** cor da splash
+  screen (antes do app carregar).
+- **`icons`:** **obrigatorio ter 192x192
+  E 512x512** pra suportar diferentes
+  tamanhos. `purpose: "maskable"` libera
+  que o sistema aplique shapes (circulo
+  no Android).
+
+**O `<link rel="manifest">` no HTML.
+Aponte o browser pro manifesto:
+
+```html
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+  </head>
+  <body>...</body>
+</html>
+```
+
+**Os 3 criterios de "instalabilidade".** O
+browser oferece o **prompt de instalacao**
+quando o app atende 3 criterios (Chromium
+- Chrome, Edge, Brave; Firefox implementa
+parcialmente):
+
+1. **Tem Service Worker registrado** (com
+   fetch event handler).
+2. **Tem manifesto valido** (com 192+ e
+   512+ icons, `start_url`, `display`).
+3. **Serve em HTTPS** (ou localhost).
+
+Quando atendido, o navegador mostra o
+prompt "Instalar app?" - pode ser via
+**install button** (custom) ou **automatic
+prompt** (raro, browser decide).
+
+**Forcar o install prompt - o pattern
+moderno.** Voce **nao** pode chamar
+`install()` diretamente (gated pelo
+browser). Use o evento `beforeinstallprompt`:
+
+```ts
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();  // browser nao mostra o banner automatico
+  deferredPrompt = e;
+  // Mostra seu botao custom
+  showInstallButton();
+});
+
+installButton.addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === "accepted") {
+    console.log("Usuario instalou o app!");
+  }
+  deferredPrompt = null;
+});
+```
+
+Esse e' o pattern usado pela maioria dos
+apps em 2026. Custom button (estilizado),
+chamada do prompt no click, instalacao
+disparada.
+
+**`display: "standalone"` vs `"fullscreen"`
+vs `"browser"`.** A escolha de display
+muda como o app aparece:
+
+| Display         | URL bar | Navigation | Status bar | Caso de uso            |
+| --------------- | ------- | ---------- | ---------- | ---------------------- |
+| `standalone`    | oculta  | sem        | sim        | **Default PWA** (app-like) |
+| `fullscreen`    | oculta  | sem        | sem        | Games, experiencias imersivas |
+| `minimal-ui`    | minima  | basica     | sim        | Hibrido (URL visivel mas minimal) |
+| `browser`       | normal  | normal     | sim        | "Quase app" - util pra SEO/canonical |
+
+**Default moderno: `standalone`**. So use
+outros se tiver caso especifico.
+
+**`vite-plugin-pwa` - o atalho pra 80% do
+trabalho.** Em Vite (default em 2026):
+
+```bash
+pnpm add -D vite-plugin-pwa
+```
+
+```ts
+// vite.config.ts
+import { VitePWA } from "vite-plugin-pwa";
+
+export default {
+  plugins: [
+    VitePWA({
+      registerType: "autoUpdate",
+      // Gera manifest automaticamente
+      manifest: {
+        name: "Meu App",
+        short_name: "MeuApp",
+        theme_color: "#000000",
+        icons: [
+          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+        ],
+      },
+      workbox: {
+        // Cache strategies automaticas
+        globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.example\.com\/.*$/,
+            handler: "NetworkFirst",
+            options: { cacheName: "api-cache", expiration: { maxEntries: 50 } },
+          },
+        ],
+      },
+    }),
+  ],
+};
+```
+
+`vite-plugin-pwa` gera o manifesto,
+registra o Service Worker, configura
+Workbox, e aplica cache strategies. **80%
+dos casos de PWA resolvidos em 5 linhas
+de config**.
+
+**HTTPS - o requisito silencioso.** Service
+Workers **exigem HTTPS** (exceto localhost).
+Por que: o SW pode interceptar **tudo**, e
+em HTTP um attacker MITM injeta SW malicioso.
+HTTPS protege a integridade do SW.
+
+Em dev, **localhost** funciona sem HTTPS
+(regex `localhost|127.0.0.0|::1` no
+ServiceWorkerContainer). Em prod, HTTPS
+obrigatorio. **Cloudflare** + **Vercel** +
+**Netlify** ja servem HTTPS gratis.
+
+**Os 3 pilares em acao.** Juntando tudo,
+um app "minimo PWA" precisa de:
+
+```
+1. HTTPS (Cloudflare/Vercel/Netlify)
+2. /manifest.webmanifest (gerado por vite-plugin-pwa)
+3. Service Worker (gerado por Workbox, configurado por vite-plugin-pwa)
+4. /icon-192.png + /icon-512.png
+5. <link rel="manifest"> no HTML
+```
+
+**5 coisas, 5 minutos de setup com
+vite-plugin-pwa**. Resultado: app
+instalavel e offline-ready.
+
+**PWA nao substitui app nativo.** Onde PWA
+**ganha**:
+- Custo zero de distribuicao (sem app store
+  review, 30% de commission).
+- Cross-platform (1 codigo base, 1 deploy).
+- Updates instantaneos (sem app store review).
+- SEO indexavel (Google indexa URL, app
+  stores nao).
+
+Onde PWA **perde** (em 2026):
+- Acesso a APIs nativas avancadas (Bluetooth,
+  NFC, contacts).
+- Performance extrema (games AAA).
+- Push notification no iOS ate iOS 16.4
+  (parcial, melhorou mas ainda limitado).
+- App Store discovery (muitos usuarios
+  procuram so na app store).
+
+**Regra 2026**: comece com PWA. Se voce
+precisar de algo que PWA nao entrega,
+ai sim vai pra nativo.
+
+## Aprofundamento 🟡
+
+**`start_url` e deep linking.** O
+`start_url` define **pra onde o app vai**
+quando o usuario clica no icone. Mas voce
+tambem pode **deep link** pra rotas
+especificas:
+
+```
+https://meuapp.com/posts/123
+```
+
+O PWA abre **na URL exata**, nao no
+`start_url`. Isso significa que voce
+pode compartilhar URLs que abrem o app
+diretamente no conteudo. **Util pra
+marketing** ("abre o app nesse post").
+
+**O `scope` no Service Worker registration.**
+O Service Worker tem um **escopo** - o
+conjunto de URLs que ele intercepta. Por
+padrao, o escopo e' o diretorio do SW:
+
+```
+/sw.js           → scope: /
+/pages/sw.js     → scope: /pages/
+```
+
+**Recomendacao: coloque o SW na raiz**
+(`/public/sw.js`) pra ter escopo `/` e
+controlar toda a app.
+
+**`display_override` - override de display
+por query string.** Em 2026+, voce pode
+forcar um display diferente por URL:
+
+```
+?display=standalone  → app-like
+?display=fullscreen  → fullscreen
+?display=browser     → browser normal
+```
+
+Util pra **modos especiais** do app
+(ex: modo "kiosk" pra uma feature).
+
+**`screenshots` no manifesto - preview no
+install dialog.** O Chrome mostra **screenshots
+do app** no prompt de instalacao. Adicione:
+
+```json
+{
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
+}
+```
+
+Preview aumenta **significativamente a taxa
+de install** (testes mostram +30%).
+
+**`shortcuts` no manifesto - atalhos no
+long-press do icon.** iOS/Android mostram
+**menus de atalho** quando o usuario da
+long-press no icone do app:
+
+```json
+{
+  "shortcuts": [
+    {
+      "name": "Buscar",
+      "short_name": "Buscar",
+      "url": "/search?q=coffee",
+      "icons": [{ "src": "/icon-search.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Camera",
+      "short_name": "Camera",
+      "url": "/camera",
+      "icons": [{ "src": "/icon-camera.png", "sizes": "96x96" }]
+    }
+  ]
+}
+```
+
+Long-press → menu com "Buscar" e "Camera".
+Click no atalho → abre a URL direto. **Atalho
+pro recurso mais usado** do app.
+
+**`id` e `launch_handler` para apps mais
+complexos.** O campo `id` (Chrome 96+)
+libera **multiplas "apps" do mesmo origin**.
+Util pra **white-label** ou **multi-tenant**:
+
+```json
+{
+  "id": "/?tenant=acme",
+  "start_url": "/?tenant=acme",
+  "name": "Acme App"
+}
+```
+
+**`related_applications` para apps hibridos.**
+Se voce tem **PWA + app nativo** (Android
+Play Store), indique:
+
+```json
+{
+  "related_applications": [
+    { "platform": "play", "url": "https://play.google.com/store/apps/details?id=com.example" },
+    { "platform": "itunes", "url": "https://apps.apple.com/app/id123456789" }
+  ],
+  "prefer_related_applications": false
+}
+```
+
+`prefer_related_applications: false` = o
+browser ainda oferece o PWA. `true` = so
+oferece o nativo.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que PWA em 2026 e' mainstream mas iOS
+atrasa.** Apple adicionou suporte a Service
+Worker em iOS 11.3 (2018) mas com limitacoes
+historicas (cache < 50MB, no background
+persistence, push so a partir de 16.4).
+**2026 mudou**: iOS 16.4+ (marco 2023)
+adicionou Web Push, manifest completo, e
+background sync. iOS 17+ melhorou storage
+limits. PWAs em iOS **ainda** tem 2
+desvantagens vs Android: (1) no background
+persistence e' mais agressivo (browser pode
+limpar SW cache), (2) install prompt e'
+mais manual (iOS nao mostra prompt automatico).
+**Mitigacao: testar em iOS real.**
+
+**`maskable` icons - o pattern 2024+.** O
+campo `purpose: "maskable"` no icon diz ao
+sistema que o icon **pode ser "mascarado"**
+(circulo, rounded square, etc) sem perder
+conteudo importante. O **safe zone** e'
+80% central do icon (20% de padding interno).
+O sistema recorta, e seu conteudo importante
+fica visivel.
+
+```json
+{
+  "src": "/icon-maskable-512.png",
+  "sizes": "512x512",
+  "type": "image/png",
+  "purpose": "maskable"
+}
+```
+
+**Sem safe zone** = texto cortado, logo
+perdida. **Com safe zone** = visual OK em
+todos os launchers.
+
+**`id` para multiple PWAs no mesmo origin.**
+Em 2026, Chrome 96+ suporta `id` no
+manifesto pra **distinguir PWAs**:
+
+```json
+// Para PWA "Acme Tenant"
+{
+  "id": "/?source=pwa&tenant=acme",
+  "scope": "/?source=pwa&tenant=acme",
+  "start_url": "/?source=pwa&tenant=acme"
+}
+```
+
+Cada `id` e' um "PWA diferente" pro sistema
+operacional (icone separado, app switcher
+separado). Util pra:
+- White-label apps (mesma origem, marcas
+  diferentes).
+- Multi-tenant (PWA por cliente).
+- Multi-app (blog, docs, app - 3 PWAs no
+  mesmo origin).
+
+**`beforeinstallprompt` so dispara 1x.**
+O evento `beforeinstallprompt` so dispara
+**uma vez** por app (browser-side). Se
+voce nao capturar e mostrar o botao custom,
+o usuario **nao ve mais** o prompt. Por
+isso o pattern `e.preventDefault()` +
+armazenar em variavel + `deferredPrompt.prompt()`
+no click.
+
+**`launchQueue` e "mini app store" no Android.**
+Android 12+ (2024+) tem **launcher de apps
+PWA** integrado no launcher do sistema.
+PWAs instaladas aparecem na lista de apps
+do usuario, com icone, splash, e atalhos.
+Nao precisa de TWA (Trusted Web Activity).
+**PWAs agora sao apps first-class no
+Android** - mesmo ranking, mesmo drawer,
+mesmo backup.
+
+**Leitura recomendada:**
+
+- [web.dev - Install Criteria](https://web.dev/articles/install-criteria) - os 3 criterios de instalabilidade.
+- [MDN - Web App Manifest](https://developer.mozilla.org/en-US/docs/Web/Manifest) - referencia completa do manifesto.
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) - doc oficial, com Workbox integration.
+
+> Dica: o erro mais comum em PWA e' **esquecer
+> o HTTPS**. Service Worker nao registra
+> em HTTP. Outro erro: **manifesto sem icons
+> 192+512**. Browser rejeita. Terceiro: **SW
+> com scope errado** (em /pages/ em vez de
+> raiz). 3 erros que tiram o "PWA installavel"
+> em 5 minutos. Use `vite-plugin-pwa` que
+> abstrai tudo.
+
+No proximo no, vamos **Service Workers** a
+fundo: o ciclo de vida (installing → waiting
+→ activating → activated), como registrar
+corretamente, escopo, atualizacao (com
+`skipWaiting` e `clients.claim`), e como
+debogar com Chrome DevTools.
+
+<Quiz
+  question="Quais sao os 3 pilares tecnicos OBRIGATORIOS pra um app ser PWA instalavel?"
+  options={[
+    {
+      text: "1) HTTPS (ou localhost em dev), 2) Service Worker registrado, 3) Web App Manifesto valido (com 192+ e 512+ icons, start_url, display).",
+      correct: true,
+      explanation:
+        "Os 3 pilares canonicos definidos pelo Google: HTTPS (Service Worker exige conexao segura, exceto localhost), Service Worker registrado (com fetch event handler - intercepta requests), Web App Manifesto (JSON com name, icons 192+512, start_url, display). Browser verifica esses 3 antes de oferecer o install prompt. Faltando qualquer um, nao e' PWA instalavel. Detalhe: HTTPS pode ser substituido por localhost em dev (regex localhost|127.0.0.0|::1 no ServiceWorkerContainer).",
+    },
+    {
+      text: "1) React, 2) TypeScript, 3) Vite. PWA exige um framework moderno.",
+      correct: false,
+      explanation:
+        "Nao. PWA e' framework-agnostic - funciona com qualquer stack que produza HTML/CSS/JS estatico. React/TypeScript/Vite sao uma escolha popular em 2026, mas nao sao requisito. PWA funciona com vanilla JS, Vue, Svelte, Astro, etc. Os 3 pilares sao HTTPS, Service Worker, e Manifesto - todos framework-agnostic.",
+    },
+    {
+      text: "1) Backend com API, 2) Banco de dados, 3) HTTPS. PWA precisa de backend.",
+      correct: false,
+      explanation:
+        "Nao. PWA pode ser totalmente offline-first sem backend (apps tipo 'calculator', 'todo list local', 'reader' com conteudo estatico). O requisito e' HTTPS (ou localhost), Service Worker, e Manifesto - nao backend. PWA com backend e' comum, mas nao obrigatorio.",
+    },
+  ]}
+/>
