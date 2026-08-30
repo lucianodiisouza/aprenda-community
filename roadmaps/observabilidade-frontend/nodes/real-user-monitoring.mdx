@@ -1,0 +1,510 @@
+---
+id: real-user-monitoring
+title: "Real User Monitoring: Web Vitals no client, custom metrics, session replay"
+resources:
+  - title: "web.dev - Web Vitals (EN)"
+    url: https://web.dev/vitals/
+    lang: en
+    type: doc
+    free: true
+  - title: "Google - web-vitals library (EN)"
+    url: https://github.com/GoogleChrome/web-vitals
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - PerformanceObserver (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce tem **error tracking** (Sentry
+captura exceptions). Mas e' **metade**:
+o user pode estar **frustrado** sem
+nenhum erro - LCP de 8s, INP de 1s,
+CLS de 0.5 (pagina pulando). **Sem
+erro**, Sentry nao ve. **Esse no cobre
+Real User Monitoring (RUM)**: medir
+**Web Vitals** (LCP, INP, CLS) de
+**users reais** (nao synthetic), enviar
+pra backend de analytics, e usar
+**session replay** pra reproduzir o
+que o user viu.
+
+RUM complementa error tracking: **error
+tracking** = "algo quebrou", **RUM** =
+"o user teve boa experiencia?". Em
+2026, **Core Web Vitals** (LCP, INP,
+CLS) sao **ranking factor** do Google
+- performance ruim = **SEO ruim**.
+RUM e' **obrigatorio** em apps que
+querem rankeiar.
+
+Voce sai de "achismo" pra "data de
+performance real por segmento
+(device, pais, conexao)".
+
+## O essencial 🟢
+
+**Core Web Vitals (CWV) - o que cada um
+mede.**
+
+- **LCP (Largest Contentful Paint):**
+  **quando** o **maior elemento
+  visivel** renderizou. **Percepcao**:
+  "a pagina carregou?". **Bom: < 2.5s**.
+- **INP (Interaction to Next Paint):**
+  **latencia de interacao** ate a
+  proxima pintura. **Percepcao**:
+  "cliquei e a UI respondeu?". **Bom:
+  < 200ms**.
+- **CLS (Cumulative Layout Shift):**
+  **quao pulante** a pagina e'. Bom:
+  < 0.1.
+
+**Thresholds oficiais (Google).**
+
+| Metrica | Bom (p75) | Needs improvement | Poor |
+| ------- | --------- | ----------------- | ---- |
+| LCP     | <= 2.5s   | <= 4.0s           | > 4.0s |
+| INP     | <= 200ms  | <= 500ms          | > 500ms |
+| CLS     | <= 0.1    | <= 0.25           | > 0.25 |
+
+**p75** = 75% dos users estao abaixo
+desse valor. Use **p75** (ou p90 em
+apps menores) como threshold.
+
+**`web-vitals` lib - medir direto no
+browser.**
+
+```bash
+pnpm add web-vitals
+```
+
+```ts
+import { onLCP, onINP, onCLS, onFCP, onTTFB } from "web-vitals";
+
+onLCP((metric) => {
+  // Envia pra backend (ou Sentry, Datadog, etc)
+  sendMetric({
+    name: metric.name,         // "LCP"
+    value: metric.value,       // 1.234 (segundos)
+    rating: metric.rating,     // "good" | "needs-improvement" | "poor"
+    id: metric.id,             // ID unico
+    page: location.pathname,   // contexto
+  });
+});
+
+onINP((metric) => {
+  sendMetric({ name: metric.name, value: metric.value, rating: metric.rating });
+});
+
+onCLS((metric) => {
+  sendMetric({ name: metric.name, value: metric.value, rating: metric.rating });
+});
+```
+
+**Sentry Performance - RUM
+integrado.**
+
+```ts
+Sentry.init({
+  tracesSampleRate: 0.1,  // 10% dos requests viram performance
+  integrations: [Sentry.browserTracingIntegration()],
+});
+// Sentry mede LCP, INP, CLS automaticamente
+// + Web Vitals dashboards
+```
+
+**Datadog RUM.**
+
+```ts
+import { datadogRum } from "@datadog/browser-rum";
+
+datadogRum.init({
+  applicationId: "...",
+  clientToken: "...",
+  site: "datadoghq.com",
+  // ...
+});
+```
+
+**New Relic Browser.**
+
+```ts
+import { BrowserAgent } from "@newrelic/browser-agent";
+
+const agent = new BrowserAgent({...});
+```
+
+**Custom metrics - alem de Web
+Vitals.** Meça **o que importa pro seu
+app**:
+
+```ts
+// Tempo de checkout
+const start = performance.now();
+await submitCheckout();
+const duration = performance.now() - start;
+
+Sentry.metrics.distribution("checkout.duration", duration, {
+  tags: { country: "BR", plan: "pro" },
+});
+
+// Counter: quantos checkouts completaram
+Sentry.metrics.increment("checkout.completed", 1, {
+  tags: { country: "BR" },
+});
+```
+
+**`PerformanceObserver` - low-level
+access.** Pra casos onde `web-vitals` nao
+mede:
+
+```ts
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntries()) {
+    // Long tasks (>50ms) = possivel jank
+    if (entry.entryType === "longtask") {
+      console.log("Long task:", entry.duration, "ms");
+      sendMetric({ name: "longtask", value: entry.duration });
+    }
+    // Resource timings (fetch, image, etc)
+    if (entry.entryType === "resource") {
+      const duration = entry.responseEnd - entry.startTime;
+      sendMetric({ name: "resource.load", value: duration, url: entry.name });
+    }
+  }
+});
+
+observer.observe({ entryTypes: ["longtask", "resource", "navigation"] });
+```
+
+**`navigation` timing - TTFB, DOM
+Content Loaded, Load.**
+
+```ts
+const observer = new PerformanceObserver((list) => {
+  for (const entry of list.getEntriesByType("navigation")) {
+    sendMetric({ name: "ttfb", value: entry.responseStart });
+    sendMetric({ name: "domContentLoaded", value: entry.domContentLoadedEventEnd });
+    sendMetric({ name: "load", value: entry.loadEventEnd });
+  }
+});
+observer.observe({ type: "navigation", buffered: true });
+```
+
+**Session replay - reproduz o que o
+user viu.** **Sentry**, **LogRocket**,
+**Datadog** gravam **DOM + eventos
+do user**. **Reproduz** como um
+video, com **network tab visivel**.
+
+```ts
+Sentry.init({
+  replaysSessionSampleRate: 0.1,    // 10% de sessoes normais
+  replaysOnErrorSampleRate: 1.0,    // 100% com erro
+  replays: {
+    maskAllText: true,    // privacy: textos viram ***
+    blockAllMedia: true,  // privacy: imagens/video nao gravados
+  },
+});
+```
+
+**Session replay e **LGPD/GDPR**.** Gravar
+**tudo** (incluindo PII) sem consentimento
+= violacao. **Sempre**:
+
+1. `maskAllText: true` (textos viram
+   `***`).
+2. `blockAllMedia: true` (imagens nao
+   gravadas).
+3. **Consent mode** - so' ativa replay
+   se user aceitou cookies.
+
+**Threshold tuning.** Web Vitals
+thresholds do Google sao **base** -
+ajuste por **seu** app:
+
+- **E-commerce:** LCP < 2.5s (impacto
+  conversion).
+- **Dashboard interno:** LCP < 1.5s
+  (user interno, espera menos).
+- **Mobile 3G:** LCP < 4.0s (rede lenta,
+  expectativa diferente).
+
+**"RUM" vs "Synthetic monitoring".**
+
+- **Synthetic (Lighthouse, WebPageTest):**
+  roda em **condicoes controladas** (Chrome
+  fixo, rede 4G simulada, sem
+  interacao). Da **baseline**, mas **nao
+  reflete user real**.
+- **RUM (Sentry, Datadog):** roda em
+  **users reais** (Chrome/Safari/Firefox,
+  Wi-Fi/4G/3G, com interacao). Da **realidade**.
+
+**Use os 2 juntos.** Synthetic em CI
+(regressao automatica), RUM em prod
+(performance real).
+
+## Aprofundamento 🟡
+
+**p75 vs p50 vs p90.** **p75** e' o
+padrao Google (75% dos users). **p50**
+(mediana) e' muito otimista (ignora
+cauda longa). **p90** e' mais estrito
+(10% dos users podem ter performance
+ruim). **Recomendado**: p75 pra
+dashboards, p90 pra alertas.
+
+**"Rage clicks" e "dead clicks".**
+**Rage click** = user clica 5+ vezes
+em 3 segundos (frustracao, achando
+que nao funcionou). **Dead click** =
+clique que nao dispara nenhuma acao
+(quebrou). Ferramentas como **LogRocket**
+e **Sentry Session Replay** detectam
+isso automaticamente.
+
+**Custom metrics - o que medir.** Alem
+de Web Vitals:
+
+- **Business metrics:** checkout
+  conversion, signup completion, search
+  results.
+- **App-specific:** time to interactive
+  (TTI), time to first byte (TTFB),
+  long task count.
+- **User behavior:** feature usage,
+  error recovery rate.
+
+**Real User Monitoring vs Real User
+Measurements (RUM).** RUM = medir
+performance de users reais. **RUM**
+e' o termo padrao. "Real User
+Measurements" e' confuso (mesma sigla,
+significado diferente as vezes).
+
+**Attribution - "o que causou LCP
+ruim?".** `web-vitals` da o **element**
+que causou LCP ruim:
+
+```ts
+onLCP((metric) => {
+  // metric.attribution: detalhes de qual elemento
+  // { element: HTMLElement, url, ... }
+  console.log("LCP element:", metric.attribution.element);
+  console.log("LCP url:", metric.attribution.url);
+});
+```
+
+**Use pra debugar** - LCP ruim foi
+causado por **imagem grande**? **Font
+load**? **HTML render-blocking**?
+
+**INP debugging - "qual interacao
+demorou?".** `onINP` da o **evento**
+que causou a interacao lenta:
+
+```ts
+onINP((metric) => {
+  // metric.attribution: event handler, target, type
+  console.log("Slow interaction:", metric.attribution.eventTarget);
+  console.log("Type:", metric.attribution.eventType);
+  console.log("Handler time:", metric.attribution.handlerTime);
+});
+```
+
+**CLS debugging - "o que pulou?".**
+`onCLS` da os **layout shifts** que
+causaram o CLS:
+
+```ts
+onCLS((metric) => {
+  // metric.attribution.largestShiftTarget
+  // metric.attribution.largestShiftValue
+  // metric.attribution.largestShiftTime
+  console.log("Layout shift target:", metric.attribution.largestShiftTarget);
+});
+```
+
+**Cumulative Layout Shift ate o user
+clicar.** **CLS** e' cumulativo -
+soma **todos** os shifts ate o user
+interagir. Use `onCLS` com `reportAllChanges:
+true` se quiser capturar **cada** shift:
+
+```ts
+onCLS((metric) => {
+  // envia a cada shift significativo
+  sendMetric({ name: "cls", value: metric.value });
+}, { reportAllChanges: true });
+```
+
+**Send rate - throttling.** Em apps
+com **muitos users**, **throttle**
+envio de metricas pra nao sobrecarregar
+backend:
+
+```ts
+import { onLCP, onINP, onCLS } from "web-vitals";
+
+// Throttle: agrupa eventos e envia a cada 30s
+let buffer = [];
+function flush() {
+  if (buffer.length === 0) return;
+  navigator.sendBeacon("/api/metrics", JSON.stringify(buffer));
+  buffer = [];
+}
+
+[onLCP, onINP, onCLS].forEach((fn) =>
+  fn((metric) => {
+    buffer.push({ name: metric.name, value: metric.value });
+  })
+);
+
+setInterval(flush, 30_000);
+```
+
+**`navigator.sendBeacon` - envio
+assincrono nao-bloqueante.** **Ideal**
+pra metricas (sobrevive a `unload`,
+nao bloqueia UI).
+
+## Pra quem quer ir mais alem 🔴
+
+**Lighthouse CI - synthetic em CI.**
+**Lighthouse** roda em Chrome headless
+e mede Web Vitals + a11y + best
+practices. **Lighthouse CI** integra
+com GitHub Actions, falha PR se
+regressao. **Complementa** RUM:
+RUM = producao real, Lighthouse = baseline
+em CI.
+
+**WebPageTest - waterfail visual.**
+**WebPageTest** roda em browsers
+reais (Chrome, Firefox, Safari) em
+**locais** (datacenters) e gera
+**waterfall chart** de cada request.
+Use pra **debug de LCP ruim** - ve
+**qual recurso** causou o delay.
+
+**Chrome User Experience Report
+(CrUX).** Google coleta Web Vitals de
+**Chrome users reais** (com opt-in)
+e expoe como **dataset publico**.
+**Field data oficial** - "seu site
+vs competitors". Use pra benchmark.
+
+**Web Vitals attribution via
+Performance Timeline API.** Low-level
+- `PerformanceObserver` com
+`element` e `size` entries da
+**espec** completa. Cobre em
+`performance-web`.
+
+**Cumulative Layout Shift em SPAs
+(React, Vue, Svelte).** SPA tem
+**muitas navegacoes** sem page reload.
+CLS de **cada navegacao** se acumula?
+**Nao** - CLS e' reset por user
+interaction. SPA que tem **pouca
+interacao** (ex: landing page) pode
+acumular alto CLS. **Cuidado** com
+**font swap** (FOUT) - causa shifts
+grandes.
+
+**INP vs FID (First Input Delay).**
+**FID** foi **substituido** por **INP**
+em 2024. FID media so' a **primeira**
+interacao - INP mede **pior interacao
+na sessao**. Use INP. FID deprecated
+em 2024, removido de CWV em 2024.
+
+**Leitura recomendada:**
+
+- [web.dev - Web Vitals](https://web.dev/vitals/) - definicao, thresholds, best practices.
+- [GoogleChrome/web-vitals](https://github.com/GoogleChrome/web-vitals) - lib oficial, exemplos, API completa.
+- [MDN - PerformanceObserver](https://developer.mozilla.org/en-US/docs/Web/API/PerformanceObserver) - low-level access a performance metrics.
+
+> Dica: o erro mais comum em RUM e'
+> **medir e nao agir**. Time instala
+> Sentry, ve dashboards, e **nada
+> acontece** com os dados. **RUM sem
+> alerting** e' **dashboard morto**.
+> Configure: (1) **alerta** quando p75
+> LCP > 4s, (2) **budget** de performance
+> em CI (Lighthouse CI falha PR se
+> regressao), (3) **review mensal** de
+> Core Web Vitals. **Medir e agir**,
+> nao "medir e mostrar em reuniao".
+
+No proximo no, vamos **OpenTelemetry
+Web**: como emitir **traces
+distribuidos** do client pro server,
+com **W3C Trace Context** propagado via
+**headers HTTP**, e integracao com
+backend (Jaeger, Tempo, Honeycomb,
+Sentry, Datadog).
+
+<Checkpoint
+  challenge="Implemente a função `avaliarWebVitals(metricas)` que classifica cada Web Vital como 'good' | 'needs-improvement' | 'poor' baseado nos thresholds oficiais. Recebe: metricas = { lcp: number (segundos), inp: number (milissegundos), cls: number }. Thresholds (Google Core Web Vitals): LCP <= 2.5 'good', <= 4.0 'needs-improvement', > 4.0 'poor'. INP <= 200 'good', <= 500 'needs-improvement', > 500 'poor'. CLS <= 0.1 'good', <= 0.25 'needs-improvement', > 0.25 'poor'. Retorna { lcp: rating, inp: rating, cls: rating } onde rating e' o classificador. Apenas inclua chaves para metricas presentes no input."
+  starterCode={`// Implemente avaliarWebVitals(metricas) que classifica cada
+// Web Vital baseado nos thresholds do Google Core Web Vitals.
+//
+// Thresholds:
+//   LCP (segundos): <= 2.5 'good', <= 4.0 'needs-improvement', > 4.0 'poor'
+//   INP (milissegundos): <= 200 'good', <= 500 'needs-improvement', > 500 'poor'
+//   CLS: <= 0.1 'good', <= 0.25 'needs-improvement', > 0.25 'poor'
+//
+// Retorna: { lcp: rating, inp: rating, cls: rating }
+// Apenas inclua chaves para metricas presentes no input.
+function avaliarWebVitals(metricas) {
+  return {};
+}
+
+const _r1 = avaliarWebVitals({ lcp: 1.5, inp: 100, cls: 0.05 });
+console.log(JSON.stringify(_r1));
+
+const _r2 = avaliarWebVitals({ lcp: 3.5, inp: 350, cls: 0.2 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = avaliarWebVitals({ lcp: 5.0, inp: 800, cls: 0.5 });
+console.log(JSON.stringify(_r3));
+
+const _r4 = avaliarWebVitals({ lcp: 2.0, cls: 0.15 });
+console.log(JSON.stringify(_r4));`}
+  expected='{"lcp":"good","inp":"good","cls":"good"}
+{"lcp":"needs-improvement","inp":"needs-improvement","cls":"needs-improvement"}
+{"lcp":"poor","inp":"poor","cls":"poor"}
+{"lcp":"good","cls":"needs-improvement"}'
+  slug="observabilidade-frontend"
+  nodeId="real-user-monitoring"
+/>
+
+<Quiz
+  question="Qual a diferenca entre Synthetic monitoring (Lighthouse) e Real User Monitoring (RUM) e por que usar os dois?"
+  options={[
+    {
+      text: "Synthetic roda em condicoes controladas (Chrome fixo, rede simulada, sem interacao) - da baseline estavel mas nao reflete user real. RUM roda em users reais (browsers variados, redes reais, com interacao) - da realidade mas com variabilidade. Use Synthetic em CI pra pegar regressao antes do deploy, RUM em prod pra medir performance real de users.",
+      correct: true,
+      explanation:
+        "Os dois respondem **perguntas diferentes**: (1) **Synthetic** (Lighthouse, WebPageTest) = 'a pagina X funciona em condicoes conhecidas?' - Chrome fixo, throttling 4G simulado, sem JavaScript complexo. Da **baseline estavel** - se quebrar, **regressao clara**. Use em CI (Lighthouse CI) pra **bloquear PR** com regressao. (2) **RUM** (Sentry, Datadog) = 'como a pagina X performa pra **users reais**?' - Safari mobile em 3G no metro, com 50 abas abertas, com 8GB RAM ocupada. Da **realidade com variabilidade** - 5% dos users tem LCP > 8s por causa de 3G + low-end device. Use em **producao** pra entender **onde** o user sofre. **Nenhum substitui o outro**: synthetic pega regressao (CI fail antes de deploy), RUM pega **realidade** (5% dos users em tal pais, tal device, tal rede). **Time maduro usa os 2**: synthetic como gate de qualidade, RUM como feedback loop. **So' synthetic** = 'achismo bem-intencionado'. **So' RUM** = 'reage a problema depois do user sofrer'.",
+    },
+    {
+      text: "Synthetic e RUM sao a mesma coisa, so' com nomes diferentes.",
+      correct: false,
+      explanation:
+        "Falso. Synthetic e RUM sao **fundamentalmente diferentes**: synthetic roda em **ambiente controlado** (você sabe o browser, a rede, o device), RUM roda em **users reais** (variavel, imprevisivel). Synthetic da **reproducibilidade** (mesma pagina, mesmo Chrome, mesmo resultado), RUM da **realidade** (pode dar certo em 99% e ruim em 1% que tem device lento + rede ruim). Use **os dois** - synthetic em CI, RUM em prod. So' um dos dois deixa voce cego ao outro lado.",
+    },
+    {
+      text: "Synthetic e' melhor que RUM porque da resultados mais confiaveis.",
+      correct: false,
+      explanation:
+        "Falso. Synthetic e RUM sao **complementares**, nao hierarquicos. Synthetic da **reproducibilidade** mas **nao** reflete a realidade de Safari mobile em 3G no metro. RUM da **realidade** mas com **variabilidade** (1% dos users tem device lento - synthetic nao captura). 'Confiavel' depende da pergunta: synthetic e' confiavel pra 'a pagina X funciona?'; RUM e' confiavel pra 'como users X usam a pagina?'. O argumento de synthetic ser 'melhor' ignora que **o objetivo e' entender o user real**, nao ter dados limpos em condicoes irreais.",
+    },
+  ]}
+/>

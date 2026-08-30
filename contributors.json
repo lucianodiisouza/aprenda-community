@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 29,
+        "trilhas": 30,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 42
+        "total": 43
       },
       "trilhas": [
         {
@@ -85,6 +85,10 @@
         {
           "slug": "nosql",
           "title": "NoSQL: Bancos Não-Relacionais"
+        },
+        {
+          "slug": "observabilidade-frontend",
+          "title": "Observabilidade Frontend: Sentry, RUM, OpenTelemetry, feature flags e PII"
         },
         {
           "slug": "performance-web",

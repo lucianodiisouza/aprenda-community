@@ -1,0 +1,589 @@
+---
+id: error-tracking
+title: "Error tracking: Sentry, source maps, release health, sampling"
+resources:
+  - title: "Sentry - JavaScript SDK docs (EN)"
+    url: https://docs.sentry.io/platforms/javascript/
+    lang: en
+    type: doc
+    free: true
+  - title: "Sentry - Source Maps (EN)"
+    url: https://docs.sentry.io/platforms/javascript/sourcemaps/
+    lang: en
+    type: doc
+    free: true
+  - title: "Sentry - Release Health (EN)"
+    url: https://docs.sentry.io/product/releases/health/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce sabe o que e' observabilidade e os
+3 sinais. Agora o **caso de uso mais
+comum**: **error tracking**. Quando o
+user tem um **uncaught exception** ou
+**rejection** no browser, voce quer
+saber **antes** do user reclamar. **Esse
+no cobre Sentry** (a plataforma mais
+usada): como capturar exceptions,
+configurar **source maps** pra ver
+stack traces reais (nao minified),
+**release health** (crash-free
+sessions), e **sampling** pra
+controlar volume.
+
+Error tracking no client serve pra
+**3 cenarios principais**: (1)
+uncaught exception em codigo de prod
+que passou pelos testes, (2) error
+boundary no React (captura erro em
+sub-arvore de componente), (3) async
+error em Promise nao tratada
+(`unhandledrejection`). **Sentry**
+captura os 3 automaticamente + da
+**contexto completo** (user, browser,
+URL, breadcrumbs de eventos).
+
+Voce sai de "console.log e esperar o
+user reclamar" pra "saber do bug
+antes do user".
+
+## O essencial 🟢
+
+**Sentry setup basico.**
+
+```bash
+pnpm add @sentry/react
+```
+
+```ts
+// main.tsx
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: "https://...@sentry.io/12345",
+  environment: "production",
+  release: "my-app@1.0.0",
+  tracesSampleRate: 0.1,  // 10% dos requests viram trace
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,  // 100% das sessoes com erro
+});
+```
+
+**DSN (Data Source Name):** URL unica
+por projeto no Sentry. **NUNCA** hardcode
+no codigo - use env var. **NUNCA** commita
+DSN privada em repo publico (Sentry da
+DSN publica por default, OK).
+
+**Captura automatica de erros comuns.**
+
+Sentry **automaticamente** captura:
+
+- `window.onerror` (uncaught exceptions).
+- `unhandledrejection` (Promise nao
+  tratada).
+- Erros em **fetch** (com integration).
+- Erros em **React** (com ErrorBoundary).
+- Erros em **console.error** (opcional).
+
+```ts
+// Captura manual (opcional)
+try {
+  riskyOperation();
+} catch (e) {
+  Sentry.captureException(e, {
+    tags: { feature: "checkout" },
+    extra: { cartSize: 5 },
+  });
+}
+
+// Mensagem custom
+Sentry.captureMessage("Payment gateway timeout", "warning");
+```
+
+**Sentry ErrorBoundary (React).**
+
+```tsx
+import { ErrorBoundary } from "@sentry/react";
+
+function App() {
+  return (
+    <ErrorBoundary fallback={<ErrorPage />}>
+      <Routes />
+    </ErrorBoundary>
+  );
+}
+
+// Captura erro em sub-arvore sem derrubar app inteiro
+```
+
+**Source maps - "ver o stack trace real,
+nao o minified".** Sem source maps, stack
+trace do Sentry mostra:
+
+```text
+Error: Cannot read property 'price' of undefined
+  at Object.<anonymous> (bundle.min.js:1:12345)
+  at Object.<anonymous> (bundle.min.js:1:67890)
+```
+
+**Inutil**. Com source maps:
+
+```text
+Error: Cannot read property 'price' of undefined
+  at calculateTotal (src/utils/cart.ts:42:15)
+  at handleCheckout (src/pages/Checkout.tsx:128:10)
+  at onClick (src/components/Button.tsx:18:5)
+```
+
+**Acao**: stack trace aponta pra linha
+real, dev conserta em 5 min.
+
+**Configurar source maps (Vite).**
+
+```ts
+// vite.config.ts
+import { sentryVitePlugin } from "@sentry/vite-plugin";
+
+export default defineConfig({
+  build: {
+    sourcemap: true,  // gera source maps
+  },
+  plugins: [
+    sentryVitePlugin({
+      org: "my-org",
+      project: "my-app",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
+  ],
+});
+```
+
+**`SENTRY_AUTH_TOKEN` e' secret** -
+injetado em CI via env var. **NUNCA**
+no codigo. **Sentry faz upload automatico**
+de source maps no build.
+
+**Release health - "quantos users
+quebraram?".** Sentry tracking **3
+metricas** por release:
+
+- **Crash-free sessions:** % de
+  sessoes sem crash.
+- **Crash-free users:** % de users
+  sem crash.
+- **Session count:** sessoes totais.
+
+```ts
+Sentry.init({
+  release: "my-app@1.2.3",
+  // Cada release tem health separado
+  // "1.2.2 tem 99.5% crash-free, 1.2.3 tem 98%"
+  // → regressao detectada
+});
+```
+
+**Alerta de regressao**: "release 1.2.3
+tem 5% crash rate → rollback" é **automatico**
+se configurado.
+
+**Sampling - "nao enviar 100% dos
+eventos".** Sentry free tier = 5K
+eventos/mes. Em prod com **10K users**,
+cada user gerando 1 evento = 10K
+eventos = estoura. **Sampling**:
+
+```ts
+Sentry.init({
+  // Error events: capturar 100% (raro, importante)
+  sampleRate: 1.0,
+
+  // Performance traces: 10% (volume alto)
+  tracesSampleRate: 0.1,
+
+  // Session replay: 10% normal, 100% com erro
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
+```
+
+**Sampling inteligente** (callback):
+
+```ts
+Sentry.init({
+  tracesSampler: (samplingContext) => {
+    // Checkout: 100% (critico)
+    if (samplingContext.location?.pathname.startsWith("/checkout")) {
+      return 1.0;
+    }
+    // Marketing pages: 1% (volume alto, baixa criticidade)
+    if (samplingContext.location?.pathname.startsWith("/blog")) {
+      return 0.01;
+    }
+    // Default: 10%
+    return 0.1;
+  },
+});
+```
+
+**User context - "quem teve o erro?".**
+
+```ts
+// Apos login
+Sentry.setUser({
+  id: "u-456",
+  email: "user@example.com",
+  username: "ana",
+});
+
+// Apos logout
+Sentry.setUser(null);
+
+// Custom tags (pra filtro)
+Sentry.setTag("subscription", "pro");
+Sentry.setTag("country", "BR");
+```
+
+**Sem `setUser`**, Sentry nao sabe **quem**
+tinha o user_id X. **Com**, cada evento
+fica associado ao user - vc busca
+eventos de um user especifico.
+
+**Breadcrumbs - "o que aconteceu antes do
+erro?".** Sentry captura **ultimos N
+eventos** (clicks, navigations, fetch)
+automaticamente:
+
+```text
+[22:30:00.100] navigation: /products
+[22:30:00.500] click: button.checkout
+[22:30:00.600] fetch: POST /api/checkout (200)
+[22:30:01.000] Error: Payment timeout
+```
+
+**Dev ve a jornada** ate o erro - **90% dos
+bugs** sao identificados com breadcrumbs.
+
+**Sentry Performance Monitoring.**
+
+```ts
+Sentry.init({
+  tracesSampleRate: 0.1,  // 10% dos requests viram trace
+});
+
+// Manual span
+const span = Sentry.startInactiveSpan({ name: "checkout.process" });
+// ... logica ...
+span.finish();
+```
+
+Sentry mede **LCP, FID, INP, CLS** e
+backend traces (com integration de
+framework).
+
+**Error tracking em Sentry vs outras
+ferramentas.**
+
+| Feature                | Sentry         | Rollbar        | Bugsnag        | Datadog RUM    |
+| ---------------------- | -------------- | -------------- | -------------- | -------------- |
+| **Error tracking**     | sim            | sim            | sim            | sim            |
+| **Source maps**        | sim            | sim            | sim            | sim            |
+| **Release health**     | sim (gratis)   | limitado       | sim (pago)     | sim            |
+| **Session replay**     | sim (pago)     | nao            | nao            | sim (pago)     |
+| **Performance**        | sim            | basico         | nao            | sim (completo) |
+| **Free tier**          | 5K events/mes  | 5K events/mes  | 12K events/mes | 1M spans/mes   |
+| **Open source**        | sim (self-host)| sim            | nao            | nao            |
+
+**Sentry** domina o ecossistema JS/TS.
+**Rollbar** bom para projetos simples.
+**Bugsnag** bom para mobile (iOS/Android).
+**Datadog** bom se ja' tem Datadog infra.
+
+## Aprofundamento 🟡
+
+**Symbolication vs source maps.** Sentry
+recebe stack trace minificado, precisa
+**mapear** de volta pra original. **Symbolication**
+e' o processo. Requer:
+1. Build gerar source maps.
+2. Upload dos source maps pro Sentry
+   (no CI).
+3. Sentry processa e associa a eventos
+   de mesma versao.
+
+**`hideSourceMaps` em prod.** Para
+evitar que **users** vejam source
+maps originais (com comentarios,
+nomes de variaveis), **nao sirva
+source maps publicamente**:
+
+```ts
+// vite.config.ts
+build: {
+  sourcemap: "hidden",  // gera mas nao inclui no bundle
+}
+```
+
+Sentry ainda recebe via upload no CI.
+Users nao veem.
+
+**`Sentry.beforeSend` - filtra eventos
+antes de enviar.** Use pra **scrub PII**
+(remove email, token, etc) ou **drop
+eventos irrelevantes**:
+
+```ts
+Sentry.init({
+  beforeSend(event, hint) {
+    // Remove dados sensiveis
+    if (event.user) {
+      delete event.user.email;
+      delete event.user.ip_address;
+    }
+    // Drop errors 4xx (sao client errors, nao bugs)
+    if (event.exception?.values?.[0]?.value?.includes("404")) {
+      return null;
+    }
+    return event;
+  },
+});
+```
+
+**`Sentry.init` com React Router (SPA).**
+Roteamento SPA nao dispara `popstate`
+que Sentry captura por default. Use
+`reactRouterV6BrowserTracingIntegration`:
+
+```ts
+import * as Sentry from "@sentry/react";
+import { reactRouterV6BrowserTracingIntegration } from "@sentry/react";
+
+Sentry.init({
+  integrations: [
+    reactRouterV6BrowserTracingIntegration({
+      // captura cada route change como transacao
+    }),
+  ],
+});
+```
+
+**Alertas no Sentry.** Configure alertas
+(baseados em metric thresholds) pra
+notificar o time:
+
+- "Crash-free sessions < 99% nas
+  ultimas 24h" → Slack #alerts.
+- "Novo issue criado" → email/Slack.
+- "Issue ignorado re-apareceu" → Slack.
+
+**Sentry Ignore vs Resolve vs
+Archive.**
+
+- **Ignore:** nao notifica (mas evento
+  vai pro log).
+- **Resolve:** marca como consertado.
+- **Archive:** esconde da lista ativa
+  (mas mantem no historico).
+
+**Use Ignore** pra **erros de terceiros**
+(extensions do browser, ad blockers).
+**Use Resolve** apos deploy de fix.
+**Use Archive** pra issues que nao sao
+acao imediata.
+
+**Sentry e privacy (LGPD/GDPR).** Sentry
+captura **muito** dado por default
+(IP, user agent, cookies). Em LGPD/GDPR,
+**anonimize**:
+
+```ts
+Sentry.init({
+  sendDefaultPii: false,  // NAO envia PII (IP, user agent completo)
+  beforeSend: scrubPII,    // scrub custom
+});
+```
+
+**Mais em `pii-e-privacidade` no final da
+trilha.**
+
+## Pra quem quer ir mais alem 🔴
+
+**Sentry Performance + Tracing com
+OpenTelemetry.** Sentry **aceita
+OpenTelemetry** traces - **bridge**
+entre OTel SDK e Sentry backend:
+
+```ts
+import { trace } from "@opentelemetry/api";
+import * as Sentry from "@sentry/react";
+
+const tracer = trace.getTracer("my-app");
+
+Sentry.init({
+  tracesSampleRate: 0.1,
+  integrations: [Sentry.browserTracingIntegration()],
+});
+
+// Span OTel
+const span = tracer.startSpan("checkout.process");
+// ... logica ...
+span.end();
+// Sentry ve o span (atras de OTel)
+```
+
+Use OTel SDK se ja' tem OTel no backend -
+**consistencia** entre client e server.
+
+**Session Replay (Sentry).** Grava
+**DOM + interacoes** do user. **Util**
+pra debug de bug raro (user diz
+"clico e nada acontece"). **Cuidado**
+com **PII** - Sentry tem
+`maskAllText` (substitui texto por
+`***`) e `blockAllMedia` (nao grava
+imagens).
+
+```ts
+Sentry.init({
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  replays: {
+    maskAllText: true,
+    blockAllMedia: true,
+  },
+});
+```
+
+**Self-hosted Sentry.** Sentry e'
+**open source** - pode rodar em
+infra propria. **Dificil** de manter
+(escala, storage, updates), mas
+**controle total** sobre dados (LGPD).
+Use em **empresas com regulacao
+pesada** (saude, financas).
+
+**Sentry alternatives - GlitchTip.**
+**GlitchTip** e' **fork open source**
+do Sentry, **API compativel**. Use
+se quer self-hosted sem manter Sentry
+proprio.
+
+**Profiling (Sentry, 2024+).** Sentry
+agora tem **profiling continuo** -
+**CPU usage, memory, render time** por
+funcao. Use pra debug de **Jank**
+(animações lentas, scroll travando).
+
+**Leitura recomendada:**
+
+- [Sentry - JavaScript SDK](https://docs.sentry.io/platforms/javascript/) - setup completo, options, integrations.
+- [Sentry - Source Maps](https://docs.sentry.io/platforms/javascript/sourcemaps/) - como configurar source maps em Vite/Webpack/etc.
+- [Sentry - Release Health](https://docs.sentry.io/product/releases/health/) - crash-free sessions, regression detection.
+
+> Dica: o erro mais comum em error
+> tracking e' **esquecer de upload
+> source maps**. Resultado: stack
+> traces **inuteis** (`bundle.min.js:1:12345`)
+> que nao dizem **onde** o bug esta'.
+> Solucao: configure **upload automatico
+> no CI** (Vite plugin, Webpack
+> plugin) e **verifique** que release
+> version do Sentry bate com a do
+> build. **Sem source maps, Sentry e'
+> metade do valor**.
+
+No proximo no, vamos **Real User
+Monitoring (RUM)**: como medir Web
+Vitals (LCP, INP, CLS) de **users
+reais** (nao synthetic), custom
+metrics, e **session replay** pra
+reproduzir o que o user viu.
+
+<Checkpoint
+  challenge="Implemente a função `criarSentryConfig(opcoes)` que monta o objeto de configuracao do Sentry.init a partir das opcoes. Recebe: opcoes = { dsn: string, ambiente: string, release: string, sampleRate: number (default 1.0), tracesSampleRate: number (default 0.0), replaySampleRate: number (default 0.1), replayOnErrorRate: number (default 1.0) }. Retorna: { dsn, environment: opcoes.ambiente, release: opcoes.release, sampleRate: opcoes.sampleRate ?? 1.0, tracesSampleRate: opcoes.tracesSampleRate ?? 0.0, replaysSessionSampleRate: opcoes.replaySampleRate ?? 0.1, replaysOnErrorSampleRate: opcoes.replayOnErrorRate ?? 1.0, sendDefaultPii: false }."
+  starterCode={`// Implemente criarSentryConfig(opcoes) que monta o objeto
+// de configuracao do Sentry.init a partir das opcoes.
+//
+// Schema de entrada:
+//   opcoes = {
+//     dsn: string,
+//     ambiente: string,
+//     release: string,
+//     sampleRate?: number,         // default 1.0
+//     tracesSampleRate?: number,   // default 0.0
+//     replaySampleRate?: number,   // default 0.1
+//     replayOnErrorRate?: number   // default 1.0
+//   }
+//
+// Schema de saida:
+//   {
+//     dsn: opcoes.dsn,
+//     environment: opcoes.ambiente,
+//     release: opcoes.release,
+//     sampleRate: opcoes.sampleRate ?? 1.0,
+//     tracesSampleRate: opcoes.tracesSampleRate ?? 0.0,
+//     replaysSessionSampleRate: opcoes.replaySampleRate ?? 0.1,
+//     replaysOnErrorSampleRate: opcoes.replayOnErrorRate ?? 1.0,
+//     sendDefaultPii: false
+//   }
+function criarSentryConfig(opcoes) {
+  return { dsn: '' };
+}
+
+const _r1 = criarSentryConfig({
+  dsn: 'https://abc@sentry.io/123',
+  ambiente: 'production',
+  release: 'app@1.0.0',
+  sampleRate: 1.0,
+  tracesSampleRate: 0.1,
+  replaySampleRate: 0.1,
+  replayOnErrorRate: 1.0
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = criarSentryConfig({
+  dsn: 'https://def@sentry.io/456',
+  ambiente: 'staging',
+  release: 'app@1.1.0-rc1'
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = criarSentryConfig({
+  dsn: 'https://ghi@sentry.io/789',
+  ambiente: 'development',
+  release: 'app@2.0.0',
+  sampleRate: 0
+});
+console.log(JSON.stringify(_r3));`}
+  expected='{"dsn":"https://abc@sentry.io/123","environment":"production","release":"app@1.0.0","sampleRate":1,"tracesSampleRate":0.1,"replaysSessionSampleRate":0.1,"replaysOnErrorRate":1,"sendDefaultPii":false}
+{"dsn":"https://def@sentry.io/456","environment":"staging","release":"app@1.1.0-rc1","sampleRate":1,"tracesSampleRate":0,"replaysSessionSampleRate":0.1,"replaysOnErrorRate":1,"sendDefaultPii":false}
+{"dsn":"https://ghi@sentry.io/789","environment":"development","release":"app@2.0.0","sampleRate":0,"tracesSampleRate":0,"replaysSessionSampleRate":0.1,"replaysOnErrorRate":1,"sendDefaultPii":false}'
+  slug="observabilidade-frontend"
+  nodeId="error-tracking"
+/>
+
+<Quiz
+  question="Por que source maps sao criticos pra error tracking em Sentry (e qualquer outra ferramenta)?"
+  options={[
+    {
+      text: "Sem source maps, stack traces apontam pra bundle.min.js:1:12345 (codigo minificado, sem contexto) - impossivel saber ONDE o bug esta'. Com source maps, stack trace aponta pra src/utils/cart.ts:42:15 (codigo original com nome de variavel, linha exata) - dev conserta em 5 min. Source maps sao o 'tradutor' entre codigo de prod e codigo de dev.",
+      correct: true,
+      explanation:
+        "O ponto: codigo de prod e' **minificado** (variaveis viram `a`, `b`, `c`, linhas combinadas). Stack trace sem source map = `at a.<computed> (bundle.min.js:1:12345)` - **inutil**. Com source map: `at calculateTotal (src/utils/cart.ts:42:15)` - **acao direta**. Em 2026, build tools (Vite, Webpack) ja' geram source maps, mas **upload pro Sentry e' responsabilidade do dev** (via plugin de build no CI). Esqueca o upload e o Sentry vira metade do valor - ve os erros mas nao sabe onde estao. **3 erros comuns**: (1) build nao gera source maps (`sourcemap: false`), (2) source maps gerados mas nao uploaded (faltou plugin no CI), (3) release version do build nao bate com a do Sentry (versao mismatch). **Solucao**: `sourcemap: 'hidden'` (gera mas nao inclui no bundle - users nao veem), plugin de upload no CI (sentry-vite-plugin ou similar), e **verificar** no Sentry que release X.Y.Z tem source maps. **Sem source maps, error tracking e' so' notificação**.",
+    },
+    {
+      text: "Source maps sao usados pra debugar local, nao fazem diferença em prod.",
+      correct: false,
+      explanation:
+        "Falso. Source maps sao **exatamente** o que faz diferença em prod. **Local**, codigo nao e' minificado - stack trace ja' aponta pra linha real. **Em prod**, codigo e' minificado - sem source maps, stack trace e' inutil. Source maps **transformam** o stack minificado (que Sentry recebe) em stack original (que dev entende). E' literalmente o motivo de existir de 'error tracking em prod' - sem source maps, Sentry te diz 'algo quebrou' mas nao 'onde'.",
+    },
+    {
+      text: "Source maps sao uma feature de seguranca que esconde codigo fonte de atacantes.",
+      correct: false,
+      explanation:
+        "Falso. Source maps sao o **oposto** - sao o **mapa** do codigo minificado pro original. Servem pra **debugar**, nao pra esconder. **Seguranca** de codigo fonte e' outra coisa (code obfuscation, sem source maps publicos - `sourcemap: 'hidden'`). Source maps **devem existir** (Sentry precisa deles); o que **nao deve** e' servir eles publicamente no bundle (users com DevTools podem ver o codigo original).",
+    },
+  ]}
+/>
