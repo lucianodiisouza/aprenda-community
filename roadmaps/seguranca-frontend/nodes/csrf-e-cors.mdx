@@ -1,0 +1,583 @@
+---
+id: csrf-e-cors
+title: "CSRF e CORS: SameSite cookies, preflight, tokens sincronizadores"
+resources:
+  - title: "OWASP - CSRF Prevention Cheat Sheet (oficial, EN)"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - CORS (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - SameSite cookies (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce protegeu contra XSS. Mas ha outro
+ataque que **nao exige codigo malicioso
+no seu app**: **CSRF (Cross-Site Request
+Forgery)**. O usuario logado no seu
+banco acessa um site malicioso, que faz
+um request pro seu banco **com os cookies
+do usuario** - e o banco processa como
+se fosse o usuario.
+
+O exemplo classico: "clica aqui pra ver
+o video de gatos" - link malicioso que
+faz um POST escondido pra
+`banco.com/transferir?para=atacante&valor=1000`.
+O cookie de sessao do banco **acompanha o
+request** (browser envia automaticamente).
+O banco processa. **$1000 transferidos**.
+
+CSRF existe ha 25 anos. So foi
+adequadamente mitigado em 2020 com
+**SameSite=Lax** (default em todos
+browsers modernos). Mas entender
+**como funciona** e o que **CORS tem
+a ver com isso** (sao ortogonais) ainda
+e' fundamental.
+
+Se voce entende CSRF, SameSite, o papel
+de CORS, e o pattern de **token
+sincronizador** (double submit cookie),
+voce sai de "o cookie resolve" pra
+"defesa em profundidade: SameSite +
+token CSRF + verificar Origin".
+
+## O essencial 🟢
+
+**CSRF em uma frase: o browser envia
+cookies automaticamente, mesmo em
+requests cross-site.** O atacante
+**abusa disso** - faz o usuario logado
+fazer um request pro seu app, e o cookie
+acompanha.
+
+```html
+<!-- Site malicioso (atacante.com) -->
+<form action="https://seu-banco.com/api/transferir" method="POST">
+  <input type="hidden" name="para" value="atacante">
+  <input type="hidden" name="valor" value="1000">
+  <button>Veja o video de gatos</button>
+</form>
+```
+
+O usuario clica. O browser faz POST
+pra `seu-banco.com/api/transferir`. O
+cookie de sessao do banco **acompanha**.
+Banco processa. **$1000 transferidos**
+sem o usuario saber.
+
+**Por que SameSite resolve 90% do
+problema.** O atributo `SameSite` no
+cookie diz ao browser quando enviar o
+cookie em requests cross-site:
+
+| Valor        | Comportamento                                                 |
+| ------------ | ------------------------------------------------------------- |
+| `Strict`     | Cookie **so** em requests same-site (mesmo dominio). Maxima protecao. |
+| `Lax` (default desde 2020) | Cookie em same-site + GET cross-site (links de outros sites). Boa protecao. |
+| `None`       | Cookie em qualquer request. Requer `Secure` (HTTPS).         |
+
+**Default moderno e' `Lax`**. Quando
+voce faz `Set-Cookie: session=abc; HttpOnly`,
+o browser ja assume `SameSite=Lax` se nao
+especificado. Significa:
+
+- Request de `atacante.com` pro seu banco:
+  cookie **NAO** envia. CSRF prevenido.
+- Link de `google.com` pro seu banco (GET):
+  cookie envia. UX preservada.
+- Form POST cross-site: cookie **NAO**
+  envia. CSRF prevenido.
+
+**A excecao: `<form method="GET">` em
+Lax.** SameSite=Lax envia cookie em GET
+cross-site. Ate form method=GET funciona.
+Mas GET **nao deveria** ter efeitos
+colaterais (regra HTTP). Logo, **CSRF via
+GET nao importa** - GET so le.
+
+**CORS - o "permission system" do
+browser pra requests cross-origin.** CORS
+(Cross-Origin Resource Sharing) e' uma
+**politica do browser**, nao do server.
+O server diz "permito", o browser
+**enforca**. Sem CORS, o browser **bloqueia
+request cross-origin por default**.
+
+```js
+// Seu frontend em app.com faz fetch pra api.com
+fetch("https://api.com/users")
+  .then((r) => r.json());
+// Browser: "Origem app.com pedindo api.com - tem header Access-Control-Allow-Origin?"
+// Se nao: bloqueia o response (mas o request chegou ao server).
+```
+
+O server precisa responder com:
+
+```http
+Access-Control-Allow-Origin: https://app.com
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Credentials: true   # so se envia cookies
+```
+
+**CORS NAO e' seguranca do server.** CORS
+protege o **browser** de mostrar response
+cross-origin. Mas o **request chega ao
+server** (CORS e' browser-side). Se o
+server nao protege, **o request e'
+processado mesmo com CORS bloqueando o
+response no browser**.
+
+A regra: **CORS protege o usuario** (nao
+vazar dados via cross-origin read), NAO
+protege o server (server tem que validar
+autorizacao sempre).
+
+**Preflight - quando o browser pergunta
+"posso?" antes de fazer.** Requests
+"complexos" (POST com `Content-Type: application/json`,
+PUT/DELETE, custom headers) **exigem um
+preflight** - um OPTIONS request
+preliminar perguntando se o server
+libera:
+
+```http
+OPTIONS /api/users HTTP/1.1
+Origin: https://app.com
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, Authorization
+```
+
+```http
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://app.com
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+Apos preflight OK, browser faz o request
+real. Se preflight falha, request nao
+acontece.
+
+**O `credentials` no fetch - quando
+cookies acompanham.** Por default, fetch
+**nao envia cookies cross-origin**. Pra
+enviar:
+
+```js
+// Frontend em app.com chama api.com
+fetch("https://api.com/users", {
+  credentials: "include",  // envia cookies
+});
+```
+
+Mas `credentials: "include"` exige que o
+server retorne `Access-Control-Allow-Credentials: true`
+E `Access-Control-Allow-Origin` nao pode
+ser `*` (tem que ser a origem exata).
+
+```http
+# ERRADO - nao funciona com credentials
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+
+# CERTO
+Access-Control-Allow-Origin: https://app.com
+Access-Control-Allow-Credentials: true
+```
+
+**`mode: "cors"` vs `mode: "no-cors"` vs
+`mode: "same-origin"`.** O `fetch` aceita
+3 modes:
+
+- **`cors` (default):** request cross-origin,
+  CORS aplicado. Se server nao permitir,
+  response bloqueado.
+- **`no-cors`:** request cross-origin SEM
+  CORS. Response **opaca** (nao da pra
+  ler body, so status). Util pra "fire
+  and forget" (analytics, beacon).
+- **`same-origin`:** so libera request
+  same-origin. Cross-origin falha.
+
+```js
+// Beacon de analytics - no-cors, nao importa o response
+navigator.sendBeacon("/log", JSON.stringify({ event: "click" }));
+// sendBeacon ja e' no-cors por design.
+```
+
+**CSRF token (double submit cookie) - a
+defesa classica alem de SameSite.** Pra
+apps de alta seguranca, alem de SameSite,
+voce usa **CSRF token**:
+
+1. Server gera token random, setta em
+   cookie (NAO httpOnly - JS precisa ler).
+2. Frontend le o cookie, inclui o token
+   em **header custom** ou **input
+   hidden** em todo POST/PUT/DELETE.
+3. Server valida que o token do cookie
+   == token do request.
+
+```js
+// 1. Server setta cookie
+res.cookie("XSRF-TOKEN", randomToken, {
+  httpOnly: false,  // JS precisa ler!
+  sameSite: "Lax",
+  secure: true,
+});
+
+// 2. Frontend le cookie, inclui em header
+const token = document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1];
+fetch("/api/transferir", {
+  method: "POST",
+  headers: { "X-CSRF-Token": token },
+  credentials: "include",
+  body: JSON.stringify({ valor: 1000 }),
+});
+
+// 3. Server valida
+app.post("/api/transferir", (req, res) => {
+  if (req.headers["x-csrf-token"] !== req.cookies["XSRF-TOKEN"]) {
+    return res.status(403).send("CSRF token invalido");
+  }
+  // processa transferencia
+});
+```
+
+Por que funciona: **site malicioso nao
+consegue ler o cookie XSRF-TOKEN do seu
+banco** (cross-origin, sem CORS), logo
+nao consegue incluir o token no header.
+**Token no request == token no cookie
+== legitimo**. E o **double-submit** (mesmo
+token em 2 lugares - cookie + header/request
+body) garante que o atacante nao
+consegue forjar.
+
+**`Origin` e `Referer` headers - verificacao
+alternativa.** Server pode **rejeitar
+requests** com `Origin` ou `Referer` que
+nao correspondem ao seu dominio:
+
+```ts
+app.post("/api/transferir", (req, res) => {
+  const origin = req.headers.origin || req.headers.referer;
+  if (!origin || new URL(origin).hostname !== "seu-banco.com") {
+    return res.status(403).send("Origem invalida");
+  }
+  // processa
+});
+```
+
+`Origin` e' setado pelo browser em todos
+os POST/PUT/DELETE cross-origin. O
+atacante **nao pode forjar** (browser
+controla). Verificacao simples que pega
+90% dos CSRF.
+
+## Aprofundamento 🟡
+
+**CORS e credenciais: a restricao
+"origin nao pode ser `*`".** Quando o
+server quer aceitar cookies (credentials:
+include) de um origin especifico, NAO
+pode retornar `*`. Tem que ser a origin
+exata. E o navegador so aceita 1 origin
+por vez (sem listas). Workaround: ler
+o header `Origin` do request e **echo
+dinamicamente**:
+
+```ts
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  next();
+});
+```
+
+**CORS preflight cache.** O preflight
+(OPTIONS) e' caro (round-trip extra). O
+browser cacheia o resultado via:
+
+```http
+Access-Control-Max-Age: 86400
+```
+
+86400 = 24h. Durante 24h, requests do
+mesmo tipo **nao fazem preflight**. Ate
+o tempo expirar. Util em apps com alta
+frequencia de POST cross-origin.
+
+**CORS proxy / dev proxy.** Em dev local,
+evita CORS usando um proxy (Vite, webpack
+dev server):
+
+```ts
+// vite.config.ts
+export default {
+  server: {
+    proxy: {
+      "/api": "http://localhost:3001",  // dev backend
+    },
+  },
+};
+```
+
+Seu app chama `/api/users` (mesmo origin).
+Vite faz proxy pra `http://localhost:3001/api/users`.
+**CORS nao se aplica** (mesmo origin pro
+browser). Em prod, app.com e api.com sao
+origins diferentes - CORS real.
+
+**`fetch` + `credentials` + `SameSite=None` -
+a combinacao pra third-party cookies.** Se
+voce tem um iframe de terceiro que precisa
+de cookies (ex: embed de Stripe Checkout),
+use `SameSite=None; Secure`:
+
+```http
+Set-Cookie: session=abc; SameSite=None; Secure
+```
+
+`Secure` exige HTTPS. `SameSite=None` libera
+cross-site. CUIDADO: third-party cookies
+**estao sendo removidos** pelos browsers
+(Chrome 2024+, Safari ja removeu, Firefox
+em 2024+). Em 2026, **a tendencia e' third-party
+storage APIs** (Storage Access API) que
+exigem gesture do usuario. Pra maioria
+dos casos, **evite third-party cookies**.
+
+**`Sec-Fetch-Site` header - o indicador
+que o browser envia.** Modern browsers
+incluem `Sec-Fetch-Site: same-origin |
+same-site | cross-site | none` em requests.
+Server pode usar pra **rejeitar cross-site
+requests** sem precisar de CORS:
+
+```ts
+app.post("/api/transferir", (req, res) => {
+  if (req.headers["sec-fetch-site"] !== "same-origin") {
+    return res.status(403).send("Cross-site bloqueado");
+  }
+  // processa
+});
+```
+
+**Preferir isso a verificar `Origin`**
+(mais robusto, mais novo, browser-controlled).
+
+**CORS bypass - o que atacantes tentam.**
+
+- **`null` origin:** sandboxes (iframe
+  com `sandbox`, `data:` URLs) tem origin
+  `null`. Server que aceita `null` em
+  `Access-Control-Allow-Origin` esta'
+  **exposto a qualquer sandbox**. Nunca
+  aceite `null`.
+- **Wildcard subdomain:** `*.example.com`
+  cobre `attacker.com`? Nao. Mas
+  `example.com.attacker.com`? Nao. Mas
+  subdominio confiavel: `*.example.com`
+  cobre `api.example.com` (legit) e
+  `evil.example.com` se for subdomain.
+  Cuidado com quem controla subdomains.
+- **CORS sem credentials + cross-origin
+  write:** o atacante usa o **user** como
+  proxy (XSS ou phishing). CORS nao ajuda
+  nesse caso - a vitima esta' autenticada.
+
+**Pattern BFF (Backend For Frontend) - o
+jeito moderno de evitar CORS/CSRF.** Em
+vez de SPA + API publica, use SPA + BFF
+(coberto em `backend`):
+
+```
+Browser (SPA)  ─cookie httpOnly─>  BFF (mesmo dominio)
+                                       │
+                                       │ token de servico
+                                       v
+                                   API publica
+```
+
+- Browser fala **so com mesmo origin** (BFF).
+  Sem CORS, sem CSRF (cookie httpOnly + same-site
+  garante).
+- BFF fala com API com **token de servico** (nao
+  cookie). Sem browser no caminho.
+- XSS no SPA **nao rouba cookie** (httpOnly).
+- CORS/CSRF eliminados **por design**.
+
+Pattern recomendado em 2026 pra apps
+sensiveis. **BFF + cookie httpOnly + SPA**
+= a melhor pratica.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que SameSite=Lax e' default desde
+2020 e nao SameSite=Strict.** O default
+`Lax` e' um **tradeoff consciente**:
+
+- `Strict` quebra links de email/Slack/
+  redes sociais pro seu site (cookie nao
+  envia no 1o request, usuario nao
+  "reconhece" como logado).
+- `Lax` libera GET cross-site (links),
+  bloqueia POST/PUT/DELETE cross-site.
+  Cobre 95% dos casos de UX.
+
+**`Double Submit Cookie` vs
+`Synchronizer Token Pattern`.** Dois
+padroes classicos:
+
+- **Synchronizer Token (stateful):** server
+  armazena tokens em sessa. Valida via lookup.
+  Mais seguro, mais state.
+- **Double Submit (stateless):** token no
+  cookie + no request. Server compara os 2.
+  Sem state, mais simples, suficiente pra 99%
+  dos casos.
+
+Em 2026, **double submit e' o default**.
+Synchronizer so em apps de alta seguranca
+(banking, gov).
+
+**`Content-Security-Policy: frame-ancestors
+'none'` - o anti-clickjacking.** O
+clickjacking e' similar a CSRF: site
+malicioso carrega seu site num iframe
+invisivel, usuario clica sem saber.
+Mitigacao: header `X-Frame-Options: DENY`
+ou CSP `frame-ancestors 'none'`. Cobre em
+`csp-e-headers`.
+
+**Subdomain takeover + CORS.** Se voce tem
+`*.example.com` e alguem consegue registrar
+`api-staging.example.com` (DNS dangling),
+o attacker controla o subdomain - e o
+CORS allow `*.example.com` aceita requests
+de la. **Audite subdomains regularmente**
+pra evitar dangling DNS.
+
+**`Access-Control-Expose-Headers` - deixar
+response headers visiveis pro JS.** Por
+default, **so 7 headers** sao expostos
+ao JS (`Cache-Control`, `Content-Language`,
+`Content-Type`, `Expires`, `Last-Modified`,
+`Pragma`). Pra expor custom (ex: `X-Request-Id`):
+
+```http
+Access-Control-Expose-Headers: X-Request-Id, X-RateLimit-Remaining
+```
+
+**CORS com credenciais + wildcard e
+impossivel por design.** O spec CORS
+proibe `*` com `credentials: true` - foi
+decisao consciente. Forca o server a
+escolher origins especificas. **E' uma
+feature, nao bug** - evita bypass de
+credential.
+
+**Leitura recomendada:**
+
+- [OWASP - CSRF](https://owasp.org/www-community/attacks/csrf/) - referencia OWASP sobre CSRF.
+- [MDN - CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) - doc oficial MDN, completa.
+- [MDN - SameSite cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite) - doc oficial do SameSite.
+- [PortSwigger - CORS](https://portswigger.net/web-security/cors) - lab interativo pra testar CORS.
+
+> Dica: o erro mais comum em CSRF/CORS
+> e' **achar que CORS protege o server**.
+> CORS **protege o browser de ler
+> responses** cross-origin. **O request
+> chega ao server mesmo com CORS bloqueado
+> no browser**. Se o server confia em CORS
+> pra seguranca, o atacante faz requests
+> **diretamente** (via curl, sem browser)
+> e CORS nao ajuda. **Sempre: server
+> valida autorizacao, CORS e' defesa
+> secundaria**.
+
+No proximo no, vamos **CSP e headers de
+hardening**: `Content-Security-Policy` em
+detalhe, `Strict-Transport-Security`,
+`X-Content-Type-Options`, `Referrer-Policy`,
+`Permissions-Policy`, e o helmet.js que
+aplica o baseline de seguranca em
+Express/Node.
+
+<Checkpoint
+  challenge="Implemente a função `configurarCORS(origensPermitidas, comCredenciais)` que recebe uma lista de origens permitidas (strings como 'https://app.com') e um boolean comCredenciais, e retorna o objeto de headers CORS { allowOrigin, allowMethods, allowHeaders, allowCredentials }. Regras: se a lista de origens tem 1 item E comCredenciais = false, allowOrigin = '*' (wildcard). Caso contrario, allowOrigin = a string da unica origem (assume lista de 1). Sempre allowMethods = 'GET, POST, PUT, DELETE, OPTIONS' e allowHeaders = 'Content-Type, Authorization'. allowCredentials = 'true' (string) se comCredenciais, else omitir (retornar null). Quando allowOrigin = '*', NUNCA incluir allowCredentials."
+  starterCode={`// Implemente configurarCORS(origensPermitidas, comCredenciais) que
+// recebe uma lista de origens (normalmente 1 origem em prod) e um
+// boolean comCredenciais, e retorna o objeto de headers CORS.
+//
+// Regras:
+// - Se origensPermitidas.length === 1 E comCredenciais === false:
+//     allowOrigin = '*' (wildcard).
+// - Caso contrario:
+//     allowOrigin = origensPermitidas[0] (string exata).
+// - Sempre: allowMethods = 'GET, POST, PUT, DELETE, OPTIONS'.
+// - Sempre: allowHeaders = 'Content-Type, Authorization'.
+// - allowCredentials: 'true' (string) se comCredenciais === true, OU null.
+// - IMPORTANTE: se allowOrigin = '*', NUNCA retorne allowCredentials (null).
+function configurarCORS(origensPermitidas, comCredenciais) {
+  return {
+    allowOrigin: "",
+    allowMethods: "",
+    allowHeaders: "",
+    allowCredentials: null,
+  };
+}
+
+const _r1 = configurarCORS(["https://app.com"], false);
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarCORS(["https://app.com"], true);
+console.log(JSON.stringify(_r2));
+
+const _r3 = configurarCORS(["*"], false);
+console.log(JSON.stringify(_r3));`}
+  expected='{"allowOrigin":"*","allowMethods":"GET, POST, PUT, DELETE, OPTIONS","allowHeaders":"Content-Type, Authorization","allowCredentials":null}
+{"allowOrigin":"https://app.com","allowMethods":"GET, POST, PUT, DELETE, OPTIONS","allowHeaders":"Content-Type, Authorization","allowCredentials":"true"}
+{"allowOrigin":"*","allowMethods":"GET, POST, PUT, DELETE, OPTIONS","allowHeaders":"Content-Type, Authorization","allowCredentials":null}'
+  slug="seguranca-frontend"
+  nodeId="csrf-e-cors"
+/>
+
+<Quiz
+  question="Por que CORS nao protege o server - apenas o browser?"
+  options={[
+    {
+      text: "CORS e' uma politica do browser, enforcada pelo browser. O request SEMPRE chega ao server. Se o server nao validar autorizacao, o atacante faz request via curl (sem browser, sem CORS) e o server processa.",
+      correct: true,
+      explanation:
+        "CORS (Cross-Origin Resource Sharing) e' enforcado pelo BROWSER. Quando o browser ve um fetch cross-origin sem o header Access-Control-Allow-Origin correto, ele bloqueia o RESPONSE no JS - mas o REQUEST chegou ao server. Se o atacante usa curl/Postman/Python (sem browser), CORS nao se aplica. O request chega, e se o server confia em CORS pra seguranca, processa. Por isso: server SEMPRE valida autorizacao. CORS e' UX do browser (nao vazar dados), nao seguranca do server.",
+    },
+    {
+      text: "CORS protege tanto browser quanto server - e' um firewall de aplicacao.",
+      correct: false,
+      explanation:
+        "Nao. CORS NAO protege o server. CORS e' enforcado pelo BROWSER, e apenas bloqueia o response no JavaScript. O request chega ao server normalmente. E' defesa em profundidade do browser pro usuario (nao vazar dados via cross-origin read), nao seguranca server-side. O server tem que validar autorizacao sempre, independente de CORS.",
+    },
+    {
+      text: "CORS protege contra CSRF - bloqueia requests maliciosos no servidor.",
+      correct: false,
+      explanation:
+        "Nao. CORS NAO bloqueia requests no servidor. CORS bloqueia o RESPONSE no browser (so o JavaScript nao le). E o request chegou. Alem disso, CORS e CSRF sao ataques diferentes: CSRF abusa de cookies automaticos em requests cross-site. CORS e' sobre leitura cross-origin. Solucao pra CSRF e' SameSite + token CSRF, NAO CORS.",
+    },
+  ]}
+/>

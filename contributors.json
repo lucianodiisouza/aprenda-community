@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 25,
+        "trilhas": 26,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 38
+        "total": 39
       },
       "trilhas": [
         {
@@ -93,6 +93,10 @@
         {
           "slug": "prompt-engineering",
           "title": "Prompt Engineering"
+        },
+        {
+          "slug": "seguranca-frontend",
+          "title": "Seguranca Frontend: XSS, CSRF, CSP, CORS, storage seguro e supply chain"
         },
         {
           "slug": "storybook-design-systems",

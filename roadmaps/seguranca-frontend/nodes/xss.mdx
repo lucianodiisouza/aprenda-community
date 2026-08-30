@@ -1,0 +1,570 @@
+---
+id: xss
+title: "XSS: stored, reflected, DOM-based, sanitizacao com DOMPurify"
+resources:
+  - title: "OWASP - XSS (oficial, EN)"
+    url: https://owasp.org/www-community/attacks/xss/
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - innerHTML security (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML#security_considerations
+    lang: en
+    type: doc
+    free: true
+  - title: "DOMPurify - GitHub (oficial, EN)"
+    url: https://github.com/cure53/DOMPurify
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou o modelo de ameacas e
+listou os ativos. Provavelmente o ativo
+#1 e' **input do usuario** - comentario
+no blog, busca, profile, mensagem,
+review. Cada um desses e' um **possivel
+vetor de XSS** se voce renderizar o
+input direto no DOM sem sanitizar.
+
+XSS (Cross-Site Scripting) e' a
+vulnerabilidade **#1 do OWASP Top 10**
+desde 2003. Ate 2026, continua no top
+porque: e' **trivial de explorar** (3
+linhas de payload), **trivial de
+mitigar** (com framework certo + sanitizacao),
+mas devs continuam cometendo erros basicos
+porque o framework **nao protege todos os
+casos**.
+
+Se voce entende os 3 tipos de XSS, os
+**sinks perigosos do browser** (e onde
+React/Vue/Svelte te protegem ou nao), e
+como usar DOMPurify, voce sai de "vou
+tomar cuidado com input" pra "CSP ativo,
+sinks cobertos, sanitizacao em todo HTML
+que vem de fora".
+
+## O essencial 🟢
+
+**XSS em uma frase: voce confia em input
+que nao devia.** O atacante injeta
+JavaScript no seu app, e o browser
+executa como se fosse codigo legitimo.
+Esse codigo pode:
+- Roubar cookies (incluindo session
+  tokens).
+- Fazer fetch com as credenciais do
+  usuario (`credentials: include`).
+- Redirecionar pra phishing.
+- Modificar a UI (ex: trocar link de
+  "transferir" pra outro destino).
+- Instalar crypto miner no browser.
+
+**Os 3 tipos de XSS.** A mesma vulnerabilidade
+se manifesta de 3 jeitos:
+
+**1. Stored XSS (persistente).** O input
+malicioso e' **salvo no backend** (banco,
+cache) e exibido pra outros usuarios:
+
+```js
+// Backend salva comentario sem sanitizar
+db.comentarios.insert({ texto: "<script>rouba()</script>" });
+
+// Outro usuario carrega a pagina, script roda
+res.json({ comentarios: [{ texto: "<script>rouba()</script>" }] });
+```
+
+E' o **mais perigoso** - 1 injection
+compromete todos os usuarios que veem
+aquele conteudo. Exemplo classico: comment
+de blog, review de produto, mensagem em
+chat.
+
+**2. Reflected XSS (nao-persistente).** O
+input malicioso vem na URL e e' **refletido**
+de volta pelo servidor sem sanitizar:
+
+```js
+// Server reflete o input direto na pagina
+app.get("/search", (req, res) => {
+  res.send(`<h1>Resultados para: ${req.query.q}</h1>`);
+});
+// URL: /search?q=<script>rouba()</script>
+// Browser executa o script.
+```
+
+A vitima precisa clicar num link malicioso
+(phishing email, mensagem). Mas o **ataque
+funciona uma vez por click**. Mitigado por
+CSP (`unsafe-inline`).
+
+**3. DOM-based XSS.** O input malicioso
+nunca chega no servidor - e' manipulado
+**inteiramente no client**:
+
+```js
+// Pega o que ta na URL e mete direto no DOM
+const params = new URLSearchParams(window.location.search);
+document.getElementById("title").innerHTML = params.get("name");
+// URL: ?name=<img src=x onerror=rouba()>
+// Imagem quebra, onerror dispara, script roda.
+```
+
+A defesa **nao e' no servidor** - e' no
+client, evitando usar `innerHTML`,
+`document.write`, `eval`, e outros sinks
+com input nao-confiavel.
+
+**Os sinks perigosos do browser.** O
+problema do XSS e' que o browser tem
+**dezenas de APIs que interpretam HTML
+ou executam JS**. Cada uma delas e' um
+"sink" possivel:
+
+| Sink                                  | Perigoso? | Por que                                |
+| ------------------------------------- | --------- | -------------------------------------- |
+| `element.innerHTML = X`               | SIM       | Interpreta tags HTML e executa scripts |
+| `element.outerHTML = X`               | SIM       | Idem, mas substitui o proprio elemento |
+| `document.write(X)`                   | SIM       | Idem                                  |
+| `element.insertAdjacentHTML(X)`       | SIM       | Idem                                  |
+| `element.setAttribute('onclick', X)`  | SIM       | X e' codigo JS, executa              |
+| `eval(X)`                             | SIM       | Executa X como JS                     |
+| `new Function(X)`                     | SIM       | Idem                                  |
+| `setTimeout(X, ms)` / `setInterval`   | SIM (se X string) | Idem                          |
+| `location.href = X`                   | PARCIAL   | javascript: URLs executam codigo      |
+| `element.src = X` (img, script, iframe)| PARCIAL   | data: URLs podem ter codigo           |
+| `element.textContent = X`             | **NAO**   | Escapa tudo, nunca interpreta         |
+| `element.setAttribute('class', X)`    | **NAO**   | Setta atributo, nao interpreta JS    |
+
+A regra: **innerHTML/eval/Function/
+document.write = quase nunca use**. Se
+precisar, sanitize antes. `textContent`
+e `setAttribute` (com whitelist de
+atributos seguros) = sempre OK.
+
+**React/Vue/Svelte te protegem por
+default.** Frameworks modernos escapam
+output por padrao:
+
+```jsx
+// React: seguro
+function Comment({ text }) {
+  return <div>{text}</div>;
+  // Renderiza "<script>rouba()</script>" como texto, NAO executa
+}
+
+// React: PERIGOSO
+function Comment({ html }) {
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  // Renderiza HTML, executa scripts
+}
+```
+
+Mesmo em React, **`dangerouslySetInnerHTML`**
+e um sink perigoso. Use **so com sanitizacao
+previa via DOMPurify**:
+
+```tsx
+import DOMPurify from "dompurify";
+
+function Comment({ html }) {
+  const clean = DOMPurify.sanitize(html);
+  return <div dangerouslySetInnerHTML={{ __html: clean }} />;
+}
+```
+
+**`href="javascript:..."` - o XSS
+"silencioso".** O atributo `href` aceita
+URLs. Se voce renderiza um link com
+`href` controlado pelo usuario:
+
+```jsx
+// PERIGOSO
+<a href={userInput}>Click</a>
+// Se userInput = "javascript:rouba()", click executa
+```
+
+Mitigacao:
+
+```tsx
+function SafeLink({ href, children }) {
+  // Whitelist: so http(s) e mailto
+  const safe = /^(https?:|mailto:)/.test(href) ? href : "#";
+  return <a href={safe}>{children}</a>;
+}
+```
+
+Sempre **valide** URLs antes de usar em
+`href`, `src`, `action`, etc. Whitelist de
+protocolos (`http`, `https`, `mailto`,
+`tel`).
+
+**A decision tree do "sink seguro".** Quando
+voce precisa renderizar HTML dinamico, qual
+sink usar?
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Preciso renderizar HTML/input dinamico?]
+    Start --> Type{E' HTML bruto ou texto puro?}
+    Type -->|Texto puro| Text[Use textContent ou {'{variavel}'} em JSX]
+    Type -->|HTML bruto| Source{De onde vem o HTML?}
+    Source -->|Do meu codigo| Safe[Aceitavel sem sanitizar<br/>eu sei o que escrevi]
+    Source -->|De API/backend confiavel| Sanitize[DOMPurify.sanitize]
+    Source -->|Input do usuario| Sanitize
+    Sanitize --> Sink{Qual sink?}
+    Sink -->|React| ReactHook[dangerouslySetInnerHTML apos DOMPurify]
+    Sink -->|Vanilla JS| InnerSafe[innerHTML apos DOMPurify]
+    Sink -->|Atributo| AttrCheck{href/src?}
+    AttrCheck -->|href| HrefCheck[Whitelist protocolos: http, https, mailto, tel]
+    AttrCheck -->|src img| ImgSafe[Validar URL contra whitelist]
+    AttrCheck -->|outro| SetAttr[setAttribute - escape automatico]
+    Text --> Done[Pronto]
+    Safe --> Done
+    ReactHook --> Done
+    InnerSafe --> Done
+    HrefCheck --> Done
+    ImgSafe --> Done
+    SetAttr --> Done`}
+  caption="Decision tree do sink seguro: antes de usar innerHTML, dangerouslySetInnerHTML, eval, ou setAttribute com input dinamico, valide a fonte e sanitize. textContent e setAttribute (com whitelist) sao sempre seguros."
+/>
+
+**DOMPurify - a lib de sanitizacao
+padrao.** Pra renderizar HTML do usuario
+(rich text editor, Markdown convertido,
+comentario com formatacao), use DOMPurify:
+
+```bash
+pnpm add dompurify
+```
+
+```ts
+import DOMPurify from "dompurify";
+
+// Sanitizacao basica
+const clean = DOMPurify.sanitize(userInput);
+// Remove <script>, on* handlers, javascript: URLs, etc
+
+// Com configuracao
+const clean = DOMPurify.sanitize(userInput, {
+  ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br"],
+  ALLOWED_ATTR: ["href", "title"],
+  ALLOWED_URI_REGEXP: /^(https?:|mailto:|#)/,
+});
+
+// Hook pra customizar (ex: forcar target="_blank" em links)
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName === "A") {
+    node.setAttribute("target", "_blank");
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+```
+
+DOMPurify e' **rapido** (~1ms pra inputs
+comuns), **battle-tested** (5+ anos, mantido
+pelo cure53, time de seguranca alemao),
+e **whitelist-based** (so libera tags/atributos
+que voce explicitamente liberar). Default
+e' seguro - ja remove `script`, `iframe`,
+`onerror`, `onclick`, `javascript:` URLs.
+
+**`html-react-parser` + DOMPurify - o pattern
+comum em React.** Pra renderizar HTML
+sanitizado como elementos React:
+
+```bash
+pnpm add html-react-parser dompurify
+```
+
+```tsx
+import DOMPurify from "dompurify";
+import parse from "html-react-parser";
+
+function SafeHtml({ html }: { html: string }) {
+  const clean = DOMPurify.sanitize(html);
+  return <>{parse(clean)}</>;
+}
+```
+
+Use em: Markdown renderizado, rich text
+editor (TipTap, Quill), comentario com
+formatacao.
+
+**A regra de ouro: sanitize no output,
+nao no input.** Um erro classico:
+
+```ts
+// ERRADO: sanitize no input, salva no banco
+db.comments.insert({ text: DOMPurify.sanitize(input) });
+// Problema: se voce mudar a regra de sanitizacao
+// (ex: liberar <video>), o historico fica sanitizado
+// com a regra antiga. Nao da pra "re-sanitizar".
+
+// CERTO: salva raw, sanitiza no output
+db.comments.insert({ text: input });  // raw
+// Na hora de renderizar:
+const safe = DOMPurify.sanitize(comment.text);
+```
+
+Por que: a politica de sanitizacao **muda
+com o tempo**. Frameworks atualizam, novos
+ataques surgem. Salvar raw destrava
+re-sanitizar com a politica atual.
+
+## Aprofundamento 🟡
+
+**CSP como defesa em profundidade contra
+XSS.** Mesmo com sanitizacao, CSP adiciona
+uma camada a mais. `script-src 'self'`
+proibe scripts inline - se o atacante
+bypassar a sanitizacao, o browser **ainda
+bloqueia** o script inline. Detalhe em
+`csp-e-headers`.
+
+**Mutation XSS (mXSS) - o ataque que pega
+DOMPurify em versao antiga.** DOMPurify
+versoes < 2.0 tinham um bypass via
+`mutation XSS`: o HTML malicioso parecia
+inocente mas se transformava em `<script>`
+quando o browser parseava. **Hoje
+DOMPurify 3.x ja mitiga**. Mas a licao
+permanece: **sempre use versao atual** de
+libs de seguranca.
+
+**`Trusted Types` - a defesa do futuro.**
+Nova API do browser (Chrome 83+, Firefox
+em progresso) que **forca** sanitizacao
+de sinks perigosos. Em vez de banir
+innerHTML, voce so libera sinks que
+passam por uma policy function:
+
+```ts
+// Habilitar Trusted Types
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+  const policy = window.trustedTypes.createPolicy("myPolicy", {
+    createHTML: (string) => DOMPurify.sanitize(string),
+    createScriptURL: (string) => {
+      const u = new URL(string, location.origin);
+      if (u.origin === location.origin) return string;
+      throw new TypeError("Invalid script URL");
+    },
+  });
+
+  // Sinks passam a exigir TrustedHTML
+  element.innerHTML = policy.createHTML(userInput);
+  // Sem policy, TypeError - sink bloqueado.
+```
+
+Em 2026, com CSP `require-trusted-types-for
+'script'`, innerHTML/eval direto **lancam
+TypeError**. Bypassa de XSS caem
+significativamente. **A defesa certa pra
+apps novos em 2026**.
+
+**XSS via CSS injection - o esquecido.**
+CSS tbm pode executar codigo. `expression()`
+(IE legacy) e `url('javascript:...')`
+eram vetores. Em 2026, mitigados por
+CSP (`style-src 'self'`). Mas ainda
+vale lembrar: nao use CSS de fontes
+nao-confiaveis sem CSP.
+
+**XSS em SSR (Next.js, etc).** Em
+Server-Side Rendering, o HTML e gerado
+no server. O React escapa por default,
+mas se voce usa `dangerouslySetInnerHTML`
+no server, a sanitizacao **nao roda no
+client** (esta' no SSR output, sem DOM).
+Pattern: sanitize **no server**, antes
+de mandar pro client. DOMPurify funciona
+em Node (via `jsdom`).
+
+**`rel="noopener noreferrer"` em links
+externos.** Nao e' XSS, mas e' um ataque
+relacionado: `target="_blank"` em link
+externo da a pagina aberta acesso a
+`window.opener` (a pagina original).
+A pagina aberta pode redirecionar a
+original pra phishing. Mitigacao:
+
+```html
+<a href="https://external.com" target="_blank" rel="noopener noreferrer">
+  External link
+</a>
+```
+
+`noopener` bloqueia `window.opener`.
+`noreferrer` bloqueia envio de `Referer`
+header. **Sempre** em links externos.
+
+**`Content-Security-Policy: require-trusted-types-for
+'script'` - o script policy estrito.** CSP
+com `script-src` estrito e' baseline. Mas
+`require-trusted-types-for 'script'` ativa
+Trusted Types - **mata XSS** em apps
+modernos. Combinado com `script-src 'self'`,
+e' a defesa mais forte possivel sem
+eliminar todo JS.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que frameworks nao bloqueiam
+`dangerouslySetInnerHTML`.** O nome
+"dangerously" e' literal - o time do React
+decidiu que **você** sabe o que esta'
+fazendo. Errado em 80% dos casos. Mas o
+framework **nao tem como saber** se aquele
+HTML e' safe sem contexto (de onde veio,
+foi sanitizado, qual politica de DOMPurify).
+A decisao fica com o dev. Em 2026, **libs
+de UI (Material UI, Chakra) ja
+sanitizam por default** quando recebem
+HTML. Mas use-as com atencao.
+
+**`html-validate` - o lint de HTML no CI.**
+Ferramenta que roda no CI, valida HTML
+contra um set de regras. Pega `href="javascript:"`,
+`<img>` sem `alt`, etc. Util em pipelines
+que renderizam HTML estatico.
+
+**Sanitizacao no servidor vs no client.**
+Onde rodar DOMPurify?
+
+- **Client (browser):** DOMPurify acessa
+  `window`/`document`. So roda no browser.
+- **Server (Node):** DOMPurify + `jsdom`.
+  Adiciona ~10MB de jsdom ao bundle. Mas
+  sanitiza antes de mandar pro client
+  (defesa mais cedo).
+
+A melhor pratica em 2026: **sanitize no
+server** (defesa primaria) + **CSP no
+client** (defesa secundaria). O server
+garante que HTML malicioso nao chega
+nem no client.
+
+**DOM clobbering - o ataque que quebra
+CSP via naming.** Se o atacante consegue
+injetar HTML com `<form id="foo">`, esse
+`form` e' acessivel via `window.foo` em
+alguns browsers. Ate CSP estrito
+(`script-src 'self'`) nao bloqueia. E'
+um ataque raro, mas existe. Mitigacao:
+nao confie em `window[userInput]`,
+use `document.getElementById` ou similar.
+
+**Por que `<a href="javascript:...">` ainda
+funciona em 2026.** Apesar de CSP e best
+practices, **nenhum browser** desabilitou
+`javascript:` URLs completamente por
+compatibilidade. **CSP nao bloqueia
+`javascript:` em `href`** (a spec do CSP
+nao cobre). So DOMPurify + sanitizacao
+manual. Em 2026, a discussao sobre matar
+`javascript:` URLs no `href` segue
+(issues no WHATWG). Por enquanto, **a
+defesa e' no dev**: valide URLs com
+whitelist.
+
+**Leitura recomendada:**
+
+- [OWASP - XSS](https://owasp.org/www-community/attacks/xss/) - a referencia OWASP sobre XSS.
+- [MDN - innerHTML security](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML#security_considerations) - consideracoes oficiais MDN.
+- [DOMPurify - GitHub](https://github.com/cure53/DOMPurify) - a lib de sanitizacao padrao, mantida pelo cure53.
+- [Google - XSS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html) - guia de prevencao do OWASP.
+
+> Dica: o erro mais comum em XSS e' **achar
+> que framework = seguro**. React/Vue/Svelte
+> escapam output por default, MAS nao te
+> protegem de `dangerouslySetInnerHTML`,
+> `href`/`src` com input do usuario, ou
+> DOM-based XSS via sinks vanilla (`document.write`,
+> `eval`). **Sempre passe por DOMPurify
+> em HTML do usuario**, **valide URLs** em
+> href/src, e **prefira `textContent` a
+> `innerHTML`**. Sanitize no output, nao
+> no input.
+
+No proximo no, vamos **CSRF e CORS**: como
+cookies vulneraveis a forjar requests, como
+SameSite resolve, o que e' preflight, e
+quando usar `credentials: include` no
+fetch.
+
+<Checkpoint
+  challenge="Implemente a função `analisarXSS(codigo)` que recebe uma string de codigo HTML/JS e retorna { vulnera vel: boolean, vetor: 'stored' | 'reflected' | 'dom-based' | 'none', sinks: string[] } - onde vulnera vel e' true se encontrar padroes de XSS (script inline, event handlers inline, javascript: em href/src, eval/Function, innerHTML com variavel), vetor indica o tipo de XSS detectado (ou 'none' se seguro), e sinks lista os nomes dos sinks perigosos encontrados."
+  starterCode={`// Implemente analisarXSS(codigo) que recebe uma string de codigo
+// HTML/JS e retorna um objeto de analise.
+//
+// Detectar os seguintes padroes vulnera veis:
+// - '<script' em qualquer lugar              → sink 'script-tag'
+// - 'onerror=', 'onload=', 'onclick=' etc    → sink 'event-handler'
+// - 'href="javascript:' ou 'src="javascript:' → sink 'javascript-url'
+// - 'eval(' ou 'new Function('                → sink 'eval'
+// - 'innerHTML' ou 'outerHTML' ou
+//   'document.write' ou 'insertAdjacentHTML' → sink 'inner-html'
+//
+// Regras:
+// - Se encontrar QUALQUER sink, vulnera vel = true.
+// - vetor: 'reflected' se o codigo tem query param + sink,
+//          'dom-based' se tem window.location + sink,
+//          'stored' se so tem sink sem contexto de URL,
+//          'none' se nao tem sink.
+// - sinks: array unico com os nomes dos sinks encontrados.
+function analisarXSS(codigo) {
+  return { vulnera vel: false, vetor: "none", sinks: [] };
+}
+
+const _r1 = analisarXSS(
+  '<div><script>rouba()</script></div>'
+);
+console.log(JSON.stringify(_r1));
+
+const _r2 = analisarXSS(
+  'app.get("/search", (req, res) => { res.send("<h1>Resultados: " + req.query.q + "</h1>"); });'
+);
+console.log(JSON.stringify(_r2));
+
+const _r3 = analisarXSS(
+  'const params = new URLSearchParams(window.location.search); document.body.innerHTML = params.get("name");'
+);
+console.log(JSON.stringify(_r3));
+
+const _r4 = analisarXSS(
+  '<p>Comentario seguro do usuario</p>'
+);
+console.log(JSON.stringify(_r4));`}
+  expected='{"vulnera vel":true,"vetor":"stored","sinks":["script-tag"]}
+{"vulnera vel":true,"vetor":"reflected","sinks":["inner-html"]}
+{"vulnera vel":true,"vetor":"dom-based","sinks":["inner-html"]}
+{"vulnera vel":false,"vetor":"none","sinks":[]}'
+  slug="seguranca-frontend"
+  nodeId="xss"
+/>
+
+<Quiz
+  question="Por que sanitizar no OUTPUT (renderizacao) e nao no INPUT (recebimento)?"
+  options={[
+    {
+      text: "Porque a politica de sanitizacao muda com o tempo. Se voce sanitiza no input e salva limpo, nao da pra re-sanitizar quando a politica mudar. Salvar raw destrava aplicar a regra mais recente no output.",
+      correct: true,
+      explanation:
+        "Salvar input sanitizado perde informacao: se voce descobrir uma nova ameaca (mutation XSS, novo bypass DOMPurify), nao tem como re-sanitizar o historico. Salvar raw e sanitizar no output destrava: (1) re-sanitizar quando a regra muda, (2) escolher politicas diferentes por contexto (ex: comentario libera <b> mas mensagem nao), (3) debugar o input original. E' o padrao recomendado pelo OWASP desde 2017. Sanitize no momento de usar, nao no momento de receber.",
+    },
+    {
+      text: "Porque sanitizar no input e' mais lento e usa mais CPU.",
+      correct: false,
+      explanation:
+        "Nao. Performance nao e' o motivo. Sanitizar no input ate pode ser mais rapido (uma vez), mas o problema e' que voce PERDE informacao: o input original e' perdido. A razao real e' manutencao: politicas de sanitizacao evoluem com novos ataques. Sanitize no output para ter a flexibilidade de aplicar a regra mais recente.",
+    },
+    {
+      text: "Sao equivalentes - escolha por preferencia pessoal.",
+      correct: false,
+      explanation:
+        "Nao sao equivalentes. Sanitizar no input parece mais simples mas tem o problema de 'regra congelada no tempo'. Se voce sanitiza no input em 2024 com DOMPurify 2.x e em 2025 descobre um novo bypass, todo o historico salvo em 2024 esta' potencialmente vulnera vel. Sanitizar no output te da a flexibilidade de aplicar a politica atual sempre. E' o padrao da industria, nao preferencia pessoal.",
+    },
+  ]}
+/>
