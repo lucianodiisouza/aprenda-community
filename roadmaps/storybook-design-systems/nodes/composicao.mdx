@@ -541,10 +541,10 @@ que devs realmente leem (em vez de só gerar).
 <Checkpoint
   challenge="Implemente a função `criarCompound(parent, parts)` que recebe um componente 'pai' (ex: Card) e um objeto com 'parts' (ex: { Header, Body, Footer }), e retorna um novo componente Card com os parts atribuídos como propriedades estáticas (ex: Card.Header, Card.Body, Card.Footer). Cada part recebe o mesmo context do parent."
   starterCode={`// Crie a função criarCompound(parent, parts).
-// - `parent` é um React component (function)
-// - `parts` é um objeto: { Key: ReactComponent, ... }
-// - O retorno é o `parent` com `parent.Key = ReactComponent` pra cada Key
-// - `parent` mantém sua assinatura original (props.children, etc)
+// - \`parent\` é um React component (function)
+// - \`parts\` é um objeto: { Key: ReactComponent, ... }
+// - O retorno é o \`parent\` com \`parent.Key = ReactComponent\` pra cada Key
+// - \`parent\` mantém sua assinatura original (props.children, etc)
 //
 // Dica: o parent pode ter um displayName (ex: "Card"). Preserve-o.
 function criarCompound(parent, parts) {

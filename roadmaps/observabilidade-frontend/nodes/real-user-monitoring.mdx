@@ -67,9 +67,9 @@ mede.**
 
 | Metrica | Bom (p75) | Needs improvement | Poor |
 | ------- | --------- | ----------------- | ---- |
-| LCP     | <= 2.5s   | <= 4.0s           | > 4.0s |
-| INP     | <= 200ms  | <= 500ms          | > 500ms |
-| CLS     | <= 0.1    | <= 0.25           | > 0.25 |
+| LCP     | ≤ 2.5s   | ≤ 4.0s           | > 4.0s |
+| INP     | ≤ 200ms  | ≤ 500ms          | > 500ms |
+| CLS     | ≤ 0.1    | ≤ 0.25           | > 0.25 |
 
 **p75** = 75% dos users estao abaixo
 desse valor. Use **p75** (ou p90 em
@@ -451,14 +451,14 @@ backend (Jaeger, Tempo, Honeycomb,
 Sentry, Datadog).
 
 <Checkpoint
-  challenge="Implemente a função `avaliarWebVitals(metricas)` que classifica cada Web Vital como 'good' | 'needs-improvement' | 'poor' baseado nos thresholds oficiais. Recebe: metricas = { lcp: number (segundos), inp: number (milissegundos), cls: number }. Thresholds (Google Core Web Vitals): LCP <= 2.5 'good', <= 4.0 'needs-improvement', > 4.0 'poor'. INP <= 200 'good', <= 500 'needs-improvement', > 500 'poor'. CLS <= 0.1 'good', <= 0.25 'needs-improvement', > 0.25 'poor'. Retorna { lcp: rating, inp: rating, cls: rating } onde rating e' o classificador. Apenas inclua chaves para metricas presentes no input."
+  challenge="Implemente a função `avaliarWebVitals(metricas)` que classifica cada Web Vital como 'good' | 'needs-improvement' | 'poor' baseado nos thresholds oficiais. Recebe: metricas = { lcp: number (segundos), inp: number (milissegundos), cls: number }. Thresholds (Google Core Web Vitals): LCP ≤ 2.5 'good', ≤ 4.0 'needs-improvement', > 4.0 'poor'. INP ≤ 200 'good', ≤ 500 'needs-improvement', > 500 'poor'. CLS ≤ 0.1 'good', ≤ 0.25 'needs-improvement', > 0.25 'poor'. Retorna { lcp: rating, inp: rating, cls: rating } onde rating e' o classificador. Apenas inclua chaves para metricas presentes no input."
   starterCode={`// Implemente avaliarWebVitals(metricas) que classifica cada
 // Web Vital baseado nos thresholds do Google Core Web Vitals.
 //
 // Thresholds:
-//   LCP (segundos): <= 2.5 'good', <= 4.0 'needs-improvement', > 4.0 'poor'
-//   INP (milissegundos): <= 200 'good', <= 500 'needs-improvement', > 500 'poor'
-//   CLS: <= 0.1 'good', <= 0.25 'needs-improvement', > 0.25 'poor'
+//   LCP (segundos): ≤ 2.5 'good', ≤ 4.0 'needs-improvement', > 4.0 'poor'
+//   INP (milissegundos): ≤ 200 'good', ≤ 500 'needs-improvement', > 500 'poor'
+//   CLS: ≤ 0.1 'good', ≤ 0.25 'needs-improvement', > 0.25 'poor'
 //
 // Retorna: { lcp: rating, inp: rating, cls: rating }
 // Apenas inclua chaves para metricas presentes no input.
