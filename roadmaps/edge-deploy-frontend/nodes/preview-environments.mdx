@@ -1,0 +1,478 @@
+---
+id: preview-environments
+title: "Preview environments: PR previews, ephemeral envs, branch URLs"
+resources:
+  - title: "Vercel - Preview Deployments (EN)"
+    url: https://vercel.com/docs/deployments/preview-deployments
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare Pages - Preview Deploys (EN)"
+    url: https://developers.cloudflare.com/pages/configuration/preview-deployments/
+    lang: en
+    type: doc
+    free: true
+  - title: "GitHub Actions - Preview Environments (EN)"
+    url: https://docs.github.com/en/actions/deployment/about-deployments/deploying-with-github-actions
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce abriu um PR. **PM precisa
+revisar visual** mas nao tem o codigo
+rodando local. **Dev** tira screenshots,
+anexa no PR. **Ineficiente**. **Esse
+no cobre preview environments**: como
+**cada PR** ganha **URL unica** pra
+review visual **sem checkout local**,
+**ephemeral envs** (variaveis de
+ambiente), e **branch URLs**.
+
+Preview environments mudam o
+**workflow de review**: PM, QA,
+**stakeholders** veem o PR rodando
+**antes do merge**. **Catches** bugs
+visuais, de UX, de integracao com
+**APIs reais** (com envs de staging).
+**Vercel, Cloudflare Pages, Netlify**
+fazem isso por default.
+
+Voce sai de "screenshot no PR" pra
+"URL unica por PR pra review
+completo".
+
+## O essencial 🟢
+
+**O que e' um preview environment.**
+
+**URL unica por PR**: cada branch
+ou PR gera **deploy automatico** com
+URL propria (ex: `pr-123.meusite.com`).
+**Reviewer** (PM, QA, designer) **acessa
+a URL** e ve o app rodando com as
+mudancas do PR. **Sem checkout local,
+sem `npm install`, sem build**.
+
+**Como funciona (CI pipeline).**
+
+```text
+1. Dev abre PR
+2. CI detecta novo branch
+3. CI faz build (npm run build)
+4. CI faz deploy (Vercel/Cloudflare/Custom)
+5. CI comita/atualiza PR comment com URL
+6. Reviewer acessa URL, testa, aprova
+```
+
+**Vercel Preview Deployments.**
+
+Vercel detecta **automatic** cada PR
+e gera URL:
+- `feat-novo-checkout-meuapp.vercel.app`
+
+**Cada PR** = **URL unica** com **build
+isolado**. **Branch deletion** =
+**preview deletion** (cleanup
+automatic).
+
+**Config de preview no `vercel.json`.**
+
+```json
+{
+  "github": {
+    "silent": false,
+    "autoAlias": false
+  }
+}
+```
+
+**Cloudflare Pages Preview Deploys.**
+
+Cloudflare Pages detecta PRs e gera:
+- `pr-123.meu-projeto.pages.dev`
+
+**Mesma logica** do Vercel: cada PR
+= URL unica.
+
+**Ephemeral environments - "envs por
+PR".**
+
+```yaml
+# Vercel - via Dashboard ou CLI
+# .env.local
+DATABASE_URL=postgres://staging.db/meuapp
+STRIPE_KEY=sk_test_xxx
+SENTRY_DSN=https://xxx@sentry.io/123
+```
+
+Vercel/Cloudflare Pages **injetam envs
+por PR** (secrets do GitHub). Cada
+PR tem **seu proprio DATABASE_URL**
+(branch de banco separado), **sua
+propria STRIPE_KEY** (test mode),
+**seu proprio SENTRY_DSN** (projeto
+separado). **Preview isolado**, sem
+interferir em staging/prod.
+
+**GitHub Actions - custom preview.**
+
+```yaml
+# .github/workflows/preview.yml
+name: Preview Deploy
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: pnpm install
+      - run: pnpm run build
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+      - name: Comment PR with URL
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            🚀 Preview deployed: ${{ steps.deploy.outputs.preview-url }}
+```
+
+**Custom preview** com GitHub
+Actions = **total controle** (envs
+custom, deploy custom, comment custom).
+
+**Preview por branch (nao so PR).**
+
+```yaml
+# .github/workflows/branch-deploy.yml
+on:
+  push:
+    branches-ignore: [main]
+jobs:
+  deploy:
+    # mesmo pipeline, mas URL: branch-name.app.com
+```
+
+**Cada branch** (NAO so PR) tem URL.
+**Use pra** dev/staging environments
+por feature.
+
+**Limpar preview environments.**
+**Cada PR = URL temporaria**. Quando
+PR fecha, **URL deleta** (Vercel/
+Cloudflare faz automatic). **Cleanup**
+importante: **100 PRs abertos = 100
+URLs = custo**.
+
+**Vercel**: **auto cleanup** apos 7
+dias ou **PR closed** (configurable).
+**Cloudflare Pages**: cleanup
+**manual** via API.
+
+**Como testar com dados reais em
+preview.** **3 opcoes**:
+
+1. **Mock data:** preview usa
+   `users.findById.mock`. **Rapido**
+   mas **nao pega** bugs de integracao.
+2. **Shared staging DB:** preview
+   usa `staging.db.meuapp.com`. **Real**
+   mas **outro dev pode ter mexido**.
+3. **Ephemeral DB por PR:** preview
+   cria **branch de DB** (Neon
+   branching, PlanetScale branching).
+   **Isolado**, **real**, **destructible**.
+
+**Neon (Postgres serverless)** tem
+**branching**:
+- main branch = production.
+- PR branch = copia do schema + dados
+  isolada.
+- PR close = branch deletada.
+
+**Pattern classico**: **preview =
+branch de DB + branch de servico
+externo** (Stripe test mode,
+Mailgun test, etc).
+
+**Secrets em preview.** **NUNCA**
+commite secrets. **Use GitHub
+Secrets**:
+
+```yaml
+- name: Set env
+  run: |
+    echo "DATABASE_URL=${{ secrets.PREVIEW_DATABASE_URL }}" >> .env
+    echo "STRIPE_KEY=${{ secrets.PREVIEW_STRIPE_KEY }}" >> .env
+```
+
+**Secrets** de preview = **test mode**
+(Stripe test, Sentry staging, etc).
+**NAO** secrets de prod em preview.
+
+**Vercel + GitHub: como funciona.**
+
+1. Vercel **escuta** webhooks do
+   GitHub.
+2. PR aberto → Vercel **build** e
+   **deploy**.
+3. Vercel **posta comment** no PR
+   com URL.
+4. Vercel **atualiza** comment em
+   cada push.
+5. PR mergeado em main → **deploy
+   production**.
+6. PR closed → **preview deleted**.
+
+**Cloudflare Pages + GitHub: similar.**
+
+1. Cloudflare Pages **escuta**
+   webhooks.
+2. PR aberto → **build** + **preview
+   deploy** em `*.pages.dev`.
+3. **Comment** automatic no PR.
+
+**Custom domain para previews.**
+
+```yaml
+# .github/workflows/preview.yml
+- name: Deploy
+  run: |
+    DEPLOY_URL="pr-${{ github.event.pull_request.number }}.staging.meusite.com"
+    vercel deploy --target $DEPLOY_URL
+```
+
+**PR-specific subdomain** (`pr-123.staging.meusite.com`)
+em vez de `.vercel.app`. **Mais
+profissional**, **mesma UX**.
+
+**Limites de preview environments.**
+
+- **Custo:** cada preview = build +
+  deploy + runtime. 100 PRs = custo
+  alto.
+- **Cleanup:** sem cleanup = 100s
+  de URLs.
+- **Test data:** preview com mock vs
+  staging DB.
+
+**Mitigacao**:
+- **Cleanup automatic** (Vercel, custom
+  script).
+- **Limite de idade** (delete apos 7
+  dias).
+- **Limite de PRs** (max 10 preview
+  simultaneos).
+
+## Aprofundamento 🟡
+
+**Preview environment = "staging
+environment" simplificado.** **Staging
+tradicional**: 1 ambiente, **compartilhado**
+por todos os devs/PRs. **Preview**:
+**1 ambiente por PR**, **isolado**.
+**Vantagem**: **parallel** (10 PRs
+= 10 previews, sem conflito).
+**Custo**: mais (10x ambientes).
+**Trade-off**: use **preview** pra
+PR review, **staging** pra **shared
+QA** (release candidate).
+
+**GitHub Actions: matrix build pra
+preview.**
+
+```yaml
+strategy:
+  matrix:
+    node: [18, 20, 22]
+steps:
+  - uses: actions/setup-node@v3
+    with:
+      node-version: ${{ matrix.node }}
+```
+
+**Build paralelo** em **multiplas
+versoes de Node**. **Use pra**
+**compatibilidade** (breaking change
+em lib). **Nao confunda** com preview
+environments (sao conceitos
+diferentes).
+
+**Preview database com Fly.io ou
+Railway.** **Fly.io** da' suporte
+**branch de Postgres** por PR. Cada
+preview tem **DB proprio**, **deletado
+quando PR fecha**. **Custo**: low
+($5-10/mes pra staging).
+
+**Preview com Sentry separate project.**
+
+```ts
+Sentry.init({
+  dsn: process.env.PREVIEW_SENTRY_DSN,  // projeto separado
+  environment: `preview-pr-${prNumber}`,
+});
+```
+
+**Sentry project** so pra previews.
+**Erros em preview** NAO poluem
+**production dashboard**.
+
+**E2E tests em preview environments.**
+
+```yaml
+# .github/workflows/preview-e2e.yml
+on:
+  pull_request:
+    types: [opened, synchronize]
+jobs:
+  e2e:
+    steps:
+      - name: Deploy preview
+        run: vercel deploy --target preview
+      - name: Run Playwright
+        run: pnpm test:e2e --url=$PREVIEW_URL
+      - name: Cleanup
+        if: always()
+        run: vercel rm preview --yes
+```
+
+**E2E tests** rodam **contra preview**
+(NAO local). **Pega** bugs de
+integracao que testes unit nao
+pegam. **Cleanup** garante que
+preview **nao fica forever**.
+
+**Vercel - environment variables
+por branch.**
+
+```bash
+# Vercel CLI
+vercel env add DATABASE_URL production
+vercel env add DATABASE_URL preview
+vercel env add PREVIEW_DATABASE_URL preview
+```
+
+**Cada environment** (production,
+preview, development) tem **envs
+separadas**. **Code** checa
+`process.env.DATABASE_URL` em prod,
+`process.env.PREVIEW_DATABASE_URL` em
+preview.
+
+**GitHub deployment API + status
+checks.**
+
+```yaml
+- name: Create deployment
+  uses: actions/github-script@v6
+  with:
+    script: |
+      await github.rest.repos.createDeployment({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        ref: context.ref,
+        environment: 'preview',
+        description: 'Preview deploy',
+      });
+```
+
+**GitHub Deployment API** cria
+"deployments" que aparecem em
+**Actions tab**. **Required status
+checks** (CI) podem **bloquear
+merge** ate preview **passa E2E
+tests**.
+
+**Preview environment security.**
+**Preview e' publico por default** no
+Vercel (`*.vercel.app`). **Risco**:
+**indexado pelo Google**, **acessivel
+por qualquer pessoa**. **Solucoes**:
+
+1. **Vercel Password Protection** (Pro
+   plan).
+2. **Cloudflare Access** (zero trust,
+   free).
+3. **Auth basica** via Cloudflare
+   Workers.
+
+**NAO** exponha **dados sensiveis** em
+preview sem auth.
+
+**Custo de preview environments.**
+
+- **Vercel Hobby:** 100GB bandwidth,
+  unlimited previews.
+- **Vercel Pro:** 1TB bandwidth, $20/
+  seat.
+- **Cloudflare Pages:** free
+  unlimited.
+- **Custom (Fly.io, Railway):** $5-20/
+  mes pra staging.
+
+**Em 2026**, **Cloudflare Pages e'
+mais barato** que Vercel. **Vercel
+e' mais DX** (Next.js integration,
+GitHub comments automatic).
+
+**Leitura recomendada:**
+
+- [Vercel - Preview Deployments](https://vercel.com/docs/deployments/preview-deployments) - como configurar, envs por PR.
+- [Cloudflare Pages - Preview Deploys](https://developers.cloudflare.com/pages/configuration/preview-deployments/) - setup, custom domains.
+- [GitHub Actions - Preview Environments](https://docs.github.com/en/actions/deployment/about-deployments/deploying-with-github-actions) - custom pipeline com Actions.
+
+> Dica: o erro mais comum em preview
+> e' **"preview = production"**. PM
+> testa no preview, aprova, merge,
+> **prod quebra** porque preview
+> tinha **staging DB** (sem
+> constraint) e prod tem **prod DB**
+> (com constraint). **Preview NAO
+> e' prod**. **Use preview pra
+> review visual + smoke test**. Use
+> **staging** pra **test de
+> integracao completo** (com dados
+> reais). Use **prod** so pra
+> **deploy final**. **3 ambientes
+> separados** = **catches mais
+> bugs**.
+
+No proximo no, vamos **atomic deploys
+e cache**: **blue/green**, **cache
+headers**, **invalidation**, **rollback**,
+e o pattern de deploy que **garante
+zero downtime** em prod.
+
+<Quiz
+  question="Por que preview environments por PR (em vez de 1 staging compartilhado) mudam o workflow de review?"
+  options={[
+    {
+      text: "Cada PR gera URL unica com codigo + envs isoladas. PM/QA/designer ve o app rodando com as mudancas do PR **antes do merge**, sem checkout local. Catches bugs visuais/UX/integracao cedo. Vercel/Cloudflare Pages fazem automatic via GitHub webhooks. Em 2026 e' default - nao exige setup custom.",
+      correct: true,
+      explanation:
+        "Preview environments resolvem o problema classico de **'review sem rodar'**: (1) **sem checkout local** (PM/QA nao precisa de `git clone`, `pnpm install`, rodar build), (2) **URL unica por PR** (`pr-123.meusite.com`), (3) **envs isoladas** (cada PR tem sua DATABASE_URL, Sentry DSN, Stripe test key), (4) **ephemeral DB por PR** (Neon branching - DB isolada, deletada quando PR fecha). **Workflow antes**: dev tira screenshots, anexa no PR. PM ve **2 screenshots**, **nao testa**. **Workflow agora**: PM acessa URL, **testa fluxo completo** (clica botao, preenche form, ve error), **descobre bug visual** que screenshots nao pegam. **Vercel/Cloudflare Pages** fazem isso **automatic** via GitHub webhooks - cada PR = URL, comment no PR com URL, delete quando PR fecha. **Custo**: 10 PRs = 10 URLs ($$), mas **economia em bugs prevenidos** >> custo. **Em 2026**, preview environments e' **default em qualquer time serio** - nao exige setup custom.",
+    },
+    {
+      text: "Preview environments so' servem pra mostrar visual - nao testam integracao.",
+      correct: false,
+      explanation:
+        "Falso. Preview environments podem ter **envs de staging reais**: (1) **DATABASE_URL de staging** (banco de dados real, sem ser prod), (2) **Stripe test mode** (API real, sem cobrar cartao real), (3) **Sentry projeto separado** (erros de preview NAO poluem prod), (4) **third-party services em test mode** (Mailgun test, Twilio test). **E2E tests** rodam **contra preview** (Playwright em URL de preview). **Pega bugs de integracao** (API retorna 500, DB query falha, third-party timeout). **Nao confunda**: preview com **mock data** = so visual. Preview com **staging data** = integracao real. **Default**: use staging data em preview.",
+    },
+    {
+      text: "Preview environments sao redundantes - staging ja' resolve.",
+      correct: false,
+      explanation:
+        "Falso. **Staging tradicional** = **1 ambiente compartilhado**. **10 PRs abertos = 10 devs mexem no mesmo staging = conflitos**. **Preview** = **1 ambiente por PR** = **isolado, sem conflito**. **Vantagem principal**: **parallel review** (10 previews simultaneos). **Custo maior** (10 ambientes vs 1), mas **economia em tempo** de review >> custo. **Staging + preview** sao **complementares**: preview pra PR review, staging pra release candidate. **Time pequeno** (1-2 devs) = staging basta. **Time maior** (5+ devs) = preview. **Time com deploys diarios** = preview **obrigatorio**.",
+    },
+  ]}
+/>

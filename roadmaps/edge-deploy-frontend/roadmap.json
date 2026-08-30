@@ -1,0 +1,106 @@
+{
+  "slug": "edge-deploy-frontend",
+  "title": "Edge Deploy Frontend: build, runtime, Cloudflare Workers, Vercel Edge, image opt, preview envs, atomic deploys",
+  "description": "Trilha sobre build e deploy de apps frontend modernos: do build output (static, SSR, SSG, ISR, edge) ao runtime (Node, serverless, edge), passando por Cloudflare Workers (V8 isolate, KV, R2, D1, Durable Objects), Vercel Edge (Edge runtime, ISR, on-demand revalidation), image optimization (Next/Image, Cloudflare Images, formato moderno, lazy loading), preview environments por PR (ephemeral envs, branch URLs), e atomic deploys com cache (blue/green, cache headers, invalidation, rollback). Cobre o workflow completo de 'codigo em producao'.",
+  "difficulty": "intermediario",
+  "skills": [
+    "edge",
+    "edge-computing",
+    "edge-runtime",
+    "cloudflare-workers",
+    "cloudflare-pages",
+    "cloudflare",
+    "vercel",
+    "vercel-edge",
+    "vercel-functions",
+    "isr",
+    "ssr",
+    "ssg",
+    "spa",
+    "build",
+    "vite",
+    "webpack",
+    "esbuild",
+    "rollup",
+    "image-optimization",
+    "next-image",
+    "cloudflare-images",
+    "webp",
+    "avif",
+    "preview-environments",
+    "ephemeral-envs",
+    "atomic-deploys",
+    "blue-green",
+    "canary-deploy",
+    "rollback",
+    "cache-control",
+    "cache-strategy",
+    "cdn",
+    "wrangler",
+    "kv",
+    "durable-objects",
+    "d1",
+    "r2",
+    "preview-deploys",
+    "pr-preview",
+    "ci-cd",
+    "github-actions"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "de-onde-vem-onde-vai",
+      "title": "De onde vem, onde vai: build output, runtime, edge vs node vs serverless",
+      "type": "topic",
+      "recommended": true,
+      "children": ["cloudflare-workers"]
+    },
+    {
+      "id": "cloudflare-workers",
+      "title": "Cloudflare Workers: V8 isolate, KV, R2, D1, Durable Objects",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["vercel-edge"]
+    },
+    {
+      "id": "vercel-edge",
+      "title": "Vercel Edge: Edge runtime, ISR, on-demand revalidation",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["image-optimization"]
+    },
+    {
+      "id": "image-optimization",
+      "title": "Image optimization: Next/Image, Cloudflare Images, formato moderno, lazy",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["preview-environments"]
+    },
+    {
+      "id": "preview-environments",
+      "title": "Preview environments: PR previews, ephemeral envs, branch URLs",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["atomic-deploys-e-cache"]
+    },
+    {
+      "id": "atomic-deploys-e-cache",
+      "title": "Atomic deploys e cache: blue/green, cache headers, invalidation, rollback",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: deploy SPA + edge function com preview por PR",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

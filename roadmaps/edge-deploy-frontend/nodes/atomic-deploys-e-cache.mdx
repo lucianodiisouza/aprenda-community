@@ -1,0 +1,606 @@
+---
+id: atomic-deploys-e-cache
+title: "Atomic deploys e cache: blue/green, cache headers, invalidation, rollback"
+resources:
+  - title: "web.dev - HTTP Caching (EN)"
+    url: https://web.dev/articles/http-cache
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - HTTP Cache Headers (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare - Cache Rules (EN)"
+    url: https://developers.cloudflare.com/cache/how-to/cache-rules/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce fez deploy, app **quebrou em
+prod**, corre pra reverter. **Mas
+"reverter" demora 30min**: build
+antigo, rollback, DNS switch, esperar
+propagar. **Esse no cobre atomic
+deploys e cache**: como **deploy sem
+downtime** (blue/green), **cache
+headers** corretos, **invalidation
+estrategica**, e **rollback
+instantaneo**.
+
+**Atomic deploy** = nova versao
+**substitui a antiga** como
+**unidade atomica**. User sempre ve
+**versao consistente** (v1 OU v2,
+nunca mix). **CDN + cache** = **95%**
+do TTFB vem de cache, **5%** do
+origin. **Cache strategy errada** =
+**user ve versao antiga** apos
+deploy (cache stale) ou **cache nunca
+funciona** (TTFB alto).
+
+Voce sai de "deploy = subir codigo e
+rezar" pra "deploy = zero downtime
++ cache strategy".
+
+## O essencial 🟢
+
+**Os 3 problemas de deploy "nao-
+atomic".**
+
+1. **Mix de versoes.** User recebe
+   `index.html` (v2) e `app.js` (v1).
+   App quebra (HTML novo espera JS
+   novo).
+2. **Cache stale.** User recebe
+   versao antiga de CDN mesmo apos
+   deploy novo.
+3. **Rollback lento.** "Reverter"
+   = git revert + redeploy + esperar
+   propagar (15-30min).
+
+**A solucao: atomic deploy.** **Nova
+versao inteira** substitui a antiga.
+User sempre ve versao **consistente**.
+**CDN/load balancer** faz swap
+**instantaneo** (DNS, load balancer,
+ou feature flag).
+
+<Mermaid
+  chart={`flowchart TD
+    Q1[Cache strategy?]
+    Q1 --> Q2{Tipo de conteudo?}
+    Q2 -->|Static asset JS/CSS/hash| CacheLong[Cache-Control: public, max-age=31536000, immutable]
+    Q2 -->|HTML| CacheShort[Cache-Control: public, max-age=0, must-revalidate]
+    Q2 -->|API response| CacheAPI[Cache-Control: private, max-age=60 ou no-store]
+    Q2 -->|User-specific| NoCache[Cache-Control: private, no-store]
+
+    CacheLong --> Q3{Versioning?}
+    CacheShort --> Q3
+    Q3 -->|Hash no filename| Good[Content-hash: app.a3b4c5.js]
+    Q3 -->|Sem hash| Stale[STALE: user recebe versao antiga]
+
+    Good --> Deploy[Atomic deploy: deploy v2 inteiro]
+    Stale --> Fix[Fix: adicionar hash + ETag]
+    Fix --> Deploy
+
+    CacheAPI --> APIQ{Por request?}
+    APIQ -->|GET com query| Short[max-age=60, stale-while-revalidate=300]
+    APIQ -->|POST/PUT/DELETE| NoStore[no-store]
+    APIQ -->|User-specific| Private[private, no-cache]
+
+    NoCache --> Done[OK]
+    Deploy --> Done
+    Short --> Done
+    NoStore --> Done
+    Private --> Done`}
+  caption="Decision tree: cache strategy por tipo de conteudo. Regra: (1) Static asset COM hash = cache 1y (immutable), (2) HTML = cache 0s + must-revalidate, (3) API = cache 60s com stale-while-revalidate, (4) User-specific = no-store. SEMPRE use content-hash em JS/CSS pra evitar stale. Atomic deploy garante zero mix de versoes."
+/>
+
+**Cache-Control headers - a base.**
+
+```http
+# Static asset COM hash no filename
+Cache-Control: public, max-age=31536000, immutable
+# (1 ano - pode ser cacheado pra sempre, hash garante freshness)
+
+# HTML / SSR pages
+Cache-Control: public, max-age=0, must-revalidate
+# (sempre revalidar com servidor, CDN checa ETag)
+
+# API response (GET, idempotente)
+Cache-Control: public, max-age=60, stale-while-revalidate=300
+# (60s fresh, 300s serve stale enquanto revalida)
+
+# User-specific (auth)
+Cache-Control: private, no-store
+# (NAO cachear, user-specific)
+
+# Mutation (POST/PUT/DELETE)
+Cache-Control: no-store
+# (NAO cachear response)
+```
+
+**`max-age`** = segundos ate o cache
+**expirar**. **`stale-while-
+revalidate`** = serve stale enquanto
+**revalida em background** (latencia
+minima).
+
+**`ETag` - "cache fingerprint".**
+
+```http
+ETag: "abc123"
+Cache-Control: public, max-age=0, must-revalidate
+```
+
+**Server** manda `ETag`. **Browser**
+guarda. **Proximo request**: `If-
+None-Match: "abc123"`. **Server**
+responde **304 Not Modified** (sem
+body) se ETag bate = **economia de
+bandwidth**.
+
+**`Vary` - "cache por criterio".**
+
+```http
+Vary: Accept-Encoding, Accept-Language
+```
+
+**CDN** cachea **variantes** por
+`Accept-Encoding` (gzip vs
+br), `Accept-Language` (en vs pt-BR).
+**Mesma URL, respostas diferentes**
+por header.
+
+**Content-hash em filename - "evita
+stale".**
+
+```text
+// Build gera:
+app.a3b4c5.js  (hash do content)
+app.b9c2d1.css
+
+// HTML referencia:
+<script src="/app.a3b4c5.js"></script>
+
+// Deploy novo:
+app.e7f8g2.js  (novo hash)
+app.h4i5j6.css
+
+// HTML referencia:
+<script src="/app.e7f8g2.js"></script>
+
+// Browser:
+- v1: <script src="app.a3b4c5.js"> - cached
+- v2: <script src="app.e7f8g2.js"> - novo request
+```
+
+**Hash = cache busting automatic**.
+**CDN serve v1 forever** (ate expirar
+em 1 ano). **v2 e' novo request**.
+**Sem mix**.
+
+**Vite, Webpack, esbuild** fazem
+isso automatic. **Configure**:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: "assets/[name].[hash].js",
+        chunkFileNames: "assets/[name].[hash].js",
+        assetFileNames: "assets/[name].[hash][extname]",
+      },
+    },
+  },
+});
+```
+
+**Atomic deploy com Vercel/Cloudflare
+Pages.**
+
+**Vercel** faz atomic por default:
+- Cada deploy = **novo** immutable
+  deployment.
+- DNS switch **instant**.
+- Rollback = **1 click** no dashboard
+  (volta pro deployment anterior).
+- Sem downtime.
+
+**Cloudflare Pages** similar: cada
+push = novo deployment, swap
+instant, rollback via dashboard.
+
+**Blue/green deployment.**
+
+```text
+- Blue: versao atual (v1), recebe 100% trafego.
+- Green: nova versao (v2), recebe 0% (staging).
+- Deploy: green pronto, switch DNS/load balancer.
+- Switch: 100% trafego pra green.
+- Rollback: switch de volta pra blue.
+```
+
+**Zero downtime**, **rollback em
+segundos**. **Use** com feature
+flag pra **canary**: 5% trafego pra
+green primeiro, monitor, scale up.
+
+**Canary deployment - "5% primeiro,
+depois 100%".**
+
+```text
+1. Deploy v2 como canary (5% trafego).
+2. Monitor error rate (Sentry), latency, business metrics.
+3. Se OK: scale 25% → 50% → 100%.
+4. Se bad: rollback automatico (volta 100% pro v1).
+```
+
+**Canary** = **blue/green com
+gradual rollout**. **Use feature
+flag** ou **load balancer** com
+weight adjustment.
+
+**Cache invalidation strategies.**
+
+1. **Time-based** (`max-age`):
+   Automatic. Cache expira em N
+   segundos. **Use** pra: API
+   responses, dados que mudam
+   periodicamente.
+
+2. **Tag-based** (`Cache-Tag` header
+   + purge API): Tag arquivos/
+   responses, purge via API.
+   **Use** pra: blog posts, produtos
+   com update.
+
+3. **Content-hash** (filename):
+   Cache **nunca** invalida - novo
+   arquivo = novo request. **Use
+   pra**: JS/CSS/assets.
+
+4. **Surrogate-Key** (Fastly/Cloudflare
+   Enterprise): Tag + purge global.
+   **Use** pra: multi-CDN.
+
+**Cache no Cloudflare.**
+
+```ts
+// Cloudflare Workers - cache API
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    const cache = caches.default;
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    const response = await fetch(request);
+    const cacheable = new Response(response.body, response);
+    cacheable.headers.set("Cache-Control", "public, max-age=3600");
+    ctx.waitUntil(cache.put(request, cacheable));
+    return response;
+  },
+};
+```
+
+**Cloudflare cache** = **edge cache**
+global. **Cache HIT** = response do
+edge, sem ir ao origin.
+
+**Vercel - purge cache.**
+
+```bash
+# Vercel CLI
+vercel cache purge --path=/api/products
+```
+
+**Ou via dashboard**: Settings >
+Data Cache > Purge.
+
+**Cache-Control em Next.js.**
+
+```ts
+// next.config.js
+async headers() {
+  return [
+    {
+      source: "/api/:path*",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=60, stale-while-revalidate=300" },
+      ],
+    },
+    {
+      source: "/_next/static/:path*",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+      ],
+    },
+    {
+      source: "/:path*",
+      headers: [
+        { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+      ],
+    },
+  ];
+}
+```
+
+**3 rules**: API (60s), static
+(1y), pages (revalidate).
+
+**CDN cache vs browser cache.**
+
+- **Browser cache:** **user** device.
+  Por URL, por origin. Persistente.
+- **CDN cache:** **edge location**
+  (Cloudflare, Vercel). Por URL, por
+  edge. Persistente (ate TTL).
+- **Origin cache:** **server** (seu
+  app). In-memory ou disk.
+
+**2 layers de cache** (browser + CDN)
+= **95% das requests nao chega ao
+server**. **Custo** reduzido **10x**.
+
+**Atomic deploy + cache strategy
+= "deploy sem dor".**
+
+```text
+1. Build: gera app.<hash>.js
+2. Test: roda E2E em preview
+3. Atomic deploy: envia build pra CDN
+4. CDN: invalida HTML (1 URL)
+5. HTML novo: referencia app.<hash>.js (novo)
+6. Browser: baixa HTML novo, descobre app.<hash>.js, baixa
+7. CDN serve app.<hash>.js (cache miss 1x, depois hit)
+8. Rollback: 1 click no Vercel, volta pro deployment anterior
+```
+
+**Zero downtime**, **rollback
+instant**, **sem stale**.
+
+## Aprofundamento 🟡
+
+**Surrogate-Key / Cache-Tag.** **CDN
+enterprise** (Cloudflare, Fastly) tem
+**tag-based purge**:
+
+```ts
+// Cloudflare
+response.headers.set("Cache-Tag", "product-123,category-electronics");
+
+// Purge
+await fetch(`https://api.cloudflare.com/.../purge_cache`, {
+  method: "POST",
+  body: JSON.stringify({ tags: ["product-123"] }),
+});
+```
+
+**1 purge** = **todas as URLs com
+aquela tag invalidadas**. **Use** pra:
+CMS publica novo conteudo, atualiza
+produto, etc.
+
+**Service Worker + cache strategy.**
+
+```ts
+// service-worker.ts
+self.addEventListener("fetch", (event) => {
+  if (event.request.destination === "image") {
+    event.respondWith(
+      caches.open("images-v1").then((cache) =>
+        cache.match(event.request).then((cached) => {
+          return (
+            cached ||
+            fetch(event.request).then((response) => {
+              cache.put(event.request, response.clone());
+              return response;
+            })
+          );
+        })
+      )
+    );
+  }
+});
+```
+
+**Service Worker** = **cache custom
+no client**. **Stale-while-revalidate**:
+serve cache, atualiza em background.
+**Use** pra: PWA, offline-first.
+
+**Cache poisoning - "cache entrega
+conteudo errado".** **Risco**: se
+**Vary header** nao setado, **CDN
+cache** user A response e **serve
+pra user B**. **Solucao**: sempre
+`Vary: Cookie, Authorization` em
+response user-specific.
+
+**ETag vs Last-Modified.**
+
+- **ETag:** hash do content. **Mais
+  preciso** (1 byte change = novo
+  ETag). **Use** por default.
+- **Last-Modified:** timestamp.
+  **Menos preciso** (1s granularity).
+
+**Use ETag** por default. **Some
+servers** (S3) usam **ambos** -
+preferem ETag.
+
+**Negative caching.** **Cache de
+"404 Not Found"** = **economizar
+requests repetidos pra URLs que nao
+existem**. **Use** com cuidado:
+**`Cache-Control: public, max-age=60`**
+em 404. **Ataque**: atacante faz
+10K requests pra URLs inexistentes
+= cache poisoned.
+
+**Layered cache.**
+
+```text
+- Browser cache (max-age=31536000, immutable) - 90% hit
+- CDN cache (Cloudflare, max-age=86400) - 5% hit (após browser miss)
+- Origin (server) - 5% reach
+```
+
+**3 layers** = **99% cache hit**.
+**Origin** = **backup** only. **Custo
+de origin** drasticamente reduzido.
+
+**Cache hit ratio (CHR).** **CHR**
+= **% de requests servidos do cache**.
+**CHR 95%** = excelente. **CHR
+80%** = aceitavel. **CHR < 70%** =
+**investigue**.
+
+**Ferramentas**: Vercel Analytics,
+Cloudflare Analytics, browser
+DevTools Network tab (size from
+cache).
+
+**Rollback strategies.**
+
+1. **Vercel dashboard:** 1 click
+   (rollback).
+2. **Cloudflare Pages:** dashboard
+   ou API.
+3. **Custom CI:** `git revert`
+   commit + redeploy.
+4. **Feature flag:** toggle off
+   (instant, no deploy).
+5. **Blue/green:** switch DNS pra
+   blue (instant).
+
+**Feature flag rollback** e'
+**mais rapido** (30s) que **redeploy
+rollback** (5-15min). **Use** feature
+flag pra **componentes criticos**.
+
+**Zero-downtime migration.** **Migrar
+DB** sem downtime:
+
+1. **Adicionar nova coluna** (v2)
+   sem remover v1.
+2. **Codigo escreve** em ambas
+   (dual-write).
+3. **Backfill** v2 com dados v1
+   (background job).
+4. **Codigo le** de v2 (com fallback
+   pra v1).
+5. **Codigo para** de escrever em
+   v1.
+6. **Drop v1** (cleanup).
+
+**6 steps** = **zero downtime**,
+**rollback** em qualquer step.
+
+**Leitura recomendada:**
+
+- [web.dev - HTTP Caching](https://web.dev/articles/http-cache) - best practices, headers, patterns.
+- [MDN - HTTP Cache Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching) - referencia completa, Cache-Control, ETag.
+- [Cloudflare - Cache Rules](https://developers.cloudflare.com/cache/how-to/cache-rules/) - rules customizadas, tags, purge.
+
+> Dica: o erro mais comum em deploy
+> e' **"cache stale"** (user ve
+> versao antiga apos deploy). **3
+> fixes**: (1) **content-hash em
+> filename** (Vite/Webpack fazem
+> automatic), (2) **HTML sempre
+> revalidate** (`max-age=0,
+> must-revalidate`), (3) **CDN
+> purge HTML** (NAO assets com
+> hash). **Sem isso** = user ve
+> JS/CSS novo + HTML antigo =
+> **app quebrado**. **Atomic deploy
+> + cache strategy correta** =
+> **zero dor**.
+
+No proximo no (ultimo), vamos
+**projeto final**: deploy de SPA + edge
+function com preview por PR, ISR,
+image optimization, e atomic deploys.
+O "hello world" de apps em producao
+moderna.
+
+<Checkpoint
+  challenge="Implemente a função `configurarCache(conteudo)` que retorna o header Cache-Control apropriado por tipo de conteudo. Recebe: conteudo = { tipo: 'static-hash'|'html'|'api-publica'|'api-privada'|'mutation', maxAge: number (opcional, em segundos) }. Regras: tipo 'static-hash' → 'public, max-age=31536000, immutable' (1 ano, ignore maxAge). tipo 'html' → 'public, max-age=0, must-revalidate' (ignore maxAge). tipo 'api-publica' → `public, max-age=${maxAge || 60}, stale-while-revalidate=300`. tipo 'api-privada' → 'private, no-cache' (ignore maxAge). tipo 'mutation' → 'no-store' (ignore maxAge). Retorne o string Cache-Control."
+  starterCode={`// Implemente configurarCache(conteudo) que retorna o header
+// Cache-Control apropriado por tipo de conteudo.
+//
+// Schema de entrada:
+//   conteudo = {
+//     tipo: 'static-hash' | 'html' | 'api-publica' | 'api-privada' | 'mutation',
+//     maxAge?: number
+//   }
+//
+// Schema de saida:
+//   string (valor do header Cache-Control)
+//
+// Regras:
+// - 'static-hash': 'public, max-age=31536000, immutable' (ignore maxAge)
+// - 'html': 'public, max-age=0, must-revalidate' (ignore maxAge)
+// - 'api-publica': `public, max-age=${maxAge || 60}, stale-while-revalidate=300`
+// - 'api-privada': 'private, no-cache' (ignore maxAge)
+// - 'mutation': 'no-store' (ignore maxAge)
+function configurarCache(conteudo) {
+  return '';
+}
+
+const _r1 = configurarCache({ tipo: 'static-hash' });
+console.log(_r1);
+
+const _r2 = configurarCache({ tipo: 'html' });
+console.log(_r2);
+
+const _r3 = configurarCache({ tipo: 'api-publica', maxAge: 300 });
+console.log(_r3);
+
+const _r4 = configurarCache({ tipo: 'api-publica' });
+console.log(_r4);
+
+const _r5 = configurarCache({ tipo: 'api-privada' });
+console.log(_r5);
+
+const _r6 = configurarCache({ tipo: 'mutation' });
+console.log(_r6);`}
+  expected='public, max-age=31536000, immutable
+public, max-age=0, must-revalidate
+public, max-age=300, stale-while-revalidate=300
+public, max-age=60, stale-while-revalidate=300
+private, no-cache
+no-store'
+  slug="edge-deploy-frontend"
+  nodeId="atomic-deploys-e-cache"
+/>
+
+<Quiz
+  question="Qual a diferenca entre 'atomic deploy' e 'incremental deploy', e por que atomic e' melhor para zero downtime?"
+  options={[
+    {
+      text: "Atomic deploy = nova versao INTEIRA substitui a antiga como unidade atomica (user sempre ve versao consistente). Incremental = deploy arquivo por arquivo (user pode receber HTML v2 + JS v1 = app quebrado). Atomic garante zero downtime e rollback instant (1 click no Vercel/Cloudflare Pages). Incremental e' mais rapido mas causa mix de versoes.",
+      correct: true,
+      explanation:
+        "A diferenca central: (1) **Atomic deploy** = **nova versao inteira** (HTML + JS + CSS + assets) vai pro CDN como **unidade atomica**. DNS/load balancer faz **swap instant** (1 click no Vercel/Cloudflare). User sempre ve versao **consistente** (v1 ou v2, nunca mix). (2) **Incremental deploy** = **arquivo por arquivo** (deploy HTML, depois JS, depois CSS). User pode receber **HTML v2 + JS v1** = **app quebrado** (HTML novo espera API nova do JS novo). **Atomic** resolve: (a) **zero downtime** (swap instant, nao tem janela de inconsistencia), (b) **rollback instant** (1 click volta pro deployment anterior), (c) **consistencia** (user ve versao coerente). **Incremental** so' faz sentido em **apps sem dependencia** entre arquivos (raro). **Vercel, Cloudflare Pages, Netlify** fazem atomic por default. **Custom CI** precisa garantir atomic via 'deploy tudo de uma vez' (git push, kubectl rollout, etc). **Content-hash em filename** (app.a3b4c5.js) garante que **CDN** pode cachear assets antigos indefinidamente (1 ano) sem stale.",
+    },
+    {
+      text: "Atomic deploy e' o mesmo que canary deploy.",
+      correct: false,
+      explanation:
+        "Falso. **Atomic deploy** = **swap instant** de 100% trafego. **Canary deploy** = **rollout gradual** (5% → 25% → 50% → 100%) com monitor. **Atomic e' binario** (v1 OU v2). **Canary e' gradual** (v1 e v2 simultaneos por um tempo). **Atomic** = **simples, rapido, mas sem validacao de producao** antes de 100% rollout. **Canary** = **complexo, mas valida em prod antes de 100%**. **Blue/green** = **atomic reversivel** (green pronto, mas blue ainda recebe trafego ate switch). **Use atomic** pra: deploy rapido com bom test coverage (baixo risco). **Use canary** pra: deploy grande com risco medio-alto (valida em prod). **Use blue/green** pra: deploy critico com rollback instant.",
+    },
+    {
+      text: "Atomic deploy nao importa - o importante e' ter CI/CD.",
+      correct: false,
+      explanation:
+        "Falso. **CI/CD** (Continuous Integration/Continuous Deployment) e' **automatizar build + test + deploy**. **Atomic** e' **garantir consistencia** durante deploy. **CI/CD sem atomic** = **incremental** (deploy arquivo por arquivo) = **mix de versoes** = **app quebrado em prod**. **Atomic** + **CI/CD** = **deploy consistente** com consistencia garantida. **Em 2026**, **Vercel/Cloudflare Pages** fazem **CI/CD + atomic** por default. **Custom CI** (GitHub Actions) precisa **garantir atomic** (deploy so' quando TODOS os arquivos estao prontos). **Sem atomic**, deploy e' **bomba-relogio**: 1 deploy grande = **janela de inconsistencia** = **user reclama no Twitter**.",
+    },
+  ]}
+/>

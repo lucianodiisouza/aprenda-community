@@ -1,0 +1,467 @@
+---
+id: de-onde-vem-onde-vai
+title: "De onde vem, onde vai: build output, runtime, edge vs node vs serverless"
+resources:
+  - title: "Cloudflare - Edge Network (EN)"
+    url: https://www.cloudflare.com/network/
+    lang: en
+    type: doc
+    free: true
+  - title: "Vercel - Edge Functions (EN)"
+    url: https://vercel.com/docs/functions/edge-functions
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Rendering on the Web (EN)"
+    url: https://web.dev/articles/rendering-on-the-web
+    lang: en
+    type: article
+    free: true
+---
+
+Voce rodou `npm run build`, gerou um
+`dist/` com HTML/CSS/JS, e fez `git
+push`. **Mas o que acontece entre o
+codigo fonte e o user final?** Esse
+no cobre **o pipeline completo**: de
+**codigo fonte** ate **HTML servida
+no browser**, passando por **build
+output** (static vs SSR vs edge) e
+**runtime** (Node, serverless, edge).
+
+Entender o pipeline e' **essencial**
+pra debugar performance ("por que LCP
+e' 8s?"), escolher stack ("SSR ou
+SPA?"), e **otimizar** ("faço build
+estatico ou server-side?"). **Decisao
+errada aqui** = **prod lento** ou
+**custo alto** ou **ambos**.
+
+Voce sai de "build e deploy" pra
+"pipeline completo: build, runtime,
+edge - e quando usar cada".
+
+## O essencial 🟢
+
+**O pipeline: codigo → user.**
+
+<Mermaid
+  chart={`flowchart LR
+    Src[Codigo fonte: JS, TS, HTML, CSS] --> Build[Build tool: Vite, Webpack, esbuild]
+    Build --> Output{Output type?}
+    Output -->|Static| Bundle[HTML + CSS + JS bundle]
+    Output -->|SSR| Server[Server-side render: HTML dinamico]
+    Output -->|SSG| PreRender[Pre-render: HTML estatico em build time]
+    Output -->|ISR| ISR[Incremental: pre-render + on-demand regen]
+    Output -->|Edge| Edge[Edge function: HTML em edge location]
+
+    Bundle --> CDN[CDN: serve static files]
+    PreRender --> CDN
+    Server --> Runtime{Runtime?}
+    ISR --> Runtime
+    Edge --> EdgeRuntime[Edge runtime: V8 isolate]
+
+    Runtime -->|Node server| Node[Node: long-running process]
+    Runtime -->|Serverless| Lambda[AWS Lambda: cold start, scale 0]
+    Runtime -->|Edge| EdgeFn[Cloudflare Workers: <5ms cold start]
+
+    CDN --> User[User no browser]
+    Node --> User
+    Lambda --> User
+    EdgeFn --> User`}
+  caption="Pipeline: codigo fonte → build tool → output (static/SSR/SSG/ISR/edge) → runtime (Node/serverless/edge) → CDN → user. Decisao 'qual output + qual runtime' impacta performance, custo, e complexidade. Em 2026, edge e' o default pra latencia <100ms; serverless pra escala zero; Node pra apps com muita CPU/memoria."
+/>
+
+**Os 5 tipos de build output.**
+
+1. **Static Site Generation (SSG).**
+   HTML pre-renderizado em **build
+   time**. Cada pagina = 1 arquivo
+   HTML. **Mais rapido** (CDN cache),
+   **mais barato** (storage), **menos
+   dinamico** (conteudo fixo ate
+   rebuild). **Use pra**: blog,
+   landing page, docs, marketing.
+
+2. **Server-Side Rendering (SSR).**
+   HTML gerado em **request time** no
+   server. Cada request = 1 render.
+   **Dinamico**, **mais lento** (TTFB
+   maior), **mais caro** (server
+   sempre running). **Use pra**: apps
+   com dados em tempo real (dashboards,
+   user-specific content).
+
+3. **Incremental Static Regeneration
+   (ISR).** SSG com **revalidacao
+   on-demand**. Paginas pre-render +
+   **regeneradas quando stale**.
+   **Hibrido**: rapido (cache) +
+   dinamico (update). **Use pra**:
+   e-commerce (produto atualiza),
+   blog com comentarios.
+
+4. **Client-Side Rendering (CSR /
+   SPA).** HTML minimo, JS faz render
+   no client. **Menos trabalho no
+   server**, **mais trabalho no
+   client**. **Use pra**: apps com
+   muito estado (Gmail, Figma).
+
+5. **Edge SSR.** SSR mas em **edge
+   locations** (V8 isolates, <5ms
+   cold start). **Latencia baixa**
+   (proximo do user), **dinamico**,
+   **limitado** (10-50ms CPU max).
+   **Use pra**: auth checks, A/B
+   tests, geo-redirects.
+
+**Os 3 tipos de runtime.**
+
+1. **Node server (long-running).**
+   Servidor tradicional. Express,
+   Fastify, Next.js, etc. **Sempre
+   running**, **CPU/memoria
+   compartilhada**, **scale vertical**.
+   Custo **fixo** (mesmo com 0 users).
+
+2. **Serverless (Lambda, Functions).**
+   AWS Lambda, Vercel Functions,
+   Cloudflare Workers (tambem). **Cold
+   start** (50-500ms), **scale
+   automatica** (0 → 1000 em segundos),
+   **custo por request** (sub-ms
+   cobrado). **Limitado** (10min max,
+   memoria 128MB-10GB).
+
+3. **Edge (V8 isolate).** Cloudflare
+   Workers, Vercel Edge, Deno Deploy.
+   **Cold start < 5ms**, **scale
+   global**, **limitado** (10-50ms
+   CPU, 128MB memoria, **sem Node
+   APIs**). **Use pra**: latency-
+   critical, geo-distributed, I/O
+   bound.
+
+**A escolha: SSG vs SSR vs CSR vs
+Edge.**
+
+| Caso                            | Escolha             |
+| ------------------------------- | ------------------- |
+| Blog, docs, marketing            | SSG                 |
+| Dashboard, user-specific         | SSR ou CSR          |
+| E-commerce, catalogo             | ISR ou SSR          |
+| Auth check, A/B test, geo        | Edge                |
+| Real-time collab (Figma-like)    | CSR                 |
+| Search results, server-heavy     | SSR (Node)          |
+| API gateway, low latency         | Edge                |
+
+**A pergunta**: "onde o HTML e'
+gerado?" Define latencia, custo,
+complexidade.
+
+**Build tools - Vite vs Webpack vs
+esbuild.**
+
+- **Vite** (mais usado em 2026): **dev
+  server** rapido (esbuild), **build**
+  com Rollup. SPA, SSR, SvelteKit,
+  Nuxt, Astro. **Default** pra
+  maioria.
+- **Webpack**: mais antigo, mais
+  configuravel, mais lento. Usado em
+  apps legados.
+- **esbuild**: build **rapido** mas
+  sem HMR dev server. Usado como
+  motor de Vite e standalone.
+- **Turbopack** (Vercel): sucessor
+  "spiritual" do Webpack, em Rust,
+  **10x mais rapido**. Em rollout em
+  Next.js 14+.
+- **Rollup**: build pra libraries,
+  nao apps.
+
+**CDN - "por que importa?".** **CDN**
+(Content Delivery Network) **cachea
+arquivos estaticos** em **edge
+locations** (200+ pontos globais).
+**User pega HTML/CSS/JS do CDN mais
+proximo** = **latencia minima**.
+
+**Sem CDN**: server unico em SP, user
+em Toca da Onca (PA) = 200ms latencia.
+**Com CDN**: user pega de edge em
+Belem = 30ms latencia. **CDN e' a
+forma mais barata de melhorar
+performance**.
+
+**Atomic deploys - "deploy nao pode
+quebrar".** **Atomic deploy** = nova
+versao **inteira** (NAO arquivo por
+arquivo) substitui a antiga. **User
+sempre ve versao consistente** (v1
+ou v2, nunca mix).
+
+**Sem atomic deploy**: deploy de
+`/index.html` (v2) + `/app.js` (v1)
+= **app quebrado** (HTML novo espera
+JS novo). **Com atomic deploy**: tudo
+v2 ou tudo v1. **Vercel, Cloudflare
+Pages, Netlify** fazem atomic por
+default.
+
+**Blue/green deployment.** **2
+ambientes** (blue = atual, green =
+novo). **Switch** de blue pra green
+e' **instantaneo** (DNS switch ou load
+balancer). **Rollback** = switch de
+volta. **Zero downtime**, **rollback
+facil**.
+
+**Canary deployment.** **5-10% do
+trafego** vai pra **green** primeiro.
+**Monitor** (Sentry, error rate). Se
+OK, **scale up** pra 100%. Se bad,
+**rollback** automatico. **Pattern
+classico de feature flag + deploy**.
+
+**Preview environments por PR.** Cada
+**PR** ganha **URL unica** (ex:
+`pr-123.meusite.com`). **PM revisa
+visual** sem checkout local. **CI
+roda build, deploy, URL gerada**.
+**Vercel, Cloudflare Pages, Netlify**
+fazem isso por default.
+
+**Quando usar cada.**
+
+- **SSG (Vite + SSG plugin, Astro,
+  Next.js SSG):** blog, docs, marketing.
+  **Mais rapido e barato**, menos
+  dinamico.
+- **SSR (Next.js, Remix, SvelteKit):**
+  dashboard, user-specific. Mais
+  dinamico, mais caro.
+- **CSR (Vite + React puro, Vite + Vue):**
+  apps internos, ferramentas. Menos
+  server work.
+- **Edge (Cloudflare Workers, Vercel
+  Edge):** latencia < 100ms,
+  geo-distributed, I/O bound.
+- **Serverless (Lambda, Functions):**
+  APIs simples, eventos async.
+- **Node server (Render, Railway,
+  EC2):** apps com muita CPU/memoria,
+  long-running processes.
+
+## Aprofundamento 🟡
+
+**TTFB vs FCP vs LCP - o que cada
+output type afeta.**
+
+- **TTFB (Time To First Byte):** tempo
+  ate o **primeiro byte** do HTML
+  chegar. SSG: 10-50ms (CDN). SSR:
+  100-500ms (render no server). CSR:
+  10-50ms (HTML minimo).
+- **FCP (First Contentful Paint):**
+  quando o **primeiro conteudo**
+  aparece. SSG: rapido. SSR: medio.
+  CSR: lento (espera JS).
+- **LCP (Largest Contentful Paint):**
+  quando o **maior elemento**
+  aparece. SSG: rapido. SSR: medio
+  (imagens em server-side). CSR:
+  lento (tudo no client).
+
+**SSG** vence em **todos** se conteudo
+e' estatico. **SSR** vence em
+**conteudo dinamico**. **CSR** perde
+em **todos** exceto apps internos.
+
+**Edge functions vs Serverless - o
+que muda.**
+
+| Feature         | Edge (V8 isolate) | Serverless (Lambda) |
+| --------------- | ----------------- | ------------------- |
+| **Cold start**  | < 5ms             | 50-500ms            |
+| **Max duration**| 30s-5min          | 15min               |
+| **Memory**      | 128MB             | 128MB-10GB          |
+| **CPU**         | limitado          | full                |
+| **Node APIs**   | NAO (V8 isolate)  | sim                 |
+| **Geolocation** | sim (sempre edge) | NAO (1 regiao)      |
+| **Custo**       | $0.50/M req      | $0.20/M req         |
+| **Limite req/s**| 1000+ (V8)        | 1000+ (auto)        |
+
+**Edge** = **latencia**, **scale
+global**, **I/O bound**. **Serverless**
+= **CPU/memoria**, **long-running**,
+**Node APIs**.
+
+**Quando NAO usar edge.** **CPU
+pesado** (machine learning, image
+processing) = **Node server** ou
+**GPU instance**. **Long-running
+connections** (WebSocket, SSE) =
+**Node server** (limite 5min em edge).
+**Stateful** (sessions, caches) =
+**Node server** ou **serverless com
+Redis externo**. **Edge e' limitado**
+por design.
+
+**Cold start - o killer do
+serverless.** **Cold start** = tempo
+entre "request chega" e "codigo
+comeca a rodar". **Edge** (< 5ms),
+**Lambda** (50-500ms primeira vez,
+warm = 1-10ms). **Mitigacoes**:
+**provisioned concurrency** (Lambda),
+**keep-warm pings** (1 req/min),
+**bundle minimo** (sem deps pesadas).
+
+**Build artifact - "o que vai pro
+prod?".** **Build** gera **artefatos**:
+HTML, CSS, JS, imagens, fonts. **Edge
+functions** = 1 arquivo JS. **SSR
+server** = Docker image ou Node
+process. **Static** = pasta `dist/`
+ou `.output/`. **Tamanho importa**:
+bundle grande = mais tempo de
+download, mais LCP ruim.
+
+**Bundle size optimization.** Em
+2026, **budget de bundle** = 200KB
+gzipped. **Ferramentas**: Vite
+analyzer, Webpack Bundle Analyzer,
+bundlephobia.com. **Code splitting**
+automatic (Vite). **Tree shaking**
+automatic. **Lazy loading** de rotas
+(React.lazy, defineAsyncComponent).
+
+**Output e SEO.** **SSG** e **SSR**
+sao **SEO-friendly** (HTML pronto
+pro crawler). **CSR** (SPA) **NAO**
+- crawlers veem HTML vazio, precisam
+executar JS. **Solucao**: **SSR** ou
+**prerendering** (pre-render SPA
+build). **Google** indexa JS, mas
+**Bing, DuckDuckGo, Baidu** ainda
+preferem HTML.
+
+**Output e "time to interactive".**
+**SSG** = interativo rapido (JS
+carrega, app roda). **SSR** = HTML
+rapido, JS hidratacao depois
+(delay). **CSR** = "tela branca" ate
+JS carregar. **Streaming SSR** (Next.js
+App Router) = HTML streamed em
+chunks, interativo progressivo.
+
+## Pra quem quer ir mais alem 🔴
+
+**Theo - edge-first framework (2024+).**
+**Theo** e' framework de Cloudflare
+que da **SSG + SSR + edge functions**
+num unico modelo. Mais novo que
+Next.js, focado em edge-first. **Em
+2026**, ainda **early** mas com
+crescimento.
+
+**Astro - islands architecture.**
+**Astro** gera HTML estatico (SSG)
+com **"islands" de JS** (componentes
+interativos). **Zero JS por default**
+(site mais rapido), JS so onde
+necessario. **Excelente** pra
+marketing + docs + blog.
+
+**Qwik - resumability.** **Qwik**
+"resumiza" em vez de "hidrata": nao
+roda JS no client ate interacao.
+**TTI quase zero**. **Excelente**
+pra Core Web Vitals.
+
+**Edge DB - Cloudflare D1, Turso,
+Neon.** SQLite-on-the-edge. **D1**
+(Cloudflare) ja' tem **1M databases**,
+**1B reads/dia** gratis. **Turso**
+(LibSQL fork) tem replicas globais.
+**Neon** e' Postgres serverless. **Use**
+pra edge apps com dados.
+
+**Edge AI - Cloudflare AI, Vercel AI
+SDK.** **Cloudflare Workers AI** =
+LLMs rodando **no edge** (Llama, Mistral,
+etc). **Vercel AI SDK** = streaming
+LLM em edge functions. **Use** pra
+chatbots, completion, embeddings sem
+server.
+
+**Cold start mitigation strategies.**
+
+- **Bundle minimo:** sem deps
+  pesadas, tree-shake, code-split.
+- **Provisioned concurrency**
+  (Lambda): N instances sempre
+  warm.
+- **Keep-warm pings:** 1 req/min
+  (NÃO em prod, só em dev).
+- **Edge:** < 5ms cold start
+  (V8 isolate), sem warmup.
+
+**Output por mercado/geografia.**
+**User na China** = edge em Hong
+Kong/Singapore melhor que US East.
+**Multi-region** = edge (Vercel,
+Cloudflare) melhor que Node
+server unico.
+
+**Leitura recomendada:**
+
+- [Cloudflare - Edge Network](https://www.cloudflare.com/network/) - 200+ edge locations, latencia global.
+- [Vercel - Edge Functions](https://vercel.com/docs/functions/edge-functions) - edge runtime, ISR, on-demand revalidation.
+- [web.dev - Rendering on the Web](https://web.dev/articles/rendering-on-the-web) - SSG vs SSR vs CSR vs ISR, tradeoffs, quando usar.
+
+> Dica: o erro mais comum em build/
+> deploy e' **escolher stack antes de
+> entender o caso de uso**. "Vou
+> fazer SSR" sem saber se precisa =
+> complexidade extra. **Perguntas
+> certas primeiro**: (1) Conteudo e'
+> estatico ou dinamico? (2) Latencia
+> importa (latency-critical)? (3)
+> Escala esperada (100 ou 1M users)?
+> (4) Budget (custo de infra)? **Com
+> respostas**: SSG/SSR/CSR/edge cai
+> naturalmente. **Sem respostas**:
+> "default moderno" = **Next.js com
+> ISR + edge** (cobre 80%).
+
+No proximo no, vamos **Cloudflare
+Workers**: V8 isolate runtime, KV,
+R2, D1, Durable Objects, e como
+**deployar edge functions** na pratica.
+
+<Quiz
+  question="Qual a diferenca entre build outputs (SSG, SSR, CSR, ISR, Edge) e quando usar cada um?"
+  options={[
+    {
+      text: "SSG = HTML pre-renderizado em build time (blog, docs, marketing, mais rapido/barato). SSR = HTML gerado em request time no server (dashboards, user-specific, mais dinamico). CSR/SPA = HTML minimo, JS renderiza no client (apps com muito estado, Gmail/Figma). ISR = SSG com revalidacao on-demand (e-commerce, blog com atualizacoes). Edge = SSR em edge location (latencia < 100ms, geo-distributed, I/O bound). A escolha impacta performance, custo, e complexidade.",
+      correct: true,
+      explanation:
+        "Os 5 outputs tem tradeoffs diferentes: (1) **SSG** = HTML gerado em **build time** (1x), servida do CDN. **Mais rapido** (TTFB 10-50ms), **mais barato** (storage), **menos dinamico** (rebuild pra atualizar). **Use**: blog, docs, marketing. (2) **SSR** = HTML gerado em **request time** no server. **Mais dinamico**, **mais lento** (TTFB 100-500ms), **mais caro** (server running). **Use**: dashboards, user-specific. (3) **CSR/SPA** = HTML minimo, **JS renderiza no client**. **Menos server work**, **mais client work**, **SEO problematico**. **Use**: apps com muito estado (Gmail, Figma). (4) **ISR** = SSG + **revalidacao on-demand** (Next.js 9+). **Hibrido**: rapido (cache) + dinamico (update). **Use**: e-commerce (produto atualiza), blog com comentarios. (5) **Edge** = SSR em **V8 isolate** no edge location. **Cold start < 5ms**, **latencia minima** (proximo do user), **limitado** (10-50ms CPU, sem Node APIs). **Use**: auth checks, A/B tests, geo-redirects. **Decisao** impacta **performance** (TTFB, LCP), **custo** (CDN vs server), **complexidade** (cache, revalidation).",
+    },
+    {
+      text: "SSR e' sempre melhor que SSG porque conteudo dinamico vence estatico.",
+      correct: false,
+      explanation:
+        "Falso. **SSG vence em performance e custo** quando conteudo **e' estatico ou muda raramente** (blog, docs, marketing). **TTFB 10-50ms** (CDN) vs SSR 100-500ms (server). **Custo**: SSG = storage, SSR = compute (sempre running). **'Sempre SSR'** = complexidade desnecessaria. **Regra pratica**: (1) Conteudo **estatico** = SSG. (2) Conteudo **dinamico mas cacheable** = ISR. (3) Conteudo **user-specific** = SSR. (4) Conteudo **user-specific + latency-critical** = Edge SSR. (5) Apps com **muito estado client-side** = CSR. **Cada um** tem **caso de uso**. **Default em 2026** = Next.js com **ISR + Edge** (cobre 80%).",
+    },
+    {
+      text: "Edge e' sempre mais rapido - use pra tudo.",
+      correct: false,
+      explanation:
+        "Falso. **Edge tem limitacoes reais**: (1) **CPU max 10-50ms** (machine learning, image processing nao cabem), (2) **memoria 128MB max**, (3) **sem Node APIs** (algumas libs nao funcionam), (4) **cold start 5ms** (bom) mas **max duration 30s-5min** (long-running tasks nao cabem), (5) **stateful = problematico** (sem sessao compartilhada facil). **Use edge** pra: auth check, A/B test, geo-redirect, lightweight API, BFF (backend for frontend). **NAO use** pra: long-running computation, ML inference pesado, WebSocket longo, processamento de arquivos grandes. **'Edge pra tudo'** = **trabalho de reescrever Node code** sem ganho. **Trade-off real** = **latencia < 5ms cold start** vs **CPU/memoria limitados**. **Use a ferramenta certa** pro caso.",
+    },
+  ]}
+/>

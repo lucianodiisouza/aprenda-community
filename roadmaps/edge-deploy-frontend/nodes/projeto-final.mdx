@@ -1,0 +1,422 @@
+---
+id: projeto-final
+title: "Projeto final: deploy SPA + edge function com preview por PR"
+resources:
+  - title: "Vercel - Deploy (EN)"
+    url: https://vercel.com/docs/deployments
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare Pages - Get Started (EN)"
+    url: https://developers.cloudflare.com/pages/get-started/
+    lang: en
+    type: doc
+    free: true
+  - title: "Next.js - Production Checklist (EN)"
+    url: https://nextjs.org/docs/app/building-your-application/deploying/production-checklist
+    lang: en
+    type: doc
+    free: true
+---
+
+Hora de unir tudo. Voce vai deployar
+um **app completo em prod** integrando
+os 6 nos da trilha: build output
+otimizado, Cloudflare Workers ou Vercel
+Edge, image optimization, preview
+environments por PR, atomic deploys com
+cache, e **rollback instant**. E' o
+**workflow real** de "codigo em
+producao" de qualquer app moderno.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes de
+comecar.
+
+## O que voce vai construir
+
+Um **app em prod** entregue como:
+
+- **Build otimizado** (Vite + content
+  hash, bundle < 200KB).
+- **Image optimization** (Next/Image
+  ou Cloudflare Images, AVIF/WebP,
+  responsive).
+- **Edge function** (Cloudflare
+  Worker ou Vercel Edge) pra
+  geo-redirect ou auth check.
+- **Preview environment** por PR
+  (URL unica, envs isoladas).
+- **Atomic deploy** com cache
+  strategy correta.
+- **Rollback** em < 30s via dashboard.
+
+Stack obrigatoria:
+
+- **Frontend:** Vite + React (ou
+  Next.js, Vue/Svelte).
+- **Build:** Vite (content hash
+  automatic).
+- **Deploy:** Vercel (Pro) ou
+  Cloudflare Pages (free).
+- **Edge function:** Cloudflare
+  Workers (V8 isolate) ou Vercel Edge
+  runtime.
+- **CDN/Image:** Cloudflare Images
+  ou Next/Image.
+- **CI:** GitHub Actions.
+
+## Objetivo
+
+- Praticar **workflow completo de
+  deploy moderno**: build, edge,
+  images, preview, atomic, rollback.
+- Construir app com **LCP < 2.5s**
+  (Core Web Vital).
+- Aplicar **cache strategy** correta
+  por tipo de conteudo.
+- Configurar **preview environment**
+  por PR com envs isoladas.
+- **Medir tempo de deploy** e
+  **rollback**.
+
+## Requisitos (minimo)
+
+Build:
+
+- [ ] Vite (ou Webpack) com
+  `output.entryFileNames: "assets/[name].[hash].js"`.
+- [ ] Bundle gzipped < 200KB.
+- [ ] **Code splitting** automatic
+  (rotas lazy loaded).
+- [ ] **Tree shaking** remove unused
+  exports.
+- [ ] **Source maps** uploaded
+  (debug em prod).
+
+Image Optimization:
+
+- [ ] Next/Image (ou Cloudflare
+  Images) com AVIF/WebP automatic.
+- [ ] LCP image com `priority` e
+  `fetchpriority="high"`.
+- [ ] Lazy loading nas below-the-fold.
+- [ ] `width`/`height` em TODAS
+  imagens (zero CLS).
+- [ ] Responsive `srcset` automatic.
+
+Edge Function:
+
+- [ ] 1+ edge function (auth check,
+  geo-redirect, ou A/B test).
+- [ ] Roda em < 5ms cold start.
+- [ ] Test em `wrangler dev` ou
+  Vercel preview.
+
+Preview Environments:
+
+- [ ] Cada PR gera URL unica.
+- [ ] Bot posta URL no PR comment
+  (Vercel automatic).
+- [ ] Env vars de preview isoladas
+  (DATABASE_URL, STRIPE_KEY, SENTRY_DSN).
+- [ ] Preview e' deletado quando PR
+  fecha.
+
+Atomic Deploy:
+
+- [ ] `Cache-Control: public,
+  max-age=31536000, immutable` em
+  static assets.
+- [ ] `Cache-Control: public,
+  max-age=0, must-revalidate` em
+  HTML.
+- [ ] `Cache-Control: public,
+  max-age=60, stale-while-revalidate=300`
+  em API GET.
+- [ ] `Cache-Control: private,
+  no-store` em API user-specific.
+- [ ] `ETag` em responses
+  cacheable.
+- [ ] **Content hash** em filename
+  de JS/CSS.
+- [ ] Atomic deploy via Vercel
+  (dashboard) ou Cloudflare Pages.
+
+Rollback:
+
+- [ ] 1 click rollback no Vercel
+  dashboard.
+- [ ] Rollback < 30s.
+- [ ] Cache invalidado em rollback
+  (HTML purge, NAO assets com
+  hash).
+
+Validacao:
+
+- [ ] Lighthouse Performance score
+  >= 90.
+- [ ] LCP < 2.5s.
+- [ ] CLS < 0.1.
+- [ ] Bundle < 200KB.
+- [ ] Preview URL funciona em 30s
+  apos abrir PR.
+- [ ] Atomic deploy: 0 downtime
+  medido (uptime robot).
+- [ ] Rollback: 0 downtime medido.
+
+## Estrutura do relatorio (`deploy-ready.md`)
+
+```markdown
+# Deploy Ready - [nome-do-app]
+
+## TL;DR
+
+- URL: https://meuapp.com
+- Stack: Vite + React + Cloudflare Pages
+- Bundle: X KB gzipped
+- LCP: X ms
+- Preview URLs: working
+- Atomic deploy: working
+- Rollback: < 30s
+
+## Arquitetura
+
+### Build
+- Vite, content hash automatic
+- Bundle: X KB gzipped
+- Code splitting: rotas lazy loaded
+- Source maps: uploaded
+
+### Image Optimization
+- AVIF/WebP automatic (Next/Image)
+- LCP image: priority + preload
+- Lazy loading: below the fold
+- Responsive: srcset automatic
+
+### Edge Function
+- Path: /api/auth-check
+- Runtime: V8 isolate
+- Cold start: < 5ms
+- Latency p50: X ms
+
+### Preview Environment
+- Cada PR: URL unica
+- Env vars: isoladas por PR
+- Cleanup: automatic quando PR fecha
+
+### Cache Strategy
+| Recurso | Cache-Control |
+| ------- | ------------- |
+| /assets/* (hash) | public, max-age=31536000, immutable |
+| /* (HTML) | public, max-age=0, must-revalidate |
+| /api/products (GET) | public, max-age=60, swr=300 |
+| /api/user (auth) | private, no-store |
+
+## Resultados
+
+- Lighthouse: 95
+- LCP: 1.8s
+- CLS: 0.05
+- Time to Interactive: 2.1s
+- Build time: 45s
+- Deploy time: 1m 20s
+- Rollback time: 25s
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Canary deploy** com 5% →
+  100% rollout via feature flag.
+- [ ] **Multi-region** (Cloudflare
+  global, Vercel multi-region).
+- [ ] **Edge database** (Neon
+  branching, Turso replicas).
+- [ ] **Image CDN custom** (Cloudflare
+  Images on-the-fly transform).
+- [ ] **Synthetic monitoring** (Lighthouse
+  CI em cada PR).
+- [ ] **Real User Monitoring** (Sentry
+  Performance, web-vitals).
+- [ ] **Service Worker** + cache
+  custom (stale-while-revalidate).
+- [ ] **Surrogate-Key / Cache-Tag**
+  pra purge granular.
+- [ ] **A/B testing** no edge (50%
+  variant A, 50% B).
+- [ ] **Streaming SSR** (Next.js
+  Suspense, Astro islands).
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Setup minimo:** Vite + React
+   app, build, deploy no Vercel
+   (free tier). URL em 5min.
+2. **Source maps:** Vite plugin
+   `@sentry/vite-plugin` (se usa
+   Sentry) ou manual upload.
+3. **Image opt:** Next/Image ou
+   converter imagens para WebP
+   (Squoosh CLI). Adicionar
+   `width`/`height`.
+4. **Cache headers:** Configure
+   `next.config.js` ou response
+   headers em Worker.
+5. **Edge function:** 1 Worker
+   simples (geo-redirect ou auth).
+6. **Preview:** GitHub Actions
+   (ou Vercel automatic).
+7. **Atomic deploy:** Vercel
+   default. Test rollback 1x.
+8. **Lighthouse:** rode antes/
+   depois, garanta >= 90.
+
+**Armadilhas comuns:**
+
+- **Bundle gigante.** App sem code
+  splitting = 1MB JS = LCP 10s.
+  **Solucao**: lazy load rotas,
+  dynamic import.
+- **Imagens sem `width`/`height`.**
+  CLS alto, layout shift, score
+  ruim. **Solucao**: sempre
+  declare.
+- **LCP image sem `priority`.**
+  Browser baixa outras imagens
+  primeiro. **Solucao**: marque
+  LCP com `priority`.
+- **Cache stale.** `app.js` novo
+  com cache 1y, HTML referencia
+  `app.js` antigo (cached).
+  **Solucao**: content hash em
+  filename.
+- **Preview com secrets de prod.**
+  Stripe real, DB real, custo.
+  **Solucao**: envs de preview
+  (test mode).
+- **Atomic deploy manual.** Custom
+  CI que faz deploy incremental
+  (arquivo por arquivo). **Solucao**:
+  Vercel/Cloudflare Pages, ou
+  garantir "deploy so' quando tudo
+  pronto".
+- **Rollback lento.** Git revert +
+  redeploy = 15-30min. **Solucao**:
+  1 click no Vercel, ou feature
+  flag kill switch.
+- **Cache-Control errado.** `public`
+  em user-specific = user A recebe
+  response de user B. **Solucao**:
+  `private, no-store` em auth, com
+  `Vary: Cookie, Authorization`.
+- **Edge function timeout.** Worker
+  com CPU > 10ms = killed. **Solucao**:
+  mude pra Node runtime (Vercel
+  Functions) ou divida em N
+  Workers.
+
+**Como validar que terminou:**
+
+- [ ] Bundle gzipped < 200KB.
+- [ ] Lighthouse >= 90.
+- [ ] LCP < 2.5s, CLS < 0.1.
+- [ ] Content hash em todos assets.
+- [ ] Cache headers corretos.
+- [ ] Edge function testada.
+- [ ] Preview URL funciona em 30s.
+- [ ] Rollback < 30s.
+- [ ] Atomic deploy: 0 downtime.
+
+**Leituras que ajudam durante o projeto:**
+
+- [Vercel - Deploy](https://vercel.com/docs/deployments) - preview, production, rollback.
+- [Cloudflare Pages - Get Started](https://developers.cloudflare.com/pages/get-started/) - setup, GitHub integration, edge.
+- [Next.js - Production Checklist](https://nextjs.org/docs/app/building-your-application/deploying/production-checklist) - 30+ items pra prod.
+
+> O projeto final e' onde a trilha
+> vira "sua". A escolha de **qual
+> app** e' o caminho feliz. Os
+> principios - build otimizado, edge,
+> images, preview, atomic, rollback
+> - aplicam a qualquer app em prod.
+> O esqueleto dado e' o caminho
+> feliz, desvie quando precisar e
+> anote as decisoes no
+> `editorial-decisions.md` da
+> trilha.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarDeploy(config)` que checa se o app esta' pronto pra deploy em prod. Recebe: config = { bundleTamanho: number (KB gzipped), lcpMs: number (milissegundos), cls: number, temContentHash: boolean, temEdgeFunction: boolean, temPreviewPorPR: boolean, tempoRollbackSeg: number }. Calcule score: (1) bundleTamanho <= 200: +15, <= 400: +7, senao 0. (2) lcpMs <= 2500: +20, <= 4000: +10, senao 0. (3) cls <= 0.1: +15, <= 0.25: +7, senao 0. (4) temContentHash: +15. (5) temEdgeFunction: +10. (6) temPreviewPorPR: +10. (7) tempoRollbackSeg <= 30: +15, <= 60: +7, senao 0. max(0, min(100, score)). Retorna: { score, status: 'pronto' | 'atencao' | 'bloqueado' }. status: score >= 90 'pronto', >= 60 'atencao', senao 'bloqueado'."
+  starterCode={`// ImplementeavaliarDeploy(config) que checa se o app esta' pronto
+// pra deploy em prod baseado em criterios de qualidade.
+//
+// Schema de entrada:
+//   config = {
+//     bundleTamanho: number,  // KB gzipped
+//     lcpMs: number,          // milissegundos
+//     cls: number,            // 0-1
+//     temContentHash: boolean,
+//     temEdgeFunction: boolean,
+//     temPreviewPorPR: boolean,
+//     tempoRollbackSeg: number
+//   }
+//
+// Schema de saida:
+//   { score: number, status: 'pronto' | 'atencao' | 'bloqueado' }
+//
+// Pontuacao:
+// - bundleTamanho <= 200: +15, <= 400: +7, senao 0
+// - lcpMs <= 2500: +20, <= 4000: +10, senao 0
+// - cls <= 0.1: +15, <= 0.25: +7, senao 0
+// - temContentHash: +15
+// - temEdgeFunction: +10
+// - temPreviewPorPR: +10
+// - tempoRollbackSeg <= 30: +15, <= 60: +7, senao 0
+// - max(0, min(100, score))
+//
+// Status:
+// - score >= 90: 'pronto'
+// - score >= 60: 'atencao'
+// - senao: 'bloqueado'
+functionavaliarDeploy(config) {
+  return { score: 0, status: 'bloqueado' };
+}
+
+const _r1 =avaliarDeploy({
+  bundleTamanho: 150, lcpMs: 1800, cls: 0.05,
+  temContentHash: true, temEdgeFunction: true, temPreviewPorPR: true, tempoRollbackSeg: 20
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 =avaliarDeploy({
+  bundleTamanho: 350, lcpMs: 3000, cls: 0.2,
+  temContentHash: true, temEdgeFunction: false, temPreviewPorPR: true, tempoRollbackSeg: 45
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 =avaliarDeploy({
+  bundleTamanho: 800, lcpMs: 6000, cls: 0.5,
+  temContentHash: false, temEdgeFunction: false, temPreviewPorPR: false, tempoRollbackSeg: 600
+});
+console.log(JSON.stringify(_r3));
+
+const _r4 =avaliarDeploy({
+  bundleTamanho: 180, lcpMs: 2200, cls: 0.08,
+  temContentHash: true, temEdgeFunction: true, temPreviewPorPR: true, tempoRollbackSeg: 25
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":100,"status":"pronto"}
+{"score":52,"status":"bloqueado"}
+{"score":0,"status":"bloqueado"}
+{"score":100,"status":"pronto"}'
+  slug="edge-deploy-frontend"
+  nodeId="projeto-final"
+/>
