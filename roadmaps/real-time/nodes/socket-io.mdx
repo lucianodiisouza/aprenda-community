@@ -1,0 +1,584 @@
+---
+id: socket-io
+title: "Socket.IO: rooms, namespaces, fallback, ack, broadcast"
+resources:
+  - title: "Socket.IO - Docs oficiais (EN)"
+    url: https://socket.io/docs/v4/
+    lang: en
+    type: doc
+    free: true
+  - title: "Socket.IO - Rooms (oficial, EN)"
+    url: https://socket.io/docs/v4/rooms/
+    lang: en
+    type: doc
+    free: true
+  - title: "Socket.IO - Introduction (oficial, EN)"
+    url: https://socket.io/docs/v4/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce implementou **WebSocket nativo** pro
+seu chat - bidirecional, baixa latencia,
+mas **sem fallback** (proxy antigo = quebra),
+**sem reconexao automatica** (voce
+implementa), **sem rooms** (canais logicos
+voce gerencia), **sem ack** (confirmacao
+de entrega voce implementa). Em 2026,
+**Socket.IO** resolve esses 4 problemas com
+1 lib.
+
+Socket.IO **comecou em 2010** como
+solucao pra "WebSocket com fallback pra
+long-polling" (browsers antigos). Em
+2026, **99% dos browsers suportam
+WebSocket** mas Socket.IO **continua
+valioso** pelos **extras**: rooms,
+namespaces, ack automatico, broadcast,
+reconexao, e um **protocolo de mensagem
+proprio** que resolve limitacoes do
+WebSocket puro.
+
+Se voce entende quando Socket.IO vale a
+pena vs WebSocket puro, os 4 conceitos
+principais (rooms, namespaces, ack, broadcast),
+e o **protocolo Socket.IO** (que adiciona
+metadata, tipos, e ack automaticamente),
+voce sai de "WebSocket e' bom, mas e
+se X?" pra "Socket.IO e' a escolha certa
+pra esse caso".
+
+## O essencial 🟢
+
+**Socket.IO em uma frase: WebSocket +
+fallback automatico (long-polling se WS
+falhar) + reconexao automatica + rooms +
+namespaces + ack + broadcast + tipos de
+eventos custom. Tudo numa lib.**
+
+**Server (Node):**
+
+```bash
+pnpm add socket.io
+```
+
+```ts
+import { Server } from "socket.io";
+
+const io = new Server(3001, {
+  cors: { origin: "*" },
+});
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("chat-message", (msg) => {
+    // Broadcast pra todos
+    io.emit("chat-message", { user: socket.id, text: msg });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+```
+
+**Client (browser):**
+
+```bash
+pnpm add socket.io-client
+```
+
+```ts
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:3001");
+
+socket.on("connect", () => {
+  console.log("Connected:", socket.id);
+});
+
+socket.emit("chat-message", "Hello!");
+
+socket.on("chat-message", (msg) => {
+  console.log("Received:", msg);
+});
+```
+
+**Por que Socket.IO vs WebSocket nativo?**
+
+| Feature                | WebSocket nativo | Socket.IO              |
+| ---------------------- | ---------------- | ----------------------- |
+| Fallback automatico    | NAO              | SIM (long-polling)      |
+| Reconexao automatica   | NAO              | SIM                     |
+| Rooms                  | manual           | built-in                |
+| Namespaces             | manual           | built-in                |
+| Ack (confirmacao)      | manual           | built-in                |
+| Broadcast              | manual           | built-in                |
+| Tipos de evento        | NAO (string)     | SIM (custom events)     |
+| Binary                 | SIM              | SIM (com serializacao)  |
+| Compatibilidade        | IE10+            | IE9+ (com flash fallback, pre-2026) |
+| Bundle size            | 0 (nativo)       | ~10KB gzipped (client)  |
+
+**Use WebSocket nativo** quando:
+- Bundle size importa (mobile first).
+- Protocol proprio / custom messages.
+- Reaproveita infraestrutura (proxy,
+  load balancer) que ja fala WS.
+- Latencia minima (< 30ms).
+- Sem rooms/namespaces.
+
+**Use Socket.IO** quando:
+- Quer **menos codigo** (reconexao, ack,
+  rooms vem de graca).
+- App **multi-usuario** (chat, dashboard
+  compartilhado, presence).
+- **Mobile + desktop** (fallback automatico
+  cobre redes instaveis).
+- Quer **broadcast/rooms** sem implementar.
+- Time pequeno que nao quer manter
+  infra de WS.
+
+**Rooms - "canais" logicos.** Room e' um
+grupo de sockets que recebem eventos
+juntos. Use pra "sala de chat #general",
+"documento X", "live stream Y":
+
+```ts
+// Server
+socket.on("join-room", (roomId) => {
+  socket.join(roomId);  // socket entra na room
+  socket.to(roomId).emit("user-joined", socket.id);
+  // 'to(roomId)' = manda pra todos NA room, exceto o sender
+});
+
+socket.on("chat-message", (msg) => {
+  const userRoom = [...socket.rooms][1];  // primeira room (exclui socket.id)
+  io.to(userRoom).emit("chat-message", msg);
+  // io.to(room) = manda pra TODOS na room
+});
+```
+
+**Emit patterns do Socket.IO:**
+
+```ts
+// 1. socket.emit: so pro socket atual
+socket.emit("hi", "Hello");
+
+// 2. io.emit: pra TODOS os clients
+io.emit("announcement", "Server restart in 5min");
+
+// 3. io.to(room).emit: pra todos na room
+io.to("general").emit("message", msg);
+
+// 4. socket.to(room).emit: pra todos na room EXCETO o sender
+socket.to("general").emit("user-typing", socket.id);
+
+// 5. socket.to(room1).to(room2).emit: broadcast multi-room
+socket.to("admins").to("mods").emit("alert", "...");
+```
+
+**Namespaces - "sub-protocolos" logicos.**
+Namespace e' um **canal separado** dentro
+da mesma conexao. Use pra separar
+contextos: `/chat`, `/admin`, `/live`:
+
+```ts
+// Server
+const chatNamespace = io.of("/chat");
+chatNamespace.on("connection", (socket) => {
+  socket.on("message", (msg) => {
+    chatNamespace.emit("message", msg);
+  });
+});
+
+const adminNamespace = io.of("/admin");
+adminNamespace.use(adminAuthMiddleware);  // middleware!
+adminNamespace.on("connection", (socket) => {
+  // ...
+});
+```
+
+```ts
+// Client
+const chatSocket = io("http://localhost:3001/chat");
+const adminSocket = io("http://localhost:3001/admin", {
+  auth: { token: adminToken },
+});
+```
+
+**2 conexoes logicas**, 1 servidor. Namespaces
+sao otimos pra **separar auth, escala, ou
+tipo de evento**.
+
+**Ack - confirmacao de entrega.** WebSocket
+nao tem ack nativo (voce implementa com
+"message sent" + timer). Socket.IO tem
+**ack automatico**:
+
+```ts
+// Server
+socket.on("send-message", (msg, ack) => {
+  // Processa mensagem
+  saveMessage(msg);
+
+  // Chama ack com resultado
+  ack({ status: "ok", messageId: msg.id });
+});
+
+// Client
+socket.emit("send-message", { text: "Hello" }, (response) => {
+  console.log("Server respondeu:", response);
+  // { status: "ok", messageId: 42 }
+});
+```
+
+**Timeout do ack**: se o server nao chamar
+`ack()` em **5s** (configuravel), o callback
+do client e' chamado com `undefined` (timeout).
+**Use ack pra operacoes criticas** (enviar
+mensagem, criar recurso). **Nao use** pra
+fire-and-forget.
+
+**Reconexao automatica.** Socket.IO
+reconecta automaticamente com
+**exponential backoff** built-in:
+
+```ts
+// Client - default ja reconecta
+const socket = io("http://localhost:3001", {
+  reconnection: true,  // default true
+  reconnectionAttempts: 5,  // max 5 tentativas
+  reconnectionDelay: 1000,  // comeca em 1s
+  reconnectionDelayMax: 5000,  // max 5s entre tentativas
+});
+```
+
+**A maquina de decisao: Socket.IO vs
+WebSocket nativo.**
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Preciso de real-time bidirecional?]
+    Start -->|Sim| Q1{Tempo pra entregar MVP?}
+    Start -->|Nao - so one-way| SSE[Use SSE - mais simples]
+
+    Q1 -->|Curto, time pequeno| Q2{App multi-usuario?}
+    Q1 -->|Tempo, controle total| WS[Use WebSocket nativo]
+
+    Q2 -->|Sim chat, presence, colaboracao| SIO[Use Socket.IO]
+    Q2 -->|Nao - 1-1 ou broadcasting simples| WS2[Use WebSocket nativo]
+
+    SIO --> Gains[Bonus: rooms, namespaces, ack, reconnection, fallback automatico]
+    WS --> Trade[Trade-off: implementar reconexao, rooms, ack manualmente]
+    WS2 --> Trade
+    SSE --> Done[OK]
+    Gains --> Done
+    Trade --> Done`}
+  caption="Decision tree: WebSocket nativo vs Socket.IO vs SSE. Regra pratica: 80% dos apps multi-usuario se beneficiam de Socket.IO (rooms, ack, reconexao). Use WebSocket nativo so em apps 1-1 ou com infra custom. Use SSE para one-way puro."
+/>
+
+**`socket.broadcast.emit` - mandar pra
+TODOS exceto o sender.** Pattern comum
+em chat (mensagem propria nao precisa
+re-broadcast):
+
+```ts
+socket.on("message", (msg) => {
+  socket.broadcast.emit("message", msg);
+  // ou socket.to(room).emit(...) com room
+});
+```
+
+**Binary data com Socket.IO.** Socket.IO
+suporta **binario** mas serializa pra
+base64 por default (overhead). Pra
+alta performance, use **WebSocket puro**
+ou **WebRTC**. Socket.IO brilha com
+**JSON + tipos custom**, nao com binario
+puro.
+
+## Aprofundamento 🟡
+
+**Socket.IO vs Server-Sent Events: o
+mesmo nao sao.** Ate 2024, existia confusao.
+**SSE** e' HTTP one-way (padrao W3C).
+**Socket.IO** e' **protocolo proprio**
+(usa WebSocket quando possivel, senao
+long-polling). **Socket.IO nao e' SSE**.
+Socket.IO **suporta SSE-like** com
+reconexao automatica, mas adiciona
+bidirecional, rooms, ack, etc.
+
+**Middleware (equivalente a Express
+middleware).** Socket.IO tem
+**middleware de conexao** (autentica,
+logging, rate limit):
+
+```ts
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+
+  // Valida token (JWT, session, etc)
+  verifyToken(token)
+    .then((user) => {
+      socket.data.user = user;  // anexa user ao socket
+      next();
+    })
+    .catch((err) => next(err));
+});
+```
+
+**Use pra**: autenticacao, rate limit,
+authorization (quem pode conectar), logging
+de conexao.
+
+**`socket.data` - estado por socket.**
+Anexe dados custom ao socket (user,
+roles, metadata):
+
+```ts
+io.use((socket, next) => {
+  // Apos auth middleware
+  socket.data.user = { id: 123, name: "Ana" };
+  next();
+});
+
+io.on("connection", (socket) => {
+  console.log("User:", socket.data.user.name);
+  socket.on("send-message", (msg) => {
+    io.emit("message", {
+      user: socket.data.user.name,
+      text: msg,
+    });
+  });
+});
+```
+
+**Volatile events - "fire and forget sem
+ack".** Pra eventos que **nao precisam**
+de garantia de entrega (typing indicator,
+mouse position), use `volatile`:
+
+```ts
+// Client
+socket.volatile.emit("mouse-position", { x: 100, y: 200 });
+
+// Server
+socket.on("mouse-position", (pos) => {
+  // Se o client desconectar entre envio e entrega, evento perdido
+  // (otimo pra eventos de alta frequencia sem overhead de ack)
+});
+```
+
+**Volatile e' 2-3x mais rapido** que
+`emit` normal (sem framework overhead).
+
+**Scaling Socket.IO com Redis adapter.**
+Em multi-server (load balancer),
+Socket.IO de **cada servidor** nao ve os
+sockets do outro. Solucao: **Redis
+adapter** (compartilha estado entre
+servidores):
+
+```bash
+pnpm add @socket.io/redis-adapter redis
+```
+
+```ts
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
+
+const pubClient = createClient({ url: "redis://..." });
+const subClient = pubClient.duplicate();
+
+io.adapter(createAdapter(pubClient, subClient));
+```
+
+**`socket.id` e unico globalmente**
+(entre servidores). `socket.to(room)`
+funciona cross-server. Rooms persistem
+no Redis. **Cobre em `edge-deploy` se
+scaling for topico**.
+
+**`disconnect` event - cleanup.**
+Quando o cliente desconecta (fecha tab,
+perde rede, etc), `disconnect` dispara:
+
+```ts
+socket.on("disconnect", (reason) => {
+  console.log("User disconnected:", socket.id, reason);
+  // reasons: 'transport close', 'ping timeout',
+  //          'transport error', 'server shutting down',
+  //          'forced close', 'forced server close'
+
+  // Cleanup: remover de rooms, notificar outros
+  socket.to("general").emit("user-left", socket.data.user);
+});
+```
+
+**Detalhe**: `disconnect` e' **async** -
+o cleanup pode nao completar se o
+processo for killed. **Use referencias
+externas** (Redis) pra state critico.
+
+**Compression (per-message deflate) -
+reduz bandwidth 70-80%.** Util pra
+mensagens grandes (chat com emoji, code
+blocks, JSON complexo):
+
+```ts
+// Server
+const io = new Server(3001, {
+  perMessageDeflate: {
+    threshold: 1024,  // comprime mensagens > 1KB
+  },
+});
+```
+
+**Trade-off**: CPU extra (compressao).
+Ative so se a maioria das mensagens for
+grande (>1KB).
+
+## Pra quem quer ir mais alem 🔴
+
+**`Socket.IO` v4 vs v3 - breaking changes.**
+Socket.IO v4 (2022) mudou a API:
+- `io.to(room).emit()` agora e' **a forma
+  principal** (v3 tinha bugs com broadcast
+  entre rooms).
+- Middleware async melhorado.
+- TypeScript types melhorados.
+- `socket.use()` (middleware de mensagem,
+  nao so conexao).
+
+**Se voce tem codigo v3**, migrar pra v4
+e' quase drop-in (mudancas em
+`adapter`, `use()`, e alguns patterns
+de broadcast). Cobre na [migration
+guide](https://socket.io/docs/v4/migrating-from-3/).
+
+**`Socket.IO` em mobile (React Native,
+Capacitor, etc).** Funciona - a lib
+cliente compila em React Native. Mas
+**bundle size** importa (mobile 3G):
+~10KB gzipped, OK. Alternativa: use
+**WebSocket puro** em apps ultra-leves
+(com fallback manual).
+
+**`Socket.IO` Admin UI (debug).** Em
+dev, use o **Socket.IO Admin UI** pra ver
+conexoes, rooms, eventos em tempo real:
+
+```bash
+pnpm add @socket.io/admin-ui
+```
+
+```ts
+import { instrument } from "@socket.io/admin-ui";
+instrument(io, { auth: { type: "basic", username: "admin", password: "..." } });
+// Acessa em http://localhost:3001/admin
+```
+
+Util pra debug de rooms, ack, e
+reconexoes. **NAO** use em prod sem auth.
+
+**Por que Socket.IO v4 ainda usa
+long-polling como fallback.** O spec do
+WebSocket e' de 2011, mas **proxies
+corporativos** (especialmente em redes
+gov/finance) ate hoje nao suportam
+WebSocket (ou o bloqueiam por seguranca).
+Socket.IO **negocia** WS primeiro, se
+falhar cai pra long-polling, **automaticamente**.
+Por isso ainda e' relevante em 2026
+(especialmente em apps B2B).
+
+**Leitura recomendada:**
+
+- [Socket.IO Docs](https://socket.io/docs/v4/) - doc oficial, completa.
+- [Socket.IO Rooms](https://socket.io/docs/v4/rooms/) - deep dive em rooms.
+- [Socket.IO - Introduction](https://socket.io/docs/v4/) - doc oficial, comparacao com WebSocket, features completas.
+
+> Dica: o erro mais comum em Socket.IO e'
+> **escolher WebSocket nativo "porque e'
+> mais leve" sem considerar o overhead de
+> implementar rooms, ack, e reconexao**.
+> 10KB gzipped e' um custo **baixo** pelo
+> tempo economizado. Em 2026, **Socket.IO
+> e' o default** pra apps multi-usuario
+> em JS/TS - use WebSocket nativo so com
+> razao clara (bundle critico, infra
+> custom, latencia < 30ms).
+
+No proximo no, vamos **reconexao e
+estado**: o pattern de **exponential
+backoff com jitter**, **heartbeat/
+ping-pong**, e a **fila de mensagens
+offline**. Quando a rede cair, sua app
+**mantem o estado** e **re-sincroniza**
+quando volta. Cobre o lado "resiliente"
+de real-time.
+
+<Checkpoint
+  challenge="Implemente a função `configurarReconexao(opcoes)` que retorna o objeto de config do socket.io-client com politica de reconexao exponencial com jitter. Recebe: { tentativasMax (number), delayInicial (ms, default 1000), delayMaximo (ms, default 5000), jitter (boolean, default true) }. A formula: delay = min(delayMaximo, delayInicial * 2^(tentativa-1)) + (jitter ? random(0, delay) : 0). Retorne { reconnection, reconnectionAttempts, reconnectionDelay, reconnectionDelayMax, randomizationFactor } - randomizationFactor = 0.5 se jitter, senao 0."
+  starterCode={`// Implemente configurarReconexao(opcoes) que retorna o config
+// de reconexao exponencial com jitter pra socket.io-client.
+//
+// opcoes = { tentativasMax: number, delayInicial: number, delayMaximo: number, jitter: boolean }
+//
+// Formula do delay: min(delayMaximo, delayInicial * 2^(tentativa-1))
+// Com jitter: + random(0, delay) quando jitter=true.
+//
+// Socket.IO usa randomizationFactor (0-1) pra fazer o jitter automatico:
+// randomizationFactor: 0.5 = jitter entre 0% e 50% do delay calculado.
+//
+// Retorna { reconnection, reconnectionAttempts, reconnectionDelay, reconnectionDelayMax, randomizationFactor }.
+function configurarReconexao(opcoes) {
+  return {
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    randomizationFactor: 0.5,
+  };
+}
+
+const _r1 = configurarReconexao({ tentativasMax: 5, delayInicial: 1000, delayMaximo: 30000, jitter: true });
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarReconexao({ tentativasMax: Infinity, delayInicial: 500, delayMaximo: 10000, jitter: false });
+console.log(JSON.stringify(_r2));`}
+  expected='{"reconnection":true,"reconnectionAttempts":5,"reconnectionDelay":1000,"reconnectionDelayMax":30000,"randomizationFactor":0.5}
+{"reconnection":true,"reconnectionAttempts":null,"reconnectionDelay":500,"reconnectionDelayMax":10000,"randomizationFactor":0}'
+  slug="real-time"
+  nodeId="socket-io"
+/>
+
+<Quiz
+  question="Por que Socket.IO e' melhor que WebSocket nativo para apps multi-usuario (chat, presence)?"
+  options={[
+    {
+      text: "Socket.IO vem com rooms (canais logicos), namespaces, ack automatico, reconexao automatica, fallback pra long-polling. WebSocket puro exige implementar todos esses, e cada um tem armadilhas (memory leak em rooms, race conditions em ack, etc).",
+      correct: true,
+      explanation:
+        "Socket.IO abstrai 5 problemas que WebSocket puro deixa pra voce: (1) Rooms - 'canais logicos' pra chat rooms, documents compartilhados, etc (WebSocket puro: voce gerencia Set de sockets por room, com memory leak se nao limpar). (2) Ack automatico - confirmacao de entrega com timeout (WebSocket: implementar com Promise + timer). (3) Reconexao com backoff - browser/server caem, reconecta com jitter (WebSocket: implementar manual). (4) Fallback long-polling - cobre proxy corporativo que bloqueia WebSocket (WebSocket: zero fallback, quebra). (5) Namespaces - separar contextos (/chat, /admin) com auth diferente. Cada um parece simples, mas em producao cada um tem edge cases. Socket.IO e' a 'opiniao forte' do time que conhece essas armadilhas.",
+    },
+    {
+      text: "Socket.IO e' sempre mais rapido que WebSocket nativo.",
+      correct: false,
+      explanation:
+        "Nao. WebSocket nativo e' mais rapido em raw throughput (sem overhead de protocolo). Socket.IO adiciona metadata, parse de mensagens, rooms - tudo isso tem custo. A velocidade de WebSocket 'puro' e' maior, mas na pratica a diferenca e' desprezivel (milissegundos). Socket.IO brilha em **produtividade** e **features**, nao em **velocidade bruta**.",
+    },
+    {
+      text: "WebSocket nativo nao suporta chat multi-usuario.",
+      correct: false,
+      explanation:
+        "Falso. WebSocket nativo suporta chat multi-usuario perfeitamente - voce implementa 'rooms' como quiser (Set de sockets, channels, etc). Socket.IO so torna isso mais facil. WebSocket puro e' um **protocolo**, nao uma 'biblioteca de chat'. Toda framework de chat (Socket.IO, SockJS, ws, etc) usa WebSocket por baixo. A questao nao e' 'suporta ou nao' - e' 'quanto codigo voce escreve'.",
+    },
+  ]}
+/>

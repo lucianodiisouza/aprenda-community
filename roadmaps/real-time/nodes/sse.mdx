@@ -1,0 +1,577 @@
+---
+id: sse
+title: "Server-Sent Events: EventSource, reconexao automatica, tipos de mensagem"
+resources:
+  - title: "MDN - EventSource (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/EventSource
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Using server-sent events (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce implementou WebSocket pra chat
+(bidirecional). Mas ha um cenario
+comum que **nao precisa de bidirecional**:
+o **server precisa empurrar dados pro
+client** sem o client pedir. Notificacao
+de novo email, dashboard de cotacoes
+atualizando, log stream de uma
+aplicacao, status de background job.
+**One-way only**.
+
+**Server-Sent Events (SSE)** e' o canal
+ideal pra isso: conexao HTTP persistente
+(`Content-Type: text/event-stream`),
+server **streama** events, client recebe
+via `EventSource`. **Browser faz
+reconexao automatica** sem codigo extra.
+**Funciona com qualquer proxy/CDN/firewall**
+(HTTP puro). Em 2026, SSE e' a **opcao
+preferida** pra real-time one-way,
+substituindo long-polling em 90% dos casos.
+
+Se voce entende a **API EventSource**,
+o formato do `text/event-stream`
+(`data:`, `event:`, `id:`), e como
+implementar reconexao com **Last-Event-ID**
+(via header), voce sai de "como uso SSE?"
+pra "implemento notificacao em tempo real
+com 5 linhas".
+
+## O essencial 🟢
+
+**`new EventSource(url)` - a entrada da
+API.** A classe `EventSource` faz parte
+do browser (junto com `WebSocket`,
+`fetch`, etc). Conecta ao server e abre
+um canal de events:
+
+```ts
+// Conexao basica
+const source = new EventSource("/api/events");
+
+// Com custom headers - NAO SUPORTADO nativamente.
+// Workaround: passa token via query string
+const source = new EventSource(`/api/events?token=${token}`);
+```
+
+**Os 3 eventos do EventSource.** A API
+tem 3 eventos principais:
+
+```ts
+// 1. message: evento sem tipo (ou tipo 'message')
+source.addEventListener("message", (event) => {
+  // event.data = string com o payload
+  const data = JSON.parse(event.data);
+  handleData(data);
+});
+
+// 2. eventos com tipo custom
+source.addEventListener("user-joined", (event) => {
+  console.log("User joined:", event.data);
+});
+
+source.addEventListener("price-update", (event) => {
+  const price = JSON.parse(event.data);
+  updatePriceDisplay(price);
+});
+
+// 3. error: erro na conexao
+source.addEventListener("error", (event) => {
+  console.error("SSE error:", event);
+  // Browser vai tentar reconectar automaticamente!
+  // readyState indica o status:
+  // 0 = CONNECTING
+  // 1 = OPEN
+  // 2 = CLOSED (sem reconexao)
+});
+```
+
+**`readyState` do EventSource - 3 valores:**
+
+- `0` - CONNECTING: tentando conectar/reconectar.
+- `1` - OPEN: conectado, recebendo events.
+- `2` - CLOSED: fechado, **sem reconexao**.
+
+Se a conexao cair e `readyState === 0`,
+o browser **tenta reconectar**. Se
+`readyState === 2`, a conexao foi
+fechada pelo server (com `event.source.close()`)
+ou **error permanente** - sem reconexao.
+
+**O formato `text/event-stream`.** O server
+manda dados em formato de **eventos**:
+
+```
+event: user-joined
+data: {"id": 123, "name": "Ana"}
+
+data: Simple message
+
+event: price-update
+data: {"symbol": "AAPL", "price": 150.25}
+id: 42
+
+```
+
+Cada event e' separado por **2 quebras
+de linha** (`\n\n`). Campos:
+- `event:` - tipo do evento (opcional,
+  default "message").
+- `data:` - o payload (string, mas
+  tipicamente JSON serializado).
+- `id:` - identificador unico (opcional,
+  usado pra Last-Event-ID na reconexao).
+- `retry:` - tempo em ms antes de tentar
+  reconectar (opcional, default 3000).
+
+**Server-side SSE em Node/Express.** O
+exemplo mais simples:
+
+```ts
+import express from "express";
+
+const app = express();
+
+app.get("/api/events", (req, res) => {
+  // Headers obrigatorios
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");  // Nginx: sem buffering
+
+  // Manda event a cada 1s
+  const interval = setInterval(() => {
+    const data = { ts: Date.now(), value: Math.random() };
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  }, 1000);
+
+  // Cleanup quando cliente desconecta
+  req.on("close", () => {
+    clearInterval(interval);
+    res.end();
+  });
+});
+```
+
+**`X-Accel-Buffering: no`** e' crucial
+quando atras do **Nginx** - Nginx faz
+buffer de responses por default, o que
+**mata SSE** (response nao chega ate
+fechar). O header desabilita isso.
+
+**Reconexao automatica - o superpoder
+do SSE.** Quando a conexao cai, o
+**browser automaticamente** tenta
+reconectar (default: 3s). Voce **nao
+precisa** implementar isso:
+
+```ts
+// Pronto. Sem codigo extra.
+// Browser cuida de:
+// - Detectar desconexao
+// - Tentar reconectar (default 3s)
+// - Manter EventSource "vivo"
+const source = new EventSource("/api/events");
+```
+
+**`retry:` no server** - controle o
+intervalo de reconexao:
+
+```
+retry: 5000
+
+data: Hello
+```
+
+Cliente reconecta apos 5s (em vez de 3s
+default). Use para **reduzir carga** no
+server se muitos clients desconectarem
+de uma vez.
+
+**`Last-Event-ID` - recupere eventos
+perdidos.** SSE tem **suporte nativo** a
+"replay" de eventos perdidos na
+reconexao. O browser manda o header
+`Last-Event-ID` com o ID do ultimo evento
+que recebeu. O server **re-envia** os
+eventos desde esse ID:
+
+```ts
+// Server
+app.get("/api/events", (req, res) => {
+  const lastId = req.headers["last-event-id"];
+
+  if (lastId) {
+    // Re-envia eventos perdidos desde lastId
+    const events = getEventsSince(lastId);
+    for (const event of events) {
+      res.write(`id: ${event.id}\n`);
+      res.write(`data: ${JSON.stringify(event.data)}\n\n`);
+    }
+  }
+
+  // Continua stream normal...
+});
+
+// Client NAO precisa fazer nada - browser
+// adiciona o header automaticamente
+```
+
+E o server **deve setar IDs nos eventos**:
+
+```ts
+res.write(`id: ${event.id}\n`);
+res.write(`data: ${JSON.stringify(event.data)}\n\n`);
+```
+
+**Sem IDs, nao tem replay**. **Com IDs,
+voce tem "at-least-once" delivery** -
+cliente pode perder eventos APENAS
+durante o periodo que o server **nao
+guardou** (voce decide quanto guardar).
+
+**Fechar a conexao explicitamente.** Use
+`source.close()` quando nao quiser mais
+events:
+
+```ts
+// No cleanup do componente
+useEffect(() => {
+  const source = new EventSource("/api/events");
+  // ...
+  return () => source.close();
+}, []);
+```
+
+**Importante**: depois de `close()`, o
+`readyState === 2` e o browser **NAO
+tenta reconectar**. E' o estado final.
+
+## Aprofundamento 🟡
+
+**SSE com autenticacao - o problema dos
+headers.** `EventSource` **nao suporta
+custom headers** (como `Authorization`).
+Workarounds:
+
+1. **Query string** (menos seguro, mas
+   simples):
+
+   ```ts
+   const source = new EventSource(
+     `/api/events?token=${token}`
+   );
+   ```
+
+2. **Cookie httpOnly** (browser envia
+   automaticamente):
+
+   ```ts
+   // Server setta cookie
+   res.cookie("session", token, { httpOnly: true });
+   // EventSource na pagina mesma origem
+   // ja envia o cookie
+   ```
+
+3. **Polyfill** (com headers custom):
+
+   ```ts
+   import { EventSourcePolyfill } from "event-source-polyfill";
+   const source = new EventSourcePolyfill("/api/events", {
+     headers: { "Authorization": `Bearer ${token}` },
+   });
+   ```
+
+Em 2026, **BFF + cookie httpOnly** (cobre
+em `seguranca-frontend`) e' o pattern
+preferido: cookie automatico, sem risco
+de token em URL.
+
+**Nginx buffering - o "inimigo silencioso"
+do SSE.** Nginx, por default, **faz
+buffer** de responses (para otimizar).
+SSE **so funciona com streaming** - se
+Nginx bufferar, o cliente nao recebe ate
+o server fechar a conexao. Solucao:
+
+```nginx
+# nginx.conf
+location /api/events {
+    proxy_pass http://backend;
+    proxy_buffering off;  # desabilita buffering
+    proxy_cache off;       # desabilita cache
+    proxy_set_header Connection '';  # limpa header Connection
+    proxy_http_version 1.1;
+}
+```
+
+OU o server manda o header
+`X-Accel-Buffering: no`. **CUIDADO**:
+ambos sao necessarios em diferentes
+configuracoes.
+
+**SSE vs WebSocket - latencia comparada.**
+Em conexao estavel: SSE ~50ms, WebSocket
+~30ms. **Diferenca desprezivel**.
+Em conexao instavel: SSE reconecta
+automaticamente (1-3s downtime), WebSocket
+precisa de codigo proprio. **SSE e' mais
+resiliente por default**.
+
+**`EventSource` com credenciais
+(`withCredentials`).** Pra enviar
+cookies cross-origin:
+
+```ts
+const source = new EventSource("https://api.other.com/events", {
+  withCredentials: true,
+});
+```
+
+Server deve responder com
+`Access-Control-Allow-Credentials: true`
+e `Access-Control-Allow-Origin: https://app.com`
+(especifico, nao `*`). Padrao similar a
+`fetch` com credentials.
+
+**SSE com ReadableStream - alternativa
+avancada.** Pra casos com custom
+headers, body, ou controle fino, use
+`fetch` + `ReadableStream`:
+
+```ts
+const response = await fetch("/api/events", {
+  headers: { "Authorization": `Bearer ${token}` },
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const text = decoder.decode(value);
+
+  // Parse SSE manualmente
+  const events = text.split("\n\n").filter(Boolean);
+  for (const event of events) {
+    const data = event.split("\n").find((l) => l.startsWith("data: "));
+    if (data) {
+      handleData(JSON.parse(data.slice(6)));
+    }
+  }
+}
+```
+
+**Mais codigo**, mas **controle total**.
+Use quando `EventSource` nao atende
+(auth custom, POST request, etc).
+
+**Heartbeat/keep-alive - manter a
+conexao.** Proxies/firewalls podem matar
+conexoes ociosas (idle timeout).
+**Heartbeat** e' um comentario SSE
+periodico:
+
+```
+: heartbeat
+
+data: {"value": 1}
+```
+
+O `: ` indica um **comentario** (browser
+ignora, mas mantem a conexao ativa).
+Mande a cada 30s:
+
+```ts
+const heartbeat = setInterval(() => {
+  res.write(": heartbeat\n\n");
+}, 30000);
+```
+
+**Sem heartbeat**, proxies (Cloudflare,
+Nginx) podem cortar a conexao apos
+60-100s de inatividade.
+
+**`AbortController` e cancelamento.**
+SSE nao tem `AbortSignal` nativo, mas
+`EventSource.close()` funciona. Pra
+integrar com `fetch` (cancellation):
+
+```ts
+const controller = new AbortController();
+const source = new EventSource("/api/events");
+
+controller.signal.addEventListener("abort", () => {
+  source.close();
+});
+
+// Cleanup
+return () => controller.abort();
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**`EventSource` reconexao com `Last-Event-ID`
+e replay garantido.** O padrao canonico
+pra "at-least-once delivery" de eventos:
+
+1. **Server** mantem buffer circular de
+   eventos (ex: ultimas 1000) por canal.
+2. **Cliente** recebe `id` em cada evento.
+3. **Cliente** desconecta, browser
+   reconecta com `Last-Event-ID: <id>`.
+4. **Server** busca eventos com
+   `id > Last-Event-ID` no buffer, re-envia.
+
+**Implementacao tipica:**
+
+```ts
+// Server (Node)
+const eventBuffer = new Map<string, Event[]>();  // por canal
+
+app.get("/api/events", (req, res) => {
+  const channel = req.query.channel;
+  const lastId = parseInt(req.headers["last-event-id"] || "0");
+
+  // Replay eventos perdidos
+  const buffered = eventBuffer.get(channel) || [];
+  const missed = buffered.filter((e) => e.id > lastId);
+  for (const e of missed) {
+    res.write(`id: ${e.id}\ndata: ${JSON.stringify(e.data)}\n\n`);
+  }
+
+  // Stream novos eventos
+  // ...
+});
+```
+
+**Limitacao**: se o buffer e' muito
+pequeno, eventos mais antigos que o
+`maxRetentionTime` sao perdidos. Trade-off:
+**memoria do server vs garantia de
+delivery**.
+
+**`SSE` + `WebSocket` hibrido.** Em apps
+complexos, da' pra ter **SSE pra one-way**
+(notificacoes, logs) e
+**WebSocket pra bidirecional** (chat,
+colaboracao). **2 conexoes**, cada uma
+otimizada pro caso. **Mais complexo**,
+mas maximo de performance.
+
+**`EventSource` polyfill pra IE11.** Use
+`event-source-polyfill` (~1KB). Suporta
+EventSource API em browsers antigos,
+incluindo IE11. Em 2026, IE11 esta
+descontinuado, mas **sistemas
+corporativos** ainda usam.
+
+**`Content-Type: text/event-stream;
+charset=utf-8` - encoding.** Sempre
+especifique charset pra evitar bugs de
+encoding em server/client diferentes
+(utf-8 e' o default, mas explicito e'
+mais seguro):
+
+```ts
+res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+```
+
+**Leitura recomendada:**
+
+- [MDN - EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) - a API completa.
+- [MDN - Using SSE](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) - tutorial pratico.
+- [HTML spec - SSE](https://html.spec.whatwg.org/multipage/server-sent-events.html) - a spec W3C, definitiva.
+
+> Dica: o erro mais comum em SSE e' **Nginx
+> buffering**. Em prod, o dev testa em
+> dev (sem Nginx) e funciona. Em prod
+> (com Nginx), SSE nao atualiza. Solucao:
+> `X-Accel-Buffering: no` no server OU
+> `proxy_buffering off` no Nginx. Outro
+> erro: **esquecer `Last-Event-ID`** -
+> sem IDs, reconexao nao recupera eventos
+> perdidos (cliente perde tudo entre
+> disconnect e reconnect). Use IDs em
+> **toda** mensagem importante.
+
+No proximo no, vamos **Socket.IO**: a
+biblioteca que abstrai WebSocket, adiciona
+**fallback automatico**, **rooms**,
+**ack**, e **reconexao com estado**. Quando
+voce precisa de **mais que WebSocket
+puro**, Socket.IO e' a resposta.
+
+<Checkpoint
+  challenge="Implemente a função `parsearSSE(chunk)` que recebe um chunk de texto (string com formato SSE) e retorna um array de eventos parseados. Cada evento e' separado por '\\n\\n' e tem campos 'event:' (opcional, default 'message'), 'data:' (obrigatorio), 'id:' (opcional), 'retry:' (opcional, em ms). Retorna array de objetos { tipo, data, id?, retry? } para todos os eventos validos no chunk (data nao vazio)."
+  starterCode={`// Implemente parsearSSE(chunk) que recebe uma string de chunk SSE
+// e retorna um array de eventos parseados.
+//
+// Formato do chunk (string com 1+ eventos):
+// event: user-joined
+// data: {"id":123}
+// (linha em branco separa eventos)
+//
+// ou:
+// data: Simple message
+//
+// Cada evento pode ter:
+// - 'event:' (opcional, default 'message')
+// - 'data:' (obrigatorio, multi-linha concatenada com '\\n')
+// - 'id:' (opcional)
+// - 'retry:' (opcional)
+//
+// Retorna: [{ tipo, data, id?, retry? }, ...] - apenas eventos com data nao vazia.
+function parsearSSE(chunk) {
+  return [];
+}
+
+const _r1 = parsearSSE("event: user-joined\\ndata: {\\"id\\":123}\\n\\n");
+console.log(JSON.stringify(_r1));
+
+const _r2 = parsearSSE("data: Simple message\\n\\n");
+console.log(JSON.stringify(_r2));
+
+const _r3 = parsearSSE("data: Line 1\\ndata: Line 2\\nid: 42\\n\\n");
+console.log(JSON.stringify(_r3));
+
+const _r4 = parsearSSE("");
+console.log(JSON.stringify(_r4));`}
+  expected='[{"tipo":"user-joined","data":"{\\"id\\":123}"}]
+[{"tipo":"message","data":"Simple message"}]
+[{"tipo":"message","data":"Line 1\\nLine 2","id":"42"}]
+[]'
+  slug="real-time"
+  nodeId="sse"
+/>
+
+<Quiz
+  question="Por que SSE e' a melhor escolha pra notificacoes one-way (em vez de WebSocket)?"
+  options={[
+    {
+      text: "Porque SSE e' one-way puro sobre HTTP, com reconexao automatica nativa do browser e suporte a Last-Event-ID. WebSocket e' bidirecional - overhead desnecessario quando so precisa de push do server. SSE funciona com qualquer CDN/proxy/firewall.",
+      correct: true,
+      explanation:
+        "SSE foi desenhado especificamente pra 'server empurra dados pro client'. One-way apenas - client NAO manda pelo mesmo canal (usa fetch separado se precisar). Vantagens: (1) HTTP puro - funciona com qualquer proxy/CDN/firewall (WebSocket pode ter problema em proxy antigo), (2) reconexao automatica nativa do browser (3 linhas de codigo vs 30 pra WS), (3) Last-Event-ID destrava replay de eventos perdidos na reconexao (WebSocket NAO tem isso), (4) EventSource API mais simples que WebSocket. Para notificacoes (novo email, cotacao, log, status), SSE e' objetivamente melhor. WebSocket brilha em chat/jogos onde bidirecional importa. Escolha pela direcionalidade, nao pela popularidade.",
+    },
+    {
+      text: "Porque SSE e' mais rapido que WebSocket em qualquer caso.",
+      correct: false,
+      explanation:
+        "Nao. WebSocket tem latencia ligeiramente menor (~30ms vs ~50ms do SSE em conexao estavel). Em conexao instavel, SSE reconecta mais rapido (automatica) mas a diferenca e' desprezivel. 'Mais rapido' nao e' o motivo. O motivo e': (1) one-way nao precisa de bidirecional, (2) HTTP puro funciona em todo lugar, (3) reconexao automatica, (4) Last-Event-ID. Sao caracteristicas, nao velocidade.",
+    },
+    {
+      text: "Porque WebSocket nao funciona em browsers modernos.",
+      correct: false,
+      explanation:
+        "Nao. WebSocket funciona em **todos** os browsers modernos desde 2011 (Chrome, Firefox, Safari, Edge). A escolha entre SSE e WebSocket NAO e' sobre compatibilidade. E' sobre o caso de uso: one-way push = SSE, bidirecional = WebSocket. Em 2026, ambos funcionam perfeitamente. Sao complementares, nao substitutos.",
+    },
+  ]}
+/>

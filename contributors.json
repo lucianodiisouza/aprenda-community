@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 27,
+        "trilhas": 28,
         "projetos": 12,
         "bootcamps": 1,
-        "total": 40
+        "total": 41
       },
       "trilhas": [
         {
@@ -97,6 +97,10 @@
         {
           "slug": "pwa",
           "title": "PWA: Service Workers, estrategias de cache, IndexedDB, background sync e offline-first"
+        },
+        {
+          "slug": "real-time",
+          "title": "Real-time: WebSockets, SSE, Socket.IO, reconexao e presence"
         },
         {
           "slug": "seguranca-frontend",
