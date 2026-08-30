@@ -137,9 +137,9 @@ cada um com tradeoffs:
 
 **O "75th percentile" (p75) e' o que importa.**
 CWV nao mede a media. Mede o **percentil 75**
-- 75% dos usuarios tem performance <= esse
+- 75% dos usuarios tem performance ≤ esse
 valor. Se LCP p75 = 2.3s, significa que 75%
-dos usuarios viram o conteudo em <= 2.3s.
+dos usuarios viram o conteudo em ≤ 2.3s.
 Os 25% restantes viram depois. **Por que p75?**
 Pra penalizar paginas com **caudas longas** -
 aquela pagina que funciona pra maioria mas
@@ -447,7 +447,7 @@ console.log(JSON.stringify(_r3));`}
       text: "p75 captura melhor a cauda longa de usuarios em devices lentos. A media esconde os 25% que tem a pior experiencia, que sao justamente os que mais sentem o problema (mobile 3G, devices low-end).",
       correct: true,
       explanation:
-        "Media esconde cauda longa: se 95% dos usuarios tem LCP 1s mas 5% tem LCP 8s, a media e' 1.4s (ok), mas 5% estao tendo experiencia pessima. p75 (percentil 75) penaliza paginas com cauda longa: significa que 75% dos usuarios estao <= valor. Os 25% restantes sao justamente mobile 3G, devices low-end, conexao ruim - os usuarios que mais sentem performance ruim. CWV usa p75 pra forcar devs a tratar esses casos, nao so os felizes.",
+        "Media esconde cauda longa: se 95% dos usuarios tem LCP 1s mas 5% tem LCP 8s, a media e' 1.4s (ok), mas 5% estao tendo experiencia pessima. p75 (percentil 75) penaliza paginas com cauda longa: significa que 75% dos usuarios estao ≤ valor. Os 25% restantes sao justamente mobile 3G, devices low-end, conexao ruim - os usuarios que mais sentem performance ruim. CWV usa p75 pra forcar devs a tratar esses casos, nao so os felizes.",
     },
     {
       text: "p75 e' mais facil de calcular que a media em datasets grandes.",

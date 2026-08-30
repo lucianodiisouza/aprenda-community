@@ -40,8 +40,8 @@ qualquer idioma.
 (`one`/`other`/`few`/`many`/etc). ICU
 MessageFormat **combina** isso com
 **templates de mensagem** - vc escreve
-"Voce tem {count, plural, one {# item}
-other {# items}}" e o ICU resolve
+"Voce tem \{count, plural, one \{# item}
+other \{# items\}}" e o ICU resolve
 corretamente pro locale.
 
 Voce sai de "template literal com
@@ -75,7 +75,7 @@ classica.** Mensagens com **placeholders**,
 ```text
 {chave, tipo, valor}
 
-{total, plural, =0 {Sem items} one {1 item} other {# items}}
+{total, plural, =0 {Sem items} one {1 item} other \{# items\}}
 {gender, select, male {Ele} female {Ela} other {Eles}}
 {price, number, currency}
 {date, date, long}
@@ -140,7 +140,7 @@ pnpm add intl-messageformat
 import IntlMessageFormat from "intl-messageformat";
 
 const msg = new IntlMessageFormat(
-  "Voce tem {count, plural, one {1 item} other {# items}}",
+  "Voce tem {count, plural, one {1 item} other \{# items\}}",
   "pt-BR"
 );
 
@@ -219,7 +219,7 @@ quer escrever `{count}` de novo:
 
 ```text
 {count, plural,
-  one {# item}
+  one \{# item}
   other {# items}
 }
 ```
@@ -240,7 +240,7 @@ i18next.use(ICU).init({
   resources: {
     "pt-BR": {
       translation: {
-        cart_items: "Voce tem {{count, plural, one {1 item} other {# items}}}",
+        cart_items: "Voce tem {{count, plural, one {1 item} other \{# items\}}}",
       },
     },
     "pl-PL": {

@@ -478,7 +478,7 @@ request, e quando volta online, re-executa.
 **O usuario nunca perde uma acao**.
 
 <Checkpoint
-  challenge="Implemente a função `montarQueryDexie(tabela, indice, opcoes)` que recebe um nome de tabela ('users' ou 'posts'), o indice a usar ('id', 'email', 'userId', 'createdAt' ou 'index' para primary key ++id), e opcoes { valor, limite, offset, ordem }. Retorna a string de query no formato do Dexie: 'tabela.where(\"indice\").equals(valor).offset(offset).limit(limite).toArray()' ou variantes conforme a operacao. Quando ordem = 'desc', usa .reverse(). order 'asc' ou undefined = ordem natural."
+  challenge="Implemente a função `montarQueryDexie(tabela, indice, opcoes)` que recebe um nome de tabela ('users' ou 'posts'), o indice a usar ('id', 'email', 'userId', 'createdAt' ou 'index' para primary key ++id), e opcoes { valor, limite, offset, ordem }. Retorna a string de query no formato do Dexie: 'tabela.where(&quot;indice&quot;).equals(valor).offset(offset).limit(limite).toArray()' ou variantes conforme a operacao. Quando ordem = 'desc', usa .reverse(). order 'asc' ou undefined = ordem natural."
   starterCode={`// Implemente montarQueryDexie(tabela, indice, opcoes) que monta uma
 // query string do Dexie 3.x.
 //
@@ -487,13 +487,13 @@ request, e quando volta online, re-executa.
 // opcoes: { valor, limite: number, offset: number, ordem: 'asc' | 'desc' }
 //
 // Formato da string:
-// - Se opcoes.valor: 'tabela.where(\"indice\").equals(valor).toArray()'
+// - Se opcoes.valor: 'tabela.where(&quot;indice&quot;).equals(valor).toArray()'
 //   (com .offset(N).limit(M) e .reverse() se necessario)
 // - Sem opcoes.valor: 'tabela.toArray()' (com .offset/limit/reverse opcionais)
 //
 // Use 'index' quando o indice for primary key (++id), nesse caso a
 // consulta via .get() e nao .where().equals(). Mas pra simplificar,
-// sempre use .where(\"indice\").equals() ou .toArray().
+// sempre use .where(&quot;indice&quot;).equals() ou .toArray().
 //
 // Regras:
 // - ordem 'desc' → adicionar .reverse() antes de .offset().limit().
@@ -516,10 +516,10 @@ console.log(JSON.stringify(_r3));
 
 const _r4 = montarQueryDexie("posts", "createdAt", { limite: 5, ordem: "asc" });
 console.log(JSON.stringify(_r4));`}
-  expected='"users.where(\\"email\\").equals(\\"ana@x.com\\").toArray()"
-"posts.where(\\"userId\\").equals(1).limit(10).toArray()"
-"users.where(\\"id\").limit(20).offset(0).reverse().toArray()"
-"posts.where(\\"createdAt\\").limit(5).toArray()"'
+  expected='"users.where(\\\\\\&quot;email\\\\\\&quot;).equals(\\\\\\&quot;ana@x.com\\\\\\&quot;).toArray()"
+"posts.where(\\\\\\&quot;userId\\\\\\&quot;).equals(1).limit(10).toArray()"
+"users.where(\\\\\\&quot;id&quot;).limit(20).offset(0).reverse().toArray()"
+"posts.where(\\\\\\&quot;createdAt\\\\\\&quot;).limit(5).toArray()"'
   slug="pwa"
   nodeId="indexeddb"
 />
