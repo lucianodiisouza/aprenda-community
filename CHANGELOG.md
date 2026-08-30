@@ -6,6 +6,32 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.27.1] - 2026-08-30
+
+### Adicionado
+
+- 📚 **`CATALOGO.md`**: catálogo navegável com a lista completa de
+  **38 trilhas** (agrupadas em 5 áreas, com contagem de nós e nível),
+  **17 projetos** e **2 bootcamps** em tabelas. Vira a fonte navegável
+  do que existe; o README passa a apontar pra cá.
+
+### Alterado
+
+- 📝 **README**: lista extensa de trilhas trocada por um resumo das 5
+  áreas + link pro `CATALOGO.md` (README muito mais enxuto). Adicionada
+  seção de **Bootcamps**, badge `bootcamps-2`, e a seção "Reconhecimento"
+  agora aponta pro `contributors.json` real (gerado por
+  `scripts/build-contributors.mjs`).
+
+### Corrigido
+
+- 🔢 **README**: contadores desatualizados - badge de trilhas `25 → 38`
+  e prosa de projetos `9 → 17`.
+- 🗂️ **README**: árvore de estrutura apontava pra um `meta/` na raiz
+  que não existe (o changelog é `CHANGELOG.md` na raiz e as decisões
+  editoriais vivem em `roadmaps/<slug>/meta/`); adicionados `bootcamps/`,
+  `contributors.json`, `scripts/`, `docs/proposals/` e `CATALOGO.md`.
+
 ## [1.27.0] - 2026-08-30
 
 ### Adicionado
