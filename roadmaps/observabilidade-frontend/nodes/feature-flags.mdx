@@ -1,0 +1,588 @@
+---
+id: feature-flags
+title: "Feature flags: LaunchDarkly, Flagsmith, Cloudflare Flagship, rollout progressivo"
+resources:
+  - title: "LaunchDarkly - Docs (EN)"
+    url: https://docs.launchdarkly.com/
+    lang: en
+    type: doc
+    free: true
+  - title: "Flagsmith - Open Source (EN)"
+    url: https://docs.flagsmith.com/
+    lang: en
+    type: doc
+    free: true
+  - title: "Cloudflare - Flagship (EN)"
+    url: https://developers.cloudflare.com/flagship/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce fez deploy, mas o **PM** quer
+**testar a nova feature com 5% dos
+users antes**. Sem feature flag, voce
+faz **2 deploys** (rollout, depois
+full). Com feature flag, **1 deploy
+e a flag controla**. **Esse no cobre
+feature flags**: o pattern de
+**separar deploy de release**, com
+**rollout progressivo** (10% → 50% →
+100%), **kill switch** instantaneo,
+e **A/B testing** com **LaunchDarkly**,
+**Flagsmith**, ou **Cloudflare
+Flagship**.
+
+Feature flags mudam a **cultura** de
+deploy: em vez de "deploy = release"
+(vinculado), voce tem "deploy = release
+controlado" (desvinculado). Beneficios:
+(1) **rollout gradual** (10% dos
+users ve nova UI, 90% ve antiga), (2)
+**kill switch** (desliga em 30s sem
+deploy), (3) **A/B test** (50% A, 50%
+B, mede qual converte mais), (4)
+**user targeting** (10% dos users em
+SA-SP ve, Brasil ainda nao).
+
+Voce sai de "deploy arriscado, sem
+volta" pra "deploy seguro, controle
+total".
+
+## O essencial 🟢
+
+**Feature flag em 30 segundos.**
+
+```ts
+import { useFlags } from "launchdarkly-react-client-sdk";
+
+function CheckoutButton() {
+  const { newCheckout } = useFlags();
+
+  if (newCheckout) {
+    return <NewCheckoutButton />;  // 10% dos users
+  }
+  return <OldCheckoutButton />;   // 90% dos users
+}
+```
+
+**A flag `newCheckout`** e' configurada
+no **LaunchDarkly dashboard**: 10% dos
+users, ou usuarios com `email ENDS WITH
+@beta.com`, ou pais = "BR". **Codigo
+nao muda** - **flag** controla o que
+cada user ve.
+
+**4 tipos de feature flags.**
+
+1. **Release flag (rollout):** liga
+   feature pra % dos users. **Mais
+   comum.** Apos validar em prod, sobe
+   pra 100%.
+2. **Experiment flag (A/B test):** 50%
+   A, 50% B. Mede **metrica** (conversion,
+   engagement) e escolhe vencedor.
+3. **Operational flag (kill switch):**
+   liga/desliga **componente
+   critico**. Default ON, **kill**
+   instantaneo se problema.
+4. **Permission flag:** "users pro ve
+   X, users free nao ve". **User
+   targeting** por plano, role,
+   atributo.
+
+**Rollout progressivo.**
+
+```text
+Deploy 1.5.0 com feature flag newCheckout
+  ↓
+Dia 1: flag off, 0% ve
+Dia 1: liga 1% (canary - early adopters)
+Dia 2: sobe pra 10% se metricas ok
+Dia 3: 50%
+Dia 5: 100% (release completo)
+```
+
+Se **metricas ruins** (LCP subiu, error
+rate subiu, conversion caiu): **kill
+flag** em 30s, volta pra 100% no antigo.
+**Sem rollback de deploy**.
+
+**Kill switch - o "por que" feature
+flags sao obrigatorios.** Em prod,
+**bug critico** detectado (payment
+gateway fora, checkout quebrado). Sem
+kill switch: revert git, build, deploy
+(15-30min). Com kill switch: **toggle
+flag no dashboard** (30s).
+
+```ts
+function PaymentProcessor() {
+  const { paymentV2 } = useFlags();
+
+  if (paymentV2) {
+    return <NewPaymentProcessor />;  // problematico
+  }
+  return <OldPaymentProcessor />;     // safe, default
+}
+```
+
+**Toggle off no LaunchDarkly** =
+`paymentV2` retorna `false` pra todos
+= app volta pro payment antigo em 30s.
+
+**LaunchDarkly - o SaaS mais usado.**
+
+```bash
+pnpm add launchdarkly-react-client-sdk
+```
+
+```ts
+import { withLDProvider, useFlags } from "launchdarkly-react-client-sdk";
+
+function App() {
+  return (
+    <LDProvider clientSideID="your-client-id">
+      <Routes />
+    </LDProvider>
+  );
+}
+
+function Feature() {
+  const { newCheckout } = useFlags();
+  return newCheckout ? <New /> : <Old />;
+}
+```
+
+**LaunchDarkly pricing**: free tier
+= ate 10 users, pago a partir de $8.33/seat/mes.
+**Self-hosted** nao disponivel (SaaS
+so').
+
+**Flagsmith - open source.**
+
+```bash
+pnpm add flagsmith
+```
+
+```ts
+import flagsmith from "flagsmith";
+
+flagsmith.init({
+  environmentID: "your-env-id",
+});
+
+const flags = await flagsmith.getFlags();
+const isEnabled = flags.isFeatureEnabled("new-checkout");
+```
+
+**Flagsmith pricing**: free tier
+**generoso** (1M requests/mes, self-hosted
+**gratis**), pago a partir de $45/mes.
+**Open source** (GitHub).
+
+**Cloudflare Flagship - edge-native
+(2024+).** Flags **executadas no edge**
+(Cloudflare Workers), **latencia
+sub-millisecond**. **Integrado** com
+Cloudflare ecosystem (KV, Durable
+Objects).
+
+```ts
+// Cloudflare Worker
+export default {
+  async fetch(request) {
+    const flag = await FLAGSHIPS.get("new-checkout");
+    if (flag.enabled) {
+      return new Response("New checkout");
+    }
+    return new Response("Old checkout");
+  },
+};
+```
+
+**Cloudflare Flagship pricing**: free
+tier = 1K requests/dia, pago a partir
+de $0.50/M requests.
+
+**Comparacao LaunchDarkly vs Flagsmith
+vs Cloudflare Flagship.**
+
+| Feature              | LaunchDarkly | Flagsmith      | Cloudflare Flagship |
+| -------------------- | ------------ | -------------- | ------------------- |
+| **Open source**      | nao          | sim            | nao                 |
+| **Self-hosted**      | nao          | sim            | nao (edge)          |
+| **Latencia**         | ~50ms        | ~50ms          | < 5ms (edge)        |
+| **Free tier**        | 10 seats     | 1M req/mes     | 1K req/dia          |
+| **Targeting**        | avancado     | basico         | basico              |
+| **A/B testing**      | sim          | nao            | nao                 |
+| **Audit log**        | sim          | sim (pago)     | basico              |
+| **Compliance**       | SOC2         | SOC2           | SOC2                |
+
+**Escolha**: LaunchDarkly = enterprise
+(complexo, com A/B test). Flagsmith =
+open source / mid-market. Cloudflare
+Flagship = edge-native, low latency.
+
+**User targeting - "10% dos users em
+SA-SP ve, Brasil ainda nao".**
+
+```text
+Flag: new-checkout
+  Target:
+    - country: BR (10% rollout)
+    - email: contains "@beta.com" (100%)
+    - userId: 12345 (100% - internal test)
+  Default: off
+```
+
+**Codigo** recebe flag booleano. **Dashboard**
+configura quem ve. **Codigo nao muda**
+quando targeting muda.
+
+**Local flag override - dev override.**
+
+```ts
+// Dev mode: force flag on
+flagsmith.identify("dev-user", {
+  customFlags: { "new-checkout": true },
+});
+```
+
+**Use** pra testar **todas as combinacoes
+de flag** sem mexer no dashboard.
+
+**Feature flag em React, Vue, Svelte.**
+
+| Framework | LaunchDarkly         | Flagsmith          |
+| --------- | -------------------- | ------------------ |
+| React     | `useFlags()` hook    | `useFlags()` hook  |
+| Vue       | `$ldReady` mixin     | composable         |
+| Svelte    | `getContext()`       | `getFlags()` store |
+| Vanilla   | `client.variation()` | `flagsmith.getValue()` |
+
+**Pattern: default safe.** **Sempre**
+defina um **fallback safe** (default
+OFF ou default ON, dependendo do
+dominio):
+
+```ts
+function Checkout() {
+  // Default OLD (conservador)
+  const { newCheckout } = useFlags();
+  if (newCheckout) {
+    return <NewCheckout />;
+  }
+  return <OldCheckout />;  // default
+}
+```
+
+**Se feature flag provider cai** (server
+fora), `newCheckout = false`, user ve
+checkout antigo. **Safe**.
+
+**Pattern: cleanup de flags.** Flags
+sao **tecnicas debt** - apos 100%
+rollout, **remova o codigo** da flag:
+
+```ts
+// Antes: 2 codigos
+function Checkout() {
+  const { newCheckout } = useFlags();
+  if (newCheckout) return <NewCheckout />;
+  return <OldCheckout />;
+}
+
+// Depois (apos 100% rollout, flag removida):
+function Checkout() {
+  return <NewCheckout />;  // dead code do antigo removido
+}
+```
+
+**Cleanup** evita "flag spaghetti" -
+cem flags em codigo que ninguem sabe
+o que fazem.
+
+## Aprofundamento 🟡
+
+**Targeting rules complexas.** LaunchDarkly
+suporta:
+
+- **User attributes:** `country`, `email`,
+  `plan`, `customKey` (userId).
+- **Segments:** grupo de users (ex:
+  "beta-testers" = todos com email
+  `@company.com`).
+- **Rules:** combinacoes (AND/OR).
+- **Prerequisites:** "so' ativar se flag
+  X esta' on".
+
+**Example rule: 10% rollout, exceto
+enterprise.**
+
+```text
+IF user.plan != "enterprise"
+  AND random(0, 100) < 10
+THEN flag = true
+ELSE flag = false
+```
+
+**A/B testing com feature flags.** Use
+flags como **experimentos** com
+**metricas**:
+
+```ts
+function PricingPage() {
+  const { priceVariant } = useFlags();
+  // priceVariant: "control" | "A" | "B"
+
+  // Track no analytics
+  useEffect(() => {
+    analytics.track("page_view", { variant: priceVariant });
+  }, [priceVariant]);
+
+  if (priceVariant === "A") return <PriceA />;
+  if (priceVariant === "B") return <PriceB />;
+  return <PriceControl />;
+}
+```
+
+**LaunchDarkly Experimentation** calcula
+significancia estatistica e mostra
+qual variante **venceu**. **Use** pra
+testes de pricing, copy, layout - mas
+**nao** pra mudancas de UI/feature
+(complexo demais, A/B test tradicional
+via Optimizely/VWO e' melhor).
+
+**Feature flag em SSR (Next.js).** No
+SSR, a flag e' avaliada **server-side**
+no primeiro request:
+
+```ts
+// pages/checkout.tsx (Next.js Pages Router)
+import { getLDServerContext } from "launchdarkly-react-client-sdk";
+
+export async function getServerSideProps(context) {
+  const ldContext = await getLDServerContext({
+    clientSideID: "your-client-id",
+    context: { kind: "user", key: context.req.cookies.userId },
+  });
+
+  return {
+    props: { newCheckout: ldContext.variation("new-checkout", false) },
+  };
+}
+```
+
+**Evita flicker** (user ve "old" no SSR,
+"new" no client hydration). **Use
+sempre** SSR com feature flags.
+
+**Feature flag e compliance.** **LGPD**
+considera feature flags que fazem
+**targeting por user attributes** (email,
+pais) como "tratamento de dados
+pessoais". **Consentimento** pode
+ser necessario se o targeting
+individualiza.
+
+**OpenFeature - vendor-neutral
+flags.** **OpenFeature** (CNCF) e' o
+"OpenTelemetry das feature flags" -
+1 API, **N providers** (LaunchDarkly,
+Flagsmith, Cloudflare Flagship,
+Unleash). **Vendor-neutrality**.
+
+```ts
+import { OpenFeature } from "@openfeature/js-sdk";
+
+const client = OpenFeature.getClient();
+const isEnabled = client.getBooleanValue("new-checkout", false);
+```
+
+**Em 2026**, OpenFeature ainda em rollout.
+**Considere** se quiser **vendor-
+neutrality**.
+
+**Feature flag local - simples, sem
+SaaS.** Pra apps sem LaunchDarkly
+orçamento, use **.env** ou **config
+JSON**:
+
+```ts
+// config/features.json
+{
+  "newCheckout": {
+    "enabled": true,
+    "rollout": 0.1
+  }
+}
+```
+
+```ts
+import features from "./config/features.json";
+
+const userHash = hashUserId(userId);
+if (features.newCheckout.enabled && userHash < features.newCheckout.rollout) {
+  return <NewCheckout />;
+}
+```
+
+**Limitado**: sem dashboard, sem targeting
+complexo, sem audit log. **OK** pra
+apps pequenos, **insuficiente** pra
+enterprise.
+
+## Pra quem quer ir mais alem 🔴
+
+**LaunchDarkly Relay Proxy.** Self-hosted
+proxy entre client e LaunchDarkly
+server. **Reduz latencia** (cache local),
+**aumenta seguranca** (cliente nao
+chama SaaS direto), **funciona offline**
+(cache). **Use** em apps com **muitos
+clients** mobile.
+
+**Feature flag em mobile (RN, native).**
+LaunchDarkly SDK funciona em React
+Native, iOS (Swift), Android (Kotlin).
+**Cuidado** com **offline** - mobile
+perde rede. **Cache last value** + **default
+fallback**.
+
+**Trunk-based development + feature
+flags.** Trunk-based = **todos
+committam em main**, **sem branches
+longos**. Feature flags sao
+**obrigatorias** - cada feature em
+branch proprio nao pode mergear ate
+"pronto". Com flags, **merge cedo,
+release gradual**. **Cultura** que
+Flickr, Google, Facebook usam desde
+2010.
+
+**Anti-patterns de feature flags.**
+
+- **Long-lived flags** (> 6 meses) -
+  technical debt, "flag spaghetti".
+- **Nested flags** (flag dentro de
+  flag) - impossivel testar todas
+  combinacoes.
+- **Flag explosion** - 100+ flags em
+  codigo, sem owner claro. **Cada
+  flag deve ter owner** (time que
+  criou) e **data de remocao**.
+- **Magic flag values** ("string 'A'
+  = tratamento X, string 'B' =
+  tratamento Y") - use **boolean**
+  ou **enum** explicitamente.
+
+**Feature flag e Continuous Delivery.
+** Flags **complementam** CD, nao
+substituem. **CD = deploy automatico**
+em cada merge. **Feature flag =
+controle de release** independente
+do deploy. **Juntos** = deploy rapido
++ release seguro.
+
+**Leitura recomendada:**
+
+- [LaunchDarkly - Docs](https://docs.launchdarkly.com/) - setup, targeting, A/B testing, code references.
+- [Flagsmith - Open Source](https://docs.flagsmith.com/) - self-hosted, open source, API completa.
+- [Cloudflare - Flagship](https://developers.cloudflare.com/flagship/) - edge-native, baixa latencia, integracao com Workers.
+
+> Dica: o erro mais comum em feature
+> flags e' **"vamos usar pra tudo"**.
+> Resultado: codigo com 30 flags
+> aninhadas, impossivel testar.
+> **Use feature flags pra 4 cenarios**:
+> (1) **rollout progressivo** de
+> feature grande, (2) **kill switch**
+> de componente critico, (3) **A/B
+> test** de copy/pricing, (4)
+> **permission/plan-based**. **Nao use**
+> pra: configuracao de UI ("dark mode
+> on/off" nao e' feature flag, e'
+> config), A/B test de copy pequeno
+> (use SaaS proprio), ou refactor
+> interno (git branch resolve). **Cada
+> flag deve ter owner e data de
+> remocao** - 6 meses max.
+
+No proximo no (ultimo teorico), vamos
+**PII e privacidade**: como scrubbing,
+consentimento, e data minimization
+afetam **Sentry, OTel, e feature
+flags** em contexto de **LGPD/GDPR**.
+Cobre o "lado juridico" de observabilidade.
+
+<Checkpoint
+  challenge="Implemente a função `resolverFeatureFlag(flag, contexto, configuracoes)` que decide se uma feature flag esta habilitada para um user. Recebe: flag (string, ex: 'new-checkout'), contexto = { userId: string, userAttributes?: object (ex: { country: 'BR', plan: 'pro' }) }, configuracoes = { 'new-checkout': { enabled: boolean, rollout?: number (0-1, default 1.0 se ausente), attributes?: object (ex: { country: 'BR' }) } }. Regras em ordem: (1) Se flag nao existe em configuracoes, retorne false. (2) Se config.enabled === false, retorne false. (3) Se config.attributes existe, todos devem bater com contexto.userAttributes (senao false). (4) Se config.rollout === 0, retorne false. (5) Se config.rollout === 1 ou ausente, retorne true. (6) Caso contrario (rollout entre 0 e 1), use hash deterministico do userId: hash = soma de charCodeAt de cada char, modulo 100. Se hash < rollout*100, true, senao false."
+  starterCode={`// Implemente resolverFeatureFlag(flag, contexto, configuracoes)
+// que decide se uma feature flag esta habilitada para um user.
+//
+// Regras em ordem:
+// 1. Se flag nao existe em configuracoes, retorne false.
+// 2. Se config.enabled === false, retorne false.
+// 3. Se config.attributes existe, todos devem bater com
+//    contexto.userAttributes (senao false).
+// 4. Se config.rollout === 0, retorne false.
+// 5. Se config.rollout === 1 ou ausente, retorne true.
+// 6. Caso contrario (rollout entre 0 e 1), use hash deterministico
+//    do userId: hash = soma de charCodeAt de cada char, modulo 100.
+//    Se hash < rollout*100, true, senao false.
+function resolverFeatureFlag(flag, contexto, configuracoes) {
+  return false;
+}
+
+const _r1 = resolverFeatureFlag('new-checkout', { userId: 'u1' }, { 'new-checkout': { enabled: true, rollout: 1.0 } });
+console.log(_r1);
+
+const _r2 = resolverFeatureFlag('new-checkout', { userId: 'u1' }, { 'new-checkout': { enabled: false, rollout: 1.0 } });
+console.log(_r2);
+
+const _r3 = resolverFeatureFlag('new-checkout', { userId: 'u1' }, { 'new-checkout': { enabled: true, rollout: 0 } });
+console.log(_r3);
+
+const _r4 = resolverFeatureFlag('new-checkout', { userId: 'u1', userAttributes: { country: 'BR' } }, { 'new-checkout': { enabled: true, attributes: { country: 'US' } } });
+console.log(_r4);
+
+const _r5 = resolverFeatureFlag('new-checkout', { userId: 'u1' }, {});
+console.log(_r5);
+
+const _r6 = resolverFeatureFlag('new-checkout', { userId: 'u1' }, { 'new-checkout': { enabled: true } });
+console.log(_r6);`}
+  expected='true
+false
+false
+false
+false
+true'
+  slug="observabilidade-frontend"
+  nodeId="feature-flags"
+/>
+
+<Quiz
+  question="Por que feature flags sao obrigatorios em times que praticam Continuous Deployment / trunk-based development?"
+  options={[
+    {
+      text: "Trunk-based development + CD = commits constantes em main, deploy automatico em cada merge. Sem feature flag, deploy = release (vinculado, arriscado, sem volta). Com feature flag, deploy = codigo em prod, mas release e' controlado por flag (desvinculado, seguro, reversivel). Kill switch em 30s vs rollback de 30min.",
+      correct: true,
+      explanation:
+        "O ponto: CD significa que **codigo novo vai pra prod em cada merge** (horas, nao semanas). Sem feature flag, **codigo incompleto vai pra prod** = quebra. Times CD resolvem com **feature flags**: merge de feature **incompleta** em main, **flag off** (feature nao ativa), deploy em prod, depois **liga flag** quando pronto. Beneficios: (1) **Rollout progressivo** (10% → 100%) - **kill switch** em 30s se problema. (2) **Trunk-based** funciona - todos mergem em main, sem merge hell de long-lived branches. (3) **A/B testing** - flag define 50% A, 50% B. (4) **Permission targeting** - users pro ve, free nao. **Sem feature flag em time CD**: deploy ameaca constante, rollback de 30min a cada bug. **Com feature flag**: kill switch em 30s, rollout gradual, deploy desacoplado de release. Times como **Flickr, GitHub, Google, Facebook** usam feature flags desde 2010 - **trunk-based development** + feature flags e' o **stack padrao** de times maduros.",
+    },
+    {
+      text: "Feature flags so' servem pra A/B testing, nao pra rollout.",
+      correct: false,
+      explanation:
+        "Falso. Feature flags servem pra **4 cenarios** principais: (1) **Release flag** (rollout progressivo) - o mais comum, (2) **Experiment flag** (A/B test) - subset de uso, (3) **Operational flag** (kill switch) - critical, (4) **Permission flag** (plan-based). **A/B testing e' so' 1 dos 4**. Em 2026, a maioria dos times usa feature flags **principalmente pra rollout + kill switch**, nao A/B test. A/B test tradicional usa SaaS proprio (Optimizely, VWO).",
+    },
+    {
+      text: "Feature flags sao um sinonimo de configuracao de app - sao a mesma coisa.",
+      correct: false,
+      explanation:
+        "Falso. **Feature flag** e' **runtime, controlado externamente** (dashboard LaunchDarkly), muda **comportamento** de feature. **Configuracao** e' **build-time** (env var, JSON), muda **parametros** (URL, flag on/off sem dashboard). Use feature flag pra rollout de feature, use config pra URL do backend. **Misturar** e' anti-pattern - 'feature flag' pra tudo gera flag explosion.",
+    },
+  ]}
+/>
