@@ -63,13 +63,13 @@ edge - e quando usar cada".
 
     Runtime -->|Node server| Node[Node: long-running process]
     Runtime -->|Serverless| Lambda[AWS Lambda: cold start, scale 0]
-    Runtime -->|Edge| EdgeFn[Cloudflare Workers: <5ms cold start]
+    Runtime -->|Edge| EdgeFn[Cloudflare Workers: \u003c5ms cold start]
 
     CDN --> User[User no browser]
     Node --> User
     Lambda --> User
     EdgeFn --> User`}
-  caption="Pipeline: codigo fonte → build tool → output (static/SSR/SSG/ISR/edge) → runtime (Node/serverless/edge) → CDN → user. Decisao 'qual output + qual runtime' impacta performance, custo, e complexidade. Em 2026, edge e' o default pra latencia <100ms; serverless pra escala zero; Node pra apps com muita CPU/memoria."
+  caption="Pipeline: codigo fonte → build tool → output (static/SSR/SSG/ISR/edge) → runtime (Node/serverless/edge) → CDN → user. Decisao 'qual output + qual runtime' impacta performance, custo, e complexidade. Em 2026, edge e' o default pra latencia \<100ms; serverless pra escala zero; Node pra apps com muita CPU/memoria."
 />
 
 **Os 5 tipos de build output.**
@@ -109,7 +109,7 @@ edge - e quando usar cada".
    muito estado (Gmail, Figma).
 
 5. **Edge SSR.** SSR mas em **edge
-   locations** (V8 isolates, <5ms
+   locations** (V8 isolates, \<5ms
    cold start). **Latencia baixa**
    (proximo do user), **dinamico**,
    **limitado** (10-50ms CPU max).
