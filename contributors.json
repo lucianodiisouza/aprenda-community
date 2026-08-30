@@ -10,8 +10,8 @@
       "counts": {
         "trilhas": 32,
         "projetos": 12,
-        "bootcamps": 1,
-        "total": 45
+        "bootcamps": 2,
+        "total": 46
       },
       "trilhas": [
         {
@@ -198,6 +198,11 @@
           "slug": "desenvolvedor-backend",
           "title": "Desenvolvedor Backend",
           "via": "creator"
+        },
+        {
+          "slug": "desenvolvedor-frontend",
+          "title": "Desenvolvedor Frontend",
+          "via": "creator"
         }
       ]
     },
@@ -277,8 +282,8 @@
       "counts": {
         "trilhas": 1,
         "projetos": 1,
-        "bootcamps": 0,
-        "total": 2
+        "bootcamps": 1,
+        "total": 3
       },
       "trilhas": [
         {
@@ -292,7 +297,13 @@
           "title": "Auditoria de Acessibilidade Web"
         }
       ],
-      "bootcamps": []
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-frontend",
+          "title": "Desenvolvedor Frontend",
+          "via": "trilha:acessibilidade-web"
+        }
+      ]
     },
     {
       "github": "theneocarvalho",
