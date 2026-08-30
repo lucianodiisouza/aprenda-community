@@ -6,6 +6,59 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.25.0] - 2026-08-30
+
+### Adicionado
+
+- 🌐 **Trilha Edge Deploy Frontend** (`roadmaps/edge-deploy-frontend`,
+  7 nós): do build output (static, SSR, SSG, ISR, edge) ao runtime
+  (Node, serverless, edge), passando por Cloudflare Workers (V8 isolate,
+  KV, R2, D1, Durable Objects), Vercel Edge, Deno Deploy e estratégias
+  de cache na borda. Posicionada como intermediária.
+- 🤖 **Trilha Engenharia de IA** (`roadmaps/engenharia-ia`, 8 nós):
+  engenharia de software assistida por IA - comparativo de ferramentas
+  (Claude Code, Cursor, Copilot, Cody, Continue), divisão de tarefas
+  para IA (prompt direto vs plano multi-step), validação de saída,
+  custos, latência e governança. Posicionada como intermediária.
+- 📊 **Trilha Observabilidade Frontend** (`roadmaps/observabilidade-frontend`,
+  7 nós): medir, rastrear e depurar a aplicação no navegador do usuário
+  real - 3 sinais clássicos (logs, metrics, traces) aplicados ao
+  client, RUM, error tracking com Sentry (source maps, release health,
+  sampling), Web Vitals e privacidade. Posicionada como intermediária.
+- 🌎 **Trilha i18n** (`roadmaps/i18n`, 7 nós): internacionalização e
+  localização na prática - Intl APIs (`NumberFormat`, `DateTimeFormat`,
+  `Collator`, `ListFormat`) para formatação locale-aware, ICU
+  MessageFormat para pluralização e seleção, RTL, locale negotiation
+  e SEO multilíngue. Posicionada como intermediária.
+- 📡 **Trilha Real-time** (`roadmaps/real-time`, 7 nós): comunicação
+  real-time no browser - WebSocket nativo (API, `readyState`, eventos),
+  Server-Sent Events (EventSource, reconexão automática), Socket.IO
+  (rooms, namespaces, fallback), reconexão e backpressure. Posicionada
+  como intermediária.
+- 🛡️ **Endurecimento do `scripts/validate.mjs`**: projetos passam a
+  exigir `published: YYYY-MM-DD` (ativa o selo "novo" no site) ou
+  `draft: true` (waiver explícito para WIP intencional) no frontmatter.
+  O check morava em `validateProject()` e estava silenciosamente
+  aceitando projetos sem data - o que permitia seed batches sem
+  destaque no academy.
+
+### Corrigido
+
+- 📚 **Publicação retroativa de 10 projetos**: 9 seed projects
+  introduzidos em `9db00ea` (2026-08-24) e `auditoria-de-acessibilidade-web`
+  (PR #61, 2026-08-29) estavam sem `published:` no frontmatter, o que
+  os deixava sem o selo "novo" no site. Adicionado
+  `published: "2026-08-30"` em todos os 10. Com isso, os 17 projetos
+  do repositório agora exibem o selo "novo" no academy.
+
+### Créditos
+
+- 5 trilhas escritas por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
+- `auditoria-de-acessibilidade-web` (publicado retroativamente) escrito
+  por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+
 ## [1.24.0] - 2026-08-29
 
 ### Adicionado
@@ -682,5 +735,6 @@ check-links    → 80 ok, 0 com problema
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
   Open Graph Protocol.
 
-[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.0.0...HEAD
+[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.25.0...HEAD
+[1.25.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.25.0
 [1.0.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.0.0
