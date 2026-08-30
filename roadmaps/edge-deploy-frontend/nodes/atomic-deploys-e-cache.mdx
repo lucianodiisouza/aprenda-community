@@ -547,7 +547,7 @@ moderna.
 // Regras:
 // - 'static-hash': 'public, max-age=31536000, immutable' (ignore maxAge)
 // - 'html': 'public, max-age=0, must-revalidate' (ignore maxAge)
-// - 'api-publica': \`public, max-age=${maxAge || 60}, stale-while-revalidate=300\`
+// - 'api-publica': \`public, max-age=\${maxAge || 60}, stale-while-revalidate=300\`
 // - 'api-privada': 'private, no-cache' (ignore maxAge)
 // - 'mutation': 'no-store' (ignore maxAge)
 function configurarCache(conteudo) {
