@@ -1,0 +1,137 @@
+---
+id: links-e-botoes
+title: "Links e Botões: Cada Elemento com a Sua Função"
+resources:
+  - title: "Elemento a"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/a
+    type: doc
+    lang: pt
+    free: true
+  - title: "Elemento button"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/button
+    type: doc
+    lang: pt
+    free: true
+---
+
+Link e botão podem receber o mesmo CSS, mas comunicam intenções diferentes. A
+pergunta decisiva não é "como ele parece?", e sim **"o que acontece ao ativá-lo?"**.
+
+```html
+<!-- Navega e cria uma entrada no histórico do navegador -->
+<a href="/pedidos/1042">Ver detalhes do pedido</a>
+
+<!-- Altera o estado da interface atual -->
+<button type="button" aria-expanded="false" aria-controls="filtros">
+  Mostrar filtros
+</button>
+```
+
+### Link navega
+
+Use `<a href="...">` quando a ação leva a outro endereço, documento ou seção
+navegável. A pessoa pode abrir em nova aba, copiar o endereço e usar Voltar.
+
+### Botão executa uma ação
+
+Use `<button>` para abrir menu, salvar, excluir, enviar, pausar ou alterar algo na
+interface. Em formulários, declare o tipo para evitar envios acidentais:
+
+```html
+<button type="button">Adicionar endereço</button>
+<button type="submit">Finalizar cadastro</button>
+```
+
+### O nome precisa fazer sentido
+
+Evite uma página cheia de links chamados "clique aqui". Prefira nomes que continuem claros fora do parágrafo:
+
+```html
+<a href="/fatura">Baixar fatura de agosto</a>
+```
+
+Compare como uma lista de links pode ser anunciada:
+
+```txt
+Ruim:  "clique aqui", "clique aqui", "saiba mais"
+Bom:   "Baixar fatura de agosto", "Rastrear pedido 1042", "Conhecer o plano Pro"
+```
+
+### Controles só com ícone também precisam de nome
+
+O desenho de uma lupa pode ser evidente visualmente, mas não fornece um nome por
+si só. Use texto visível quando houver espaço; em um botão realmente compacto,
+forneça um nome acessível:
+
+```html
+<button type="button" aria-label="Pesquisar">
+  <svg aria-hidden="true" focusable="false">...</svg>
+</button>
+```
+
+O `aria-label` deve descrever a ação, não o formato do ícone. "Pesquisar" é melhor
+que "Lupa".
+
+### Decisão rápida
+
+| Resultado da ativação | Elemento |
+| --- | --- |
+| Abre outra rota, página, arquivo ou âncora | `<a href="...">` |
+| Salva, abre modal, revela painel ou muda estado | `<button>` |
+| Envia o formulário | `<button type="submit">` |
+
+- **Link** muda o destino da navegação.
+- **Botão** executa uma ação na interface.
+- **Nome acessível** precisa explicar a finalidade do controle.
+
+> Dica: se você precisa adicionar `role="button"` a um link só para ele "virar
+> botão", provavelmente escolheu o elemento errado.
+
+### Teste prático
+
+Use `Tab` para chegar ao controle e escute ou leia seu nome fora do contexto da
+página. Depois tente `Enter`; em botões, teste também `Espaço`. O resultado deve
+ser previsível pelo nome e pela função anunciada.
+
+No próximo nó, vamos guardar o mouse e navegar pela interface usando **só o teclado**.
+
+<VisualCheckpoint
+  challenge="Use um link para navegar até /pedidos e um botão para abrir os filtros."
+  starterHtml={`<div class="acoes">
+  <!-- crie os dois controles aqui -->
+</div>`}
+  starterCss={`.acoes {
+  display: flex;
+  gap: 1rem;
+}`}
+  assert={`
+    const link = root.querySelector('a[href="/pedidos"]');
+    const button = root.querySelector('button');
+    return {
+      pass: !!link && !!button && button.textContent.trim().length > 0,
+      message: 'Crie <a href="/pedidos"> para navegar e <button> para a ação.'
+    };
+  `}
+  slug="acessibilidade-web"
+  nodeId="links-e-botoes"
+/>
+
+<Quiz
+  question="Qual critério separa bem link de botão?"
+  options={[
+    {
+      text: "Link navega para um destino; botão executa uma ação na interface",
+      correct: true,
+    },
+    {
+      text: "Tudo que parece clicável deve ser link",
+      correct: false,
+      explanation: "Abrir menu, salvar ou excluir são ações; nesses casos, button costuma ser o elemento certo.",
+    },
+    {
+      text: "Tudo que tem hover deve ser botão",
+      correct: false,
+      explanation: "Hover é estilo visual, não define a função semântica do controle.",
+    },
+  ]}
+/>

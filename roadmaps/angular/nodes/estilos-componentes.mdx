@@ -1,0 +1,80 @@
+---
+id: estilos-componentes
+title: "Estilos e Organização Visual"
+resources:
+  - title: "Angular: Styling components"
+    url: https://angular.dev/guide/components/styling
+    type: doc
+    lang: en
+    free: true
+---
+
+Quando o app é pequeno, qualquer CSS parece suficiente. Depois aparecem dez
+componentes, estados de erro, telas responsivas, tema e variações do mesmo card.
+Aí estilo solto começa a cobrar.
+
+Angular permite estilos por componente. Isso ajuda a manter o CSS perto da tela
+que ele afeta.
+
+```ts
+@Component({
+  selector: "app-status",
+  standalone: true,
+  template: `<span class="badge">{{ status }}</span>`,
+  styles: [`
+    .badge {
+      display: inline-flex;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+  `],
+})
+export class StatusComponent {
+  status = "em andamento"
+}
+```
+
+## Escopo de estilo
+
+Por padrão, o Angular encapsula estilos de componente para reduzir vazamento.
+Isso significa que o CSS de um componente tende a afetar só aquele componente.
+
+Ainda assim, você precisa separar responsabilidades:
+
+- estilo global para reset, fonte, tokens, tema e utilidades realmente comuns
+- estilo de componente para layout e variações daquele componente
+- classes de estado para situações como erro, selecionado, bloqueado e vazio
+
+## :host
+
+Use `:host` para estilizar o elemento do próprio componente:
+
+```css
+:host {
+  display: block;
+}
+
+:host(.compacto) {
+  font-size: 0.875rem;
+}
+```
+
+Isso evita criar wrappers só para aplicar layout no componente inteiro.
+
+## Responsividade
+
+Componente também precisa sobreviver em tela pequena. Prefira layout flexível,
+quebras naturais e tamanhos com limite. Se um componente só funciona em uma
+largura, ele vai quebrar quando entrar em uma página real.
+
+Três coisas pra levar deste nó:
+
+- **CSS de componente reduz vazamento visual.**
+- **`:host` estiliza o elemento do próprio componente.**
+- **Responsividade faz parte do componente, não só da página.**
+
+> Dica: antes de criar uma classe global, pergunte se ela é mesmo global. Muitas
+> classes globais começam como atalho e viram acoplamento invisível.
+
+No próximo nó, vamos tirar regra e dados dos componentes usando services e
+injeção de dependências.

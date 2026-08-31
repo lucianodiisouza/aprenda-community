@@ -1,0 +1,492 @@
+---
+id: icu-messageformat
+title: "ICU MessageFormat: pluralizacao, selecao, argumentos, MessageFormat 2"
+resources:
+  - title: "ICU MessageFormat - Syntax (EN)"
+    url: https://messageformat.unicode.org/
+    lang: en
+    type: doc
+    free: true
+  - title: "Format.JS - ICU MessageFormat (EN)"
+    url: https://formatjs.io/docs/message-format
+    lang: en
+    type: doc
+    free: true
+  - title: "i18next - Interpolation (EN)"
+    url: https://www.i18next.com/translation-function/interpolation
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce ja' sabe formatar numeros, datas,
+moedas com `Intl.*`. Agora vem o
+**problema de i18n que 80% dos apps
+implementam errado**: **pluralizacao e
+selecao**. Ingles e' facil: "1 item" /
+"2 items" (2 formas). Mas **polones** tem
+**3 formas** (1 / 2-4 / 5+), **arabe** tem
+**6 formas** (1 / 2 / 3-10 / 11-99 / 100
+/ 101+), e **japones** so' tem **1 forma**.
+**Esse no cobre ICU MessageFormat**: a
+**linguagem padrao** pra escrever
+mensagens que lidam com plural, selecao
+("male/female/other"), e argumentos
+nomeados - traduzida corretamente em
+qualquer idioma.
+
+`Intl.PluralRules` (no anterior) diz
+**qual** categoria de plural usar
+(`one`/`other`/`few`/`many`/etc). ICU
+MessageFormat **combina** isso com
+**templates de mensagem** - vc escreve
+"Voce tem \{count, plural, one \{# item}
+other \{# items\}}" e o ICU resolve
+corretamente pro locale.
+
+Voce sai de "template literal com
+if(count===1)" (quebra em polones) pra
+"mensagens ICU que funcionam em qualquer
+idioma".
+
+## O essencial 🟢
+
+**O problema classico: pluralizacao que
+quebra em i18n.**
+
+```ts
+// ❌ Errado: assume "1 = singular, 2+ = plural"
+const mensagem = `Voce tem ${count} ${count === 1 ? "item" : "items"}`;
+// Quebra em:
+//   polones: 1 = 1 forma, 2-4 = outra, 5+ = outra
+//   arabe: 1 = 1 forma, 2 = 2 forma, 3-10 = 3 forma, ...
+//   japones: 1 = mesma forma (1 item, 2 item, 5 item...)
+//   chines: 1 = mesma forma
+
+// ❌ Tambem errado: plural em ingles hardcoded
+const mensagem = `${count} item${count === 1 ? "" : "s"}`;
+// Quebra em qualquer outro idioma alem de ingles
+```
+
+**ICU MessageFormat 1.x - a sintaxe
+classica.** Mensagens com **placeholders**,
+**plural**, **select**, e combinacoes:
+
+```text
+{chave, tipo, valor}
+
+{total, plural, =0 {Sem items} one {1 item} other \{# items\}}
+{gender, select, male {Ele} female {Ela} other {Eles}}
+{price, number, currency}
+{date, date, long}
+```
+
+**Exemplos praticos:**
+
+```ts
+// Plural basico
+const m1 = `Voce tem {count, plural,
+  one {1 item}
+  other {# items}
+}`;
+// count=1: "Voce tem 1 item"
+// count=5: "Voce tem 5 items"
+
+// Plural em polones
+const m2 = `Masz {count, plural,
+  one {1 przedmiot}
+  few {# przedmioty}
+  many {# przedmiotów}
+  other {# przedmiotu}
+}`;
+// count=1: "Masz 1 przedmiot"
+// count=2: "Masz 2 przedmioty"  (few)
+// count=5: "Masz 5 przedmiotów"  (many)
+// count=22: "Masz 22 przedmioty" (few - 22-25)
+
+// Select por genero
+const m3 = `{gender, select,
+  male {Ele enviou uma mensagem}
+  female {Ela enviou uma mensagem}
+  other {Enviaram uma mensagem}
+}`;
+
+// Combinando plural + select
+const m4 = `{gender, select,
+  male {Ele tem {count, plural, one {1 amigo} other {# amigos}}}
+  female {Ela tem {count, plural, one {1 amiga} other {# amigas}}}
+}`;
+// gender=male, count=1: "Ele tem 1 amigo"
+// gender=female, count=3: "Ela tem 3 amigas"
+
+// Argumentos nomeados
+const m5 = `Ola {nome}, voce tem {count, plural, one {1 mensagem} other {# mensagens}}`;
+// "Ola Ana, voce tem 1 mensagem"
+// "Ola Bruno, voce tem 5 mensagens"
+
+// Number format inline
+const m6 = `Total: {total, number, ::currency/EUR}`;
+// "Total: €99,90"
+```
+
+**Usando em JS - intl-messageformat
+(npm).**
+
+```bash
+pnpm add intl-messageformat
+```
+
+```ts
+import IntlMessageFormat from "intl-messageformat";
+
+const msg = new IntlMessageFormat(
+  "Voce tem {count, plural, one {1 item} other \{# items\}}",
+  "pt-BR"
+);
+
+msg.format({ count: 1 });  // "Voce tem 1 item"
+msg.format({ count: 5 });  // "Voce tem 5 items"
+
+const plMsg = new IntlMessageFormat(
+  "Masz {count, plural, one {1 przedmiot} few {# przedmioty} many {# przedmiotów} other {# przedmiotu}}",
+  "pl-PL"
+);
+
+plMsg.format({ count: 1 });   // "Masz 1 przedmiot"
+plMsg.format({ count: 3 });   // "Masz 3 przedmioty"  (few)
+plMsg.format({ count: 5 });   // "Masz 5 przedmiotów" (many)
+plMsg.format({ count: 22 });  // "Masz 22 przedmioty" (few)
+```
+
+**`Intl.PluralRules` - o motor por tras.**
+
+```ts
+const pr = new Intl.PluralRules("pl-PL");
+pr.select(1);   // "one"
+pr.select(2);   // "few"
+pr.select(5);   // "many"
+pr.select(22);  // "few"  (22-25 sao few)
+pr.select(100); // "many"
+
+const prAr = new Intl.PluralRules("ar-EG");
+prAr.select(1);   // "one"
+prAr.select(2);   // "two"
+prAr.select(3);   // "few"  (3-10)
+prAr.select(11);  // "many" (11-99)
+prAr.select(100); // "other"
+```
+
+**Categorias CLDR padrao:**
+
+- `zero` - arabe (count=0)
+- `one` - ingles (1), polones (1)
+- `two` - arabe (2)
+- `few` - polones (2-4, 22-25), arabe (3-10)
+- `many` - polones (5-21, 26+), arabe (11-99)
+- `other` - **default** (sempre disponivel)
+
+**`=N` exato - "exatamente 0 items", "exatamente
+1 item".** Para casos onde o plural CLDR nao
+captura o que voce quer:
+
+```text
+{count, plural,
+  =0 {Voce nao tem items}
+  one {Voce tem 1 item}
+  other {Voce tem # items}
+}
+```
+
+**Select aninhado com plural.**
+
+```text
+{gender, select,
+  male {{count, plural,
+    one {Ele tem 1 amigo}
+    other {Ele tem # amigos}
+  }}
+  female {{count, plural,
+    one {Ela tem 1 amiga}
+    other {Ela tem # amigas}
+  }}
+}
+```
+
+**`#` - o valor atual.** Dentro de
+`{count, plural, ...}`, o `#` e' substituido
+pelo valor de `count`. Util quando voce nao
+quer escrever `{count}` de novo:
+
+```text
+{count, plural,
+  one \{# item}
+  other {# items}
+}
+```
+
+**ICU em i18next, FormatJS, react-intl.**
+Todas as libs de i18n populares usam ICU
+como motor. **i18next** tem `i18next-icu`
+plugin, **FormatJS** usa ICU nativo. Em
+**99% dos casos** voce nao escreve ICU na
+mao - usa uma lib que parseia e resolve.
+
+```ts
+// i18next com i18next-icu
+import i18next from "i18next";
+import ICU from "i18next-icu";
+
+i18next.use(ICU).init({
+  resources: {
+    "pt-BR": {
+      translation: {
+        cart_items: "Voce tem {{count, plural, one {1 item} other \{# items\}}}",
+      },
+    },
+    "pl-PL": {
+      translation: {
+        cart_items: "Masz {{count, plural, one {1 przedmiot} few {# przedmioty} many {# przedmiotów} other {# przedmiotu}}}",
+      },
+    },
+  },
+});
+
+i18next.t("cart_items", { count: 1 }); // "Voce tem 1 item"
+i18next.t("cart_items", { count: 5 }); // "Voce tem 5 items"
+```
+
+## Aprofundamento 🟡
+
+**MessageFormat 2 (MF2) - o futuro (2024+).**
+A sintaxe **1.x** funciona, mas tem
+limitacoes: verbosa, dificil de aninhar,
+type-unsafe. **MF2** (a nova versao, em
+rollout em 2024-2026) simplifica:
+
+```text
+// ICU 1.x: verboso
+{chose, select, male {his} female {her} other {their}}
+
+// MF2: declarativo
+.input {$chose :gender}
+.match $chose
+male {{Ele enviou}}
+female {{Ela enviou}}
+* {{Enviaram}}
+```
+
+MF2 tem **sintaxe type-safe** (compilador
+valida placeholders), **mais expressiva**
+(local variants, custom functions), e
+**backward-compatible** com 1.x. Em 2026,
+use **1.x** (estavel) a menos que esteja
+comecando projeto novo e queira apostar em
+**MF2** (compiler + parser disponivel).
+
+**Custom functions em MF2.** Alem de
+`plural`/`select`/`number`/`date`, MF2
+aceita **functions custom** (registered
+no compilador). Ex: `:currency`,
+`:relativeTime`, `:emoji` - voce cria
+suas proprias.
+
+**ICU em libs de UI: react-intl, FormatJS,
+Lingui, i18next-icu.**
+
+| Lib              | ICU nativo | Sintaxe      | Bundle    |
+| ---------------- | ---------- | ------------ | --------- |
+| **i18next-icu**  | via plugin | ICU 1.x      | +12KB     |
+| **FormatJS**     | nativo     | ICU 1.x      | +30KB     |
+| **react-intl**   | nativo     | ICU 1.x      | +30KB     |
+| **Lingui**       | compila    | ICU-like     | +10KB     |
+| **@messageformat/parse** | puro | ICU 1.x      | +8KB    |
+
+**Lingui** compila ICU em **JS estatico** -
+bundle minimo, mas tem build step. Escolha
+depende de **stack**: i18next (mais popular
+JS), FormatJS (React first), Lingui
+(performance).
+
+**`Intl.MessageFormat` proposal - nativo no
+JS.** Stage 3 (proposta TC39). Em 2026,
+**nao no spec** - ainda depende de libs.
+Acompanhe
+[github.com/tc39/proposal-intl-messageformat](https://github.com/tc39/proposal-intl-messageformat).
+
+**Argumentos nomeados vs posicionais.**
+
+```text
+// Posicional
+"Hello {0}, you have {1} items"  (i18next: {{0}}, {{1}})
+
+// Nomeado
+"Hello {name}, you have {count} items"
+```
+
+**Nomeado** e' mais legivel e mais facil de
+traduzir (tradutor ve "name" e "count" em
+vez de numeros).
+
+**Escape com aspas simples.** Pra incluir
+`{` ou `}` literal em mensagem ICU, use
+`'` como escape:
+
+```text
+"Mostre '{name}' no console"  -> "Mostre {name} no console"
+"Use '{' e '}'"  -> "Use { e }"
+```
+
+**Plural + offset.** Pra "voce, mais 4
+amigos" (count inclui voce), use offset:
+
+```text
+{count, plural, offset:1
+  =0 {Voce nao tem amigos}
+  =1 {Voce tem 1 amigo (so' voce)}
+  one {Voce e # outro amigo}
+  other {Voce e # outros amigos}
+}
+// count=1: "Voce tem 1 amigo (so' voce)"
+// count=5: "Voce e 4 outros amigos"
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**ICU em SSR (Next.js, Remix, etc).** ICU
+parser precisa de **CLDR data** (vem com
+Node/browser). Em **serverless** (Vercel
+Edge, Cloudflare Workers), pode ser
+limitado. Solucao: polyfill com
+[`@formatjs/intl-pluralrules`](https://formatjs.io/docs/polyfills/intl-pluralrules) ou use
+**Lingui** que compila em estatico.
+
+**Custom CLDR rules - quando o seu produto
+e' diferente.** Raro, mas se voce tem
+categoria de plural **propria** (ex:
+"pro" vs "free" user), implemente custom
+select:
+
+```ts
+const customRules = {
+  pro: (n) => n > 0,
+  free: () => true,
+};
+```
+
+Use **`@messageformat/runtime`** com
+**custom select** function.
+
+**i18n em Web Components / Shadow DOM.**
+ICU nao tem nada especifico pra Shadow DOM,
+mas **`Intl.PluralRules`** e
+**`Intl.NumberFormat`** funcionam global.
+**Cuidado com `lang` attribute**: se voce
+nao define `<html lang>`, o browser usa
+default (en-US) e formata errado.
+
+**Number skeletons (LDML).** Formatacao
+avancada de numeros inline em ICU:
+
+```text
+{price, number, ::currency/EUR .##}
+{count, number, ::percent .00}
+{bytes, number, ::unit/megabyte .0#}
+```
+
+Skeletons sao **strings** que descrevem
+formatacao, alternativa a `options` object.
+Use quando precisa de formatacao complexa
+**inline** em mensagem.
+
+**Date skeletons:**
+
+```text
+{date, date, ::yyyyMMdd}
+{now, date, ::hms}
+{deadline, date, ::yMMMMd}
+```
+
+**Leitura recomendada:**
+
+- [ICU MessageFormat](https://messageformat.unicode.org/) - spec oficial, sintaxe, exemplos.
+- [Format.JS - Message Format](https://formatjs.io/docs/message-format) - uso pratico em React, polyfills.
+- [i18next - Interpolation](https://www.i18next.com/translation-function/interpolation) - integracao i18next + ICU.
+
+> Dica: o erro mais comum em pluralizacao
+> i18n e' **hardcoded if/else baseado em
+> ingles**. "1 = singular, 2+ = plural"
+> funciona em ingles, **quebra** em polones
+> (1 = singular, 2-4 = "few", 5+ = "many"),
+> arabe (6 formas!), e japones (1 forma so').
+> **Use ICU + Intl.PluralRules**: o motor
+> consulta o CLDR e escolhe a categoria
+> certa pro locale. Em ingles: `one` /
+> `other`. Em polones: `one` / `few` /
+> `many` / `other`. **Escreva a mensagem
+> com ICU** e o parser resolve.
+
+No proximo no, vamos **RTL e
+bidirecionalidade**: como tornar sua UI
+correta em arabe, hebraico, e outros
+idiomas RTL. Cobre `dir`, icones
+espelhados, e **CSS logical properties**
+que tornam o layout **agnostico de
+direcao**.
+
+<Checkpoint
+  challenge="Implemente a função `pluralForma(count, opcoes, locale)` que retorna a string formatada com plural correto pro locale. Recebe: count (number), opcoes (objeto com chaves 'one' | 'other' | 'few' | 'many' | 'two' | 'zero'), locale (string BCP47, default 'en-US'). Regras: use Intl.PluralRules(locale).select(count) pra escolher a categoria; se opcoes[categoria] existir, use-a; senao fallback pra opcoes.other; senao retorne string vazia. Substitua '{count}' (placeholder) pelo count real. Retorne a string formatada."
+  starterCode={`// Implemente pluralForma(count, opcoes, locale) que retorna a
+// string formatada com plural correto pro locale.
+//
+// Regras:
+// 1. Use new Intl.PluralRules(locale || 'en-US').select(count)
+//    para obter a categoria ('one' | 'other' | 'few' | 'many' etc).
+// 2. Tente opcoes[categoria]. Se nao existir, use opcoes.other.
+// 3. Se nenhum dos dois existir, retorne string vazia ''.
+// 4. Substitua o placeholder {count} pelo numero (toString()).
+function pluralForma(count, opcoes, locale) {
+  return '';
+}
+
+const _r1 = pluralForma(1, { one: '{count} item', other: '{count} items' }, 'en-US');
+console.log(_r1);
+
+const _r2 = pluralForma(5, { one: '{count} item', other: '{count} items' }, 'en-US');
+console.log(_r2);
+
+const _r3 = pluralForma(2, { one: '{count} predmet', few: '{count} predmeta', many: '{count} predmetov' }, 'pl-PL');
+console.log(_r3);
+
+const _r4 = pluralForma(5, { one: '{count} predmet', few: '{count} predmeta', many: '{count} predmetov' }, 'pl-PL');
+console.log(_r4);`}
+  expected='1 item
+5 items
+2 predmeta
+5 predmetov'
+  slug="i18n"
+  nodeId="icu-messageformat"
+/>
+
+<Quiz
+  question="Por que pluralizacao hardcoded com if/else (1 ? 'item' : 'items') quebra em apps i18n?"
+  options={[
+    {
+      text: "Diferentes idiomas tem diferentes numeros de categorias de plural: ingles tem 2 (one/other), polones tem 3 (one/few/many/other), arabe tem 6 (zero/one/two/few/many/other), japones tem 1 (other). O CLDR define a regra de cada locale - hardcoded if/else ignora isso e so funciona em ingles.",
+      correct: true,
+      explanation:
+        "O ponto central: plural nao e' binario. Ingles: 2 formas (1 item / 2 items). Polones: 3 formas (1 = one, 2-4 + 22-25 = few, 5-21 + 26+ = many). Arabe: 6 formas (0, 1, 2, 3-10, 11-99, 100+). Japones: 1 forma so' (1 item = 2 item = qualquer). Hardcoded if(count === 1) trata 2=plural e 5=plural identico - quebra em polones (2=few, 5=many) e arabe (2=two, 5=few). Use `Intl.PluralRules(locale).select(count)` que consulta CLDR e retorna a categoria correta pro locale. ICU MessageFormat usa isso pra escolher o template certo. Em 2026, apps i18n sem ICU quebram em pelo menos 50% dos idiomas.",
+    },
+    {
+      text: "if/else hardcoded e' mais lento que ICU porque exige mais codigo.",
+      correct: false,
+      explanation:
+        "Falso. if/else hardcoded e' **mais rapido** que ICU - uma comparacao e' O(1), ICU parseia string e consulta CLDR. A razao pra usar ICU nao e' velocidade - e' **correctude** em outros idiomas. if/else hardcoded ganha em performance mas perde em i18n. Em apps que suportam so' ingles, if/else e' aceitavel. Em apps multi-idioma, ICU e' obrigatorio.",
+    },
+    {
+      text: "if/else hardcoded nao funciona com React por causa do virtual DOM.",
+      correct: false,
+      explanation:
+        "Falso. if/else funciona perfeitamente em React - renderiza condicionalmente baseado em count. O problema nao e' framework - e' **logica de plural** baseada em regras de ingles. Em React, use `t('cart.items', { count })` que chama ICU por baixo. Em qualquer framework (React, Vue, Svelte, vanilla), o problema e' o mesmo: plural rules variam por locale.",
+    },
+  ]}
+/>

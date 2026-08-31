@@ -1,0 +1,432 @@
+---
+id: modelo-de-ameacas-frontend
+title: "Modelo de ameacas frontend: trust boundary, o que proteger no client"
+resources:
+  - title: "OWASP - Threat Modeling (oficial, EN)"
+    url: https://owasp.org/www-community/Threat_Modeling
+    lang: en
+    type: doc
+    free: true
+  - title: "OWASP Top 10 Web (oficial, EN)"
+    url: https://owasp.org/www-project-top-ten/
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Web Security (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/Security
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou o `frontend`, fez o app
+bonito. Aí o time de seguranca pergunta: "a gente
+auditou o que voce fez. Como voce sabe que o
+seu codigo nao tem XSS? Como voce sabe que
+o token do usuario nao vai pro localStorage?
+Como voce sabe que a CDN nao foi
+comprometida?"
+
+Se voce nao sabe responder de cabeca, **a
+seguranca do seu app e' sorte**, nao design.
+
+A boa noticia: seguranca frontend segue
+**poucos principios** que, uma vez entendidos,
+se aplicam a 90% dos casos. O modelo de
+ameacas (threat modeling) e' o **primeiro
+passo**: listar **o que** voce protege, **de
+quem**, e **como** - antes de sair colocando
+CSP e tokens.
+
+Se voce entende trust boundary, o que
+proteger no client vs no server, e como fazer
+uma analise de ameacas simples, voce sai de
+"a gente precisa de seguranca" pra "a gente
+tem X superficie de ataque, com Y controles,
+e Z gaps conhecidos".
+
+## O essencial 🟢
+
+**Seguranca frontend comeca com
+"o que eu confio?"** A pergunta mais
+importante de seguranca, repetida em
+**todo** input, **toda** decisao, e':
+
+> "De onde vem esse dado? Eu confio nele?"
+
+Se a resposta for "nao sei" ou "do
+usuario", o dado e' **nao-confiavel** ate
+prova em contrario. O resto da seguranca
+(des CSP, sanitizacao, escape) sao
+**mitigacoes** pra quando a resposta
+for "nao confio".
+
+Esse e' o principio de **trust boundary**:
+existe uma **linha** entre dados confiaveis
+(o codigo da sua aplicacao) e dados
+nao-confiaveis (input do usuario, URL
+params, cookies de terceiro, dados de API
+externa, dados de localStorage que podem
+ter sido editados pelo devtools).
+
+**Os 3 lugares onde o dado "entra" no
+frontend:**
+
+1. **Input do usuario direto** (form
+   fields, search box, comment box). O
+   usuario controla 100% do conteudo. Sempre
+   nao-confiavel.
+2. **URL e location** (query params, hash,
+   referrer). O usuario pode editar a URL.
+   Historicamente veio de emails/mensagens
+   com link manipulado. Sempre nao-confiavel.
+3. **Storage** (localStorage, sessionStorage,
+   cookies de terceiro). Devtools libera
+   editar. Sempre potencialmente nao-confiavel.
+4. **API responses** (fetch, GraphQL,
+   WebSocket). O backend controla, MAS pode
+   ter bug, ou ser de terceiro sem SLA. Em
+   duvida, sanitize.
+
+A regra: **nao confiavel na entrada, valida
+no uso**. Sanitize no momento de renderizar,
+nao no momento de receber.
+
+**O que e' responsabilidade do client vs
+do server.** O principio classico que devs
+junior confundem:
+
+| O que                                | Client    | Server    |
+| ------------------------------------ | --------- | --------- |
+| Sanitizar input do usuario pra XSS   | Backup    | Obrigatorio |
+| Validar formato de email             | UI/UX     | Obrigatorio |
+| Autorizar acesso a recurso           | **NUNCA** | Obrigatorio |
+| Autenticar usuario                   | Session   | Obrigatorio |
+| Armazenar tokens de auth             | Backup    | Obrigatorio |
+| Renderizar dados dinamicos           | **NUNCA** sozinho | Validado por CSP/sanitizacao |
+| Rate limiting                        | N/A       | Obrigatorio |
+| Prevenir CSRF                        | Token     | Obrigatorio |
+
+**O client NUNCA e' a defesa principal**.
+E' a **defesa em profundidade**. O server
+sempre valida tudo de novo. O client adiciona
+**uma camada extra** (CSP, sanitizacao,
+SameSite) que dificulta ataques.
+
+Razao: o client e' **controlado pelo
+atacante**. Ele pode:
+- Abrir devtools e ver todo o codigo
+  (incluindo logica de auth).
+- Modificar qualquer variavel (`localStorage`,
+  cookies via extensions).
+- Bloquear JS, enviar requests diretamente
+  pro server.
+
+Se a seguranca depende do client, **o
+atacante vence**. O server **tem que** ser
+a defesa.
+
+**Threat modeling em 4 passos.** O
+processo classico (STRIDE, OWASP, qualquer
+framework) reduz a 4 perguntas:
+
+1. **O que estou construindo?** Liste os
+   ativos: dados do usuario, tokens de auth,
+   APIs chamadas, dados sensiveis exibidos.
+2. **O que da errado?** Liste ameacas:
+   "XSS via comentario", "CSRF em mudanca
+   de email", "token roubado do localStorage".
+3. **O que eu faco sobre cada ameaca?**
+   Liste controles: "DOMPurify no comentario",
+   "SameSite=Strict + token CSRF", "mover
+   token pra cookie httpOnly".
+4. **Voce revisou isso?** Documente
+   (security.md do repo, ou pagina interna).
+
+A maioria dos times junior pula os passos
+1-3 e vai direto pro 4. A seguranca vira
+"checkbox" (CSP setado, https ativo) ao
+inves de "decisao" (o que precisa de
+protecao, contra quem, com quais controles).
+
+**STRIDE - o mnemonico classico.** Pra
+listar ameacas, o STRIDE do Microsoft da
+6 categorias:
+
+- **S**poofing (fingir ser outro usuario)
+- **T**ampering (modificar dados em transito)
+- **R**epudiation (negar acao que fez)
+- **I**nformation Disclosure (vazar dados)
+- **D**enial of Service (tirar do ar)
+- **E**levation of Privilege (virar admin)
+
+Pra cada **ativo** (lista do passo 1),
+voce passa pelas 6 categorias. "O que
+poderia dar errado em cada?"
+
+Exemplo: ativo = "token de auth do usuario".
+
+- Spoofing: atacante rouba o token e finge
+  ser o usuario.
+- Tampering: token alterado no caminho
+  (mitigado por HTTPS + assinatura).
+- Repudiation: usuario nega ter feito
+  acao - logs de auditoria resolvem.
+- Information Disclosure: token em
+  localStorage vaza via XSS.
+- DoS: muitos tokens invalidos sobrecarregam
+  backend.
+- Elevation: token com role=admin
+  exposto.
+
+Em 5min voce tem 6 ameacas pra mitigar.
+
+**Onde armazenar o token de auth - a
+pergunta que decide 50% do modelo de
+ameacas.** A escolha classica (e' coberta
+no node `storage-seguro` em detalhe):
+
+- **`localStorage`:** acessivel por
+  qualquer JS na pagina. **XSS rouba**. Nunca
+  use pra token de auth.
+- **Cookie `httpOnly`:** NAO acessivel por
+  JS. XSS nao rouba. Vulneravel a CSRF
+  (mitigado por SameSite + token CSRF).
+- **Memory (variavel JS):** mais seguro,
+  some no reload. UX ruim.
+- **Cookie + BFF (Backend For Frontend):**
+  o padrao moderno. Frontend fala com BFF
+  via cookie, BFF fala com API via token.
+  XSS nao rouba.
+
+**O 80% do modelo de ameacas frontend.**
+A maioria dos apps precisa proteger:
+
+1. **Token de auth do usuario** (contra
+   XSS, CSRF, roubo).
+2. **Dados do usuario exibidos** (contra
+   XSS, leaking via console error).
+3. **Acoes sensiveis** (mudanca de email,
+   pagamento, delete account) (contra CSRF,
+   replay).
+4. **Dependencias externas** (contra
+   supply chain attack).
+5. **CDN/assets** (contra tampering).
+
+Pra cada um, defina: **onde mora o dado,
+quem acessa, o que acontece se vazar**.
+
+## Aprofundamento 🟡
+
+**Diagrama de trust boundary visual.** Em
+apps modernos, a trust boundary fica assim:
+
+```
++-----------------+        +-----------------+
+|   User Browser  |        |  3rd Party CDN  |
+|   (nao-confiavel)|        |  (parcialmente  |
+|                 |        |   confiavel)    |
++-----------------+        +-----------------+
+        |                          |
+        v                          v
++-----------------------------------------+
+|          Frontend (seu codigo)          |
+|    - Recebe input nao-confiavel         |
+|    - Valida, sanitiza, renderiza         |
+|    - Token fica em cookie httpOnly       |
++-----------------------------------------+
+        |                          |
+        v                          v
++-----------------------------------------+
+|          Backend (confiavel)            |
+|    - Re-valida TUDO                     |
+|    - Autoriza com base em cookie        |
+|    - Rate limit, log de auditoria        |
++-----------------------------------------+
+```
+
+O frontend e' **parcialmente confiavel**.
+Recebe input nao-confiavel, mas processa
+no codigo que voce controla. O server
+confia no frontend **ate certo ponto**
+(re-valida tudo).
+
+**`security.md` por repositorio.** Cada
+repo deveria ter um arquivo `SECURITY.md`
+(documento leve, 1-2 paginas) com:
+
+- **Vetor de ameacas** (o que protege).
+- **Modelo de ameacas** (o que NAO
+  protege, conhecido).
+- **Reporting** (como reportar
+  vulnerabilidade, contato security@).
+- **Politica de atualizacao** (SLA pra
+  patch de CVE).
+
+Em projetos open source, e' o arquivo que
+mostra que o time leva seguranca a serio.
+Em apps internos, e' a base da auditoria.
+
+**Threat modeling com STRIDE + diagrama
+de fluxo de dados (DFD).** Pra apps
+maiores, a pratica recomendada:
+
+1. Desenhar o **diagrama de fluxo de
+   dados**: quem fala com quem, quais dados
+   passam.
+2. Numerar cada **fronteira de confianca**
+   (linha pontilhada no DFD).
+3. Pra cada cruzamento de fronteira,
+   perguntar: "O dado e' validado? Sanitizado?
+   Autorizado?"
+
+Em 30-60min voce tem um **documento
+acionavel** com a lista de controles
+faltando.
+
+**`npm audit` + Snyk - o baseline de
+supply chain.** Coberto em detalhe em
+`supply-chain`, mas vale mencionar no
+modelo de ameacas: 80% dos ataques de
+supply chain vem de **dependencias
+vulnera veis nao-atualizadas**. Um
+`npm audit --production` basico no CI
+pega a maioria.
+
+**Risk = probabilidade x impacto.** Nem
+toda ameaca precisa de controle maximo.
+Classifique:
+
+- **Alto risco:** provavel + impacto
+  grande. Mitigar com prioridade.
+- **Medio risco:** provavel OU impacto
+  grande. Mitigar com awareness + monitoring.
+- **Baixo risco:** improvavel + impacto
+  pequeno. Aceitar o risco ou documentar.
+
+Voce **nao tem budget pra mitigar tudo**.
+Foco no alto risco.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que "shift left" e' o mantra de
+seguranca.** Antigamente, seguranca era
+"portao de qualidade" - rodava no fim, antes
+do deploy. Apos 2010, o movimento "shift left"
+leva seguranca **pra dentro do dev workflow**:
+SAST no CI, dependency check no PR, security
+champion por time. Resultado: bug de
+seguranca pego no PR custa **100x menos**
+que pego em prod.
+
+**Bug bounty programs.** Empresas grandes
+(Google, Microsoft, GitHub) rodam programas
+publicos de bug bounty: pesquisador externo
+acha vulnera velidade, reporta, recebe $$$.
+Cobre em trilhas de seguranca ofensiva. Em
+2026, plataformas como HackerOne e Bugcrowd
+conectam pesquisadores a empresas.
+
+**Penetration testing vs DAST vs SAST.** Tres
+categorias de testes de seguranca automatizados:
+
+- **SAST (Static Application Security
+  Testing):** analisa codigo fonte sem rodar.
+  Acha patterns vulnera veis (regex
+  perigoso, SQLi). Roda em CI.
+- **DAST (Dynamic Application Security
+  Testing):** roda contra a app live, simula
+  ataques (XSS scanner, SQLi scanner). Mais
+  lento, mais caro.
+- **Pentest:** humano faz ataque manual.
+  Mais profundo, mais caro. Anual ou
+  pre-launch.
+
+**Modelo de ameacas adversarial.** Em
+contextos de ameaca alta (fintech, gov,
+saude), o modelo de ameacas inclui **quem**
+e' o atacante:
+
+- **Script kiddie:** ferramentas
+  automatizadas, ataque opportunista. Mitigado
+  com baseline de seguranca (CSP, HTTPS, updates).
+- **Hacktivista:** motivado por causa.
+  Mesma superficie de ataque, mas persistente.
+- **Criminoso organizado:** paciencia,
+  ferramentas custom. Alvos de alto valor.
+- **State actor:** APT, recursos
+  ilimitados. Criptografia, supply chain,
+  social engineering.
+
+**App diferentes, modelos diferentes**.
+O **90% dos apps** se protege com
+"HTTPS + CSP + sanitizacao + httpOnly
+cookie + audit basico". Fintech precisa
+de mais. Gov muito mais. **Nao copie o
+modelo de seguranca do banco pra sua
+landing page**.
+
+**`sandbox` attribute em iframes.** Iframes
+de terceiro (YouTube, ads) podem rodar
+JS no seu dominio. `sandbox` attribute
+limita o que podem fazer:
+
+```html
+<iframe
+  src="https://youtube.com/embed/abc"
+  sandbox="allow-scripts allow-same-origin"
+></iframe>
+```
+
+Sem `sandbox`, iframe de ad maliciosa pode
+roubar cookies, fazer XSS via DOM access,
+etc. Com `sandbox`, restrito ao minimo
+necessario. Util no node `csp-e-headers` +
+`storage-seguro` quando falamos de embed.
+
+**Leitura recomendada:**
+
+- [OWASP - Threat Modeling](https://owasp.org/www-community/Threat_Modeling) - o processo canonico.
+- [OWASP Top 10 Web](https://owasp.org/www-project-top-ten/) - o ranking de 2026, com exemplos.
+- [MDN - Web Security](https://developer.mozilla.org/en-US/docs/Web/Security) - referencia MDN das APIs e headers de seguranca.
+
+> Dica: o erro mais comum em seguranca
+> frontend e' **comecar pelo controle ao
+> invez do modelo**. "Vou adicionar CSP"
+> sem saber o que proteger. Resultado: CSP
+> mal configurado que quebra o app ou
+> destrava bypass. **Sempre faca o modelo
+> primeiro**: liste ativos, ameacas,
+> controles. Apos, implemente. Sem
+> modelo, voce esta adicionando seguranca
+> por "achismo".
+
+No proximo no, vamos ver **XSS em detalhe**:
+os 3 tipos (stored, reflected, DOM-based),
+os sinks perigosos do browser, e como
+usar DOMPurify pra sanitizar input do
+usuario de forma segura.
+
+<Quiz
+  question="Por que o 'client NUNCA e' a defesa principal' em seguranca frontend?"
+  options={[
+    {
+      text: "O client e' controlado pelo atacante: ele pode abrir devtools, modificar variaveis, bloquear JS, e enviar requests diretamente. Se a seguranca depende so do client, o atacante vence. O server SEMPRE re-valida.",
+      correct: true,
+      explanation:
+        "O client roda no device do usuario. O atacante controla o device: pode usar devtools pra ler todo o codigo (incluindo logica de auth), modificar localStorage/cookies via extensions, bloquear JS e enviar requests via curl direto pro server. Se a seguranca fica so no client (ex: 'esconder' a API key em JS ofuscado), o atacante encontra. O server TEM que ser a defesa principal - re-valida TUDO que o client envia. O client adiciona camadas extras (CSP, sanitizacao) que dificultam, mas nao substitui a defesa server-side.",
+    },
+    {
+      text: "Porque JS e' lento e nao da pra fazer validacao complexa no client.",
+      correct: false,
+      explanation:
+        "Nao. JS e' totalmente capaz de fazer validacao complexa. O motivo de o server ser defesa principal e' CONTROLE, nao performance. O atacante pode simplesmente pular o JS do client e enviar request direto pro server (via curl, Postman, etc). O server e' o unico ponto que o atacante NAO pode modificar. Client e' defense in depth, nao defense principal.",
+    },
+    {
+      text: "Porque HTTPS ja protege tudo no client.",
+      correct: false,
+      explanation:
+        "HTTPS protege dados EM TRANSITO (man-in-the-middle). NAO protege contra XSS, CSRF, ou roubo de token via JS malicioso na pagina. Sao categorias diferentes. HTTPS e' necessario mas nao suficiente - voce ainda precisa CSP, sanitizacao, httpOnly cookies, CSRF tokens, etc.",
+    },
+  ]}
+/>

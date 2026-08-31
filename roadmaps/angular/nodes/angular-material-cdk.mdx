@@ -1,0 +1,76 @@
+---
+id: angular-material-cdk
+title: "Angular Material e CDK"
+resources:
+  - title: "Angular Material"
+    url: https://material.angular.dev/
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular CDK"
+    url: https://material.angular.dev/cdk/categories
+    type: doc
+    lang: en
+    free: true
+---
+
+Construir cada componente de interface do zero parece controle total. Até você
+precisar de dialog com foco correto, autocomplete acessível, tabela com estados,
+menu por teclado e overlay que funciona em tela pequena.
+
+Angular Material entrega componentes prontos. O CDK entrega blocos de
+comportamento para você construir componentes próprios.
+
+```bash
+ng add @angular/material
+```
+
+## Material
+
+Material é útil para acelerar interfaces comuns:
+
+- botão
+- campo de formulário
+- select
+- dialog
+- menu
+- tabs
+- table
+- snackbar
+
+Com standalone components, você importa no componente o que usa:
+
+```ts
+import { MatButtonModule } from "@angular/material/button"
+
+@Component({
+  standalone: true,
+  imports: [MatButtonModule],
+  template: `<button matButton>Salvar</button>`,
+})
+export class SalvarButtonComponent {}
+```
+
+## CDK
+
+CDK é para quando você quer comportamento sem necessariamente usar o visual do
+Material. Ele ajuda com overlay, portal, drag-drop, a11y, scroll e collections.
+
+Isso é valioso quando o produto tem design próprio, mas ainda precisa de
+comportamento robusto.
+
+## Tema
+
+Material também traz sistema de tema. Defina cores, tipografia e densidade com
+critério. Tema não é só estética; ele afeta consistência e acessibilidade.
+
+Três ideias pra levar deste nó:
+
+- **Material entrega componentes prontos.**
+- **CDK entrega comportamento reutilizável.**
+- **UI pronta não substitui organização do app.**
+
+> Dica: comece pelos componentes mais difíceis de acertar manualmente: dialog,
+> menu, select, autocomplete, table e overlay.
+
+No próximo nó, vamos cuidar de acessibilidade e internacionalização.

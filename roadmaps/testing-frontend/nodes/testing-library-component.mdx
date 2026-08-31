@@ -1,0 +1,595 @@
+---
+id: testing-library-component
+title: "Testing Library: render, queries por papel, userEvent, async"
+resources:
+  - title: "Testing Library - Queries (oficial, EN)"
+    url: https://testing-library.com/docs/queries/about
+    lang: en
+    type: doc
+    free: true
+  - title: "Kent C. Dodds - Making your UI tests resilient to change (artigo, EN)"
+    url: https://kentcdodds.com/blog/making-your-ui-tests-resilient-to-change
+    lang: en
+    type: artigo
+    free: true
+  - title: "Kent C. Dodds - Common mistakes with React Testing Library (artigo, EN)"
+    url: https://kentcdodds.com/blog/common-mistakes-with-react-testing-library
+    lang: en
+    type: artigo
+    free: true
+---
+
+Unit test de função pura é o começo. Mas a maior
+parte do código de frontend **é React** -
+componentes, estado, eventos do DOM, async. Pra
+testar isso você precisa de uma lib que **renderiza**
+o componente num DOM fake (jsdom), e **destrava**
+**procurar elementos como o usuário** (por papel
+ARIA, label, texto), e **simular interações reais**
+(clique, digitação, tab). É o que o React Testing
+Library faz.
+
+O princípio norteador é simples: **"quanto mais seu
+teste se parece com como o usuário usa o app, mais
+confiança ele dá"**. Isso significa queries por papel
+ARIA (não por classe CSS), `userEvent` (não
+`fireEvent`), e asserções pelo que **aparece na tela**
+(não pelo estado interno).
+
+## O essencial 🟢
+
+**Setup em 3 pacotes.** Além do Vitest, instale:
+
+```bash
+pnpm add -D @testing-library/react @testing-library/jest-dom @testing-library/user-event
+```
+
+- **`@testing-library/react`** - o core: `render`,
+  `screen`, queries.
+- **`@testing-library/jest-dom`** - matchers extras
+  pro DOM (`toBeInTheDocument`, `toHaveAccessibleName`,
+  `toBeVisible`).
+- **`@testing-library/user-event`** - simula
+  interação real do usuário (digitação com delay,
+  foco, blur, keypress).
+
+```ts
+// vitest.setup.ts
+import "@testing-library/jest-dom/vitest";
+```
+
+**O mínimo que você precisa saber.** O fluxo
+básico de um teste de componente:
+
+```tsx
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Botao } from "./Botao";
+
+describe("Botao", () => {
+  it("renderiza o label e dispara onClick ao clicar", async () => {
+    const user = userEvent.setup();
+    const onClick = vi.fn();
+
+    render(<Botao onClick={onClick}>Salvar</Botao>);
+
+    // 1. Achar o botão pelo papel (acessibilidade)
+    const botao = screen.getByRole("button", { name: /salvar/i });
+
+    // 2. Simular o usuário clicando
+    await user.click(botao);
+
+    // 3. Asserir que o callback foi chamado
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+Três passos: `render` monta o componente, `screen.getByRole`
+acha o elemento, `user.click` simula a ação. O
+teste lê como se fosse o usuário falando: "tem um
+botão com nome 'Salvar'? Quando eu clico, o
+callback dispara?"
+
+**`render` e `screen` - a anatomia.** O `render`
+monta o componente num DOM virtual (jsdom) e
+retorna utilidades:
+
+```tsx
+const { container, getByText, rerender, unmount } =
+  render(<Botao>Salvar</Botao>);
+
+// `screen` é o atalho - importa uma vez e usa em tudo
+import { screen } from "@testing-library/react";
+screen.getByRole("button", { name: /salvar/i });
+```
+
+A preferência é **`screen.getByRole(...)`** em
+vez de `getByText(...)` direto. `screen` busca
+no documento inteiro (mais robusto a mudanças
+de hierarquia), e `getByRole` é a query
+"preferida" (ver próxima seção).
+
+**Queries por papel - a hierarquia de preferência.**
+A Testing Library tem 11+ tipos de query. A ordem
+de preferência é:
+
+```ts
+// 1. getByRole (preferida) - papel ARIA + nome acessível
+screen.getByRole("button", { name: /salvar/i });
+screen.getByRole("textbox", { name: /email/i });
+screen.getByRole("heading", { level: 1, name: /boas-vindas/i });
+
+// 2. getByLabelText - input com <label>
+screen.getByLabelText(/email/i);
+
+// 3. getByPlaceholderText - input com placeholder
+screen.getByPlaceholderText("seu@email.com");
+
+// 4. getByText - texto visível (não-input)
+screen.getByText(/total: r\$ 100/i);
+
+// 5. getByDisplayValue - input com valor atual
+screen.getByDisplayValue("Ana");
+
+// 6. getByAltText - imagem com alt
+screen.getByAltText(/foto do usuário/i);
+
+// 7. getByTitle - elemento com title attr
+screen.getByTitle("Fechar");
+
+// 8. getByTestId - ÚLTIMO RECURSO
+screen.getByTestId("botao-customizado");
+```
+
+A regra: **se o usuário não consegue achar, você
+também não deveria**. `getByRole("button")` reflete
+o que o usuário vê (um botão). `getByTestId("btn-1")`
+só existe no código - muda o id, o teste quebra
+sem motivo.
+
+**`getBy*` vs `findBy*` vs `queryBy*`.** A diferença
+é o que acontece quando o elemento **não** está na
+tela:
+
+- **`getBy*`** - lança erro se não achar. Use quando
+  "tem que estar ali agora".
+- **`queryBy*`** - retorna `null` se não achar. Use
+  quando "pode não estar ali" (ex: "modal não está
+  aberto").
+- **`findBy*`** - retorna Promise que resolve quando
+  achar (espera até 1s). Use quando "vai aparecer
+  após ação async".
+
+```ts
+// Síncrono - "tem que estar ali"
+const botao = screen.getByRole("button", { name: /salvar/i });
+
+// Síncrono - "pode não estar"
+expect(screen.queryByText("Erro 404")).not.toBeInTheDocument();
+
+// Async - "vai aparecer após fetch"
+const nome = await screen.findByText("Ana Silva", {}, { timeout: 1000 });
+```
+
+A pegadinha mais comum: usar `getByText` antes de
+esperar a renderização async, e o teste falha com
+"Unable to find element". A solução é `findBy*` em
+vez de `getBy*` + `waitFor`.
+
+**`userEvent` vs `fireEvent`.** Sempre prefira
+`userEvent`:
+
+```tsx
+// BOM: userEvent simula o usuário real (com delay, focus, etc)
+const user = userEvent.setup();
+await user.type(input, "Ana");
+await user.click(botao);
+
+// RUIM: fireEvent dispara o evento direto, sem副作用
+fireEvent.change(input, { target: { value: "Ana" } });
+fireEvent.click(botao);
+```
+
+A diferença prática:
+
+- `userEvent.type` simula tecla por tecla, com
+  delay, disparando `keydown`, `keypress`, `input`,
+  `change`, `focus`, `blur` na ordem. É o que
+  React/RHF/Zod esperam.
+- `fireEvent.change` dispara só o `change`. Funciona
+  pra input controlado simples, mas quebra com libs
+  que dependem de múltiplos eventos (RHF, máscaras).
+
+A regra do time do Testing Library: **nunca use
+`fireEvent` a menos que tenha um motivo forte**
+(e mesmo assim, procure o `userEvent` correspondente
+primeiro). O `userEvent` 14+ tem `userEvent.setup()`
+pra criar a instância (v14+ exige setup explícito).
+
+**`act` - o que é e quando usar.** O `act` envolve
+ações que disparam re-render do React:
+
+```tsx
+import { act } from "react";
+
+it("atualiza o estado", async () => {
+  const user = userEvent.setup();
+  render(<Contador />);
+
+  // act é chamado automaticamente por user.click, user.type
+  // Mas pra ações "raw" (setState direto, fetch.then),
+  // você precisa envolver:
+  await act(async () => {
+    // ação que dispara re-render
+  });
+});
+```
+
+Na prática, `userEvent.click`/`userEvent.type` já
+chamam `act` internamente. Você só precisa envolver
+quando:
+
+- Mocka `fetch` e dá `await` no `then` antes do
+  `findBy`.
+- Chama `setState` direto fora de evento.
+- Usa `renderHook` (nó 2) - tem que envolver
+  `result.current.incrementar()` em `act`.
+
+**Mockando fetch com MSW (Mock Service Worker).**
+Pra testar componente que faz `fetch`, você **não**
+mocka `fetch` direto. Usa MSW - um service worker
+que intercepta requests de rede e devolve respostas
+mockadas:
+
+```bash
+pnpm add -D msw
+npx msw init public/ --save
+```
+
+```ts
+// src/mocks/handlers.ts
+import { http, HttpResponse } from "msw";
+
+export const handlers = [
+  http.get("/api/usuarios/:id", ({ params }) => {
+    return HttpResponse.json({ id: params.id, nome: "Ana" });
+  }),
+  http.post("/api/cadastro", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ id: "1", ...body });
+  }),
+];
+
+// src/mocks/server.ts (Node - para testes)
+import { setupServer } from "msw/node";
+import { handlers } from "./handlers";
+export const server = setupServer(...handlers);
+```
+
+```ts
+// vitest.setup.ts
+import { server } from "./src/mocks/server";
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+```
+
+```tsx
+// Componente.test.tsx
+it("mostra o nome do usuário", async () => {
+  render(<Perfil userId="1" />);
+
+  // MSW intercepta o fetch em /api/usuarios/1 e devolve o mock
+  expect(await screen.findByText("Ana")).toBeInTheDocument();
+});
+```
+
+MSW funciona **em Node (testes) e em browser (dev)**.
+Uma vez configurado, o mesmo mock serve pros dois.
+A forma como ele funciona: o service worker (no
+browser) ou o interceptor de request (no Node) pega
+o `fetch("/api/usuarios/1")` antes de sair pra rede
+e devolve a resposta do handler. Seu componente não
+sabe que a resposta é mock - é a mesma API do
+`fetch` real.
+
+**Acessibilidade vem de graça.** Usar `getByRole`
+força você a colocar `aria-label`, `htmlFor` em
+labels, `alt` em imagens, e headings semânticos.
+Sem isso, o teste falha com "no accessible element".
+O efeito colateral: seu componente fica
+acessível **antes** mesmo de testar a11y
+explicitamente.
+
+```tsx
+// Sem label: teste falha
+<input type="text" />
+screen.getByRole("textbox"); // ❌ Unable to find
+
+// Com label: teste passa + é acessível
+<label>
+  Email
+  <input type="text" />
+</label>
+screen.getByRole("textbox", { name: /email/i }); // ✅
+```
+
+## Aprofundamento 🟡
+
+**Providers de contexto (`ThemeProvider`,
+`QueryClientProvider`, etc).** Componentes que
+usam contexto precisam do provider em volta:
+
+```tsx
+import { ThemeProvider } from "./ThemeContext";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+function renderComProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>{ui}</ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+// Teste
+it("mostra dados do TanStack Query", async () => {
+  renderComProviders(<Perfil userId="1" />);
+  expect(await screen.findByText("Ana")).toBeInTheDocument();
+});
+```
+
+Crie um helper `renderComProviders` no seu setup
+pra não repetir o wrapping em cada teste.
+
+**Testando componentes async com `findBy*`.** Quando
+o componente faz `useEffect` + `fetch` + `setState`,
+o conteúdo aparece **depois** do `render`:
+
+```tsx
+it("mostra o nome do usuário após fetch", async () => {
+  render(<Perfil userId="1" />);
+
+  // Errado: getBy joga erro porque ainda está "Carregando..."
+  // expect(screen.getByText("Ana")).toBeInTheDocument();
+
+  // Certo: findBy espera até 1s pelo elemento aparecer
+  expect(await screen.findByText("Ana")).toBeInTheDocument();
+});
+```
+
+`findBy*` é o `getBy*` + espera + retry. Default:
+1000ms com polling de 50ms. Configurável via 3º
+argumento.
+
+**Testando interação com `user.keyboard` e
+`user.tab`.** Pra testar navegação por teclado:
+
+```tsx
+it("tab move o foco para o próximo input", async () => {
+  const user = userEvent.setup();
+  render(
+    <>
+      <input type="text" aria-label="Nome" />
+      <input type="text" aria-label="Email" />
+    </>
+  );
+
+  const nome = screen.getByRole("textbox", { name: /nome/i });
+  nome.focus();
+
+  await user.tab();
+  expect(screen.getByRole("textbox", { name: /email/i })).toHaveFocus();
+});
+```
+
+Útil pra testar a11y de foco visível, ordem de
+tab, e atalhos de teclado.
+
+**Testando formulários completos (com React Hook
+Form, Zod).** A combinação que você viu em
+`form-libraries` (RHF + Zod) + Testing Library:
+
+```tsx
+it("envia form com dados válidos", async () => {
+  const user = userEvent.setup();
+  const onSubmit = vi.fn();
+  render(<Cadastro onSubmit={onSubmit} />);
+
+  await user.type(screen.getByLabelText(/nome/i), "Ana");
+  await user.type(screen.getByLabelText(/email/i), "ana@x.com");
+  await user.type(screen.getByLabelText(/senha/i), "12345678");
+  await user.click(screen.getByRole("button", { name: /cadastrar/i }));
+
+  expect(onSubmit).toHaveBeenCalledWith({
+    nome: "Ana",
+    email: "ana@x.com",
+    senha: "12345678",
+  });
+});
+
+it("mostra erro de email inválido", async () => {
+  const user = userEvent.setup();
+  render(<Cadastro />);
+
+  await user.type(screen.getByLabelText(/email/i), "errado");
+  await user.click(screen.getByRole("button", { name: /cadastrar/i }));
+
+  expect(await screen.findByText(/email inválido/i)).toBeInTheDocument();
+});
+```
+
+A integração com `form-libraries` é direta -
+Testing Library + userEvent + RHF é a forma padrão
+de testar formulários em React.
+
+**`cleanup` automático.** O Testing Library limpa
+o DOM entre testes por padrão (a partir da v13+).
+Você não precisa chamar `cleanup()` manualmente.
+Se algum teste não limpa, é porque o `render` foi
+chamado **dentro** de um hook ou callback - mover
+o `render` pro nível do `it` resolve.
+
+## Pra quem quer ir mais além 🔴
+
+**Por que `getByRole` é a query preferida.** O
+argumento é duplo:
+
+- **Acessibilidade** - `getByRole` só funciona
+  se o elemento tem o papel ARIA correto. Se
+  você usou `<div onClick>` em vez de `<button>`,
+  `getByRole("button")` falha. Você é **forçado**
+  a usar HTML semântico.
+- **Robustez** - `getByRole` é estável a mudanças
+  de classe CSS, estrutura de DOM, e framework.
+  Se você refatorar `<button className="btn
+  btn-primary">` pra `<button className="submit">`,
+  o teste passa. Se usou `getByTestId("submit")`,
+  depende do test-id.
+
+Em produção, o resultado é: **componentes testados
+com Testing Library são automaticamente mais
+acessíveis e mais robustos a refatoração**.
+
+**`userEvent` v14+ mudou a API.** Até v13, `userEvent`
+era uma chamada direta (`userEvent.click(botao)`).
+Em v14+, você **precisa** chamar `userEvent.setup()`
+pra criar uma instância:
+
+```tsx
+// v13 (legacy)
+userEvent.click(botao);
+
+// v14+ (atual)
+const user = userEvent.setup();
+await user.click(botao);
+```
+
+O motivo: `setup()` ativa a config de `delay`,
+`pointerMap`, `skipAutoClose`, etc. sem mudar a
+API. O `await` em cada chamada reflete que a
+simulação é assíncrona (delays reais entre
+eventos, como o usuário faz).
+
+**`act` warning - o que fazer quando aparece.** Em
+modo dev, React loga "An update to X inside a test
+was not wrapped in act(...)". Solução:
+
+- Se é de `userEvent` - ignore, é warning de
+  setup conhecido.
+- Se é de `setState` direto - envolva em `act(() => {...})`.
+- Se é de `await` em `then` - use `findBy*` em
+  vez de `getBy*` + `waitFor`.
+
+Warning de act em produção deve ser zero. Em
+teste, é só ruído.
+
+**Testing Library + Vitest + Next.js: gotcha
+do jsdom.** Next 15+ com RSC exige cuidado: o
+componente testado precisa ser Client Component
+(`"use client"`), porque o render roda em jsdom
+(não em Node real). Server Components não dá pra
+testar com Testing Library puro - precisa de
+Playwright (E2E) ou ferramentas específicas
+(`@testing-library/jest-dom` com `next/jest`).
+
+**Leitura recomendada:**
+
+- [Testing Library - Queries](https://testing-library.com/docs/queries/about) - a doc oficial, com tabela de prioridade.
+- [Kent C. Dodds - Making UI tests resilient to change](https://kentcdodds.com/blog/making-your-ui-tests-resilient-to-change) - o argumento pra `getByRole`.
+- [Kent C. Dodds - Common mistakes with React Testing Library](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library) - erros comuns e como evitar, com a opinião do autor da lib.
+
+> Dica: o erro mais comum no começo é usar
+> `getByTestId` em tudo porque "funciona".
+> Aí o teste fica frágil (quebra a cada
+> refatoração) e não pega bug de acessibilidade.
+> Trocar pra `getByRole` é chato no começo
+> (você precisa adicionar `aria-label` em
+> todos os botões) mas paga dividendo: a11y
+> "de graça" e testes robustos.
+
+No próximo nó, vamos subir pro **Playwright** E2E:
+testar o app de verdade num browser, do "abrir
+home" até o "comprar e ver confirmação".
+
+<Checkpoint
+  challenge="Implemente a função `encontrarBotaoPorLabel(rotulo)` que recebe uma string (ex: 'Salvar') e retorna o `Botao` correto. A função deve buscar num array de botões usando query por papel ARIA + nome acessível (case-insensitive). Se não achar, joga erro. Bônus: preferir match exato antes de substring."
+  starterCode={`// Simule a estrutura de um botao DOM: { role: "button", accessibleName: "..." }.
+function encontrarBotaoPorLabel(botoes, rotulo) {
+  // 1. Filtre botoes cujo role === "button"
+  // 2. Dentre esses, encontre um cujo accessibleName (case-insensitive)
+  //    bate com rotulo (case-insensitive)
+  // 3. Preferir match exato antes de substring
+  // 4. Se não achar, joga new Error("Botao nao encontrado: " + rotulo)
+  return null;
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const _botoes = [
+  { role: "button", accessibleName: "Cancelar" },
+  { role: "button", accessibleName: "Salvar" },
+  { role: "button", accessibleName: "Salvar e continuar" },
+  { role: "link", accessibleName: "Salvar" },
+];
+
+const _c1 = encontrarBotaoPorLabel(_botoes, "Salvar");
+console.log(JSON.stringify({
+  case: "match_exato",
+  nome: _c1 ? _c1.accessibleName : null,
+}));
+
+const _c2 = encontrarBotaoPorLabel(_botoes, "salvar");
+console.log(JSON.stringify({
+  case: "case_insensitive",
+  nome: _c2 ? _c2.accessibleName : null,
+}));
+
+const _c3 = encontrarBotaoPorLabel(_botoes, "continuar");
+console.log(JSON.stringify({
+  case: "substring_match",
+  nome: _c3 ? _c3.accessibleName : null,
+}));
+
+try {
+  encontrarBotaoPorLabel(_botoes, "Deletar");
+  console.log(JSON.stringify({ case: "nao_achou", erro: false }));
+} catch (e) {
+  console.log(JSON.stringify({ case: "nao_achou", erro: true, msg: e.message }));
+}`}
+expected='{"case":"match_exato","nome":"Salvar"}
+{"case":"case_insensitive","nome":"Salvar"}
+{"case":"substring_match","nome":"Salvar e continuar"}
+{"case":"nao_achou","erro":true,"msg":"Botao nao encontrado: Deletar"}'
+slug="testing-frontend"
+nodeId="testing-library-component"
+/>
+
+<Quiz
+  question="Por que `getByRole` é a query preferida em vez de `getByTestId`?"
+  options={[
+    {
+      text: "getByRole força uso de HTML semantico (papel ARIA correto), garantindo acessibilidade e robustez a refatoração.",
+      correct: true,
+      explanation:
+        "getByRole funciona só se o elemento tem o papel ARIA certo. Se você usou <div onClick> em vez de <button>, getByRole falha - você é forçado a usar HTML semântico. Bônus: é robusto a mudanças de classe CSS, estrutura de DOM e framework. getByTestId é frágil porque depende de um atributo que existe só pro teste.",
+    },
+    {
+      text: "getByRole é mais rápido em performance que getByTestId.",
+      correct: false,
+      explanation:
+        "Não - a diferença de performance é desprezível (ambos percorrem o DOM). O ganho do getByRole é semântico (força a11y) e de robustez (sobrevive a refatoração), não velocidade.",
+    },
+    {
+      text: "É uma preferencia estilistica, qualquer um funciona igual.",
+      correct: false,
+      explanation:
+        "Não é estilística - é a recomendação oficial do time do Testing Library (Kent C. Dodds) com argumento forte: getByRole força acessibilidade e é robusto a refatoração. getByTestId é o último recurso, quando nenhuma outra query é viável (ex: canvas, svg complexo).",
+    },
+  ]}
+/>

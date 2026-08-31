@@ -89,6 +89,23 @@ trabalho pode ser recusado não por qualidade, mas por **fora de escopo**.
 
 ---
 
+## Veja sua trilha renderizada (preview local)
+
+Antes de abrir o PR, dá pra ver sua trilha com o **mesmo visual do site**, rodando
+localmente:
+
+```bash
+cd preview
+npm install
+npm run dev
+```
+
+Abra o endereço que o Vite mostra (por padrão `http://localhost:5173`). Ele lê
+`roadmaps/` direto e recarrega sozinho quando você edita um `.mdx` ou o
+`roadmap.json`. É uma **prévia de conteúdo** - progresso, login e busca não estão
+aqui; alguns componentes interativos aparecem como marcador. Detalhes em
+[`preview/README.md`](preview/README.md).
+
 ## Anatomia de um nó `.mdx`
 
 Todo nó tem duas partes: **frontmatter** (metadados) e **corpo** (o texto).

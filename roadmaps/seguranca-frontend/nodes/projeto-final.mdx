@@ -1,0 +1,429 @@
+---
+id: projeto-final
+title: "Projeto final: hardening de uma SPA (CSP, headers, sanitizacao, audit)"
+---
+
+Hora de unir tudo. Voce vai pegar uma
+**SPA real** (sua, open source, ou
+auditar uma conhecida), fazer **threat
+model** da superficie de ataque, aplicar
+os **6 controles essenciais** (XSS
+prevention, CSP, SameSite cookies,
+secure storage, headers hardening, supply
+chain hygiene), validar com `npm audit` +
+OWASP ZAP scan, e gerar um **relatorio
+de hardening** com os gaps encontrados e
+fixes aplicados. E' o ciclo completo:
+mapear superficie, identificar ameacas,
+mitigar com camadas, validar, documentar.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes
+de comecar.
+
+## O que voce vai construir
+
+Um **relatorio de hardening de seguranca**
+de uma SPA, entregue como:
+
+- **1 threat model** (`threat-model.md`)
+  com STRIDE aplicado aos principais
+  ativos.
+- **1 relatorio de hardening** (`hardening.md`)
+  com os controles antes vs depois.
+- **PRs de mitigacao** (1 PR por "round"
+  de fixes, focando em alto risco primeiro).
+- **CI configurado** com `pnpm audit` +
+  CSP report endpoint.
+- **Config de Dependabot/Renovate** para
+  supply chain automatico.
+
+A SPA pode ser:
+- Sua propria (portfolio, side project).
+- Open source conhecida (Vite default
+  template, Next.js examples).
+- Algum app de estudo do Bootcamp.
+
+O esqueleto abaixo assume uma SPA React +
+Vite com backend Express. Os principios
+se aplicam a qualquer stack.
+
+## Objetivo
+
+- Praticar **threat modeling** em uma app
+  real (STRIDE ou 4-passos OWASP).
+- Identificar **gaps reais** vs
+  "achismos" - usar ferramentas
+  automatizadas.
+- Aplicar os **6 controles essenciais**
+  com prioridade por risco.
+- Configurar **CI com auditoria
+  automatizada** pra nao regredir.
+- Documentar o hardening de forma que
+  outro dev (ou auditor) consiga auditar.
+
+## Requisitos (minimo)
+
+Threat model:
+
+- [ ] Listar **5-8 ativos** da SPA
+  (token de auth, dados de usuario, APIs
+  chamadas, dados sensiveis exibidos, etc).
+- [ ] Para cada ativo, aplicar **STRIDE**
+  (6 categorias: Spoofing, Tampering,
+  Repudiation, Information Disclosure,
+  DoS, Elevation).
+- [ ] Listar **ameacas concretas**
+  ("XSS via comentario do blog", "CSRF
+  em mudanca de email", etc).
+- [ ] Para cada ameaca, classificar
+  **risco** (probabilidade x impacto) e
+  propor **controle**.
+
+Auditoria inicial:
+
+- [ ] Rodar `pnpm audit` (ou `npm audit`)
+  e listar vulns no `package-lock.json`.
+- [ ] Rodar **OWASP ZAP** ou **Burp Suite
+  Community** contra a app rodando. Salvar
+  report. Listar os 5 maiores findings.
+- [ ] Inspecionar headers de response com
+  `curl -I <url>` - quais dos 7 essenciais
+  estao presentes?
+- [ ] Conferir cookies: tem `httpOnly`,
+  `Secure`, `SameSite`?
+- [ ] Conferir storage client: token em
+  `localStorage`? (red flag).
+- [ ] Procurar sinks perigosos no codigo
+  (`innerHTML`, `eval`, `dangerouslySetInnerHTML`,
+  `document.write`). Listar todos os
+  encontrados.
+- [ ] Documentar tudo em `threat-model.md`.
+
+Hardening - 6 controles essenciais:
+
+- [ ] **XSS prevention:** rodar DOMPurify
+  em todo HTML dinamico. Trocar
+  `dangerouslySetInnerHTML` por
+  `SafeHtml` component. Validar URLs em
+  `href`/`src`.
+- [ ] **CSP estrita:** `default-src 'none'`,
+  liberar so `script-src 'self'`,
+  `style-src 'self'`, `img-src 'self' data:
+  https:`, etc. Rollout com
+  `Content-Security-Policy-Report-Only`
+  primeiro.
+- [ ] **SameSite cookies:** garantir
+  `SameSite=Lax` (ou `Strict` pra acoes
+  sensiveis) + `HttpOnly` + `Secure`. Mover
+  token de `localStorage` pra cookie
+  httpOnly.
+- [ ] **Secure storage:** mover prefs de
+  UI pra `localStorage`, drafts pra
+  `sessionStorage`, cache grande pra
+  `IndexedDB`. Token **nunca** em
+  `localStorage`.
+- [ ] **Headers de hardening:** HSTS,
+  X-Content-Type-Options, Referrer-Policy,
+  Permissions-Policy, frame-ancestors.
+  Usar `helmet.js` (Express) ou
+  `next.config.js` headers (Next).
+- [ ] **Supply chain:** `package-lock.json`
+  commitado, `pnpm install --frozen-lockfile`
+  em CI, Dependabot/Renovate, signed commits.
+
+Validacao:
+
+- [ ] Re-rodar `pnpm audit`. Confirmar
+  reducao de vulns (ou justificativa para
+  as remanescentes).
+- [ ] Re-rodar OWASP ZAP. Confirmar
+  reducao de findings.
+- [ ] Conferir `curl -I` - todos os
+  7 headers presentes.
+- [ ] Adicionar CSP report endpoint
+  (`/api/csp-report`) - em prod, monitor
+  violacoes.
+- [ ] Adicionar `pnpm audit --prod` em CI
+  (failing high).
+- [ ] Documentar tudo em `hardening.md`
+  com o delta "antes vs depois".
+
+## Estrutura do relatorio (`hardening.md`)
+
+O relatorio deve ter:
+
+```markdown
+# Hardening de Seguranca - [nome-do-app]
+
+## TL;DR
+
+- Ameacas identificadas: 12 (3 high, 5 medium, 4 low).
+- Controles aplicados: 6 (XSS, CSP, SameSite, secure storage, headers, supply chain).
+- Findings OWASP ZAP antes: 8 (3 high).
+- Findings OWASP ZAP depois: 1 (low, aceito).
+- `pnpm audit` antes: 5 vulns (2 high).
+- `pnpm audit` depois: 0 vulns.
+
+## Threat Model (resumo)
+
+### Ativos
+
+1. Token de sessao do usuario (autentica).
+2. Dados de perfil (PII basica: nome, email).
+3. Posts/comentarios do usuario (input dele).
+4. Endpoints de mutacao (mudanca de email,
+   delete account).
+
+### Ameacas (STRIDE)
+
+#### Token de sessao
+
+- **Spoofing:** XSS rouba token se em
+  localStorage.
+- **Information Disclosure:** MITM se
+  sem HTTPS.
+- **Mitigacao:** cookie httpOnly + Secure +
+  SameSite=Lax.
+
+#### Posts/comentarios
+
+- **Tampering:** XSS stored via comentario.
+- **Mitigacao:** DOMPurify no output.
+
+(continuar para cada ativo)
+
+## Hardening aplicado
+
+### 1. XSS prevention
+
+- **Antes:** `<Comment html={comment.body} />`
+  com `dangerouslySetInnerHTML`.
+- **Depois:** `<SafeHtml html={comment.body} />`
+  componente com DOMPurify.
+- **Resultado:** 0 sinks perigosos no codigo.
+
+### 2. CSP
+
+- **Antes:** sem CSP.
+- **Depois:**
+  `default-src 'none'; script-src 'self'; ...`.
+- **Resultado:** bloqueia scripts inline,
+  exige CDNs whitelisted.
+
+(continuar para cada controle)
+
+## Resultados
+
+| Metrica                | Antes | Depois |
+| ---------------------- | ----- | ------ |
+| Findings ZAP high      | 3     | 0      |
+| Findings ZAP medium    | 5     | 1      |
+| `pnpm audit` high      | 2     | 0      |
+| Headers presentes      | 2/7   | 7/7    |
+| Token em localStorage  | sim   | nao    |
+| Sinks perigosos        | 4     | 0      |
+
+## Proximos passos
+
+- CSP rollout gradual (Report-Only por 2
+  semanas, depois enforce).
+- Adicionar Trusted Types
+  (`require-trusted-types-for 'script'`).
+- Penetration test anual com terceiros.
+- Bug bounty program (quando aplicavel).
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **BFF (Backend For Frontend).** Refatorar
+  pra BFF + cookie httpOnly ao inves de
+  SPA direta com API.
+- [ ] **Trusted Types.** Migrar todos
+  innerHTML pra `policy.createHTML(userInput)`.
+- [ ] **CSP3 strict-dynamic.** Ativar
+  `strict-dynamic` pra suportar scripts
+  carregados dinamicamente.
+- [ ] **Subresource Integrity (SRI).** Adicionar
+  `integrity` em todos os `<script src=>` de
+  CDN.
+- [ ] **Penetration test com OWASP ZAP
+  automation.** CI que roda ZAP em
+  cada PR, falha em finding high.
+- [ ] **SBOM generation.** Integrar
+  `cyclonedx-npm` no build, gerar SBOM
+  por release.
+- [ ] **Signed commits enforced.** Branch
+  protection: "Require signed commits".
+- [ ] **CSP report endpoint com alerting.**
+  Coleta violations de CSP, alerta
+  Datadog/Sentry se taxa subir.
+- [ ] **OAuth/OIDC com PKCE.** Migrar
+  autenticacao custom pra OAuth2 flow
+  com PKCE.
+- [ ] **JWT em vez de session id.**
+  Se for auth stateless, usar JWT assinado
+  com rotacao.
+- [ ] **Rate limiting no client.** Detectar
+  requests abusivos (login brute force,
+  comment spam) e bloquear antes de chegar
+  no server.
+- [ ] **Audit logs de acoes sensiveis.**
+  Logar toda mudanca de email, senha,
+  delete account.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Escolha a SPA** - sua, open source, ou
+   Bootcamp.
+2. **Threat model primeiro** (1-2h). Sem
+   threat model, voce vai "achar" ameacas
+   ao acaso.
+3. **`pnpm audit` + ZAP scan** (1h). Acha
+   os problemas REAIS.
+4. **Headers check** (15min). `curl -I`
+   mostra o que falta.
+5. **Sinks check** (30min). `grep -r
+   "innerHTML\|dangerouslySetInnerHTML\|eval"
+   src/`. Lista todos.
+6. **Aplique high-risk primeiro.** Token
+   em localStorage, CSP faltando, CSRF
+   sem SameSite.
+7. **Valide com scan** - re-rodar tudo
+   depois de aplicar.
+
+**Armadilhas comuns:**
+
+- **Aplicar CSP restritiva sem testar.**
+  Vai quebrar o app. Use Report-Only
+  primeiro, 1-2 semanas, depois enforce.
+- **Mover token sem ajustar CORS.** Se
+  app.com chama api.com, mover token pra
+  cookie httpOnly exige `credentials:
+  include` + CORS ajustado.
+- **Esquecer HTTPS em dev.** Cookie
+  `Secure` nao setta em HTTP. Use
+  `process.env.NODE_ENV` ou similar.
+- **Confundir CORS com seguranca server.**
+  Server SEMPRE valida autorizacao.
+  CORS e' browser-side.
+- **Aplicar `unsafe-inline` em script-src.**
+  Quebra 50% da protecao XSS. Use nonce
+  se precisar de inline.
+- **Confiar em `pnpm audit` 100%.** O
+  banco nao tem TODAS as vulns. Snyk ou
+  Socket complementa.
+- **Esquecer de proteger `fetch` com
+  CSRF token.** SameSite=Lax ja
+  mitiga 90%, mas token sincronizador
+  cobre os 10% que sobram (subdomain
+  attack, etc).
+- **CSP permissiva demais.** `script-src
+  'self' 'unsafe-inline' 'unsafe-eval' https:`
+  = CSP nao protege nada.
+- **Achar que "no nosso app nao tem
+  XSS".** Toda app moderna tem
+  dependencias que renderizam HTML
+  (markdown, rich text, charts). DOMPurify
+  deve estar no fluxo por default.
+
+**Como validar que terminou:**
+
+- [ ] `threat-model.md` com 5-8 ativos e
+  STRIDE aplicado.
+- [ ] `hardening.md` com delta antes/depois.
+- [ ] `pnpm audit` clean (ou justificativa
+  pra vulns remanescentes).
+- [ ] OWASP ZAP report sem finding high.
+- [ ] `curl -I <url>` mostra os 7 headers.
+- [ ] CSP em Report-Only configurado
+  (com endpoint de coleta).
+- [ ] Token em cookie httpOnly (nao em
+  localStorage).
+- [ ] DOMPurify em todo HTML dinamico.
+- [ ] Dependabot/Renovate configurado.
+- [ ] `package-lock.json` commitado.
+
+**Leituras que ajudam durante o projeto:**
+
+- [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/) - referencia por topico (XSS, CSRF, CSP, etc).
+- [OWASP ZAP Getting Started](https://www.zaproxy.org/getting-started/) - como rodar scan automatizado.
+- [Snyk - Vulnerability DB](https://security.snyk.io/) - lookup de CVE.
+
+> O projeto final e' onde a trilha vira
+> "sua". **Seguranca nao e' checkbox, e'
+> decisao arquitetural**. Onde mora o
+> token, qual CSP, como lidar com
+> dependencia vulnera vel, quais
+> controles justificam o esforco -
+> cada app decide. O esqueleto dado e'
+> o caminho feliz, desvie quando
+> precisar e anote as decisoes no
+> `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarControles(controles)` que recebe um objeto com chaves booleanas representando os 6 controles essenciais (xssPrevention, cspEstrita, sameSiteCookies, secureStorage, headersHardening, supplyChainHygiene) e retorna { score: 0-100, gaps: string[], forte: string[] } - score e' a porcentagem de controles ativos (cada um vale ~16.67 pontos), gaps lista os nomes dos controles faltando, forte lista os nomes dos controles ativos. Use os nomes exatos: 'XSS prevention', 'CSP estrita', 'SameSite cookies', 'Secure storage', 'Headers hardening', 'Supply chain hygiene'."
+  starterCode={`// Implemente avaliarControles(controles) que recebe:
+//
+// controles = {
+//   xssPrevention: true,
+//   cspEstrita: false,
+//   sameSiteCookies: true,
+//   secureStorage: true,
+//   headersHardening: false,
+//   supplyChainHygiene: true,
+// }
+//
+// E retorna { score, gaps, forte }.
+//
+// Regras:
+// - 6 controles, cada um ativo vale ~16.67 pontos (100/6, arredondar pra inteiro).
+// - Calcular score somando os pontos dos controles ativos.
+// - gaps: nomes dos controles com valor false.
+// - forte: nomes dos controles com valor true.
+// - Nomes: 'XSS prevention', 'CSP estrita', 'SameSite cookies',
+//   'Secure storage', 'Headers hardening', 'Supply chain hygiene'.
+function avaliarControles(controles) {
+  return { score: 0, gaps: [], forte: [] };
+}
+
+const _r1 = avaliarControles({
+  xssPrevention: true,
+  cspEstrita: false,
+  sameSiteCookies: true,
+  secureStorage: true,
+  headersHardening: false,
+  supplyChainHygiene: true,
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = avaliarControles({
+  xssPrevention: true,
+  cspEstrita: true,
+  sameSiteCookies: true,
+  secureStorage: true,
+  headersHardening: true,
+  supplyChainHygiene: true,
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = avaliarControles({
+  xssPrevention: false,
+  cspEstrita: false,
+  sameSiteCookies: false,
+  secureStorage: false,
+  headersHardening: false,
+  supplyChainHygiene: false,
+});
+console.log(JSON.stringify(_r3));`}
+  expected='{"score":67,"gaps":["CSP estrita","Headers hardening"],"forte":["XSS prevention","SameSite cookies","Secure storage","Supply chain hygiene"]}
+{"score":100,"gaps":[],"forte":["XSS prevention","CSP estrita","SameSite cookies","Secure storage","Headers hardening","Supply chain hygiene"]}
+{"score":0,"gaps":["XSS prevention","CSP estrita","SameSite cookies","Secure storage","Headers hardening","Supply chain hygiene"],"forte":[]}'
+  slug="seguranca-frontend"
+  nodeId="projeto-final"
+/>

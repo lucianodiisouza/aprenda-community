@@ -1,0 +1,641 @@
+---
+id: translation-workflow
+title: "Translation workflow: i18next, Locize/Crowdin, glossarios, plural rules"
+resources:
+  - title: "i18next - Getting started (EN)"
+    url: https://www.i18next.com/overview/getting-started
+    lang: en
+    type: doc
+    free: true
+  - title: "Locize - Documentation (EN)"
+    url: https://docs.locize.com/
+    lang: en
+    type: doc
+    free: true
+  - title: "Format.JS - ICU MessageFormat (EN)"
+    url: https://formatjs.io/docs/react-intl
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce ja' sabe **formatar** (Intl), **pluralizar**
+(ICU), e fazer **RTL** funcionar. Agora
+vem o workflow **real**: como organizar
+**arquivos de traducao** por locale,
+integrar com **i18next** ou **FormatJS**,
+e **gerenciar** as traducoes com o time
+(developer + tradutor + PM). **Esse no
+cobre o workflow completo** - da estrutura
+de arquivos ao deploy.
+
+Em producao, traducoes **nao** ficam
+hardcoded no codigo. Vaõ em arquivos
+**JSON/YAML** por locale, versionados
+em Git ou gerenciados em **SaaS**
+(Locize, Crowdin, Phrase). O **i18next**
+ou **FormatJS** carrega sob demanda e
+expõe funcoes `t()` que o codigo usa. O
+**tradutor** edita em uma UI web
+(Locize), o **PM** valida contexto, e o
+**deploy** pega tudo pronto.
+
+Voce sai de "strings hardcoded" pra
+"workflow escalavel com 12 idiomas e 3
+tradutores externos".
+
+## O essencial 🟢
+
+**Estrutura classica de arquivos.**
+
+```text
+src/
+  i18n/
+    locales/
+      pt-BR/
+        common.json
+        cart.json
+        checkout.json
+      en-US/
+        common.json
+        cart.json
+        checkout.json
+      ja-JP/
+        common.json
+        cart.json
+        checkout.json
+    config.ts        # setup do i18next
+    index.ts         # exporta t() e useTranslation()
+```
+
+**`common.json` (chaves de UI compartilhadas).**
+
+```json
+// locales/pt-BR/common.json
+{
+  "app_name": "Minha App",
+  "nav": {
+    "home": "Início",
+    "about": "Sobre",
+    "contact": "Contato"
+  },
+  "buttons": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir"
+  }
+}
+```
+
+```json
+// locales/en-US/common.json
+{
+  "app_name": "My App",
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  }
+}
+```
+
+**i18next setup basico.**
+
+```bash
+pnpm add i18next react-i18next i18next-browser-languagedetector
+```
+
+```ts
+// i18n/config.ts
+import i18n from "i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next";
+
+import ptBRCommon from "./locales/pt-BR/common.json";
+import enUSCommon from "./locales/en-US/common.json";
+import jaJPCommon from "./locales/ja-JP/common.json";
+
+i18n
+  .use(LanguageDetector)  // detecta do browser, localStorage, URL
+  .use(initReactI18next)  // integra com React
+  .init({
+    resources: {
+      "pt-BR": { common: ptBRCommon },
+      "en-US": { common: enUSCommon },
+      "ja-JP": { common: jaJPCommon },
+    },
+    fallbackLng: "en-US",     // locale padrao se user language nao tem
+    defaultNS: "common",       // namespace padrao
+    interpolation: {
+      escapeValue: false,      // React ja escapa
+    },
+  });
+
+export default i18n;
+```
+
+**Usando no React.**
+
+```tsx
+import { useTranslation } from "react-i18next";
+
+function BotaoSalvar() {
+  const { t } = useTranslation();
+  return <button>{t("buttons.save")}</button>;
+}
+
+// Com namespace especifico
+function CartHeader() {
+  const { t } = useTranslation("cart");
+  return <h1>{t("title")}</h1>;
+}
+
+// Com interpolacao
+function Welcome() {
+  const { t } = useTranslation();
+  return <p>{t("welcome", { name: "Ana" })}</p>;
+}
+// pt-BR: "Bem-vinda, Ana"
+// en-US: "Welcome, Ana"
+
+// Com plural (precisa i18next-icu)
+function ItemCount({ count }: { count: number }) {
+  const { t } = useTranslation();
+  return <p>{t("cart.items", { count })}</p>;
+}
+// i18n/en-US: "cart_items": "You have {{count, plural, one {1 item} other {# items}}}"
+// count=1: "You have 1 item"
+// count=5: "You have 5 items"
+```
+
+**Namespaces - separar concerns.** Em apps
+grandes, **1 arquivo gigante** vira
+pesadelo. **Namespaces** separam por feature:
+
+```text
+locales/pt-BR/
+  common.json     # "save", "cancel", "loading"
+  auth.json       # "login", "logout", "register"
+  cart.json       # "items", "total", "checkout"
+  errors.json     # "network_error", "validation_failed"
+```
+
+**Lazy load** de namespaces (carrega so
+quando user entra na rota):
+
+```ts
+i18n.init({
+  ns: ["common"],  // so carrega common no boot
+});
+
+// Lazy load
+await i18n.loadNamespaces(["cart"]);
+// agora t("cart.items") funciona
+```
+
+**Detecção de locale - ordem de prioridade.**
+
+1. **URL** (ex: `meusite.com/pt-BR/...`)
+2. **Cookie/localStorage** (escolha
+   previa do user)
+3. **Accept-Language header** (browser)
+4. **fallbackLng** (default do app)
+
+```ts
+// i18next-browser-languagedetector config
+i18n.use(LanguageDetector).init({
+  detection: {
+    order: ["path", "localStorage", "navigator"],
+    lookupFromPathIndex: 0,    // /pt-BR/products
+    caches: ["localStorage"],
+  },
+  fallbackLng: "en-US",
+});
+```
+
+**Translation management SaaS - Locize,
+Crowdin, Phrase.** Quando o time tem
+**traducao externa** (3rd party, freelancers,
+agencia), gerenciar JSONs em Git vira
+**bagunça** (PRs, conflitos, falta de
+contexto). SaaS resolve:
+
+- **Locize** ([locize.com](https://locize.com/)) -
+  mais usado em i18next ecosystem, plano
+  free generoso.
+- **Crowdin** ([crowdin.com](https://crowdin.com/)) -
+  plataforma completa, integra com GitHub.
+- **Phrase** ([phrase.com](https://phrase.com/)) -
+  enterprise, integra com Figma.
+- **Lokalise** ([lokalise.com](https://lokalise.com/)) -
+  similar ao Locize, UI moderna.
+- **Weblate** ([weblate.org](https://weblate.org/)) -
+  open source, self-hosted.
+
+**Locize em i18next.**
+
+```bash
+pnpm add i18next-locize-backend locize
+```
+
+```ts
+import i18n from "i18next";
+import LocizeBackend from "i18next-locize-backend";
+import LanguageDetector from "i18next-browser-languagedetector";
+import { initReactI18next } from "react-i18next";
+
+i18n
+  .use(LocizeBackend)
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    backend: {
+      projectId: "your-locize-project-id",
+      apiKey: "your-api-key",  // opcional, so pra write
+    },
+    fallbackLng: "en-US",
+  });
+// i18next busca traducoes de https://api.locize.app/...
+// Traducoes editadas em Locize UI
+```
+
+**Vantagens do Locize:**
+
+- **Tradutor** edita em UI web, sem Git.
+- **Contexto** (screenshot, comentario)
+  anexado a cada string.
+- **Plural rules** por locale.
+- **Glossario** (termos consistentes).
+- **Auto-translate** (Google/DeepL como
+  rascunho).
+- **Versionamento** + **rollback**.
+- **CDN** pra deliver (rapido).
+
+**Plural rules no Locize.** Locize tem
+suporte nativo a **ICU MessageFormat** -
+tradutor escreve plural/select direto
+na UI:
+
+```text
+// En-US
+cart_items: "You have {{count, plural, one {1 item} other {# items}}}"
+
+// Pl-PL
+cart_items: "Masz {{count, plural, one {1 przedmiot} few {# przedmioty} many {# przedmiotów} other {# przedmiotu}}}"
+```
+
+**Glossarios - terminologia consistente.**
+Em apps com **100+ strings**, garantir
+que "save" sempre traduza pra "Salvar" (e
+nao "Gravar" ou "Salvar Dados") exige
+**glossario**:
+
+```text
+EN: "Save" -> PT-BR: "Salvar"
+EN: "Submit" -> PT-BR: "Enviar"
+EN: "Cancel" -> PT-BR: "Cancelar"
+```
+
+**Locize e Crowdin** tem glossario
+**built-in** (com cores, contexto, exemplos).
+Tradutor recebe **alerta** se usar
+termo nao aprovado.
+
+**CI/CD - check de traducao faltando.**
+Antes de fazer deploy, **verifique** que
+todas as chaves existem em todos os
+locales:
+
+```ts
+// scripts/check-translations.ts
+import ptBRCommon from "../locales/pt-BR/common.json";
+import enUSCommon from "../locales/en-US/common.json";
+
+function flattenKeys(obj: any, prefix = ""): string[] {
+  return Object.entries(obj).flatMap(([k, v]) => {
+    const key = prefix ? `${prefix}.${k}` : k;
+    if (typeof v === "object" && v !== null) {
+      return flattenKeys(v, key);
+    }
+    return [key];
+  });
+}
+
+const ptKeys = flattenKeys(ptBRCommon);
+const enKeys = flattenKeys(enUSCommon);
+
+const missing = ptKeys.filter((k) => !enKeys.includes(k));
+if (missing.length > 0) {
+  console.error("Missing translations in en-US:", missing);
+  process.exit(1);
+}
+```
+
+**Adiciona no CI (GitHub Actions).**
+
+```yaml
+name: Check translations
+on: [pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: pnpm install
+      - run: pnpm tsx scripts/check-translations.ts
+```
+
+**Build-time vs runtime translation.**
+
+- **Build-time:** `t()` retorna string
+  direto, bundle maior, mas zero latencia
+  (Vite plugin, webpack loader).
+- **Runtime:** traduzcoes carregadas
+  dinamicamente, bundle menor, latencia
+  inicial (default).
+
+```ts
+// Build-time (vite-plugin-i18next)
+import { useTranslation } from "react-i18next";
+// strings ja' vem no bundle, sem fetch
+
+// Runtime (default)
+import { useTranslation } from "react-i18next";
+// carrega de /locales/*.json no boot
+```
+
+**Escolha:** app pequeno/medio = build-time.
+App grande/enterprise = runtime (CDN,
+cache, versionamento).
+
+## Aprofundamento 🟡
+
+**FormatJS (react-intl) vs i18next.**
+Comparacao real:
+
+| Aspecto                  | i18next                  | FormatJS / react-intl   |
+| ------------------------ | ------------------------ | ----------------------- |
+| **Bundle**               | ~12KB                    | ~30KB                   |
+| **ICU nativo**           | via plugin               | sim                     |
+| **Sintaxe**              | \{\{var\}\}                  | \{var\}                   |
+| **Lingua principal**     | JS-first                 | React-first             |
+| **Translation mgmt**     | Locize, Crowdin          | Locize, Crowdin         |
+| **Type safety**          | via typescript plugin    | sim (types nativos)     |
+| **Plural**               | ICU (com plugin)         | ICU (nativo)            |
+| **Adocao**               | ~10M downloads/semana    | ~2M downloads/semana    |
+
+**i18next** domina o ecossistema JS.
+**FormatJS** brilha em **React
+enterprise** com type safety forte.
+
+**LinguiJS - performance primeiro.**
+**Lingui** compila ICU em **estatico**
+(bundle minimo, sem parser runtime). Em
+2026, melhor escolha pra apps com
+**performance** critica.
+
+**i18n no SSR (Next.js, Remix, Astro).**
+Server-side rendering i18n tem **2
+opcoes**:
+
+1. **Subpath routing** (`/pt-BR/about`):
+   cada locale e' uma rota, SEO melhor,
+   cache melhor.
+2. **Subdomain** (`pt-br.site.com/about`):
+   mesmo conteudo, locale diferente.
+
+```ts
+// next.config.js (Next.js 13+ App Router)
+const i18n = {
+  defaultLocale: "pt-BR",
+  locales: ["pt-BR", "en-US", "ja-JP"],
+};
+
+// app/[locale]/layout.tsx
+export default function Layout({ children, params: { locale } }) {
+  return (
+    <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+**Versionamento de traducoes.** Quando
+voce atualiza o app, **algumas strings
+mudam**. Traducoes **velhas** ficam
+**stale**. Estrategia:
+
+- **Major version** (1.x → 2.x): reseta
+  traducoes (forca retraducao).
+- **Minor version** (1.0 → 1.1):
+  mantem traducoes existentes, marca
+  strings novas como "missing".
+- **Locize** tem "versions" - da' pra
+  ter 1.0 e 1.1 simultaneas e migrar
+  gradual.
+
+**Translation memory.** SaaS (Locize,
+Crowdin) tem **TM (Translation Memory)**:
+se voce traduziu "Save" → "Salvar" antes,
+a proxima vez que aparecer "Save",
+sugere "Salvar" automaticamente. **Acelera
+traducao 3-5x**.
+
+**MT (Machine Translation) - rascunho
+inicial.** Crowdin/Locize integra com
+Google Translate / DeepL / Claude API
+pra gerar **rascunho** de traducao.
+Tradutor **revisa** (mais rapido que
+traduzir do zero).
+
+**i18n em React Native / mobile.** Mesmo
+conceito, mas **bundle size importa**.
+Use **Lingui** (compila ICU estatico) ou
+**i18next + namespaces lazy**. Em
+**Expo**, use `expo-localization` pra
+detectar locale do device.
+
+**`i18next-browser-languagedetector` -
+opcoes de deteccao.**
+
+```ts
+import LanguageDetector from "i18next-browser-languagedetector";
+
+i18n.use(LanguageDetector).init({
+  detection: {
+    order: [
+      "querystring",    // ?lng=pt-BR
+      "cookie",
+      "localStorage",
+      "sessionStorage",
+      "navigator",      // navigator.language
+      "htmlTag",        // <html lang="...">
+    ],
+    lookupQuerystring: "lng",
+    lookupCookie: "i18next",
+    lookupLocalStorage: "i18nextLng",
+    caches: ["localStorage", "cookie"],
+  },
+});
+```
+
+**`Intl.Locale` - normalizacao.** Use
+pra **normalizar** locale string antes
+de comparar:
+
+```ts
+const userLocale = "pt_br";   // user digitou
+const normalized = new Intl.Locale(userLocale).baseName;
+// "pt-BR" (canonical)
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**ICU MessageFormat em Locize/Crowdin.**
+SaaS moderno suporta ICU nativo. Tradutor
+ve preview de plural/select **renderizado**,
+nao texto cru. **Recomendado** pra plurals.
+
+**Translation memory export/import.** Locize
+e Crowdin suportam **TMX** (Translation
+Memory eXchange) - exporta/importa memoria
+de traducao entre plataformas. Use pra
+migrar de Crowdin pra Locize (ou vice-versa)
+sem perder trabalho.
+
+**A11y + i18n.** Screen readers leem
+conteudo em **idioma detectado**. Sem
+`<html lang="...">`, VoiceOver/NVDA
+pronuncia em ingles (sotaque errado).
+**Sempre** defina `lang` no `<html>` ou
+no elemento especifico.
+
+**A/B test de traducoes.** Em Locize,
+da' pra fazer **A/B** de variacoes
+("Salvar" vs "Gravar") e medir **CTR
+no botao**. **Nao** e' ciencia exata,
+mas em apps de e-commerce pode mudar
+conversion.
+
+**i18n audit - encontre strings
+hardcoded.** Ferramenta
+[`i18n-unused`](https://github.com/sanity-io/i18n-unused)
+encontra chaves **definidas** mas
+**nao usadas** no codigo. Inverso:
+`eslint-plugin-i18next` acha strings
+hardcoded.
+
+```bash
+# Install
+pnpm add -D @intlify/eslint-plugin-i18next
+```
+
+```js
+// .eslintrc
+{
+  "plugins": ["@intlify/i18next"],
+  "rules": {
+    "i18next/no-literal-string": ["error", { "mode": "jsx-text-only" }]
+  }
+}
+```
+
+**Leitura recomendada:**
+
+- [i18next - Getting started](https://www.i18next.com/guides/getting-started) - setup basico, exemplos React/Vue/Node.
+- [Locize Documentation](https://docs.locize.com/) - translation management, integracao i18next.
+- [Format.JS - react-intl](https://formatjs.io/docs/react-intl) - alternativa React-first, type-safe.
+
+> Dica: o erro mais comum em translation
+> workflow e' **gerenciar JSONs em Git
+> com 5+ tradutores**. Conflitos, PRs
+> infinitas, falta de contexto, sem
+> glossario. **Use SaaS** (Locize,
+> Crowdin) desde o dia 1 se tiver
+> **mais que 2 idiomas** e **mais que 1
+> tradutor externo**. Em apps
+> pessoais/pequenos, Git + script de
+> check + glossario no README funciona.
+> **Escolha** baseado em **tamanho do
+> time de traducao**, nao tamanho do app.
+
+No proximo no, vamos **pseudo-localization**:
+tecnica de **testar i18n sem traducoes
+reais** - transforme "Hello" em
+"[Ĥéļļö世界]" e veja **todos os bugs de
+i18n** aparecerem: strings concatenadas,
+hardcoded, truncamento, layout quebra,
+RTL esquecido. **Roda em CI**, pega
+bugs antes do tradutor humano.
+
+<Checkpoint
+  challenge="Implemente a função `resolverLocale(aceitas, disponiveis)` que retorna a melhor match entre locales aceitas pelo user e locales disponiveis no app. Recebe: aceitas (array de strings BCP47, em ordem de preferencia do user), disponiveis (array de strings BCP47, locales que o app tem). Regras de match em ordem: (1) match exato: tag completa presente em disponiveis. (2) match por language: se nenhuma tag completa bateu, tenta o prefixo antes do '-' (ex: 'pt' de 'pt-BR') se alguma disponivel comecar com esse prefixo, retorna a PRIMEIRA nessa forma. (3) fallback: se nenhum match, retorna a PRIMEIRA string de disponiveis. (4) se disponiveis for vazio, retorna null."
+  starterCode={`// Implemente resolverLocale(aceitas, disponiveis) que retorna
+// a melhor match entre locales aceitas e disponiveis.
+//
+// Regras em ordem:
+// 1. Match exato: tag completa (ex: 'pt-BR') presente em disponiveis.
+// 2. Match por language: se nao houve exato, tente o prefixo antes
+//    do '-' (ex: 'pt' de 'pt-PT') - se alguma disponivel COMECAR
+//    com \`\${prefixo}-\`, retorna a PRIMEIRA nessa forma.
+// 3. Fallback: retorna a PRIMEIRA string de disponiveis.
+// 4. Se disponiveis for vazio, retorna null.
+//
+// "Primeira" significa a PRIMEIRA na ordem do array.
+function resolverLocale(aceitas, disponiveis) {
+  return null;
+}
+
+const _r1 = resolverLocale(['pt-BR', 'en-US'], ['en-US', 'pt-BR']);
+console.log(_r1);
+
+const _r2 = resolverLocale(['fr-FR', 'en-US'], ['en-US', 'pt-BR']);
+console.log(_r2);
+
+const _r3 = resolverLocale(['pt-PT'], ['pt-BR', 'en-US']);
+console.log(_r3);
+
+const _r4 = resolverLocale(['de-DE'], ['en-US', 'pt-BR']);
+console.log(_r4);
+
+const _r5 = resolverLocale(['de-DE'], []);
+console.log(_r5);`}
+  expected='pt-BR
+en-US
+pt-BR
+en-US
+null'
+  slug="i18n"
+  nodeId="translation-workflow"
+/>
+
+<Quiz
+  question="Por que usar um SaaS de translation management (Locize, Crowdin) em vez de gerenciar arquivos JSON direto em Git?"
+  options={[
+    {
+      text: "SaaS resolve 3 problemas do workflow em Git: (1) tradutor externo nao precisa aprender Git/PR/CLI - edita em UI web com preview, (2) contexto visual (screenshot, onde a string aparece) anexado a cada chave, (3) glossario e translation memory garantem terminologia consistente. Em Git, 3+ tradutores = conflitos constantes e retrabalho.",
+      correct: true,
+      explanation:
+        "A razao central: tradutor externo **nao e' developer**. Pedir pra um tradutor fazer PR em Git, resolver conflitos, escrever JSON sem sintaxe highlight, e adivinhar contexto ('o que e' `cart.items`?') gera **trabalho ruim e lento**. SaaS resolve: (1) UI com **preview ao vivo** (ve a string na tela, com contexto visual), (2) **comentarios e screenshots** anexados (PM explica 'esse e' o botao de checkout'), (3) **glossario central** ('Save' sempre = 'Salvar', nunca 'Gravar'), (4) **Translation Memory** (sugere traducoes anteriores), (5) **MT (Machine Translation)** como rascunho. Em Git, 3 tradutores = 5 PRs por semana com conflitos. Em SaaS, mesmo time entrega 3x mais com qualidade. Use SaaS quando tem **+2 idiomas e +1 tradutor externo**. Pra projetos solo ou 1 idioma, Git + script de check basta.",
+    },
+    {
+      text: "SaaS de traducao e' obrigatorio por questao legal em apps publicos.",
+      correct: false,
+      explanation:
+        "Falso. Nao ha **nenhuma obrigacao legal** de usar SaaS de translation management. A escolha e' **tecnica** (workflow do time) e **pratica** (custo x beneficio). Em projetos pessoais, **Git + JSON** funciona perfeitamente. Em apps com **traducao profissional** ou **multi-time**, SaaS economiza tempo. A decisao e' do time, nao regulacao.",
+    },
+    {
+      text: "JSON em Git nao suporta mais que 2 idiomas por limitacao tecnica.",
+      correct: false,
+      explanation:
+        "Falso. JSON em Git suporta **infinitos idiomas** - e' so' questao de estrutura de pastas. O problema nao e' tecnico, e' **workflow do time**: tradutor nao-programador luta com Git, conflitos de merge acontecem, glossario fica espalhado em 20 arquivos. SaaS resolve workflow, nao restricao tecnica.",
+    },
+  ]}
+/>

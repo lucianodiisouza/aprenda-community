@@ -1,0 +1,553 @@
+---
+id: websockets-nativo
+title: "WebSockets nativo: readyState, eventos, mensagens binarias e texto"
+resources:
+  - title: "MDN - WebSocket API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - WebSocket.readyState (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+    lang: en
+    type: doc
+    free: true
+  - title: "ws - Node WebSocket library (oficial, EN)"
+    url: https://github.com/websockets/ws
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce entendeu as 4 abordagens de real-time
+e escolheu **WebSocket** pro seu caso
+(bidirecional, baixa latencia, chat/jogo/
+colaboracao). Agora vamos abrir a API
+nativa do browser: `new WebSocket(url)`.
+
+`WebSocket` e' a **classe** do browser
+(escrita como `WebSocket`, com W e S
+maiusculos, nao `websocket`). Apos
+instanciar, voce tem **4 estados**,
+**4 eventos principais**, e **2 metodos
+de envio** (texto/JSON ou binario). Em
+2026, e' a API mais usada pra real-time
+bidirecional no browser.
+
+Se voce entende o `readyState` (o
+"ciclo de vida" da conexao), os 4 eventos
+principais (`open`, `message`, `error`,
+`close`), e como mandar/receber mensagens
+texto (JSON) e binarias (Blob/ArrayBuffer),
+voce sai de "como uso WebSocket?" pra
+"implemento o chat real-time" com seguranca.
+
+## O essencial 🟢
+
+**`new WebSocket(url)` - a entrada da API.**
+O construtor aceita **URL com protocolo
+especial**: `ws://` (HTTP) ou `wss://`
+(HTTPS, equivalente a wss://TLS).
+
+```ts
+// Conexao basica
+const ws = new WebSocket("wss://api.example.com/ws");
+
+// Com subprotocol (opcional)
+const ws = new WebSocket("wss://api.example.com/ws", "graphql-ws");
+
+// Com headers custom (via subprotocol ou query string)
+// WebSocket nao suporta headers custom na URL - use query string
+const ws = new WebSocket("wss://api.example.com/ws?token=abc123");
+```
+
+**O `readyState` - o ciclo de vida do
+WebSocket.** Apos `new WebSocket()`, a
+conexao passa por **4 estados numericos**:
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Connecting: new WebSocket()
+    Connecting --> Open: open event
+    Connecting --> Closing: error antes do open
+    Connecting --> Closed: close() antes do open
+    Open --> Closing: close() ou servidor fecha
+    Open --> Closed: erro fatal (network down)
+    Closing --> Closed: handshake de close completo
+    Closed --> [*]: reconectar (manual)`}
+  caption="Ciclo de vida do WebSocket: 4 estados (CONNECTING=0, OPEN=1, CLOSING=2, CLOSED=3). Eventos: open (handshake completo), message (dados recebidos), error (problema), close (conexao fechada). Reconexao e' manual."
+/>
+
+Valores numericos:
+
+- `0` - **CONNECTING**: socket criado, handshake
+  em andamento.
+- `1` - **OPEN**: handshake completo, pode
+  mandar/receber.
+- `2` - **CLOSING**: close() chamado, handshake
+  de fechamento em andamento.
+- `3` - **CLOSED**: conexao fechada.
+
+```ts
+const ws = new WebSocket(url);
+console.log(ws.readyState);  // 0 (CONNECTING)
+
+ws.addEventListener("open", () => {
+  console.log(ws.readyState);  // 1 (OPEN)
+});
+```
+
+**Os 4 eventos principais.** A API
+WebSocket e' **event-based** - voce
+registra listeners:
+
+```ts
+const ws = new WebSocket("wss://api.example.com/ws");
+
+// 1. open: conexao estabelecida
+ws.addEventListener("open", (event) => {
+  console.log("Conectado!");
+  ws.send(JSON.stringify({ type: "hello" }));
+});
+
+// 2. message: dados recebidos do server
+ws.addEventListener("message", (event) => {
+  // event.data pode ser string OU Blob/ArrayBuffer
+  if (typeof event.data === "string") {
+    const data = JSON.parse(event.data);
+    handleMessage(data);
+  } else {
+    // binario
+  }
+});
+
+// 3. error: problema na conexao
+ws.addEventListener("error", (event) => {
+  console.error("WebSocket error:", event);
+  // event nao tem muito detalhe - WebSocket errors sao opacos
+});
+
+// 4. close: conexao fechada (limpa ou nao)
+ws.addEventListener("close", (event) => {
+  console.log(`Fechado: code=${event.code}, reason=${event.reason}`);
+  // code 1000 = normal closure
+  // code 1001 = going away
+  // code 1006 = abnormal closure (sem close frame)
+});
+```
+
+**`send()` - mandar dados pro server.** O
+metodo `send()` aceita **string** ou
+**binario** (Blob/ArrayBuffer). Tentar
+mandar em estado errado **lanca erro**:
+
+```ts
+// String (ou JSON.stringify pra objeto)
+ws.send("Hello, server!");
+ws.send(JSON.stringify({ type: "ping", ts: Date.now() }));
+
+// Blob (binario)
+const blob = new Blob([binaryData]);
+ws.send(blob);
+
+// ArrayBuffer (binario, mais comum)
+const buffer = new ArrayBuffer(8);
+const view = new Uint8Array(buffer);
+ws.send(view);
+
+// Erro: tentar mandar antes de OPEN
+ws.send("test");  // throws InvalidStateError
+```
+
+**Otimizacao**: empacote multiplas mensagens
+em **1 so** quando possivel (reduz
+overhead):
+
+```ts
+// Ruim: 10 sends = 10 frames WebSocket
+for (const item of items) {
+  ws.send(JSON.stringify(item));
+}
+
+// Bom: 1 send = 1 frame
+ws.send(JSON.stringify(items));
+```
+
+**`close()` - fechar a conexao
+limpa.** Quando terminar a sessao, chame
+`close()`:
+
+```ts
+ws.close(1000, "User logged out");
+// 1000 = normal closure
+// "User logged out" = reason (opcional, visivel so no server)
+```
+
+**`close()` vs `close()` automatico:**
+- `close()`: graceful - envia close frame,
+  server confirma, conexao fecha.
+- Sem `close()`: o server detecta via
+  `close` event, ou o socket fica aberto
+  ate o browser fechar (memory leak).
+
+**Sempre** chame `close()` em cleanup
+(component unmount, user logout, page
+unload).
+
+**`binaryType` - text vs Blob vs ArrayBuffer.**
+Por default, `event.data` em mensagem
+**binaria** vem como `Blob`. Voce pode
+mudar pra `ArrayBuffer`:
+
+```ts
+const ws = new WebSocket("wss://api.example.com/ws");
+ws.binaryType = "arraybuffer";  // ou "blob" (default)
+
+ws.addEventListener("message", (event) => {
+  if (event.data instanceof ArrayBuffer) {
+    // Manipular como ArrayBuffer
+    const view = new Uint8Array(event.data);
+  }
+});
+```
+
+**Quando usar `arraybuffer`**: quando voce
+vai processar os bytes (parsear protobuf,
+descomprimir, etc). **Quando usar `blob`**
+(default): quando voce vai armazenar
+(file upload, video chunk, etc).
+
+**Subprotocols - o "content-type" do
+WebSocket.** Alem do URL, da' pra
+especificar **subprotocol** (negociado
+durante o handshake):
+
+```ts
+// Client
+const ws = new WebSocket("wss://api.example.com/graphql", "graphql-transport-ws");
+
+// Server (Node `ws`)
+const wss = new WebSocket.Server({
+  handleProtocols: (protocols) => {
+    if (protocols.has("graphql-transport-ws")) return "graphql-transport-ws";
+    return false;  // rejeita conexao
+  },
+});
+```
+
+Subprotocols comuns em 2026:
+- `graphql-transport-ws` (GraphQL subscriptions).
+- `wamp` (Web Application Messaging Protocol).
+- Protocolos custom (chat, game, etc).
+
+**Reconectar - o lado que voce
+implementa.** O WebSocket **nao tem**
+reconexao automatica. Se o servidor cair
+ou a rede cair, a conexao morre e seu
+cliente fica **desconectado** ate voce
+reconectar manualmente. Cobre em
+`reconexao-e-estado` com exponential
+backoff + heartbeat.
+
+```ts
+// Pattern basico de reconexao
+function connect() {
+  const ws = new WebSocket(url);
+
+  ws.addEventListener("close", () => {
+    setTimeout(connect, 3000);  // tenta em 3s
+  });
+
+  return ws;
+}
+```
+
+Em prod, **sempre** combine com exponential
+backoff + jitter + heartbeat.
+
+## Aprofundamento 🟡
+
+**`ping`/`pong` - o heartbeat do
+WebSocket.** WebSocket **nao detecta**
+conexao morta (network drop, NAT timeout,
+proxy timeout). O **ping/pong** e' o
+heartbeat que detecta:
+
+```ts
+// Server (Node `ws`)
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on("connection", (ws) => {
+  ws.isAlive = true;
+  ws.on("pong", () => { ws.isAlive = true; });
+});
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (!ws.isAlive) {
+      ws.terminate();  // mata conexao zumbi
+      return;
+    }
+    ws.isAlive = false;
+    ws.ping();  // envia ping
+  });
+}, 30000);  // a cada 30s
+```
+
+```ts
+// Client (browser)
+ws.addEventListener("pong", () => {
+  // marcar como vivo
+  lastPong = Date.now();
+});
+
+setInterval(() => {
+  if (Date.now() - lastPong > 60000) {
+    ws.close();  // 60s sem pong = morto
+    reconnect();
+  }
+}, 5000);
+```
+
+**Sem ping/pong**, em redes instaveis
+(mobile, wifi), a conexao "morre" sem
+voce saber. Cobre em `reconexao-e-estado`.
+
+**`perMessageDeflate` - compressao por
+mensagem.** WebSocket suporta **compressao
+de cada mensagem** (RFC 7692). Reduz
+bandwidth ate 80% (mensagens JSON sao
+muito compressiveis). Ativar:
+
+```ts
+// Server
+const wss = new WebSocket.Server({
+  port: 8080,
+  perMessageDeflate: true,
+});
+```
+
+Client (browser): **automaticamente
+negociado** se o server suportar. Nada a
+fazer no client.
+
+**Cuidado**: compressao adiciona CPU.
+Em apps de alta performance (games), meca
+se a compressao ajuda ou atrapalha. Em
+apps com texto (chat), sempre ajuda.
+
+**WebSocket + CORS.** Diferente de `fetch`,
+WebSocket **nao usa CORS** (e' um
+protocolo separado). A regra de
+conexao e' simplesmente:
+- Origem **mesma** do server: conecta
+  sempre.
+- Origem **diferente**: conecta desde que
+  o server aceite (via header
+  `Access-Control-Allow-Origin` no
+  handshake, mas nao e' CORS de verdade -
+  e' decisao do server).
+
+**Autenticacao** em WebSocket e' o seu
+problema (cookie funciona automaticamente,
+token requer query string ou primeira
+mensagem).
+
+**`ArrayBuffer` vs `Blob` para binario.**
+
+| Tipo            | Quando usar                                |
+| --------------- | ------------------------------------------ |
+| `ArrayBuffer`   | Processar bytes (parse, crypto, etc)      |
+| `Blob`          | Armazenar/enviar (file upload, video)     |
+
+Exemplo: **file upload progressivo**:
+
+```ts
+const file = input.files[0];
+const chunkSize = 64 * 1024;  // 64KB
+
+for (let offset = 0; offset < file.size; offset += chunkSize) {
+  const chunk = file.slice(offset, offset + chunkSize);
+  ws.send(chunk);  // Blob
+}
+
+// Server recebe Blob, pode armazenar chunk por chunk
+```
+
+**SharedArrayBuffer + WebSocket** - o
+**alto desempenho**. Pra apps que
+transferem **muito dado binario** (video
+chunks, game state, simulacoes), use
+`SharedArrayBuffer` em vez de
+`ArrayBuffer`. Worker thread acessa o
+buffer, main thread le. **Sem copia** -
+zero-copy transfer.
+
+```ts
+// Main thread
+const buffer = new SharedArrayBuffer(1024 * 1024);
+const view = new Float32Array(buffer);
+
+// Worker preenche o buffer
+worker.postMessage(buffer, [buffer]);  // transfer
+
+// WebSocket envia o buffer
+ws.send(buffer);
+```
+
+**Limitacao**: `SharedArrayBuffer` exige
+**COOP/COEP headers** (cross-origin
+isolation) - detalhe em `performance-web`
+e `csp-e-headers`.
+
+**`WebSocket` + Service Worker (PWA).**
+Em PWA, o Service Worker pode fazer
+**proxy de WebSocket**: a pagina cria
+WebSocket, passa pro SW, SW faz relay.
+Util pra **economia de bateria** (mobile)
+- SW dorme, acorda so quando ha data.
+**Experimental** - API em rollout.
+
+## Pra quem quer ir mais alem 🔴
+
+**`WebSocket` vs `WebTransport` - o
+sucessor.** WebTransport (Chrome 97+,
+Firefox 114+, Safari 17+) e' o **sucessor
+moderno** do WebSocket: HTTP/3 + UDP +
+bidirecional. Vantagens:
+- **Latencia menor** (UDP sem handshake).
+- **Multiplexing** (multiplos streams em
+  1 conexao).
+- **Datagrams** (mensagens sem ordering,
+  como UDP).
+
+**Limitacao em 2026**: requer HTTP/3
+(ainda em rollout em CDNs). Para apps de
+**gaming** ou **colaboracao de alta
+performance**, WebTransport vale. Pra
+chat/notificacoes, **WebSocket ainda e' o
+default estavel**.
+
+**`EventSource` reconexao automatica vs
+WebSocket manual.** Por que SSE tem
+reconexao automatica mas WebSocket nao?
+**SSE e' HTTP** - o browser ja gerencia
+conexoes HTTP, sabe quando cai. **WebSocket
+e' protocolo proprio** - o browser nao
+sabe "quando reconectar" (depende do app).
+A decisao de **quando** reconectar e' do
+app - o que justifica o pattern de
+exponential backoff + heartbeat.
+
+**Por que `WebSocket` nao tem multiplexing
+nativo.** WebSocket e' **1 stream** por
+conexao. Pra mandar mensagens em paralelo
+(chat + presence + typing indicators),
+voce precisa de **sub-protocolo** ou
+**Socket.IO** (que adiciona multiplexing).
+**WebTransport** ja tem multiplexing
+nativo - 1 conexao, N streams. Em 2026+,
+WebTransport substituira WebSocket em apps
+de alta demanda.
+
+**`eventSource` vs `WebSocket` proxy.** Em
+PWA, da' pra fazer o Service Worker
+**proxy** de WebSocket: a pagina abre
+WebSocket, SW intercepta, faz relay.
+Util pra **background sync** - SW pode
+manter WS vivo mesmo com a pagina
+fechada. **Ainda em proposal** em 2026.
+
+**Leitura recomendada:**
+
+- [MDN - WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) - referencia MDN.
+- [MDN - WebSocket.readyState](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState) - os 4 estados.
+- [ws - GitHub](https://github.com/websockets/ws) - a lib de WebSocket mais usada em Node.
+
+> Dica: o erro mais comum em WebSocket e'
+> **assumir que a conexao fica viva para
+> sempre**. Em redes reais (mobile, wifi
+> instavel), **a conexao morre** -
+> sem heartbeat, voce nao detecta. Sempre
+> implemente: (1) ping/pong a cada 30s, (2)
+> deteccao de morte (60s sem pong), (3)
+> reconexao com exponential backoff.
+> **Sem isso, app quebra em prod** mesmo
+> funcionando em dev.
+
+No proximo no, vamos **Server-Sent Events
+(SSE)**: a alternativa **one-way** ao
+WebSocket. Mais simples, reconexao
+automatica nativa, HTTP puro. Ideal pra
+notificacoes, dashboards live, e log
+streams.
+
+<Checkpoint
+  challenge="Implemente a função `decidirEstadoWebSocket(estadoAnterior, evento, conectouAgora)` que simula a maquina de estados do WebSocket. Recebe: estadoAnterior (0|1|2|3), evento ('open' | 'message' | 'error' | 'close'), e conectouAgora (boolean - se foi 'new WebSocket()'). Retorna o novo readyState (0|1|2|3). Regras: conectouAgora=true → 0 (CONNECTING). estado=0 + open → 1. estado=0 + error/close → 3. estado=1 + close (chamado pelo user ou server) → 2. estado=2 + close handshake completo → 3. estado=1 + error fatal → 3. Caso contrario retorna o estadoAnterior (sem mudanca)."
+  starterCode={`// Implemente decidirEstadoWebSocket que simula a maquina de estados
+// do WebSocket.
+//
+// estadoAnterior: 0|1|2|3 (CONNECTING|OPEN|CLOSING|CLOSED)
+// evento: 'open' | 'message' | 'error' | 'close'
+// conectouAgora: boolean - true se foi 'new WebSocket()' chamado agora
+//
+// Retorna o novo readyState: 0|1|2|3.
+//
+// Regras:
+// - conectouAgora=true: retorna 0 (CONNECTING).
+// - estado=0 + 'open': retorna 1 (OPEN).
+// - estado=0 + 'error' ou 'close': retorna 3 (CLOSED).
+// - estado=1 + 'close' (user/server): retorna 2 (CLOSING).
+// - estado=2 + 'close' (handshake completo): retorna 3 (CLOSED).
+// - estado=1 + 'error' (fatal): retorna 3 (CLOSED).
+// - caso contrario (ex: message em qualquer estado): retorna estadoAnterior.
+function decidirEstadoWebSocket(estadoAnterior, evento, conectouAgora) {
+  return estadoAnterior;
+}
+
+const _r1 = decidirEstadoWebSocket(0, "open", true);
+console.log(JSON.stringify(_r1));
+
+const _r2 = decidirEstadoWebSocket(0, "error", false);
+console.log(JSON.stringify(_r2));
+
+const _r3 = decidirEstadoWebSocket(1, "close", false);
+console.log(JSON.stringify(_r3));
+
+const _r4 = decidirEstadoWebSocket(2, "close", false);
+console.log(JSON.stringify(_r4));
+
+const _r5 = decidirEstadoWebSocket(3, "open", false);
+console.log(JSON.stringify(_r5));`}
+  expected='"1"
+"3"
+"2"
+"3"
+"3"'
+  slug="real-time"
+  nodeId="websockets-nativo"
+/>
+
+<Quiz
+  question="Por que WebSocket precisa de heartbeat (ping/pong) para detectar conexao morta?"
+  options={[
+    {
+      text: "Porque WebSocket nao detecta conexao morta (network drop, NAT timeout, proxy timeout). Sem ping/pong, o socket fica 'zumbi' - parece conectado mas nao recebe dados. Heartbeat identifica a queda e destrava reconexao.",
+      correct: true,
+      explanation:
+        "WebSocket e' um protocolo TCP full-duplex. TCP detecta **erros de envio** (RST), mas NAO detecta **network drop silencioso** (wifi desconectou, NAT timeout apos 5min de idle, proxy decidiu fechar). O socket continua 'conectado' no JavaScript, mas nao recebe nada. Ping/pong resolve: cada lado envia ping, o outro responde pong. Se 60s passam sem pong, a conexao e' considerada morta. E' o mesmo problema de TCP keep-alive, mas em nivel de aplicacao. Cobre em 'reconexao-e-estado' com exponential backoff - sem heartbeat + sem reconexao, app quebra em prod mesmo funcionando em dev.",
+    },
+    {
+      text: "Porque ping/pong e' obrigatorio pelo protocolo WebSocket.",
+      correct: false,
+      explanation:
+        "Nao. Ping/pong NAO e' obrigatorio pelo protocolo WebSocket. E' uma **convencao de aplicacao** pra detectar conexao morta. O protocolo WebSocket define os frames ping/pong (RFC 6455), mas o uso e' opcional. Muitos apps WebSocket funcionam sem heartbeat - ate quebrarem em prod. Em redes instaveis (mobile, wifi), heartbeat e' **essencial**. Mas nao e' 'obrigatorio' - e' 'recomendado'.",
+    },
+    {
+      text: "Porque o browser fecha o WebSocket se nao houver atividade por 30s.",
+      correct: false,
+      explanation:
+        "Nao. O browser NAO fecha WebSocket por inatividade - ele deixa aberto indefinidamente. E' o servidor ou proxy que pode ter timeout (Nginx: 60s padrao, Cloudflare: 100s). Sem ping/pong, o servidor ou proxy pode fechar a conexao silenciosamente, e o client so descobre na proxima tentativa de enviar. Heartbeat mantem a conexao 'visivelmente ativa' pro servidor/proxy.",
+    },
+  ]}
+/>

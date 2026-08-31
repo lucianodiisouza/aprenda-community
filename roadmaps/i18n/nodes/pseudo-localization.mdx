@@ -1,0 +1,589 @@
+---
+id: pseudo-localization
+title: "Pseudo-localization: testar com locale falso em CI, encontrar bugs cedo"
+resources:
+  - title: "pseudo-localization - GitHub (EN)"
+    url: https://github.com/tryggvigy/pseudo-localization
+    lang: en
+    type: doc
+    free: true
+  - title: "Unicode Pseudo Locale (UTR #35) (EN)"
+    url: https://www.unicode.org/reports/tr35/
+    lang: en
+    type: doc
+    free: true
+  - title: "Google - Pseudo-localization (EN)"
+    url: https://testing.googleblog.com/2010/07/pseudo-localization-for-faster.html
+    lang: en
+    type: artigo
+    free: true
+---
+
+Voce terminou a i18n, mandou pro time
+de **traducao**, e em 3 semanas voltam
+os arquivos em alemao, japones, arabe.
+Ate la', **nao da pra testar a UI em
+outros idiomas**. Solucao: **pseudo-
+localization** - transforme "Save" em
+"[Sàvé wîth àççéntš]" **sem precisar de
+traducao real**, e veja **todos os bugs
+de i18n** aparecerem: **strings
+concatenadas**, **truncamento** (botao
+fixo em 80px), **layout quebra** (texto
+expandido nao cabe), **RTL esquecido**,
+**hardcoded** que escapou. **Esse no
+cobre pseudo-localization**: a tecnica
+de gerar **strings artificialmente
+expandidas** que simulam a realidade de
+outros idiomas, **sem** depender de
+traducoes humanas.
+
+Pseudo-localization e' **a melhor
+ferramenta pra testar i18n ANTES de
+ter traducao**. Em 2026, e' considerado
+**pratica padrao** em apps que vao
+multi-idioma: roda em CI, falha o build
+se aparecer "string nao traduzida" ou
+"layout quebrou". Pega 80% dos bugs de
+i18n **antes** do usuario real.
+
+Voce sai de "testar i18n so' quando
+traducao chega" pra "testar i18n todo
+PR com pseudo-locale automatica".
+
+## O essencial 🟢
+
+**O que e' pseudo-localization.** Voce
+cria um **pseudo-locale** (ex: `en-XA`
+ou `en-PSEUDO`) que **transforma** cada
+string do app em algo **artificial**:
+
+```text
+Original:        "Save"
+Pseudo (en-XA):  "[Sàvé ŵîťh àççéñţš]"
+```
+
+**As 3 transformacoes classicas:**
+
+1. **Acentuacao** - substitui letras por
+   variantes acentuadas (a → à, e → é,
+   i → ï, o → ö, u → û, n → ñ, c → ç).
+   **Mostra** onde a fonte nao suporta
+   acentos (encontra bug visual).
+
+2. **Expansão** - aumenta o texto em
+   30-50% (alemao expande ate 50%,
+   japones expande pouco). **Mostra**
+   onde o layout tem `width: 80px` fixo
+   ou `text-overflow: ellipsis` mal
+   configurado.
+
+3. **Brackets** - envolve o texto em
+   `[` `]`. **Mostra** onde uma string
+   foi **concatenada** ou **nao extraida**
+   (vira "[[Sàvé] Click]").
+
+**Por que funciona.** Alemão/japones
+**realmente** tem essas propriedades:
+expansao, acentos, mix de scripts. O
+pseudo-locale **forca o codigo a lidar
+com a realidade de outros idiomas sem
+depender deles**.
+
+**Exemplo real do bug que pseudo-
+localization pega:**
+
+```html
+<!-- ❌ Bug: string concatenada em vez de template -->
+<button>Save {{ filename }}</button>
+<!-- Resultado do pseudo: "[Sàvé] {{ filename }}" -->
+<!-- "filename" nao foi traduzido - obvio -->
+
+<!-- ❌ Bug: hardcoded que escapou -->
+<title>My App - Dashboard</title>
+<!-- Resultado do pseudo: "[Mÿ Àpp] - Dashboard" -->
+<!-- "Dashboard" nao extraido - obvio -->
+
+<!-- ❌ Bug: truncamento com width fixo -->
+<button style="width: 60px">Save</button>
+<!-- "Save" vira "[Sàvé ŵ...]" - trunca em "...", obvio -->
+```
+
+**O pseudo-locale `en-XA` (Unicode CLDR).**
+`en-XA` e' um locale **oficial** do CLDR
+(Unicode) que faz pseudo-localization
+**nativa** no browser. `en-XA` adiciona
+**`[ ` no inicio e ` ]` no fim**, e
+**expande 30%** (adiciona caracteres
+extra). E' **built-in** - basta o
+**user agent** reportar `Accept-Language:
+en-XA` (configuravel via DevTools).
+
+**No Chrome DevTools:**
+
+1. `chrome://settings/languages` →
+   adicionar "English (XA)".
+2. Mover pra topo de preferencia.
+3. Recarregar app.
+
+**O `en-XB` (RTL variant).** Alem de
+`en-XA`, existe **`en-XB`** (RTL) -
+pseudo-locale com direcao RTL. **Mesma
+coisa** mas com `[` no fim e `]` no
+inicio, e direcao RTL. Use pra testar
+se o layout **aguenta bidi** (mistura
+LTR/RTL).
+
+**Implementacao custom de pseudo-
+localization.** Em apps que nao podem
+usar `en-XA` (ex: SSR com locale
+hardcoded), implemente um
+**transformador** de strings:
+
+```ts
+// lib/pseudo-localize.ts
+
+const charMap: Record<string, string> = {
+  a: "à", A: "À",
+  e: "é", E: "É",
+  i: "ï", I: "Ï",
+  o: "ö", O: "Ö",
+  u: "û", U: "Û",
+  n: "ñ", N: "Ñ",
+  c: "ç", C: "Ç",
+  y: "ÿ", Y: "Ÿ",
+  s: "š", S: "Š",
+  z: "ž", Z: "Ž",
+};
+
+export function pseudoLocalize(text: string): string {
+  const transformed = text
+    .split("")
+    .map((c) => charMap[c] || c)
+    .join("");
+
+  // Wrap in brackets
+  return `[${transformed} ŵîth àççéñţš]`;
+}
+```
+
+**Uso com i18next:**
+
+```ts
+// i18n/config.ts
+i18n.init({
+  resources: {
+    "en-XA": {
+      common: Object.fromEntries(
+        Object.entries(enUSResources).map(([k, v]) => [
+          k,
+          pseudoLocalize(v),
+        ])
+      ),
+    },
+  },
+});
+
+// ou via interpolation
+i18n.init({
+  interpolation: {
+    format: (value, format) => {
+      if (format === "pseudo") return pseudoLocalize(value);
+      return value;
+    },
+  },
+});
+```
+
+**Uso com FormatJS (react-intl).**
+
+```ts
+import { IntlProvider } from "react-intl";
+
+const messages = transformMessages(enUSMessages, pseudoLocalize);
+
+<IntlProvider locale="en-XA" messages={messages}>
+  <App />
+</IntlProvider>
+```
+
+**CI - rodar pseudo-locale em testes
+visuais.** Combinado com
+**Playwright/Cypress**, pseudo-loc
+pega **bugs visuais**:
+
+```ts
+// tests/pseudo-locale.spec.ts
+import { test, expect } from "@playwright/test";
+
+test("dashboard handles pseudo-locale", async ({ page }) => {
+  await page.context().setExtraHTTPHeaders({
+    "Accept-Language": "en-XA",
+  });
+  await page.goto("/dashboard");
+
+  // Pseudo strings devem aparecer
+  await expect(page.getByText(/\[Mÿ Àpp/)).toBeVisible();
+  // Sem overflow horizontal
+  const overflow = await page.evaluate(() => {
+    return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+  });
+  expect(overflow).toBe(false);
+});
+```
+
+**O pipeline de CI.**
+
+<Mermaid
+  chart={`flowchart LR
+    Src[Source strings em en-US] --> PL[Pseudo-localize lib]
+    PL --> Trans1[en-XA: 30% maior, acentos, brackets]
+    PL --> Trans2[en-XB: RTL variant]
+    Trans1 --> App1[App rodando com locale en-XA]
+    Trans2 --> App2[App rodando com locale en-XB]
+    App1 --> Test1[Visual regression: overflow, truncamento, layout]
+    App2 --> Test2[Bidi test: RTL funciona, icones espelhados]
+    Test1 --> Bug{Encontrou bug?}
+    Test2 --> Bug
+    Bug -->|Sim| Fix[Dev conserta: width, text-overflow, dir]
+    Bug -->|Nao| Pass[Build passa]
+    Fix --> Src`}
+  caption="Pipeline de pseudo-localization em CI: source strings passam por transformador (acentos + expansao + brackets), viram locale en-XA (LTR) e en-XB (RTL), sao renderizados no app, e validados com testes visuais (overflow, truncamento, bidi). Bugs aparecem ANTES de traducao real existir."
+/>
+
+**Quando NAO usar pseudo-localization:**
+
+- Apps **internos** com 1 idioma so'.
+- Landing pages de **evento unico**.
+- **MVP descartavel**.
+
+**Quando usar:**
+
+- Apps que vao **multi-idioma no
+  futuro** (mesmo que so ingles agora).
+- Apps com **3+ idiomas** planejados.
+- Apps **enterprise** com **audiencia
+  global**.
+
+**Pseudo-localization nao substitui
+traducao real.** Pseudo pega bugs de
+**i18n** (codigo), nao bugs de
+**l10n** (traducao). Alem disso, nao
+testa **plural** (5 formas de polones)
+nem **RTL** complexo (arabe misturado
+com ingles). **Use** pseudo como
+**primeira linha de defesa**, **complemente**
+com traducao real quando chegar.
+
+## Aprofundamento 🟡
+
+**`pseudo-localization` (npm) - a lib
+classica.** Mantida, simples, suporta
+varias transformacoes:
+
+```bash
+pnpm add -D pseudo-localization
+```
+
+```ts
+import { pseudoLocalize } from "pseudo-localization";
+
+pseudoLocalize("Hello, world!");
+// "[Ĥéļļö, ŵöŕļð!]"
+
+pseudoLocalize("Save", { strategy: "bidi" });
+// "[!!!Save!!!]" (bidi-aware)
+
+pseudoLocalize("a", { multiplier: 2 });
+// "[àà]"
+```
+
+**`@formatjs/intl-pseudo-locales` (extensao
+de FormatJS).** Adiciona `en-XA` e `en-XB`
+como locales reconhecidos nativamente.
+
+```bash
+pnpm add @formatjs/intl-pseudo-locales
+```
+
+**Pseudo-locale + TypeScript.** Force
+**type safety** em chaves de traducao:
+
+```ts
+// i18n/enums.ts
+export const TranslationKey = {
+  SAVE: "common.save",
+  CANCEL: "common.cancel",
+} as const;
+
+type TranslationKey = typeof TranslationKey[keyof typeof TranslationKey];
+
+function t(key: TranslationKey): string {
+  return i18n.t(key);
+}
+
+// Erro de TypeScript se typo
+t("common.sav");   // ❌ typo nao compila
+t(TranslationKey.SAVE);  // ✅ compila
+```
+
+**A11y + pseudo-locale.** O atributo
+`lang` da `<html>` deve refletir o locale
+**real** do pseudo:
+
+```tsx
+// Pseudo-locale nao afeta screen reader de verdade
+<html lang={locale === "en-XA" ? "en" : locale}>
+```
+
+Screen reader continua lendo em ingles
+(ou no fallback) - pseudo e' so' **teste
+visual**.
+
+**Pseudo-locale com RTL: `en-XB`.** O
+**`en-XB`** adiciona `[` e `]` invertidos
+(`]` no inicio, `[` no fim) e **expande
+com char Unicode RTL marks** (RLM/RLI).
+Testa se a UI aguenta bidi **mesmo com
+string pseudo**.
+
+```text
+Original:        "Save"
+Pseudo en-XA:    "[Sàvé ŵîth àççéñţš]" (LTR)
+Pseudo en-XB:    "ïéééSàvéïééé]" (RTL-ish)
+```
+
+**Pseudo + RTL + bidi misto.** Pra
+**teste pesado** de bidi, use `en-XB` +
+**string com numero no meio**
+("Order #12345 placed") - numero fica
+LTR mesmo em contexto RTL. **Pseudo
+pega** quando numero estoura layout
+ou texto fica ilegivel.
+
+**Teste de regressao visual.** Percy,
+Chromatic, ou Loki capturam screenshots
+em cada locale (incluindo pseudo) em
+cada PR. Diff visual **automatico**:
+
+```ts
+// percy/visual.spec.ts
+test("dashboard", async ({ page }) => {
+  for (const locale of ["en-US", "en-XA", "en-XB", "pt-BR", "ja-JP"]) {
+    await page.context().setExtraHTTPHeaders({ "Accept-Language": locale });
+    await page.goto("/dashboard");
+    await percySnapshot(page, `dashboard-${locale}`);
+  }
+});
+```
+
+**Pseudo-locale com Cypress.**
+
+```ts
+// cypress/e2e/pseudo-locale.cy.ts
+describe("Pseudo locale", () => {
+  it("handles pseudo-locale without overflow", () => {
+    cy.visit("/", {
+      headers: { "Accept-Language": "en-XA" },
+    });
+    cy.get("body").should("not.have.css", "overflow-x", "scroll");
+    cy.contains(/\[Mÿ Àpp/);
+  });
+});
+```
+
+**Limites do pseudo-locale.** Pseudo **nao**
+testa:
+- **Plural rules** (1 item vs 2 items -
+  pseudo usa mesma string).
+- **Genero** (ele/ela - pseudo usa
+  neutro).
+- **Cultura especifica** (imagens, cores,
+  simbolos).
+- **Conjugacao** (verbos em japones
+  conjugam por idade, formalidade -
+  pseudo nao simula).
+- **Direcao certa** (`dir="rtl"` -
+  pseudo usa LTR ou RTL hardcoded).
+
+**Use** pseudo como **smoke test
+automatizado**. **Complemente** com
+traducao real + reviewer humano +
+teste de regressao visual.
+
+**Pseudo em SSR (Next.js).** Server-side
+rendering de pseudo precisa de **locale
+negociado** diferente. Use `next.config.js`
+com i18n routing:
+
+```ts
+// next.config.js
+module.exports = {
+  i18n: {
+    locales: ["en-US", "pt-BR", "en-XA", "en-XB"],
+    defaultLocale: "en-US",
+  },
+};
+```
+
+**`en-XA` e `en-XB` em CLDR.** Sao
+**oficiais** no CLDR desde 2008 - Unicode
+mantem, e browsers atualizam CLDR
+anualmente. **Zero risco** de quebrar.
+
+## Pra quem quer ir mais alem 🔴
+
+**Pseudo-locale + machine translation.**
+**Combinacao** poderosa: pseudo-locale
+pega bugs de i18n, MT preenche rascunhos
+rapido. **GitHub Copilot for translations**
+- projeto Open Source.
+
+**Pseudo-locale em Storybook.** Em
+**Storybook**, configure **locale
+switcher** no toolbar pra testar
+pseudo-locale em cada componente:
+
+```ts
+// .storybook/preview.ts
+export const globalTypes = {
+  locale: {
+    name: "Locale",
+    description: "Locale",
+    defaultValue: "en-US",
+    toolbar: {
+      icon: "globe",
+      items: [
+        { value: "en-US", title: "English" },
+        { value: "en-XA", title: "Pseudo (LTR)" },
+        { value: "en-XB", title: "Pseudo (RTL)" },
+        { value: "pt-BR", title: "Português" },
+      ],
+    },
+  },
+};
+
+export const decorators = [
+  (Story, { globals }) => {
+    const locale = globals.locale;
+    return (
+      <IntlProvider locale={locale} messages={getMessages(locale)}>
+        <Story />
+      </IntlProvider>
+    );
+  },
+];
+```
+
+**Pseudo + RTL visual diff.** Em
+**Chromatic** ou Percy, compare
+`en-US` vs `en-XA` vs `en-XB`
+automaticamente. Diff visual aparece
+no PR review.
+
+**Pseudo + mobile (React Native).** Em
+**RN**, pseudo-locale expo funciona
+com `expo-localization`. Use `I18nManager`
+pra forcar RTL em dev:
+
+```ts
+import { I18nManager } from "react-native";
+
+if (__DEV__) {
+  I18nManager.forceRTL(true);  // Forca RTL pra teste
+}
+```
+
+**Pseudo-locale no design system.** Em
+**Material UI**, **Chakra**, **Ant
+Design** - ja' vem com suporte a RTL via
+`<ThemeProvider>`. Combine com pseudo
+locale pra testar se os components
+aguenta expansao/acentuacao.
+
+**Leitura recomendada:**
+
+- [pseudo-localization (GitHub)](https://github.com/tryggvigy/pseudo-localization) - lib classica, opcoes de transformacao.
+- [Unicode Pseudo Locale UTR #35](https://www.unicode.org/reports/tr35/) - spec oficial de `en-XA` e `en-XB`.
+- [Google Testing Blog - Pseudo-localization](https://testing.googleblog.com/2010/07/pseudo-localization-for-faster.html) - case study do Google usando pseudo em Android/i18n.
+
+> Dica: o erro mais comum em i18n e'
+> **"vou testar quando chegar traducao"**.
+> Resultado: 6 meses depois, quando
+> alemao chega, **layout quebra** em
+> 50 lugares, **strings concatenadas**
+> aparecem, **RTL** vira "suporte
+> futuro". **Rode pseudo-localization
+> no CI desde o dia 1** - pega 80% dos
+> bugs de i18n **antes** da traducao.
+> **10 minutos de setup** economiza
+> **semanas de retrabalho**. Use
+> `en-XA` (LTR) + `en-XB` (RTL) em
+> todo PR.
+
+No proximo no (ultimo), vamos **projeto
+final**: app multi-idioma completo com
+ICU, RTL, formatação locale-aware, e
+**pseudo-localization em CI**. O "hello
+world" de apps i18n em producao.
+
+<Checkpoint
+  challenge="Implemente a função `pseudoLocalizar(texto)` que transforma uma string em uma versao pseudo-localized. Recebe: texto (string). Mapeia letras para versoes acentuadas: a→à, A→À, e→é, E→É, i→ï, I→Ï, o→ö, O→Ö, u→û, U→Û, n→ñ, N→Ñ, c→ç, C→Ç. Caracteres nao mapeados ficam como estao. Retorna a string transformada ENVOLVIDA em brackets: `[` no inicio, `]` no fim, e sufixo ' ŵîth àççéñţš' antes do `]` final."
+  starterCode={`// Implemente pseudoLocalizar(texto) que transforma uma string
+// em versao pseudo-localized pra teste de i18n.
+//
+// Mapa de acentuacao:
+//   a→à, A→À, e→é, E→É, i→ï, I→Ï
+//   o→ö, O→Ö, u→û, U→Û, n→ñ, N→Ñ
+//   c→ç, C→Ç
+//
+// Caracteres nao mapeados ficam inalterados.
+//
+// Retorna: [TEXTO_ACENTUADO ŵîth àççéñţš]
+// (abre bracket, texto acentuado, sufixo, fecha bracket)
+function pseudoLocalizar(texto) {
+  return '';
+}
+
+const _r1 = pseudoLocalizar('Hello');
+console.log(_r1);
+
+const _r2 = pseudoLocalizar('Save');
+console.log(_r2);
+
+const _r3 = pseudoLocalizar('a');
+console.log(_r3);
+
+const _r4 = pseudoLocalizar('Cancel');
+console.log(_r4);`}
+  expected='[Héllö ŵîth àççéñţš]
+[Sàvé ŵîth àççéñţš]
+[à ŵîth àççéñţš]
+[Çàñçél ŵîth àççéñţš]'
+  slug="i18n"
+  nodeId="pseudo-localization"
+/>
+
+<Quiz
+  question="Por que pseudo-localization (en-XA, en-XB) deve rodar em CI mesmo ANTES de ter traducoes reais?"
+  options={[
+    {
+      text: "Pseudo-locale transforma cada string em versao acentuada + 30% expandida + brackets, simulando alemao/japones sem traducao. Pega 80% dos bugs de i18n (string concatenada, hardcoded, truncamento, layout overflow) ANTES de tradutor humano chegar. Custo: 10 min de setup. Beneficio: semanas de retrabalho economizadas.",
+      correct: true,
+      explanation:
+        "O ponto central: pseudo-locale **simula** o efeito de outros idiomas sem precisar deles. **Expansao** (30%) pega `width: 80px` fixo em botao. **Acentuacao** pega fonte sem suporte Unicode completo. **Brackets** pega string concatenada hardcoded. **en-XB** (RTL) pega layout que nao aguenta bidirecionalidade. Custo de implementar: 10 minutos (lib `pseudo-localization` ou `en-XA` no browser). Custo de **nao** fazer: quando alemao chegar em 3 meses, layout quebra em 30 lugares, retrabalho de 2 semanas. Em 2026, pseudo-locale em CI e' **pratica padrao** em apps com i18n - Google, Microsoft, Mozilla usam desde 2008.",
+    },
+    {
+      text: "Pseudo-locale substitui traducao real, entao nao precisa mais de tradutor.",
+      correct: false,
+      explanation:
+        "Falso. Pseudo-locale **substitui teste de i18n** (codigo), **nao traducao real** (l10n). Ele pega 'string hardcoded que escapou' e 'layout quebra com expansao' - mas **nao** testa plural correto em polones, genero em arabe, ou nuances culturais. Use pseudo como **primeira linha de defesa em CI**; quando traducao real chegar, **complemente** com teste visual regression e reviewer humano.",
+    },
+    {
+      text: "Pseudo-locale funciona so em Chrome/Edge porque foi feito pelo Google.",
+      correct: false,
+      explanation:
+        "Falso. `en-XA` e `en-XB` sao **oficiais no CLDR** (Unicode) desde 2008 - **todos browsers** modernos suportam (Chrome, Firefox, Safari, Edge). A spec e' da **Unicode**, nao Google. Google **usa** em Android desde 2010, mas a spec e' cross-browser. Funciona em Node, RN (com polyfill), e qualquer runtime com CLDR.",
+    },
+  ]}
+/>

@@ -1,0 +1,507 @@
+---
+id: projeto-final
+title: "Projeto final: app com Sentry, RUM, feature flag e trace distribuido"
+resources:
+  - title: "Sentry - JavaScript SDK (EN)"
+    url: https://docs.sentry.io/platforms/javascript/
+    lang: en
+    type: doc
+    free: true
+  - title: "OpenTelemetry JS - Browser (EN)"
+    url: https://opentelemetry.io/docs/languages/js/getting-started/browser/
+    lang: en
+    type: doc
+    free: true
+  - title: "LaunchDarkly - React Web SDK (EN)"
+    url: https://launchdarkly.com/docs/sdk/client-side/react/react-web
+    lang: en
+    type: doc
+    free: true
+---
+
+Hora de unir tudo. Voce vai construir um
+**app observavel** integrando os 6 nos
+da trilha: **Sentry** pra error tracking
+com **source maps**, **RUM** com **Web
+Vitals** (LCP, INP, CLS), **OpenTelemetry**
+com traces distribuidos **client → server**,
+**feature flag** pra rollout progressivo,
+e **PII scrubbing** em conformidade
+com **LGPD/GDPR**. E' o ciclo completo
+de observabilidade em producao:
+captura, instrumentacao, privacy,
+alerting.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes
+de comecar.
+
+## O que voce vai construir
+
+Um **app web observavel** (e-commerce
+ou dashboard), entregue como:
+
+- **Sentry integrado** com source maps
+  upload no CI.
+- **RUM medindo** LCP, INP, CLS de
+  users reais.
+- **OpenTelemetry SDK** com
+  auto-instrumentation e OTLP export.
+- **Feature flag** (`newCheckout`)
+  controlada via LaunchDarkly ou
+  Flagsmith.
+- **PII scrubbing** em `beforeSend` +
+  `sendDefaultPii: false`.
+- **Alertas** configurados no Sentry
+  pra crash-free < 99%.
+
+Stack obrigatoria:
+
+- **Frontend:** Vite + React (ou
+  Vue/Svelte, sua escolha).
+- **Error tracking:** Sentry + source
+  maps via `@sentry/vite-plugin`.
+- **RUM:** Sentry Performance + `web-vitals`.
+- **OpenTelemetry:** `@opentelemetry/sdk-web`
+  + `@opentelemetry/auto-instrumentations-web`.
+- **Feature flags:** LaunchDarkly
+  (cloud) ou Flagsmith (self-hosted).
+- **Backend:** Express/Node (simples)
+  com OTLP receiver (Jaeger, Tempo, ou
+  Honeycomb).
+- **CI:** GitHub Actions.
+
+## Objetivo
+
+- Praticar **ciclo completo de
+  observabilidade**: Sentry, RUM, OTel,
+  feature flags, PII.
+- Construir app que **detecta bug
+  antes do user reclamar**.
+- Aplicar **PII scrubbing** em
+  conformidade com LGPD.
+- Configurar **feature flag rollout**
+  com kill switch funcional.
+- **Medir Web Vitals reais** e ter
+  baseline de performance.
+
+## Requisitos (minimo)
+
+Sentry + Source Maps:
+
+- [ ] `@sentry/react` instalado.
+- [ ] `Sentry.init` com `sendDefaultPii: false`.
+- [ ] `beforeSend` que remove emails e
+  tokens de mensagens.
+- [ ] `release` config baseado em
+  versao do package.json.
+- [ ] `tracesSampleRate: 0.1` (10% de
+  performance).
+- [ ] `replaysSessionSampleRate: 0.05`,
+  `replaysOnErrorSampleRate: 1.0`.
+- [ ] `ErrorBoundary` em volta de
+  `<Routes>`.
+- [ ] `Sentry.setUser({ id: hash(userId) })`
+  apos login.
+- [ ] Vite plugin `@sentry/vite-plugin`
+  configurado pra upload de source maps
+  no CI.
+- [ ] Build CI falha se source maps
+  nao forem uploaded.
+
+RUM (Web Vitals):
+
+- [ ] `web-vitals` instalado, callbacks
+  para LCP, INP, CLS, FCP, TTFB.
+- [ ] Metricas enviadas pra backend
+  (ou Sentry metrics).
+- [ ] Thresholds definidos: p75 LCP <
+  2.5s, INP < 200ms, CLS < 0.1.
+- [ ] **Custom metric:** tempo de
+  checkout (start to end).
+- [ ] **Custom counter:** checkouts
+  completados.
+- [ ] Dashboard RUM visivel (Sentry
+  Performance tab).
+
+OpenTelemetry:
+
+- [ ] `@opentelemetry/sdk-web` instalado.
+- [ ] Auto-instrumentation ativa
+  (DocumentLoad, UserInteraction, Fetch).
+- [ ] OTLP exporter configurado
+  (Honeycomb, Jaeger, ou Sentry).
+- [ ] W3C Trace Context propagado
+  (header `traceparent` no fetch).
+- [ ] **Manual span** em checkout
+  (`tracer.startSpan("checkout.process")`).
+- [ ] **Custom attributes** no span
+  (cart size, country, plan).
+- [ ] Backend le `traceparent` header
+  e continua trace.
+
+Feature Flags:
+
+- [ ] LaunchDarkly ou Flagsmith
+  integrado.
+- [ ] Flag `newCheckout` configurada
+  (default off).
+- [ ] Rollout progressivo: 1% → 10% →
+  50% → 100% (config no dashboard).
+- [ ] **Kill switch** funcional: toggle
+  off no dashboard → users veem
+  checkout antigo em 30s.
+- [ ] **User targeting** por atributo
+  (ex: `country: BR` so' rollout em
+  BR primeiro).
+
+PII / LGPD:
+
+- [ ] `sendDefaultPii: false` em
+  Sentry.
+- [ ] `beforeSend` scrub emails, tokens,
+  CPFs de mensagens.
+- [ ] `hashUserId` antes de
+  `Sentry.setUser`.
+- [ ] Privacy policy declara uso de
+  Sentry, OTel, e feature flags.
+- [ ] DPA assinado com Sentry (se
+  aplicavel).
+- [ ] **EU region** se tem users
+  europeus (`de.sentry.io`).
+
+Validacao:
+
+- [ ] 2 abas abertas, force um erro
+  (throw em onClick), verificar que
+  aparece no Sentry com stack trace
+  **real** (nao minified) - source
+  maps funcionaram.
+- [ ] LCP, INP, CLS medidos em
+  RUM (Sentry Performance tab mostra
+  p75).
+- [ ] OTLP trace chega no backend
+  (Honeycomb/Jaeger UI mostra trace
+  completo com spans client + server).
+- [ ] Feature flag toggle off no
+  dashboard → 30s depois, app volta
+  pro checkout antigo sem deploy.
+- [ ] Sentry events **sem IP, sem
+  user agent completo, sem cookies**
+  (verificar payload no DevTools).
+- [ ] Email em mensagem de erro
+  aparece como `[REDACTED]`.
+- [ ] Browser em modo incognito com
+  cookie banner rejeitado → Sentry
+  nao envia evento (consent mode
+  bloqueia).
+
+## Estrutura do relatorio (`observability-ready.md`)
+
+```markdown
+# Observability Ready - [nome-do-app]
+
+## TL;DR
+
+- Sentry: integrado, source maps
+  uploaded, beforeSend scrubbing
+  ativo.
+- RUM: LCP, INP, CLS medidos, p75
+  baseline X ms / Y ms / Z.
+- OpenTelemetry: traces client →
+  server, X% sampled.
+- Feature flags: 1 flag em
+  producao (newCheckout).
+- LGPD: DPA assinado, sendDefaultPii:
+  false, privacy policy atualizada.
+
+## Arquitetura
+
+### Frontend
+
+- Vite + React
+- Sentry + web-vitals
+- OTel SDK + auto-instrumentation
+- LaunchDarkly
+
+### Backend
+
+- Express + OTLP receiver
+- Continua traces do client via
+  W3C Trace Context
+
+### CI
+
+- GitHub Actions
+- Upload de source maps
+- Lighthouse CI pra performance
+
+## Fluxo de error
+
+1. User em checkout clica em
+   "Pagar".
+2. Erro: payment gateway timeout.
+3. Sentry captura, beforeSend scrub
+   email, envia.
+4. Email/Slack notifica on-call.
+5. On-call ve stack trace
+   (src/utils/payment.ts:42:15).
+6. Fix em 5 min, push, deploy.
+
+## Fluxo de feature flag
+
+1. PM pede "rollout newCheckout
+   em 5%".
+2. Config no LaunchDarkly:
+   enabled=true, rollout=0.05.
+3. SDK inicia com hash do userId
+   (sticky).
+4. 5% dos users veem newCheckout.
+5. APM: newCheckout tem 10% mais
+   conversion. Decide 100%.
+
+## Resultados
+
+- Crash-free sessions: X%
+- LCP p75: Xs
+- INP p75: Xms
+- CLS p75: X
+- Time to detect bug: X min
+- Time to fix: X min
+- Bugs prevenidos por RUM: X/mes
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Session replay** com `maskAllText`
+  pra bug raro.
+- [ ] **Profiling continuo** (Sentry
+  profiling) - CPU, memory, render.
+- [ ] **Anomaly detection** com
+  thresholds adaptativos.
+- [ ] **OTel Collector** self-hosted
+  com tail-based sampling.
+- [ ] **OpenFeature** vendor-neutral
+  flags.
+- [ ] **A/B testing** com
+  LaunchDarkly Experimentation.
+- [ ] **PII redaction** em logs com
+  `pino redact`.
+- [ ] **DPA automation** - script
+  assina DPA com cada vendor.
+- [ ] **Privacy policy gerada via
+  cookiebot/OneTrust** CMP.
+- [ ] **EU + BR split** - data region
+  por user (Sentry dual DSN).
+- [ ] **Synthetic + RUM** combinados
+  (Lighthouse CI + Sentry RUM).
+- [ ] **Distributed tracing E2E** -
+  client → backend → DB → payment
+  gateway.
+- [ ] **Alerting inteligente** -
+  PagerDuty integration com runbook
+  links.
+- [ ] **Postmortem template** - Sentry
+  issue link + timeline.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Sentry minimo:** `@sentry/react`,
+   `init` com DSN, `sendDefaultPii: false`,
+   `ErrorBoundary` em volta de
+   `<Routes>`. Force um erro, verifique
+   no Sentry dashboard.
+2. **Source maps:** `@sentry/vite-plugin`
+   no `vite.config.ts`, `SENTRY_AUTH_TOKEN`
+   em env var do CI. Build com source
+   maps, deploy, verificar que release
+   no Sentry tem source maps.
+3. **RUM:** `web-vitals` callbacks,
+   `Sentry.metrics.distribution` para
+   cada Web Vital. Ver p75 no Sentry
+   Performance.
+4. **OTel:** `@opentelemetry/sdk-web`,
+   `WebTracerProvider`, `OTLPTraceExporter`
+   pra Honeycomb ou Jaeger. Ver trace
+   completo no backend.
+5. **Feature flag:** LaunchDarkly SDK,
+   `useFlags()` no componente de
+   checkout. Toggle no dashboard,
+   ver mudanca em 30s.
+6. **PII scrubbing:** `beforeSend`
+   removendo emails, `sendDefaultPii: false`,
+   `hashUserId` antes de `setUser`.
+   Verificar payload no DevTools
+   Network tab (sem IP, sem user
+   agent completo).
+7. **CI:** GitHub Actions com build,
+   upload de source maps, run de
+   tests, Lighthouse CI.
+
+**Armadilhas comuns:**
+
+- **Source maps nao uploaded.** Build
+  gera mas CI esquece de fazer upload.
+  **Solucao**: `sentry-vite-plugin` no
+  `vite.config.ts` faz automatico se
+  `SENTRY_AUTH_TOKEN` estiver no env.
+- **`sendDefaultPii: true` (default).**
+  Sentry envia IP, user agent
+  completo, cookies. **Solucao**:
+  setar `false` sempre. LGPD/GDPR
+  compliance em 1 linha.
+- **Email em mensagem de error.** `Error:
+  failed for user@email.com` - email
+  capturado. **Solucao**: `beforeSend`
+  com regex `replace(/[\w.-]+@[\w.-]+\.\w+/g,
+  "[REDACTED]")`.
+- **OTel trace quebrado entre client
+  e server.** Backend nao propaga
+  trace context. **Solucao**: backend
+  le `traceparent` header (W3C) e
+  continua com mesmo traceId.
+- **Feature flag 100% rollout mas
+  flag nao removida.** Codigo tem
+  `if (newCheckout)` pra sempre.
+  **Solucao**: **cleanup** apos
+  100% rollout - remover codigo
+  antigo e a flag.
+- **User hash quebra entre deploys.**
+  `hash(userId) % 100` muda entre
+  versoes. **Solucao**: usar hash
+  estavel (ex: SHA-256 de userId),
+  nao codigo proprio.
+- **Consent mode nao implementado.**
+  Sentry envia mesmo sem consent. **Solucao**:
+  CMP + check `hasAnalyticsConsent()`
+  antes de `Sentry.init`.
+- **Alerting sem runbook.** Alerta
+  dispara, on-call nao sabe o que
+  fazer. **Solucao**: link pra runbook
+  no Sentry alert config.
+- **Sampling 100% em prod.** Volume
+  estoura, Sentry free tier bloqueia.
+  **Solucao**: `tracesSampleRate: 0.1`
+  (10%) + `tracesSampler` inteligente.
+- **RUM sem baseline.** Mede mas
+  nao sabe se ta' bom ou ruim. **Solucao**:
+  definir SLO (p75 LCP < 2.5s) e
+  alertar quando ultrapassa.
+- **OTel sem collector.** Cada client
+  fala direto com backend (Honeycomb
+  ou Jaeger). **Solucao em prod**:
+  OTel Collector centraliza, faz
+  tail sampling, exporta pra N
+  backends.
+
+**Como validar que terminou:**
+
+- [ ] Force um erro em prod, aparece
+  no Sentry com stack trace real
+  (nao minified).
+- [ ] Web Vitals p75 visivel no
+  Sentry Performance tab.
+- [ ] Trace E2E (client → server) no
+  Honeycomb/Jaeger mostra spans
+  nested.
+- [ ] Toggle feature flag off no
+  dashboard → app volta pro antigo
+  em 30s sem deploy.
+- [ ] Sentry payload (DevTools
+  Network) nao tem IP, nao tem
+  user agent completo, nao tem
+  cookies.
+- [ ] Email em mensagem de erro
+  aparece como `[REDACTED]`.
+- [ ] Cookie banner rejeitado →
+  Sentry nao envia.
+- [ ] Privacy policy atualizada com
+  Sentry, OTel, feature flags.
+- [ ] DPA assinado com Sentry.
+- [ ] LGPD/GDPR checklist interno
+  passou.
+
+**Leituras que ajudam durante o projeto:**
+
+- [Sentry - JavaScript SDK](https://docs.sentry.io/platforms/javascript/) - setup completo, source maps, beforeSend.
+- [OpenTelemetry JS - Browser](https://opentelemetry.io/docs/languages/js/getting-started/browser/) - setup browser, OTLP export.
+- [LaunchDarkly - React Web SDK](https://launchdarkly.com/docs/sdk/client-side/react/react-web) - setup React, useFlags, targeting.
+
+> O projeto final e' onde a trilha vira
+> "sua". A escolha de **qual app
+> construir** (e-commerce, dashboard,
+> social) e' o **caminho feliz**. Os
+> principios - Sentry + RUM + OTel +
+> feature flags + PII - aplicam a
+> qualquer app em producao. O esqueleto
+> dado e' o caminho feliz, desvie
+> quando precisar e anote as decisoes
+> no `editorial-decisions.md` da
+> trilha.
+
+<Checkpoint
+  challenge="Implemente a função `auditarObservabilidade(checklist)` que avalia o quao observavel um app esta' baseado em 8 criterios essenciais. Recebe: checklist = { errorTracking, sourceMaps, rum, webVitals, traces, featureFlags, piiScrubbing, consentMode } (cada um boolean). Cada criterio ativo vale 12.5 pontos (100/8). Retorna: { score: number (0-100, soma dos pontos), completo: boolean (true se score === 100), problemas: string[] (nomes dos criterios com valor false) }. Nomes: 'error tracking (Sentry)', 'source maps uploaded', 'RUM configurado', 'Web Vitals medidos', 'traces distribuidos', 'feature flags ativo', 'PII scrubbing', 'consent mode (LGPD/GDPR)'. Apenas inclua chaves para criterios presentes no input."
+  starterCode={`// Implemente auditarObservabilidade(checklist) que avalia o
+// quao observavel um app esta' baseado em 8 criterios.
+//
+// Schema de entrada:
+//   checklist = {
+//     errorTracking?: boolean,
+//     sourceMaps?: boolean,
+//     rum?: boolean,
+//     webVitals?: boolean,
+//     traces?: boolean,
+//     featureFlags?: boolean,
+//     piiScrubbing?: boolean,
+//     consentMode?: boolean
+//   }
+//
+// Schema de saida:
+//   {
+//     score: number (0-100, soma dos pontos),
+//     completo: boolean (true se score === 100),
+//     problemas: string[] (nomes dos criterios com valor false)
+//   }
+//
+// Nomes (em ordem): 'error tracking (Sentry)', 'source maps uploaded',
+// 'RUM configurado', 'Web Vitals medidos', 'traces distribuidos',
+// 'feature flags ativo', 'PII scrubbing', 'consent mode (LGPD/GDPR)'.
+function auditarObservabilidade(checklist) {
+  return { score: 0, completo: false, problemas: [] };
+}
+
+const _r1 = auditarObservabilidade({
+  errorTracking: true, sourceMaps: true, rum: true, webVitals: true,
+  traces: true, featureFlags: true, piiScrubbing: true, consentMode: true
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = auditarObservabilidade({
+  errorTracking: true, sourceMaps: true, rum: true, webVitals: true,
+  traces: false, featureFlags: false, piiScrubbing: false, consentMode: false
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = auditarObservabilidade({});
+console.log(JSON.stringify(_r3));
+
+const _r4 = auditarObservabilidade({
+  errorTracking: true, sourceMaps: false, rum: true, webVitals: true,
+  traces: true, featureFlags: true, piiScrubbing: true, consentMode: true
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":100,"completo":true,"problemas":[]}
+{"score":50,"completo":false,"problemas":["traces distribuidos","feature flags ativo","PII scrubbing","consent mode (LGPD/GDPR)"]}
+{"score":0,"completo":false,"problemas":["error tracking (Sentry)","source maps uploaded","RUM configurado","Web Vitals medidos","traces distribuidos","feature flags ativo","PII scrubbing","consent mode (LGPD/GDPR)"]}
+{"score":87.5,"completo":false,"problemas":["source maps uploaded"]}'
+  slug="observabilidade-frontend"
+  nodeId="projeto-final"
+/>

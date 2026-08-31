@@ -1,0 +1,675 @@
+---
+id: imagens-e-fontes
+title: "Imagens e fontes: AVIF/WebP, srcset, font-display, preload"
+resources:
+  - title: "web.dev - Image performance (oficial, EN)"
+    url: https://web.dev/learn/performance/image-performance
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - Best practices for fonts (oficial, EN)"
+    url: https://web.dev/articles/font-best-practices
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - Responsive images (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTML/Responsive_images
+    lang: en
+    type: doc
+    free: true
+---
+
+Em 2026, **imagens representam ~50% do peso
+total de uma pagina media** (HTTP Archive).
+Fontes custom representam outros ~5%. Esses
+2 tipos de recurso sao os que mais afetam
+**LCP** (imagens) e **CLS** (font swap) - 2
+das 3 Core Web Vitals. Ignorar otimizacao
+de imagens/fonts e' literalmente entregar
+CWV ruim por design.
+
+Se voce entende AVIF vs WebP, `<picture>`
+com `srcset`/`sizes`, `font-display: swap`,
+e o pattern de preload pra LCP, voce
+consegue reduzir 70-90% do peso visual
+de uma landing page sem perder qualidade.
+
+## O essencial 🟢
+
+**Os 3 formatos de imagem modernos (e quando
+usar cada).** Cada formato tem um trade-off
+de compressao, suporte de browser, e caso
+de uso:
+
+| Formato | Compressao vs JPEG/PNG | Suporte 2026 | Uso ideal               |
+| ------- | ---------------------- | ------------ | ----------------------- |
+| **JPEG**| Baseline (1x)          | 100%         | Fotos com fall-through  |
+| **PNG** | Lossless               | 100%         | Icones com transparencia (raro em 2026) |
+| **WebP**| ~30% menor que JPEG    | 97%          | Default moderno         |
+| **AVIF**| ~50% menor que JPEG    | 92%          | Imagens de alta qualidade, hero |
+| **SVG** | Vetorial               | 100%         | Logos, icones, ilustracoes simples |
+
+A regra pratica em 2026: **AVIF > WebP >
+JPEG/PNG**. Use `<picture>` pra fornecer
+multiplos formatos (browser pega o melhor
+que suporta). Fallback JPEG pra browsers
+antigos.
+
+**`<picture>` com multiplos formatos - o
+pattern canonico.**
+
+```html
+<picture>
+  <source srcset="hero.avif" type="image/avif">
+  <source srcset="hero.webp" type="image/webp">
+  <img src="hero.jpg" alt="Hero" width="1200" height="600">
+</picture>
+```
+
+O browser:
+
+1. Tenta AVIF (suporta? usa).
+2. Se nao, tenta WebP.
+3. Se nao, usa JPEG (fallback).
+
+**Sempre inclua `<img>` como fallback** com
+`width`/`height` explicitos (evita CLS). O
+`<picture>` envolve o `<img>`, nao o
+substitui.
+
+**`srcset` e `sizes` - servir imagem do
+tamanho certo.** Uma imagem de 4000px
+num celular de 375px = 10x mais pixels
+que o necessario = 10x mais download.
+`srcset` destrava oferecer **multiplas
+versoes** da mesma imagem, em tamanhos
+diferentes, e o browser pega a melhor
+pro device:
+
+```html
+<img
+  src="hero-800.jpg"
+  srcset="
+    hero-400.jpg 400w,
+    hero-800.jpg 800w,
+    hero-1200.jpg 1200w,
+    hero-2000.jpg 2000w
+  "
+  sizes="
+    (max-width: 600px) 100vw,
+    (max-width: 1200px) 80vw,
+    1200px
+  "
+  alt="Hero"
+  width="1200"
+  height="600"
+>
+```
+
+O `sizes` diz ao browser **quanto espaco a
+imagem ocupa** no layout (CSS pixels). O
+browser multiplica pelo `device-pixel-ratio`
+pra escolher a versao ideal. Em celular
+3x DPR, `sizes="100vw"` (375px CSS) =
+1125px fisicos = escolhe `hero-1200.jpg`.
+
+**Combinando AVIF + srcset = o estado da
+arte.** Voce gera as imagens em AVIF e
+WebP, em 4-5 tamanhos cada, e serve
+tudo via `<picture>` + `srcset`:
+
+```html
+<picture>
+  <source
+    type="image/avif"
+    srcset="
+      hero-400.avif 400w,
+      hero-800.avif 800w,
+      hero-1200.avif 1200w,
+      hero-2000.avif 2000w
+    "
+    sizes="(max-width: 600px) 100vw, 1200px"
+  >
+  <source
+    type="image/webp"
+    srcset="
+      hero-400.webp 400w,
+      hero-800.webp 800w,
+      hero-1200.webp 1200w,
+      hero-2000.webp 2000w
+    "
+    sizes="(max-width: 600px) 100vw, 1200px"
+  >
+  <img
+    src="hero-1200.jpg"
+    alt="Hero"
+    width="1200"
+    height="600"
+  >
+</picture>
+```
+
+E' verboso, mas a **diferenca e' brutal**:
+hero JPEG 2000px = 800KB. Hero AVIF 800px
+= 50KB. **16x menor**.
+
+**Ferramentas pra gerar variantes.** Em 2026:
+
+- **CLI:** `sharp` (Node, mais rapido),
+  `cwebp`, `avifenc` (libaom).
+- **Build plugin:** `vite-imagetools` (Vite
+  faz em build time).
+- **CDN com transformacao:** Cloudflare
+  Polish, Cloudinary, ImageKit, imgix.
+  Voce serve 1 imagem original, a CDN gera
+  variantes on-demand com query string
+  (`?w=800&format=avif`).
+
+**`<img loading="lazy">` - lazy load
+nativo.** Imagens abaixo da dobra nao
+precisam baixar ate o usuario rolar ate
+elas. `loading="lazy"` faz isso:
+
+```html
+<!-- Acima da dobra: SEM lazy (LCP critico) -->
+<img src="hero.avif" alt="Hero" width="1200" height="600">
+
+<!-- Abaixo da dobra: COM lazy -->
+<img src="product-1.avif" alt="Produto 1" loading="lazy" width="400" height="400">
+```
+
+**NAO use lazy na imagem do LCP** (hero) -
+isso atrasa o LCP. So use em imagens
+abaixo da dobra. O browser tem heuristica
+interna: se a imagem esta visivel no load,
+baixa mesmo com `loading="lazy"`. Mas
+explicitar `loading="eager"` no hero e
+claro e seguro.
+
+**`<img decoding="async">` - decode nao
+bloqueia.** Decode de imagem (JPG/PNG
+parsing) e' CPU-intensive. Em 2026, mobile
+mid-range pode levar 100-500ms pra decodar
+uma imagem grande. `decoding="async"`
+diz ao browser "faz isso em background,
+nao bloqueia o thread principal":
+
+```html
+<img src="hero.avif" alt="Hero" decoding="async" width="1200" height="600">
+```
+
+Quase sempre **use async**. Excecao: a
+imagem precisa estar pronta antes de uma
+animacao JS (raro).
+
+**`<img fetchpriority="high">` - LCP boost.**
+Pra **imagens criticas pro LCP**, diga ao
+browser pra priorizar:
+
+```html
+<img
+  src="hero.avif"
+  alt="Hero"
+  fetchpriority="high"
+  width="1200"
+  height="600"
+>
+```
+
+Em conjunto com `<link rel="preload">`:
+
+```html
+<head>
+  <link rel="preload" as="image" href="hero.avif" fetchpriority="high">
+</head>
+<body>
+  <img src="hero.avif" alt="Hero" fetchpriority="high" width="1200" height="600">
+</body>
+```
+
+O `preload` + `fetchpriority="high"` diz
+"baixa o AVIF do hero AGORA, com maxima
+prioridade". O browser antecipa. Resultado:
+LCP tipicamente cai 200-500ms.
+
+**`width` e `height` sempre - pra evitar
+CLS.** Imagens sem dimensao definida causam
+**CLS** (a tela "pula" quando carregam).
+Sempre, **sem excecao**, defina:
+
+```html
+<!-- BOM: width e height (ou aspect-ratio em CSS) -->
+<img src="x.avif" width="800" height="400" alt="...">
+
+<!-- RUIM: sem dimensao - CLS quando carregar -->
+<img src="x.avif" alt="...">
+```
+
+O browser usa `width`/`height` pra calcular
+o `aspect-ratio` e reservar o espaco antes
+da imagem carregar. Sem isso, o espaco e'
+0 ate a imagem chegar, depois "pula" pra
+o tamanho real.
+
+**Web fonts: o problema do FOIT vs FOUT.**
+Quando o browser ve `@font-face` no CSS,
+o texto que usa essa fonte tem 2
+comportamentos possiveis ate a fonte
+carregar:
+
+- **FOIT (Flash of Invisible Text):**
+  texto **invisivel** ate a fonte custom
+  carregar. Padrao em Safari e browsers
+  antigos. **Ruim pra UX** - usuario ve
+  espaco vazio.
+- **FOUT (Flash of Unstyled Text):**
+  texto **visivel com fonte do sistema**
+  ate a custom carregar, depois **troca**.
+  Padrao com `font-display: swap`. **Muito
+  melhor** - usuario ve conteudo imediato.
+
+```css
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter.woff2") format("woff2");
+  font-display: swap;  /* FOUT em vez de FOIT */
+  font-weight: 400;
+}
+```
+
+**Quase sempre `font-display: swap`**. A
+reformata quando a fonte chega e' visivel,
+mas **muito menos prejudicial** que tela
+branca. Excecao: fontes que **mudam muito o
+layout** (ex: width 20% maior). Aí use
+`optional` (mostra fallback se nao carregar
+em 100ms) ou `size-adjust` (ajusta o
+fallback pra ter width similar).
+
+**Preload de fontes criticas.** Se sua
+fonte principal e' "Inter" e ela e' usada
+no LCP, **preload**:
+
+```html
+<head>
+  <link
+    rel="preload"
+    href="/fonts/inter-regular.woff2"
+    as="font"
+    type="font/woff2"
+    crossorigin
+  >
+</head>
+```
+
+O `crossorigin` e' **obrigatorio** pra
+preload de fontes (fonts sao treated como
+CORS). O browser baixa o WOFF2 em paralelo
+com o HTML, antes mesmo do CSS ser
+parseado. Quando o CSS pede a fonte, ja
+ta em cache - sem FOUT.
+
+**Self-host de fontes vs Google Fonts.**
+Google Fonts e' **conveniente** mas tem
+custos:
+
+- DNS lookup extra (`fonts.googleapis.com`,
+  `fonts.gstatic.com`).
+- Conexao TCP/TLS extra (RTT adicional).
+- Sem `preload` automatico.
+- Sem controle de formato (Google serve WOFF2
+  moderno, OK).
+
+Em 2026, **self-host e' o default** pra
+performance. Coloque os WOFF2 no seu
+servidor/CDN, com `Cache-Control: public,
+max-age=31536000, immutable` (1 ano, imutavel).
+A font e' cacheada 1 ano.
+
+```html
+<!-- Self-host -->
+<link
+  rel="preload"
+  href="/fonts/inter-regular.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin
+>
+
+<!-- vs Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter">
+```
+
+Self-host e' **10-100ms mais rapido** na
+primeira visita (sem RTT extra pro Google).
+
+**Quantos pesos de fonte carregar.** Cada
+peso/italic = 1 arquivo WOFF2 de 20-50KB.
+**Nunca carregue todos os pesos**. Escolha:
+
+- `400` (regular) - sempre.
+- `600` (semibold) - se usa em titulos.
+- `700` (bold) - se usa em CTAs.
+
+Maximo 3-4 pesos. Mais que isso, fica
+caro. Se o design exige todos os 9 pesos
+(100-900), questione - quase nunca e'
+necessario.
+
+## Aprofundamento 🟡
+
+**`font-display: optional` vs `swap` vs
+`fallback` vs `block`.** Os 4 valores
+controlam trade-offs diferentes:
+
+- **`block`:** texto invisivel por ate 3s
+  enquanto a fonte carrega. **FOIT**. Ruim.
+- **`swap`:** texto com fallback ate a fonte
+  custom carregar, depois troca. **FOUT**.
+  Default sensato.
+- **`fallback`:** texto com fallback
+  invisivel por 100ms (FOIT curto), depois
+  FOUT. Compromisso entre block e swap.
+- **`optional`:** browser decide se baixa
+  ou nao baseado na conexao. Em conexao
+  lenta, fica no fallback. Em rapida,
+  baixa e troca. **Melhor pra mobile**.
+
+`optional` e' sub-utilizado. Em mobile 3G,
+**evita o download da fonte** (fica no
+fallback), o que e' mais responsivo que
+esperar 3s e fazer FOUT.
+
+**`size-adjust` e `@font-face` trick pra
+zero-CLS swap.** O FOUT causa CLS quando
+a fonte custom tem **width diferente** do
+fallback. Solucao: ajustar o fallback pra
+ter width similar:
+
+```css
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  size-adjust: 107%;   /* Inter e' 7% mais largo que Arial */
+  ascent-override: 90%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+}
+
+body {
+  font-family: "Inter", "Inter Fallback", sans-serif;
+}
+```
+
+Resultado: a fonte fallback tem metrics
+proximas da Inter, entao quando a Inter
+carrega, **a diferenca de width e'
+sub-perceptivel**. CLS ~0. Padrao moderno
+em 2026.
+
+**`aspect-ratio` em CSS - alternativa a
+`width`/`height` em HTML.** Se voce quer
+controlar aspect ratio via CSS (mais
+flexivel), use `aspect-ratio`:
+
+```css
+.hero {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background-image: url("hero.avif");
+  background-size: cover;
+}
+```
+
+Browser reserva espaco (16:9) antes da
+imagem carregar. **Sem CLS**. Funciona
+com `<img>` tambem:
+
+```css
+img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+```
+
+**`image-set()` em CSS - srcset sem HTML.**
+A mesma logica de `srcset`, mas em CSS:
+
+```css
+.hero {
+  background-image: image-set(
+    url("hero.avif") type("image/avif") 1x,
+    url("hero.avif") type("image/avif") 2x,
+    url("hero-2x.avif") type("image/avif") 2x
+  );
+}
+```
+
+Util pra `background-image` (que nao tem
+`<picture>`). Suporte ainda limitado
+(Safari 17+, Chrome 88+, Firefox 113+).
+
+**`@font-face` variable fonts - 1 arquivo,
+infinitos pesos.** Variable fonts (WOFF2 com
+axis) substituem multiplos pesos por **1
+unico arquivo** com axis (`wght`, `slnt`,
+`ital`):
+
+```css
+@font-face {
+  font-family: "Inter Variable";
+  src: url("/fonts/inter-variable.woff2") format("woff2-variations");
+  font-weight: 100 900;   /* range */
+  font-display: swap;
+}
+
+body { font-family: "Inter Variable", sans-serif; }
+h1 { font-weight: 700; }
+h2 { font-weight: 600; }
+.bold { font-weight: 800; }
+```
+
+1 arquivo de 80KB substitui 5 arquivos
+de 30KB cada. **150KB -> 80KB**. Em 2026,
+a maioria dos designers ja entrega variable
+fonts. Se o design usa Inter, Roboto,
+Source Sans - todos tem versao variable.
+
+**`<img srcset>` automatic com build tools.**
+Voce nao precisa escrever 5 URLs no srcset
+manualmente. Ferramentas como `vite-imagetools`
+fazem em build time:
+
+```ts
+import hero from "./hero.jpg?w=400;800;1200;2000&format=avif;webp&as=picture";
+// retorna { src, sources, img }
+```
+
+O build gera as variantes, e o componente
+emite o `<picture>` correto. Em Next.js, o
+componente `<Image>` faz isso automaticamente.
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que JPEG XL morreu.** JPEG XL (jxl)
+era um sucessor moderno do JPEG com 30%
+menos peso. Chrome e Safari adicionaram
+suporte em 2022-2023. Em 2024, **Chrome
+descontinuou** (removido em Chrome 130, 2024).
+O argumento: AVIF ja cobre o caso de uso com
+compressao similar e ecossistema maior.
+Licao: nao aposte em formato novo sem
+verificar engajamento de longo prazo do
+vendor. WebP e AVIF sao apostas seguras.
+
+**`priority hints` API e o futuro de
+`fetchpriority`.** `fetchpriority` e' estavel
+em 2026. Mas o "low priority" ainda e'
+pouco usado:
+
+```html
+<img src="banner-ad.avif" fetchpriority="low" loading="lazy">
+```
+
+Util pra imagens claramente "abaixo da dobra"
+(footer, sidebar). Em conjunto com lazy
+load, o browser sabe "baixa isso em
+background, nao concorre com o LCP".
+
+**`AVIF` vs `WebP`: a escolha pragmatica.**
+AVIF tem compressao melhor (~20% vs WebP),
+mas **encoding e' 10x mais lento** (CPU).
+Em sites com 100+ imagens, build com AVIF
+demora 10min vs 1min com WebP. Em 2026:
+
+- **Use AVIF pra imagens criticas** (hero,
+  LCP, banners).
+- **Use WebP pra imagens "abaixo da dobra"**
+  (galeria, cards).
+- **Use JPEG so pra fallback** (browsers
+  antigos).
+
+A economia marginal de AVIF em imagens
+abaixo da dobra (que carregam lazy) nao
+justifica o tempo de build.
+
+**`placeholder="blur"` e LQIP.** Padrao
+moderno: gerar um placeholder **bem
+pequeno e embacado** (20x15px, base64
+inline), mostrar enquanto a imagem real
+baixa:
+
+```jsx
+<Image
+  src="hero.avif"
+  alt="Hero"
+  placeholder="blur"
+  blurDataURL="data:image/jpeg;base64,..."  // 200 bytes
+  width="1200"
+  height="600"
+/>
+```
+
+UX: o usuario ve o "blur" da imagem
+(indicacao visual de que algo ta vindo),
+sem perceber o delay. Quando a imagem
+chega, faz fade-in. **LCP nao muda** (o
+blur nao conta como LCP), mas a perceived
+performance melhora muito.
+
+**`Content-Type` correto pra AVIF/WebP.**
+Servidor precisa retornar
+`Content-Type: image/avif` (e nao
+`image/jpeg`). Nginx/Apache precisam de
+config:
+
+```nginx
+# nginx
+types {
+  image/avif avif;
+  image/webp webp;
+}
+```
+
+Sem isso, o browser **rejeita a imagem**
+(mesmo que o arquivo seja valido). Erro
+classico: "AVIF configurado, mas Chrome
+nao carrega".
+
+**Leitura recomendada:**
+
+- [web.dev - Images](https://web.dev/articles/images) - a referencia completa de imagens.
+- [web.dev - Web fonts](https://web.dev/articles/fonts) - patterns de font loading.
+- [MDN - Responsive images](https://developer.mozilla.org/en-US/docs/Web/HTML/Responsive_images) - doc oficial de `srcset`/`sizes`.
+
+> Dica: o erro mais comum em imagens e'
+> **mandar 1 imagem gigante e rezar**. Hero
+> de 4000px no celular de 375px = 10x mais
+> bytes que o necessario. Sempre use
+> `<picture>` + `srcset` + `sizes`. E
+> lembre: **a imagem do LCP precisa de
+> preload + fetchpriority="high"**. Sem
+> isso, o browser prioriza o CSS (que
+> bloqueia), e a imagem so comeca a
+> baixar tarde.
+
+No proximo no, vamos **CDN e cache**:
+Cache-Control headers, ETag, como CDNs
+funcionam (edge, POP, TTL), e o pattern
+de `stale-while-revalidate` que entrega
+"instantaneo" mesmo com cache expirado.
+
+<Checkpoint
+  challenge="Implemente a função `gerarPictureHTML(srcBase, alt, larguras, formatos, aspectRatio)` que recebe um nome base de imagem, texto alt, array de larguras (ex: [400, 800, 1200]), array de formatos em ordem de preferencia (ex: ['avif', 'webp', 'jpg']), e aspect ratio no formato 'largura/altura' (ex: '16/9'). Retorna o HTML completo da tag <picture> com todos os sources e o <img> fallback, cada source com type correto, srcset no formato 'src-largura.formato larguraw', sizes unico '(max-width: 600px) 100vw, 1200px'."
+  starterCode={`// Implemente gerarPictureHTML que recebe:
+//
+// srcBase: 'hero'
+// alt: 'Hero image'
+// larguras: [400, 800, 1200]
+// formatos: ['avif', 'webp', 'jpg']   // ordem de preferencia
+// aspectRatio: '16/9'
+//
+// E retorna o HTML:
+//
+// <picture>
+//   <source type="image/avif"
+//     srcset="hero-400.avif 400w, hero-800.avif 800w, hero-1200.avif 1200w"
+//     sizes="(max-width: 600px) 100vw, 1200px">
+//   <source type="image/webp"
+//     srcset="hero-400.webp 400w, hero-800.webp 800w, hero-1200.webp 1200w"
+//     sizes="(max-width: 600px) 100vw, 1200px">
+//   <img src="hero-1200.jpg" alt="Hero image" width="1200" height="675">
+// </picture>
+//
+// Calculo da altura: a partir de aspectRatio '16/9' e largura maxima 1200,
+// altura = 1200 * 9 / 16 = 675.
+//
+// Lembre: cada source usa TODAS as larguras. O <img> final usa a maior
+// largura do primeiro formato na lista.
+function gerarPictureHTML(srcBase, alt, larguras, formatos, aspectRatio) {
+  return "";
+}
+
+const _h = gerarPictureHTML(
+  "hero",
+  "Hero image",
+  [400, 800, 1200],
+  ["avif", "webp", "jpg"],
+  "16/9"
+);
+console.log(_h);`}
+  expected='<picture>
+  <source type="image/avif" srcset="hero-400.avif 400w, hero-800.avif 800w, hero-1200.avif 1200w" sizes="(max-width: 600px) 100vw, 1200px">
+  <source type="image/webp" srcset="hero-400.webp 400w, hero-800.webp 800w, hero-1200.webp 1200w" sizes="(max-width: 600px) 100vw, 1200px">
+  <img src="hero-1200.jpg" alt="Hero image" width="1200" height="675">
+</picture>'
+  slug="performance-web"
+  nodeId="imagens-e-fontes"
+/>
+
+<Quiz
+  question="Por que `font-display: swap` e' o default recomendado em 2026 (em vez de `block` ou `optional`)?"
+  options={[
+    {
+      text: "swap: mostra texto com fonte do sistema imediatamente e troca quando a custom carrega (FOUT). block deixa invisivel (FOIT, ruim). optional pode nao baixar em conexao lenta. swap equilibra UX (texto aparece rapido) e branding (fonte final chega).",
+      correct: true,
+      explanation:
+        "FOUT (Flash of Unstyled Text) com `swap` mostra o texto com a fonte do sistema em milissegundos, depois troca pela custom quando carrega. Usuario nunca ve tela vazia. `block` (FOIT) deixa invisivel por ate 3s - pessimo. `optional` em conexao lenta nem baixa a fonte (fica no fallback), bom pra mobile mas perde branding. `swap` e' o equilibrio: texto imediato E fonte final. E' o default recomendado em 2026 pra maioria dos casos.",
+    },
+    {
+      text: "Sao a mesma coisa - apenas nomes diferentes pro mesmo comportamento.",
+      correct: false,
+      explanation:
+        "Nao. block = texto invisivel (FOIT). swap = texto com fallback e troca depois (FOUT). optional = browser decide se baixa. fallback = meio termo. Cada um otimiza pra um cenario. block e' o default antigo (ruim), swap e' o moderno (bom).",
+    },
+    {
+      text: "block e' melhor - texto custom desde o inicio.",
+      correct: false,
+      explanation:
+        "Nao. block (FOIT) deixa texto invisivel por ate 3s esperando a fonte custom. Em conexao lenta, usuario ve espaco vazio. swap (FOUT) mostra texto com fonte do sistema imediatamente - melhor UX, troca sutil quando a custom chega. block era default em browsers antigos, mas em 2026 e' considerado anti-pattern.",
+    },
+  ]}
+/>

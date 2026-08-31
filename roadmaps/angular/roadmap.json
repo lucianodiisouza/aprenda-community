@@ -1,0 +1,184 @@
+{
+  "slug": "angular",
+  "title": "Angular",
+  "description": "Trilha para aprender Angular moderno: TypeScript, CLI, workspace, componentes standalone, templates, serviços, rotas, guards, formulários, HTTP, RxJS, Signals, estado, UI, acessibilidade, i18n, PWA, testes, performance, SSR e deploy.",
+  "difficulty": "intermediario",
+  "published": "2026-08-29",
+  "skills": ["angular", "typescript", "frontend", "spa", "rxjs"],
+  "creators": [
+    {
+      "name": "Lucas Pedro",
+      "github": "LucasPedruo"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-angular",
+      "title": "O que é Angular",
+      "type": "topic",
+      "recommended": true,
+      "children": ["ambiente-cli"]
+    },
+    {
+      "id": "ambiente-cli",
+      "title": "Ambiente e Angular CLI",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["workspace-config"]
+    },
+    {
+      "id": "workspace-config",
+      "title": "Workspace e Configuração",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["typescript-para-angular"]
+    },
+    {
+      "id": "typescript-para-angular",
+      "title": "TypeScript para Angular",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["componentes-standalone"]
+    },
+    {
+      "id": "componentes-standalone",
+      "title": "Componentes Standalone",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ciclo-de-vida"]
+    },
+    {
+      "id": "ciclo-de-vida",
+      "title": "Ciclo de Vida do Componente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["inputs-outputs"]
+    },
+    {
+      "id": "inputs-outputs",
+      "title": "Inputs, Outputs e Comunicação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["templates-binding"]
+    },
+    {
+      "id": "templates-binding",
+      "title": "Templates, Binding e Eventos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["diretivas-pipes"]
+    },
+    {
+      "id": "diretivas-pipes",
+      "title": "Diretivas, Pipes e Control Flow",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estilos-componentes"]
+    },
+    {
+      "id": "estilos-componentes",
+      "title": "Estilos e Organização Visual",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["servicos-di"]
+    },
+    {
+      "id": "servicos-di",
+      "title": "Serviços e Injeção de Dependências",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["roteamento"]
+    },
+    {
+      "id": "roteamento",
+      "title": "Rotas e Navegação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["guards-interceptors"]
+    },
+    {
+      "id": "guards-interceptors",
+      "title": "Guards e Interceptors",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["formularios"]
+    },
+    {
+      "id": "formularios",
+      "title": "Formulários",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["http-client"]
+    },
+    {
+      "id": "http-client",
+      "title": "HTTP e Integração com APIs",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rxjs"]
+    },
+    {
+      "id": "rxjs",
+      "title": "RxJS e Programação Reativa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["signals"]
+    },
+    {
+      "id": "signals",
+      "title": "Signals e Reatividade Moderna",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estado-app"]
+    },
+    {
+      "id": "estado-app",
+      "title": "Estado da Aplicação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["angular-material-cdk"]
+    },
+    {
+      "id": "angular-material-cdk",
+      "title": "Angular Material e CDK",
+      "type": "subtopic",
+      "recommended": false,
+      "children": ["acessibilidade-i18n"]
+    },
+    {
+      "id": "acessibilidade-i18n",
+      "title": "Acessibilidade e i18n",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pwa"]
+    },
+    {
+      "id": "pwa",
+      "title": "PWA e Service Worker",
+      "type": "subtopic",
+      "recommended": false,
+      "children": ["testes"]
+    },
+    {
+      "id": "testes",
+      "title": "Testes em Angular",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["performance-ssr"]
+    },
+    {
+      "id": "performance-ssr",
+      "title": "Performance, SSR e Deploy",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Dashboard Angular",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

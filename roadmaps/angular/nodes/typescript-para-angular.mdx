@@ -1,0 +1,51 @@
+---
+id: typescript-para-angular
+title: "TypeScript para Angular"
+resources:
+  - title: "Angular: TypeScript configuration"
+    url: https://angular.dev/reference/configs/typescript-configuration
+    type: doc
+    lang: en
+    free: true
+  - title: "TypeScript Handbook"
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Angular usa TypeScript como base. Isso não quer dizer que você precisa dominar a
+linguagem inteira antes de começar. Quer dizer que tipos fazem parte do jeito de
+pensar o app.
+
+O problema que TypeScript resolve é simples: a tela espera um formato de dado, a
+API devolve outro, e você só descobre quando o navegador quebra. Tipos reduzem
+esse tipo de surpresa.
+
+```ts
+type Tarefa = {
+  id: string
+  titulo: string
+  feita: boolean
+}
+
+const tarefas: Tarefa[] = []
+```
+
+Em Angular, esses contratos aparecem em componentes, services, formulários,
+rotas e chamadas HTTP.
+
+```ts
+this.http.get<Tarefa[]>("/api/tarefas")
+```
+
+Três ideias pra levar deste nó:
+
+- **Types e interfaces descrevem dados** que circulam pelo app.
+- **Classes aparecem em componentes e services.**
+- **Generics aparecem em HTTP, forms tipados e helpers reutilizáveis.**
+
+> Dica: quando uma resposta de API ainda não tem tipo, crie um tipo pequeno.
+> `any` parece acelerar agora, mas cobra a conta quando o app cresce.
+
+No próximo nó, vamos montar a unidade principal da interface: o componente.

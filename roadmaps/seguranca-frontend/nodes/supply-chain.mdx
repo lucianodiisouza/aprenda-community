@@ -1,0 +1,552 @@
+---
+id: supply-chain
+title: "Supply chain: lockfile, npm audit, Snyk, Dependabot/Renovate, signed commits"
+resources:
+  - title: "npm - npm ci command (oficial, EN)"
+    url: https://docs.npmjs.com/cli/v10/commands/npm-ci
+    lang: en
+    type: doc
+    free: true
+  - title: "GitHub - Dependabot security updates (oficial, EN)"
+    url: https://docs.github.com/en/code-security/dependabot/dependabot-security-updates
+    lang: en
+    type: doc
+    free: true
+  - title: "Snyk - Vulnerability DB (oficial, EN)"
+    url: https://security.snyk.io/
+    lang: en
+    type: doc
+    free: true
+---
+
+Em 2018, o pacote `event-stream` no npm
+(usado por milhoes de projetos) foi
+**sequestrado** pelo autor original, que
+transferiu o pacote pra um attacker. O
+attacker injetou codigo que **roubava
+bitcoins** de wallets. Detectado 2 meses
+depois. Ate la, milhoes de downloads
+estavam comprometidos.
+
+Em 2021, **Log4Shell** (CVE-2021-44228)
+no `log4j` (Java) afetou milhoes de
+apps. Patch saiu em 48h - mas a maioria
+das empresas levou semanas/meses pra
+atualizar.
+
+Em 2024, **ua-parser-js** (usado por
+milhares de projetos) foi sequestrado,
+injetando crypto miner e credential
+stealer. Versoes 0.7.29, 0.8.0, 1.5.0
+estavam comprometidas.
+
+**Supply chain attacks** estao em alta.
+Voce **nao** precisa ter uma vulnera velidade
+propria - basta ter uma dependencia com
+vulnera velidade, e o atacante explora
+**seu** app via **sua** dependencia. E' a
+maior ameaca de seguranca em 2026, e
+a **mais subestimada** por times frontend.
+
+Se voce entende `package-lock.json` (e
+**porque commit-lo**), `npm audit` + Snyk
+como baseline, Renovate/Dependabot como
+automacao, e signed commits pra defender
+a cadeia inteira, voce sai de "a gente
+usa 200 deps e reza" pra "a gente
+sabe o que tem, atualiza em 24h, e
+verifica origem".
+
+## O essencial 🟢
+
+**O que e' supply chain attack.** Em vez
+de atacar **seu** codigo, o atacante
+ataca uma **dependencia sua** (de terceiros
+que voce confia). O ataque escala:
+**1 dependencia vulnera vel = milhoes
+de apps vulnera veis**.
+
+Os 3 vetores classicos:
+
+1. **Dependencia abandonada sequestrada:**
+   o mantenedor original "vende" ou perde
+   o acesso ao pacote. Attacker publica
+   versao maliciosa. (event-stream 2018,
+   ua-parser-js 2024, node-ipc 2022).
+2. **Vulnera velidade conhecida nao-patchada:**
+   o pacote tem um CVE, mas o time nao
+   atualiza. (Log4Shell, Lodash CVE-2020-28500).
+3. **Typosquatting:** atacante publica
+   pacote com nome similar (`react-dom`
+   vs `reactd-dom`), desenvolvedor instala
+   por engano.
+
+**`package-lock.json` - o "DNA" do seu
+projeto.** Quando voce roda `pnpm install`,
+o pnpm/npm le `package.json` (lista de
+deps) e gera `package-lock.json` (versao
+**exata** de cada dep, **incluindo deps
+de deps**):
+
+```json
+// package.json
+{
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}
+
+// package-lock.json (resumido)
+{
+  "packages": {
+    "node_modules/react": {
+      "version": "18.2.0",
+      "resolved": "https://registry.npmjs.org/react/-/react-18.2.0.tgz",
+      "integrity": "sha512-..."  // SHA-512
+    }
+  }
+}
+```
+
+O `integrity` e' o **hash SHA-512** do
+tarball. Se o tarball publicado for
+diferente (atacante republicou com malware),
+o npm/pnpm **se recusa a instalar**.
+
+**SEMPRE commite o `package-lock.json`.**
+Ele garante que **todo dev / CI / prod
+instala exatamente as mesmas versoes**.
+Sem ele, `pnpm install` pode resolver pra
+versao diferente (mesmo com `^18.2.0`,
+pode pegar `18.2.5` ou `18.3.0` se sair
+nova minor). Em prod, **isso e' desastre**:
+o CI pode estar testando uma versao e
+prod roda outra.
+
+**`npm audit` - o scanner de CVE
+integrado.** Roda contra o `package-lock.json`
+e lista vulnera velidades conhecidas:
+
+```bash
+pnpm audit
+# Produz:
+# Package:    lodash
+# Severity:  high
+# CVE:       CVE-2020-28500
+# Title:     Prototype Pollution
+# Patched in: 4.17.21
+# Path:      lodash > 4.17.20
+```
+
+E' **rapido** (~5s) e baseado no **GitHub
+Advisory Database**. Use em CI como
+baseline. **Atenção**: `pnpm audit`
+**nao bloqueia** por padrao, so reporta.
+Pra bloquear, use `--failing high` ou
+similar (configuracao de CI).
+
+**Snyk - o scanner mais agressivo.** Snyk
+(open source free tier) tem **banco de
+vulns proprio** (mais atualizado que
+GitHub) e faz **deep analysis**:
+
+```bash
+# Install Snyk CLI
+pnpm add -D snyk
+
+# Test
+npx snyk test
+# Lista vulns com:
+# - Severity (low/medium/high/critical)
+# - Caminho exato no lockfile
+# - Recomendacao de upgrade
+# - Informacoes adicionais
+
+# Monitor (snapshots em Snyk app)
+npx snyk monitor
+# Envia lockfile pro Snyk, recebe alertas de novas vulns via email
+```
+
+Snyk tem **free tier** (200 tests/mes pra
+projetos open source). Em CI, Snyk bloqueia
+PR com deps vulnera veis.
+
+**Renovate e Dependabot - a automacao
+de updates.** Os 2 mantem suas deps
+**atualizadas** automaticamente, abrindo
+PR quando ha nova versao:
+
+| Ferramenta    | Vantagem                                       |
+| ------------- | ---------------------------------------------- |
+| Dependabot    | Built-in no GitHub, free                       |
+| Renovate      | Mais flexivel, agrupa updates, schedule custom |
+
+Exemplo `.github/dependabot.yml`:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+      major:
+        update-types: ["major"]
+```
+
+Dependabot abre PRs **automaticamente** com
+a versao nova. Voce revisa, testa, merge.
+**PR de dependencia nao vira "novidade"**
+- e' rotina. Times que adotam dependabot
+ficam com `pnpm outdated` limpo; times
+que nao adotam ficam com deps de 2020.
+
+**`npm ci` vs `npm install` em CI.** Em
+CI, **sempre use `npm ci`** (ou `pnpm install
+--frozen-lockfile`):
+
+```bash
+# ERRADO: pode mudar resolucao
+npm install
+
+# CERTO: falha se lockfile nao bate
+npm ci   # ou pnpm install --frozen-lockfile
+```
+
+`npm ci` **le o lockfile** e instala
+exatamente o que esta la. Se `package.json`
+e `package-lock.json` estao dessincronizados,
+**falha**. Em prod, isso impede de instalar
+versoes inesperadas.
+
+**Signed commits - defendendo o "outro
+lado".** Supply chain nao e' so deps
+externas. **Seus proprios commits**
+podem ser comprometidos (GitHub account
+hackeada, dev machine infectada). Signed
+commits (GPG ou SSH key) provam que o
+commit veio de **voce**:
+
+```bash
+# Configurar GPG key (uma vez)
+git config --global user.signingkey <KEY_ID>
+
+# Assinar commit
+git commit -S -m "feat: ..."
+# Output: commit assinado com sua chave
+
+# Branch protection: "Require signed commits"
+# Em GitHub: Settings > Branches > Branch protection rules
+```
+
+Em 2026, **SSH signing** e' mais popular
+que GPG (mais simples):
+
+```bash
+# Gerar SSH signing key
+ssh-keygen -t ed25519 -C "you@example.com" -f ~/.ssh/git_signing
+
+# Configurar
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/git_signing.pub
+
+# Commits assinados com SSH
+git commit -S
+```
+
+GitHub valida a assinatura e mostra
+"Verified" no commit. **Se sua conta for
+hackeada**, o atacante **nao pode assinar**
+commits sem acesso a sua chave privada
+(que fica em `~/.ssh` com permissao 600).
+
+**`npm ci` + signature + lockfile = o
+triangulo de defesa.** Combinado:
+1. **lockfile commitado:** versao exata
+   de cada dep.
+2. **`npm ci` em CI:** instala exato.
+3. **Dependabot/Renovate:** mantem atualizado.
+4. **Snyk/npm audit:** detecta CVEs.
+5. **Signed commits:** prova origem.
+
+## Aprofundamento 🟡
+
+**`npm audit signatures` - verificar
+autenticidade do registry.** O npm 9+
+verifica assinaturas dos pacotes publicados.
+Se alguem republica o pacote no registry
+(mesmo com mesmo nome e versao), o hash
+nao bate e o install falha. **Defesa
+contra typosquatting + registry hijacking**.
+
+**`npm install --ignore-scripts` - bloquear
+postinstall scripts.** Muitos pacotes
+rodam scripts no install (`postinstall`
+hook). Esses scripts rodam **com suas
+permissoes**, podem ler env, fazer
+network. Pacotes maliciosos abusam disso.
+
+```bash
+# Padrao em CI
+pnpm install --ignore-scripts
+
+# Roda manualmente depois (se necessario)
+pnpm rebuild pacote-especifico
+```
+
+Em prod, `--ignore-scripts` e' a **defesa
+contra scripts maliciosos**. Trade-off:
+libs que dependem de `postinstall` pra
+build (ex: `node-gyp`) quebram. Avalie
+caso a caso.
+
+**Renovate com auto-merge.** Renovate pode
+ser configurado pra **auto-merge** PRs
+de patch/minor que passam no CI:
+
+```json5
+// renovate.json
+{
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "requiredStatusChecks": ["ci/test"]
+    }
+  ]
+}
+```
+
+Em 2026, **auto-merge com CI verde** e' o
+padrao pra deps de patch/minor. Major
+updates exigem revisao manual.
+
+**`Socket.dev` e `Snyk Advisor` - deteccao
+de pacotes maliciosos antes de instalar.**
+Antes de adicionar uma dep, checar:
+
+- **socket.dev:** analisa **comportamento**
+  do pacote (acesso a network, env, fs,
+  crypto suspeito). Detecta typosquatting
+  e comportamento anomalo.
+- **snyk.io/advisor:** score de qualidade
+  do mantenedor, vulnerabilidades conhecidas,
+  popularidade.
+
+Use **antes** de `pnpm add`. 5 minutos de
+pesquisa economiza incidentes de seguranca.
+
+**`Subresource Integrity` (SRI) - o hash
+pra scripts de CDN.** Cobertura em
+`csp-e-headers`, mas vale repetir: SRI
+e' a defesa contra **CDN compromise**:
+
+```html
+<script
+  src="https://cdn.example.com/lib.js"
+  integrity="sha384-abc123..."
+  crossorigin="anonymous">
+</script>
+```
+
+Se o `lib.js` for modificado (mesmo 1 byte),
+o hash nao bate, browser **se recusa** a
+executar. E' a defesa mais forte contra
+supply chain attack em tempo de execucao.
+
+**`sbom` (Software Bill of Materials).**
+SBOM e' o "manifesto" de tudo que esta
+no seu app. Formatos padrao: SPDX, CycloneDX.
+Use em apps regulados (healthcare, gov,
+finance):
+
+```bash
+# Gerar SBOM com syft
+npx syft . -o spdx-json > sbom.spdx.json
+
+# Ou com cyclonedx
+npx @cyclonedx/cyclonedx-npm --output-file sbom.cdx.json
+```
+
+SBOM destrava **rastrear** qual app usa
+qual dep afetada por um CVE. Em 2026,
+**EU Cyber Resilience Act** exige SBOM
+em software vendido na Europa.
+
+**`npm audit signatures` e `provenance`.**
+npm 9+ tem **npm provenance** - pacote
+publicado via GitHub Actions tem metadata
+criptografica que prova **de onde veio**.
+Garanta que seus pacotes tenham provenance
+(ou use deps que tem):
+
+```bash
+# Publicar com provenance
+npm publish --provenance
+```
+
+Em 2026, **`npm view <pacote> signatures`**
+mostra se a versao e signed. Use signed
+versions quando disponivel.
+
+## Pra quem quer ir mais alem 🔴
+
+**Lockfile poisoning - o ataque novo.**
+Cenario: atacante consegue commitar no
+`package-lock.json` (CI comprometido, dev
+hackeado). Lockfile agora aponta pra
+versao maliciosa. **CI instala malware
+sem alerta** (lockfile e confiavel por
+design). Mitigacao: revisar PRs que mexem
+em lockfile (a maioria dos bots de auto-merge
+**excluem** lockfile do auto-merge -
+Dependabot e Renovate tem flag).
+
+**Dependabot `groups` para reduzir
+PR noise.** Configurar pra agrupar updates
+por **dominio** (ex: testing deps, build
+deps):
+
+```yaml
+groups:
+  testing:
+    patterns: ["vitest", "@testing-library/*", "playwright"]
+  build:
+    patterns: ["vite", "rollup", "esbuild"]
+```
+
+Em vez de 20 PRs por semana, **3-4 PRs
+agupados**. Mais facil de revisar.
+
+**`Socket.dev` e a analise comportamental.**
+Socket nao olha so o codigo - **executa
+em sandbox** e observa o que o pacote
+faz. Comportamentos flagged:
+
+- Acesso a `process.env` (rouba env vars).
+- Network requests durante install.
+- Crypto operations (mining, credential
+  encoding).
+- Spawn de subprocessos.
+
+Em 2026, Socket tem free tier pra OSS e
+**flagou centenas de pacotes** antes de
+serem reportados manualmente.
+
+**`pnpm audit --prod` em CI - ignorar
+devDependencies.** A maioria das CVEs
+em dev deps nao afeta prod (vite, jest,
+etc - nao vao pro bundle). Em CI:
+
+```bash
+# Ignora devDeps
+pnpm audit --prod
+
+# Ou em Snyk
+npx snyk test --prod
+```
+
+Reduz **falsos positivos** em apps onde
+devs adicionam deps "experimentais".
+
+**`openssf scorecard` - score de saude
+do projeto open source.** O OpenSSF
+Security Scorecard da um score 0-10
+pro projeto open source baseado em:
+
+- Branch protection ativado.
+- 2FA no mantenedor.
+- Signed releases.
+- CI com testes.
+- License + community.
+- Resposta a issues de seguranca.
+
+Antes de adicionar uma dep nova, checar
+`scorecard.dev/viewer?uri=github.com/<owner>/<repo>`.
+Score < 5 = red flag.
+
+**`npm install --dry-run` - ver o que
+instalaria sem instalar.** Util pra
+auditar antes de commitar:
+
+```bash
+pnpm install --dry-run
+# Lista o que seria adicionado/atualizado
+```
+
+Em code review, `git diff package-lock.json`
+mostra o diff de versoes - revisa se
+faz sentido.
+
+**`provenance attestation` - SLSA levels.**
+SLSA (Supply-chain Levels for Software
+Artifacts) e' o framework do Google/OpenSSF
+pra defender supply chain. Em 2026:
+
+- **SLSA L1:** build automatizado.
+- **SLSA L2:** signed provenance.
+- **SLSA L3:** hardened build (isolated).
+- **SLSA L4:** two-party review.
+
+GitHub Actions + npm provenance ja te da
+SLSA L2. Pra L3+, precisa de builds
+isolados (GitHub Reuse Actions, etc).
+
+**Leitura recomendada:**
+
+- [npm - package-lock.json](https://docs.npmjs.com/cli/v10/configuring-npm/package-lock) - doc oficial do npm.
+- [GitHub - Dependabot security updates](https://docs.github.com/en/code-security/dependabot/dependabot-security-updates) - doc oficial Dependabot.
+- [Snyk - Vulnerability DB](https://security.snyk.io/) - database de vulns (free, sem login).
+- [OpenSSF - Supply Chain Security guide](https://openssf.org/resources/) - recursos OpenSSF.
+
+> Dica: o erro mais comum em supply chain
+> e' **tratar como "outro time" resolve**.
+> "A gente tem 200 deps, nao da pra auditar
+> cada uma." Real. Mas da pra:
+> - **Lockfile commitado** (1 commit).
+> - **`pnpm audit --prod` em CI** (1 job).
+> - **Dependabot/Renovate** (1 config file).
+> - **Snyk ou Socket** (1 servico).
+>
+> 4 mudancas, 1 dia de trabalho. **Cobre
+> 90% dos ataques reais** (Log4Shell, ua-parser-js,
+> etc). O **ultimo 10%** exige SBOM, signed
+> commits, e SLSA - mas isso e' pra apps
+> regulados. Pra 95% dos apps, o baseline
+> ja resolve.
+
+No proximo no, vamos ao **projeto final**:
+pegar uma SPA real, fazer threat model,
+aplicar os 6 controles (XSS prevention,
+CSP, CORS, SameSite cookies, storage
+seguro, headers de hardening), validar
+contra OWASP Top 10, e gerar relatorio.
+
+<Quiz
+  question="Por que SEMPRE commitar o package-lock.json e usar `npm ci` em CI?"
+  options={[
+    {
+      text: "Porque sem lockfile commitado, `npm install` pode resolver para versoes diferentes em dev/CI/prod. Com lockfile + `npm ci`, todos instalam exatamente as mesmas versoes, e o hash integrity do lockfile garante que o tarball nao foi modificado.",
+      correct: true,
+      explanation:
+        "package-lock.json contem a versao EXATA de cada dep (incluindo deps de deps) e o hash SHA-512 (integrity) do tarball. Commitar garante reprodutibilidade: dev/CI/prod instalam o mesmo. `npm ci` falha se lockfile nao bate com package.json - impede instalacao de versoes inesperadas. O integrity hash bloqueia pacotes modificados (typosquatting ou registry hijacking). E' o triangulo de defesa: lockfile + integrity + npm ci = build deterministico e seguro. Sem lockfile, voce tem 'npm install' que pode resolver para qualquer minor/patch.",
+    },
+    {
+      text: "Porque o lockfile e' o historico de commits do projeto.",
+      correct: false,
+      explanation:
+        "Nao. O historico de commits e' o .git/. O package-lock.json e' o registro deterministico de QUAIS versoes de cada dependencia estao instaladas. O proposito nao e' 'historico de commits' - e' garantir reprodutibilidade. Commit-lo significa que dev/CI/prod instalam exatamente o mesmo conjunto de pacotes, com os mesmos hashes. Sem lockfile, vc pode ter 'react 18.2.0' no package.json mas '18.2.5' em prod (se saiu minor nova).",
+    },
+    {
+      text: "Porque e' obrigatorio por padrao em todos os registries.",
+      correct: false,
+      explanation:
+        "Nao. Lockfile e' OBRIGATORIO em npm/pnpm/yarn (todos geram por default), mas **commitar** e' decisao do time. Muitos .gitignore excluem package-lock.json (errado!). Commitar e' boa pratica - NAO e' enforced pelo registry. A razao de commitar e' reprodutibilidade e seguranca, nao regra do npm.",
+    },
+  ]}
+/>

@@ -1,0 +1,451 @@
+---
+id: server-actions
+title: "Server Actions: mutations sem API route"
+resources:
+  - title: "Next.js: Server Actions and Mutations (oficial)"
+    url: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations
+    type: doc
+    lang: en
+    free: true
+  - title: "React 19: useOptimistic (oficial)"
+    url: https://react.dev/reference/react/useOptimistic
+    type: doc
+    lang: en
+    free: true
+  - title: "Theo: Server Actions explained (15 min)"
+    url: https://www.youtube.com/watch?v=OduKx1c5yUM
+    type: video
+    lang: en
+    free: true
+---
+
+Antes do Next 13, criar um post era: Client Component com
+`useState`, chamar `fetch('/api/posts', { method: 'POST' })`,
+tratar loading, tratar erro, fazer `router.refresh()` pra ver o
+novo dado. Dezenas de linhas, três arquivos (form, action, API
+route). Com **Server Actions**, é um `async function` no server
+marcado com `"use server"`, chamado direto do `<form action>`. E
+**funciona sem JavaScript no browser**.
+
+## O essencial 🟢
+
+**Server Action = função `async` que roda no servidor, marcada
+com `"use server"`.** Você escreve a função, ela vira um
+endpoint HTTP automaticamente, e o framework gera tudo que
+precisa pro client chamar.
+
+```tsx
+// app/posts/actions.ts
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+
+export async function createPost(formData: FormData) {
+  const title = formData.get("title") as string;
+  const body = formData.get("body") as string;
+
+  if (!title || !body) {
+    return { error: "Título e corpo são obrigatórios" };
+  }
+
+  await db.post.create({ data: { title, body } });
+  revalidatePath("/posts"); // invalida o cache da lista
+  redirect("/posts"); // vai pra lista após criar
+}
+```
+
+A string `"use server"` no topo do arquivo marca **todas as
+funções exportadas** como Server Actions. Você também pode marcar
+**uma função** dentro de um arquivo:
+
+```tsx
+// actions.ts (sem "use server" no topo)
+export async function helper() { ... } // função normal
+
+export async function createPost() {
+  "use server"; // marca SÓ essa função
+  ...
+}
+```
+
+**Vantagem sobre API route: type-safe, sem boilerplate, sem
+cliente HTTP.** O Client Component importa a action diretamente
+(como uma função), sem `fetch`, sem `JSON.stringify`, sem método
+HTTP. TypeScript valida os tipos. Sem precisar de arquivo de
+API separado.
+
+**Chamada de form: `<form action={myAction}>` funciona sem JS.**
+O framework injeta um handler que faz POST direto. Se o JS
+estiver desligado ou falhar em carregar, o form **continua
+funcionando** - vira form HTML tradicional.
+
+```tsx
+// app/posts/new/page.tsx (Server)
+import { createPost } from "../actions";
+
+export default function NewPostPage() {
+  return (
+    <form action={createPost}>
+      <input name="title" placeholder="Título" required />
+      <textarea name="body" placeholder="Conteúdo" required />
+      <button type="submit">Criar</button>
+    </form>
+  );
+}
+```
+
+Repare: **nada de `'use client'`**. O form é Server Component, e
+a action roda no servidor. O browser manda um POST tradicional
+com `multipart/form-data` ou `application/x-www-form-urlencoded`.
+
+**Chamada programática: dentro de Client Component, `await
+myAction(formData)`.** Quando você quer fazer a mutation a partir
+de um botão (não form), ou mostrar loading state, ou tratar
+erros programaticamente, você chama a action direto:
+
+```tsx
+// components/DeleteButton.tsx (Client)
+"use client";
+import { useState } from "react";
+import { deletePost } from "@/app/posts/actions";
+
+export function DeleteButton({ postId }: { postId: string }) {
+  const [pending, setPending] = useState(false);
+  return (
+    <button
+      disabled={pending}
+      onClick={async () => {
+        setPending(true);
+        await deletePost(postId); // direto, sem fetch
+        setPending(false);
+      }}
+    >
+      {pending ? "Deletando..." : "Deletar"}
+    </button>
+  );
+}
+```
+
+```tsx
+// app/posts/actions.ts (Server)
+"use server";
+
+export async function deletePost(id: string) {
+  await db.post.delete({ where: { id } });
+  revalidatePath("/posts");
+}
+```
+
+**Validação server-side: use Zod no início da action. Nunca
+confiar no client.** O client pode ser burlado (DevTools, cURL).
+A action é a única fronteira segura. Valide **tudo** lá dentro.
+
+```tsx
+// app/posts/actions.ts
+"use server";
+import { z } from "zod";
+
+const PostSchema = z.object({
+  title: z.string().min(3).max(200),
+  body: z.string().min(10),
+});
+
+export async function createPost(formData: FormData) {
+  const parsed = PostSchema.safeParse({
+    title: formData.get("title"),
+    body: formData.get("body"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors };
+  }
+
+  const { title, body } = parsed.data;
+  await db.post.create({ data: { title, body } });
+  revalidatePath("/posts");
+  redirect("/posts");
+}
+```
+
+Reutilize o mesmo schema no client pra validação em tempo real
+(Zod tem integração com React Hook Form). Mas **a validação
+definitiva é no server**.
+
+## Aprofundamento 🟡
+
+**Argumentos: a action recebe `FormData` (de form) ou argumentos
+posicionais (chamada programática).** Quando você usa `<form
+action={fn}>`, o React monta um `FormData` e passa como primeiro
+argumento. Quando você chama programaticamente, passa os
+argumentos que quiser:
+
+```tsx
+// De form: sempre FormData
+export async function createPost(formData: FormData) {
+  const title = formData.get("title");
+}
+
+// Programática: argumentos normais
+export async function deletePost(id: string) {
+  // ...
+}
+// Chama: await deletePost("123");
+```
+
+**`revalidatePath` / `revalidateTag` dentro da action.** A
+mutation muda o dado - o cache do Next precisa ser invalidado
+senão a UI mostra dado velho. **Padrão: revalide no final da
+action, depois de `db.X.create/update/delete`.**
+
+```tsx
+"use server";
+import { revalidatePath, revalidateTag } from "next/cache";
+
+export async function createPost(formData: FormData) {
+  await db.post.create({ ... });
+  revalidateTag("posts"); // invalida fetches com tag "posts"
+  // ou
+  revalidatePath("/posts"); // invalida toda a rota /posts
+}
+```
+
+`revalidateTag` é mais cirúrgico, `revalidatePath` é mais simples.
+Use tag se você tem fetches em múltiplas rotas com a mesma tag;
+use path se a mutation afeta uma rota específica.
+
+**`redirect()` dentro da action vira 303 pro client.** O Next
+manda um HTTP 303 (See Other) pro browser, que navega. Funciona
+em form (após submit, navega) e em chamada programática
+(equivalente a `router.push`).
+
+```tsx
+"use server";
+import { redirect } from "next/navigation";
+
+export async function createPost(formData: FormData) {
+  const post = await db.post.create({ ... });
+  revalidatePath("/posts");
+  redirect(`/posts/${post.id}`); // 303 → /posts/<id>
+}
+```
+
+**Otimistic updates: `useOptimistic` mostra a mudança antes do
+server confirmar.** Padrão útil pra "dar like", "marcar como
+lido", "adicionar ao carrinho" - coisas onde o usuário espera
+resposta instantânea.
+
+```tsx
+"use client";
+import { useOptimistic } from "react";
+import { likePost } from "@/app/posts/actions";
+
+export function LikeButton({ postId, count }: { postId: string; count: number }) {
+  const [optimisticCount, addOptimistic] = useOptimistic(
+    count,
+    (state) => state + 1
+  );
+
+  return (
+    <form
+      action={async () => {
+        addOptimistic(1); // UI atualiza IMEDIATAMENTE
+        await likePost(postId); // server roda em paralelo
+      }}
+    >
+      <button>❤️ {optimisticCount}</button>
+    </form>
+  );
+}
+```
+
+Se o server falhar, o React reverte o estado otimista. Se der
+certo, o estado "real" chega e o otimista é descartado.
+
+**Tratamento de erro: throw, try/catch, `useFormState`.** A
+action pode retornar um objeto de erro (em vez de throw), que o
+client pega com `useFormState`:
+
+```tsx
+// actions.ts
+"use server";
+export async function createPost(prevState: any, formData: FormData) {
+  const title = formData.get("title") as string;
+  if (!title) return { error: "Título obrigatório" };
+  await db.post.create({ data: { title, ... } });
+  redirect("/posts");
+}
+
+// Form.tsx (Client)
+"use client";
+import { useFormState } from "react-dom";
+import { createPost } from "./actions";
+
+export function Form() {
+  const [state, formAction] = useFormState(createPost, { error: null });
+  return (
+    <form action={formAction}>
+      <input name="title" />
+      {state.error && <p className="error">{state.error}</p>}
+      <button type="submit">Criar</button>
+    </form>
+  );
+}
+```
+
+A action recebe `(prevState, formData)` - o estado anterior
+fica disponível pra encadear (ex: contadores, lista de erros
+acumulados).
+
+**Segurança: action é pública, validar sempre; rate limiting;
+CSRF.** Server Actions são **endpoints HTTP públicos** - qualquer
+um pode mandar POST com os argumentos certos. Valide **toda**
+entrada, sempre. Trate como se fosse uma API route.
+
+CSRF: o Next lida com isso automaticamente (token de origem
+embutido na action, validado no server). Mas **rate limiting
+não é automático** - você precisa adicionar (Upstash, Cloudflare,
+etc.) se a action for sensível.
+
+**Server Action com argumentos validados (não FormData).** Você
+pode passar argumentos complexos (objetos, números) **se** eles
+forem serializáveis. Funções e classes não. Pra evitar a pegadinha
+do FormData, defina um schema e use:
+
+```tsx
+"use server";
+import { z } from "zod";
+
+const InputSchema = z.object({ id: z.string(), title: z.string() });
+
+export async function updatePost(input: unknown) {
+  const { id, title } = InputSchema.parse(input); // valida E tipa
+  await db.post.update({ where: { id }, data: { title } });
+  revalidatePath(`/posts/${id}`);
+}
+```
+
+## Pra quem quer ir além 🔴
+
+**`useFormStatus` (React 19): pending state sem useState.** Hook
+que te dá `pending` (true enquanto a action roda). Use em
+componentes filhos do form pra desabilitar botões, mostrar
+spinners:
+
+```tsx
+"use client";
+import { useFormStatus } from "react-dom";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return <button type="submit" disabled={pending}>{pending ? "Enviando..." : "Enviar"}</button>;
+}
+
+export function Form() {
+  return (
+    <form action={createPost}>
+      <input name="title" />
+      <SubmitButton /> {/* useFormStatus aqui */}
+    </form>
+  );
+}
+```
+
+`useFormStatus` só funciona em componentes **dentro do form**.
+Ele lê o status do form pai.
+
+**Quando AINDA usar API route (route handler).** Server Actions
+não substituem 100% das APIs. Casos onde API route é melhor:
+
+- **Cliente que não é browser** (mobile, CLI, webhook de
+  terceiro) - eles não conseguem chamar Server Action
+  diretamente.
+- **Streaming response** (SSE, WebSocket establishment) - Server
+  Action retorna uma única resposta.
+- **Versionamento explícito** - API routes têm URL estável
+  (`/api/v1/posts`), Server Actions são chamadas por hash de
+  função.
+- **Documentação OpenAPI/Swagger** - APIs públicas com
+  documentação gerada.
+
+**Composição: action que chama outra action.** Funciona, mas
+cuidado: se `actionA` chama `actionB`, e `actionB` tem
+`redirect`, o redirect **substitui** o return de `actionA`. Use
+com cuidado.
+
+**Otimização: `bind` ou wrapper pra pré-aplicar argumentos.** Em
+vez de o client passar `id` toda vez, você cria um wrapper
+server-side que pré-aplica:
+
+```tsx
+// app/posts/[id]/actions.ts
+"use server";
+import { deletePost } from "../actions";
+
+export async function deletePostAction(formData: FormData) {
+  // Já tem o id no path, não precisa de bind.
+  const id = formData.get("id") as string;
+  await deletePost(id);
+}
+```
+
+Ou no client: `const deleteThis = deletePost.bind(null, postId)`.
+
+**Leitura recomendada:**
+
+- [Next.js: Server Actions and Mutations (oficial)](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) - referência canônica, com exemplos progressivos.
+- [React 19: useOptimistic (oficial)](https://react.dev/reference/react/useOptimistic) - o hook de optimistic update.
+- [Theo: Server Actions em 15 min](https://www.youtube.com/watch?v=OduKx1c5yUM) - overview visual.
+
+> Dica: a primeira vez que você usa Server Action, vai parecer
+> mágica. "Como assim, sem API route?". Lembre: **a action é um
+> endpoint HTTP** - dá pra chamar via cURL
+> (`curl -X POST https://app.com/... -d "title=X"`). O Next gera
+> o cliente pra você, mas por baixo é HTTP. Trate como tal:
+> valide, autentique, limite.
+
+No próximo nó, vamos ver **streaming SSR** - como o Next manda
+HTML em chunks, `<Suspense>` libera cada pedaço quando fica
+pronto, e como isso muda o "loading" que o usuário vê.
+
+<Checkpoint
+  challenge="Implemente uma Server Action que valida input e atualiza o banco. A action `atualizarNome(usuarioId, novoNome)` deve: 1) validar que novoNome tem pelo menos 2 caracteres, 2) chamar db.user.update com o novo nome, 3) chamar revalidateTag('user-${usuarioId}') para invalidar o cache."
+  starterCode={`"use server";
+import { revalidateTag } from "next/cache";
+
+// Mock de db (não roda de verdade, é só pro tipo)
+declare const db: { user: { update: (args: { where: { id: string }; data: { name: string } }) => Promise<{ id: string; name: string }> } };
+
+export async function atualizarNome(usuarioId: string, novoNome: string) {
+  // 1. Validar que novoNome tem pelo menos 2 caracteres
+  // 2. Chamar db.user.update com o novo nome
+  // 3. Chamar revalidateTag('user-<usuarioId>')
+  return null;
+}`}
+expected=""
+slug="nextjs"
+nodeId="server-actions"
+/>
+
+<Quiz
+  question="Qual a principal vantagem de Server Actions sobre API routes pra mutations em formulários?"
+  options={[
+    {
+      text: "São type-safe, sem boilerplate de fetch, e o <form action> funciona sem JavaScript no browser (progressive enhancement)",
+      correct: true,
+    },
+    {
+      text: "São mais rápidas porque não usam HTTP",
+      correct: false,
+      explanation:
+        "Server Actions SÃO HTTP por baixo - o Next gera o endpoint e o cliente HTTP automaticamente. A velocidade percebida é similar à de API route; a diferença é DX e type-safety.",
+    },
+    {
+      text: "Substituem completamente as API routes, que estão deprecated",
+      correct: false,
+      explanation:
+        "API routes (route handlers) não estão deprecated - continuam sendo a escolha certa para clientes não-browser (mobile, webhooks, CLI) e para endpoints documentados. Server Actions complementam, não substituem.",
+    },
+  ]}
+/>

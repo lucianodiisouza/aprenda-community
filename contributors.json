@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/build-contributors.mjs",
-  "count": 5,
+  "count": 7,
   "contributors": [
     {
       "github": "lucianodiisouza",
@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 18,
-        "projetos": 0,
-        "bootcamps": 1,
-        "total": 19
+        "trilhas": 32,
+        "projetos": 12,
+        "bootcamps": 2,
+        "total": 46
       },
       "trilhas": [
         {
@@ -43,8 +43,20 @@
           "title": "Docker Fundamentos"
         },
         {
+          "slug": "edge-deploy-frontend",
+          "title": "Edge Deploy Frontend: build, runtime, Cloudflare Workers, Vercel Edge, image opt, preview envs, atomic deploys"
+        },
+        {
+          "slug": "engenharia-ia",
+          "title": "Engenharia assistida por IA: Claude Code, Cursor, Copilot, audit, testes e refactor"
+        },
+        {
           "slug": "estruturas-de-dados",
           "title": "Estruturas de Dados"
+        },
+        {
+          "slug": "form-libraries",
+          "title": "Form Libraries: React Hook Form + Zod"
         },
         {
           "slug": "frontend",
@@ -63,12 +75,32 @@
           "title": "HTML"
         },
         {
+          "slug": "i18n",
+          "title": "i18n / l10n: Intl APIs, ICU MessageFormat, RTL, translation workflow e pseudo-localization"
+        },
+        {
           "slug": "kubernetes",
           "title": "Kubernetes"
         },
         {
+          "slug": "motion",
+          "title": "Motion: animacao JS declarativa, View Transitions, Rive e a11y"
+        },
+        {
+          "slug": "nextjs",
+          "title": "Next.js e Meta-frameworks"
+        },
+        {
           "slug": "nosql",
           "title": "NoSQL: Bancos Não-Relacionais"
+        },
+        {
+          "slug": "observabilidade-frontend",
+          "title": "Observabilidade Frontend: Sentry, RUM, OpenTelemetry, feature flags e PII"
+        },
+        {
+          "slug": "performance-web",
+          "title": "Performance Web: Core Web Vitals, bundle, imagens, CDN e CI"
         },
         {
           "slug": "programacao-do-zero",
@@ -79,19 +111,97 @@
           "title": "Prompt Engineering"
         },
         {
+          "slug": "pwa",
+          "title": "PWA: Service Workers, estrategias de cache, IndexedDB, background sync e offline-first"
+        },
+        {
+          "slug": "real-time",
+          "title": "Real-time: WebSockets, SSE, Socket.IO, reconexao e presence"
+        },
+        {
+          "slug": "seguranca-frontend",
+          "title": "Seguranca Frontend: XSS, CSRF, CSP, CORS, storage seguro e supply chain"
+        },
+        {
+          "slug": "storybook-design-systems",
+          "title": "Storybook & Design Systems: tokens, primitives, versionamento"
+        },
+        {
+          "slug": "tanstack-query",
+          "title": "TanStack Query: server state na prática"
+        },
+        {
           "slug": "terminal-para-devs",
           "title": "Terminal para Devs"
+        },
+        {
+          "slug": "testing-frontend",
+          "title": "Testing Frontend: Vitest, Testing Library, Playwright"
         },
         {
           "slug": "typescript",
           "title": "TypeScript"
         }
       ],
-      "projetos": [],
+      "projetos": [
+        {
+          "slug": "api-rest-com-autenticacao",
+          "title": "API REST com Autenticação"
+        },
+        {
+          "slug": "busca-com-filtros",
+          "title": "Busca com Filtros"
+        },
+        {
+          "slug": "calculadora-de-gorjeta",
+          "title": "Calculadora de Gorjeta"
+        },
+        {
+          "slug": "clima-agora",
+          "title": "Clima Agora"
+        },
+        {
+          "slug": "dashboard-analitico",
+          "title": "Dashboard Analítico"
+        },
+        {
+          "slug": "servico-com-docker",
+          "title": "Empacote um Serviço com Docker"
+        },
+        {
+          "slug": "encurtador-de-url",
+          "title": "Encurtador de URL"
+        },
+        {
+          "slug": "landing-page-responsiva",
+          "title": "Landing Page Responsiva"
+        },
+        {
+          "slug": "lista-de-tarefas",
+          "title": "Lista de Tarefas"
+        },
+        {
+          "slug": "modelagem-de-banco",
+          "title": "Modelagem de um Banco de Dados"
+        },
+        {
+          "slug": "pagina-de-perfil",
+          "title": "Página de Perfil"
+        },
+        {
+          "slug": "quiz-react",
+          "title": "Quiz em React"
+        }
+      ],
       "bootcamps": [
         {
           "slug": "desenvolvedor-backend",
           "title": "Desenvolvedor Backend",
+          "via": "creator"
+        },
+        {
+          "slug": "desenvolvedor-frontend",
+          "title": "Desenvolvedor Frontend",
           "via": "creator"
         }
       ]
@@ -103,9 +213,9 @@
       "profile": "https://github.com/obrenoalvim",
       "counts": {
         "trilhas": 2,
-        "projetos": 0,
+        "projetos": 1,
         "bootcamps": 1,
-        "total": 3
+        "total": 4
       },
       "trilhas": [
         {
@@ -117,12 +227,81 @@
           "title": "SQL e Banco de Dados"
         }
       ],
-      "projetos": [],
+      "projetos": [
+        {
+          "slug": "auditoria-seo-aeo-geo",
+          "title": "Auditoria de SEO, AEO e GEO"
+        }
+      ],
       "bootcamps": [
         {
           "slug": "desenvolvedor-backend",
           "title": "Desenvolvedor Backend",
           "via": "trilha:sql-banco-de-dados"
+        }
+      ]
+    },
+    {
+      "github": "rafa-coelho",
+      "name": "Rafael Coelho",
+      "avatar": "https://github.com/rafa-coelho.png",
+      "profile": "https://github.com/rafa-coelho",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 3,
+        "bootcamps": 0,
+        "total": 4
+      },
+      "trilhas": [
+        {
+          "slug": "rabbitmq-mensageria",
+          "title": "RabbitMQ e Mensageria"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "central-de-notificacoes",
+          "title": "Central de Notificações"
+        },
+        {
+          "slug": "fila-de-atendimento",
+          "title": "Fila de Atendimento"
+        },
+        {
+          "slug": "processador-de-planilhas",
+          "title": "Processador de Planilhas"
+        }
+      ],
+      "bootcamps": []
+    },
+    {
+      "github": "brunofhorn",
+      "name": "Bruno Fernandes Horn",
+      "avatar": "https://github.com/brunofhorn.png",
+      "profile": "https://github.com/brunofhorn",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 1,
+        "bootcamps": 1,
+        "total": 3
+      },
+      "trilhas": [
+        {
+          "slug": "acessibilidade-web",
+          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-de-acessibilidade-web",
+          "title": "Auditoria de Acessibilidade Web"
+        }
+      ],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-frontend",
+          "title": "Desenvolvedor Frontend",
+          "via": "trilha:acessibilidade-web"
         }
       ]
     },
@@ -173,10 +352,10 @@
       "bootcamps": []
     },
     {
-      "github": "rafa-coelho",
-      "name": "Rafael Coelho",
-      "avatar": "https://github.com/rafa-coelho.png",
-      "profile": "https://github.com/rafa-coelho",
+      "github": "lucaspedruo",
+      "name": "Lucas Pedro",
+      "avatar": "https://github.com/lucaspedruo.png",
+      "profile": "https://github.com/lucaspedruo",
       "counts": {
         "trilhas": 1,
         "projetos": 0,
@@ -185,8 +364,8 @@
       },
       "trilhas": [
         {
-          "slug": "rabbitmq-mensageria",
-          "title": "RabbitMQ e Mensageria"
+          "slug": "angular",
+          "title": "Angular"
         }
       ],
       "projetos": [],

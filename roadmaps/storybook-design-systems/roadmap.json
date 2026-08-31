@@ -1,0 +1,88 @@
+{
+  "slug": "storybook-design-systems",
+  "title": "Storybook & Design Systems: tokens, primitives, versionamento",
+  "description": "Trilha sobre construir, documentar e versionar uma biblioteca de componentes: o que é (e o que não é) um design system, tokens e theming com Style Dictionary, primitives compostas (compound + headless), Storybook como ambiente de desenvolvimento e documentação, versionamento com Semver + Changesets, e test runner com visual regression (Chromatic) + acessibilidade automatizada. Complementa a `frontend` (que cobre como USAR componentes) com a mentalidade de quem CRIA a biblioteca que 50 apps vão consumir.",
+  "difficulty": "intermediario",
+  "skills": [
+    "storybook",
+    "design-system",
+    "design-tokens",
+    "style-dictionary",
+    "theming",
+    "compound-components",
+    "headless",
+    "radix",
+    "react-aria",
+    "css-variables",
+    "semver",
+    "changesets",
+    "chromatic",
+    "visual-regression",
+    "a11y",
+    "csf3"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "o-que-e-design-system",
+      "title": "O que e (e o que nao e) um design system",
+      "type": "topic",
+      "recommended": true,
+      "children": ["storybook-basico"]
+    },
+    {
+      "id": "storybook-basico",
+      "title": "Storybook basico: setup, stories, args, controls, decorators",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tokens-e-tema"]
+    },
+    {
+      "id": "tokens-e-tema",
+      "title": "Design tokens e theming: Style Dictionary, light/dark",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["composicao"]
+    },
+    {
+      "id": "composicao",
+      "title": "Composicao: compound components, slot patterns, headless primitives",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["documentacao"]
+    },
+    {
+      "id": "documentacao",
+      "title": "Documentacao: MDX docs, autodocs, quando usar / quando nao usar",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["versionamento"]
+    },
+    {
+      "id": "versionamento",
+      "title": "Versionamento: Semver, Changesets, deprecation, publicacao",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["contract-testing"]
+    },
+    {
+      "id": "contract-testing",
+      "title": "Contract testing: Storybook test runner, addon a11y, Chromatic visual",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: lib de UI com 5+ componentes, tokens, Storybook publicado",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

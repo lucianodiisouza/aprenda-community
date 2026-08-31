@@ -1,0 +1,447 @@
+---
+id: o-que-e-observabilidade
+title: "O que e observabilidade: logs, metrics, traces, RUM - pra que cada um"
+resources:
+  - title: "OpenTelemetry - Logs, Metrics, Traces (EN)"
+    url: https://opentelemetry.io/docs/concepts/observability-primer/
+    lang: en
+    type: doc
+    free: true
+  - title: "Google SRE Book - Observability (EN)"
+    url: https://sre.google/sre-book/monitoring-distributed-systems/
+    lang: en
+    type: doc
+    free: true
+  - title: "Sentry - Application Observability (EN)"
+    url: https://sentry.io/solutions/application-observability/
+    lang: en
+    type: artigo
+    free: true
+---
+
+Voce fez deploy, o app ta' no ar, e o
+**PM** liga: "cliente reclamou que a
+página de checkout demora 30s". Voce
+**nao tem ideia** do que aconteceu -
+qual network call demorou, qual erro
+jogoou, qual browser/usuario afetado.
+**Voce esta' voando cego**. **Esse no
+cobre observabilidade**: os **3 sinais
+classicos** (logs, metrics, traces) +
+**RUM** (Real User Monitoring), e quando
+usar cada um pra responder **"o que
+aconteceu em producao?"**.
+
+**Observabilidade** = capacidade de
+**perguntar e responder** sobre o estado
+interno do sistema a partir dos dados
+que ele emite. **Monitoramento
+tradicional** = dashboards pre-definidos
+("CPU < 80%"). **Observabilidade** =
+**exploracao** ad-hoc de dados
+("por que 5% dos usuarios em SP tem
+LCP > 5s?").
+
+Voce sai de "voando cego" pra "resposta
+em < 5min pra qualquer incidente".
+
+## O essencial 🟢
+
+**Os 3 sinais classicos (e RUM).**
+
+1. **Logs** - **eventos discretos** com
+   timestamp. "User clicou em checkout",
+   "API retornou 500", "WebSocket caiu".
+   Use pra **debugging detalhado**.
+
+2. **Metrics** - **valores numericos
+   agregados** ao longo do tempo.
+   "Checkout completou em 2.3s", "p99
+   LCP = 4.2s". Use pra **dashboards e
+   alertas**.
+
+3. **Traces** - **jornada completa** de
+   uma request atraves de **multiplos
+   servicos**. User clica → fetch →
+   server A → server B → DB. Use pra
+   **identificar gargalos**.
+
+4. **RUM (Real User Monitoring)** -
+   **experiencia real** do usuario final
+   (LCP, FID/INP, CLS, crashes, rage
+   clicks). Use pra **entender o que o
+   user ve**.
+
+**A maquina de decisao: qual sinal pra
+qual pergunta.**
+
+<Mermaid
+  chart={`flowchart TD
+    Start[O que voce quer saber?]
+    Start --> Q1{Tem dados agregados?}
+    Q1 -->|Sim, contagens/somas| M[Metrics]
+    Q1 -->|Nao, evento especifico| Q2{Discreto ou jornada?}
+    Q2 -->|Discreto: o que aconteceu| L[Logs]
+    Q2 -->|Jornada: por que demorou| T[Traces]
+    Start --> Q3{Experiencia do user final?}
+    Q3 -->|Sim, o que o user ve| RUM[RUM: Web Vitals, session replay]
+    Q3 -->|Nao| Start
+
+    M --> Ex1[Ex: p99 LCP, taxa de erro, requests/s]
+    L --> Ex2[Ex: 'API retornou 500', 'user clicou em X']
+    T --> Ex3[Ex: request 1234: 50ms frontend, 200ms backend, 100ms DB]
+    RUM --> Ex4[Ex: 5% dos users em mobile tem CLS > 0.25]
+
+    Ex1 --> Done[OK]
+    Ex2 --> Done
+    Ex3 --> Done
+    Ex4 --> Done`}
+  caption="Decision tree: qual sinal de observabilidade usar. Regra pratica: (1) Metrics pra dashboards e alertas, (2) Logs pra debugging de evento especifico, (3) Traces pra entender jornada de uma request, (4) RUM pra experiencia real do usuario. Em prod, use os 4 juntos."
+/>
+
+**Logs - "o que aconteceu?"** Estrutura
+classica:
+
+```json
+{
+  "timestamp": "2026-08-29T22:30:00.123Z",
+  "level": "error",
+  "service": "checkout-web",
+  "traceId": "abc-123-def",
+  "userId": "u-456",
+  "message": "Failed to submit checkout",
+  "error": {
+    "type": "NetworkError",
+    "stack": "...",
+    "code": "ERR_NETWORK"
+  },
+  "context": {
+    "cartSize": 5,
+    "cartValue": 1234.56,
+    "country": "BR"
+  }
+}
+```
+
+**Chaves canonicas** que **todo log
+deve ter**: `timestamp`, `level`, `service`,
+`traceId` (pra correlacionar com traces),
+`message`. **O resto** varia.
+
+**Metrics - "quanto, com que
+frequencia?"** Tipos:
+
+- **Counter:** so' incrementa
+  (requests_total, errors_total).
+- **Gauge:** valor instantaneo
+  (memory_used, queue_size).
+- **Histogram:** distribuicao
+  (request_duration, lcp).
+- **Summary:** similar a histogram,
+  com quantis calculados.
+
+```ts
+// Prom-client (Node) ou web-vitals (browser)
+import { onLCP, onINP, onCLS } from "web-vitals";
+
+onLCP((metric) => {
+  // Envia pra backend de metrics
+  fetch("/api/metrics", {
+    method: "POST",
+    body: JSON.stringify({
+      name: "lcp",
+      value: metric.value,
+      page: location.pathname,
+    }),
+  });
+});
+```
+
+**Traces - "por que essa request
+demorou?"** Estrutura:
+
+```text
+Trace (1 user request)
+  Span: frontend.click_checkout (50ms)
+    Span: fetch /api/checkout (200ms)
+      Span: backend.checkout_handler (180ms)
+        Span: db.query (100ms)
+        Span: payment_gateway (50ms)
+```
+
+Cada **span** tem **nome, duracao,
+metadata** (atributos). Spans **aninhados**
+mostram **onde** o tempo foi gasto.
+
+**RUM - "o que o usuario sente?"**
+**Web Vitals** (core metrics do Google):
+
+- **LCP (Largest Contentful Paint):**
+  tempo ate o maior elemento renderizar.
+  **Bom: < 2.5s**.
+- **INP (Interaction to Next Paint):**
+  latencia de interacao. **Bom: < 200ms**.
+- **CLS (Cumulative Layout Shift):**
+  estabilidade visual. **Bom: < 0.1**.
+
+**Sentry, Datadog, New Relic** medem
+RUM. **web-vitals** (lib do Google) da
+acesso direto no browser.
+
+**A diferenca critica: monitoring vs
+observability.** Monitoring tradicional
+("CPU < 80%") assume que voce sabe
+**o que** procurar. Observability
+assume que voce **nao sabe** - e da
+**ferramentas** pra explorar dados
+ad-hoc. **Por que importa?** Em sistemas
+**complexos** (microsservicos, mobile,
+real-time), incidentes sao
+**desconhecidos-desconhecidos** - nao
+tem dashboard pre-feito que responda.
+
+**Custo:** observabilidade **custa
+dinheiro e dados**. Cada evento
+enviado, armazenado, e indexado tem
+custo. **Sampling** (enviar 10% dos
+eventos) e **retention** (manter 30
+dias) sao decisoes criticas.
+
+**OpenTelemetry - o padrao aberto.**
+**OTel** e' o **padrao CNCF** pra
+emitir logs, metrics, e traces de
+forma **vendor-neutral**. Use OTel SDK
+no client → envie pra **qualquer**
+backend (Sentry, Datadog, Honeycomb,
+Jaeger, Grafana Tempo). **Sem vendor
+lock-in**.
+
+**A jornada real de um incidente.**
+
+```text
+1. Cliente reclama: "checkout demora 30s"
+2. Dev abre Sentry, busca por
+   "checkout" no periodo
+3. Ve 50 usuarios afetados, todos do
+   mesmo pais (BR), todos mobile
+4. Clica em 1 evento → ve trace
+   completo: frontend 50ms, backend
+   29.5s, payment_gateway 29s
+5. Acha que e' payment gateway
+   instavel no BR
+6. Confirma em dashboards (Grafana):
+   p99 de payment_gateway = 25s
+   (normal e' 500ms)
+7. Reporta ao time de payments
+8. Tempo total: 5 min
+```
+
+Sem observabilidade, esse **mesmo
+incidente** levaria **horas** de
+"tenta reproduzir localmente" +
+"adivinha o que esta' errado".
+
+## Aprofundamento 🟡
+
+**SLO, SLI, error budget.** Conceitos
+SRE que **complementam** observabilidade:
+
+- **SLI (Service Level Indicator):** a
+  metrica ("99% dos requests em < 500ms").
+- **SLO (Service Level Objective):** o
+  objetivo ("99.9% em 30 dias").
+- **Error budget:** "0.1% de requests
+  podem falhar em 30 dias" - **gera
+  autorizacao** pra deploys.
+
+**High-cardinality metrics.** Em prod,
+metrica como `requests_total` tem
+**dimensoes** (labels): `endpoint`,
+`status_code`, `country`, `device`. **Cardinalidade
+alta** (muitos valores unicos) =
+**caro** de armazenar. **Trace** e
+**log** lidam melhor com
+high-cardinality que **metric**.
+
+**Sampling strategies.** Enviar **100%
+dos traces** = caro. **Sampling
+inteligente**:
+
+- **Head sampling:** decide no inicio
+  do trace (100% ou 10% aleatorio).
+- **Tail sampling:** decide no fim
+  (100% de erros, 1% de sucessos).
+- **Adaptive sampling:** ajusta baseado
+  em volume.
+
+**Logs estruturados vs nao estruturados.**
+
+```text
+// ❌ Nao estruturado (parseia com regex)
+"2026-08-29 22:30:00 ERROR checkout failed user=456 cart=5"
+
+// ✅ Estruturado (JSON, parseia facil)
+{"timestamp":"2026-08-29T22:30:00.123Z","level":"error","event":"checkout_failed","userId":"u-456","cartSize":5}
+```
+
+**Logs estruturados** sao **pesquisaveis,
+agregaveis, e alertas baseados em query**.
+
+**Cardinalidade em logs.** **Nunca** use
+`userId` ou `requestId` como label de
+metric - alta cardinalidade estoura
+storage. Use em **log** (texto livre
+ou JSON) onde index full-text resolve.
+
+**Distributed tracing - W3C Trace
+Context.** Padrao W3C pra propagar
+**trace ID** entre client e server
+via **headers HTTP**:
+
+```http
+traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+```
+
+`traceparent` carrega `traceId`,
+`parentSpanId`, e `flags` (sampled).
+**Server** le o header, continua o
+trace, e propaga pros proximos
+servicos. **Sem** isso, traces ficam
+**quebrados** entre client e server.
+
+**OpenTelemetry vs Sentry SDK.** Sao
+**complementares**:
+
+- **Sentry:** error tracking + RUM
+  (facilitado, opinionated).
+- **OTel:** vendor-neutral, traces
+  distribuidos, **mais complexo**.
+
+**Use Sentry** pra error tracking e
+RUM (rapido setup). **Use OTel** pra
+traces distribuidos cross-service
+(quando precisa de profundidade).
+
+**Observability em SPA (React, Vue,
+Svelte).** SPA tem **2 desafios**:
+
+1. **Route change** quebra trace
+   unico. Solucao: `route` como
+   atributo do span, ou criar novo
+   trace por navigation.
+2. **Long-running sessions** (user
+   fica na pagina por horas). Trace
+   "eterno" vira **lixo**. Solucao:
+   trace por **interacao** ou
+   **fluxo** (clique em checkout =
+   1 trace).
+
+**Session replay (Sentry, LogRocket,
+Datadog).** **Grava** a sessao do
+user (DOM + eventos + network) pra
+reproduzir **exatamente** o que ele
+viu. **Util** pra debug de bug raro.
+**Cuidado** com PII - precisa **scrub**
+(textos, inputs, imagens).
+
+## Pra quem quer ir mais alem 🔴
+
+**eBPF no client (Chrome DevTools
+Performance).** Chrome 96+ expoe
+**trace events** via DevTools
+Performance API. Da acesso a **core
+web vitals**, **long tasks**, e
+**resource timings** sem Sentry/OTel
+SDK - mas so' local. Use pra **debug
+local**, nao producao.
+
+**OpenTelemetry Collector.** Em
+producao enterprise, OTel Collector
+e' um **proxy** que recebe traces/
+metrics/logs, processa (filter,
+sample, enrich), e envia pra
+**múltiplos backends**. Self-hosted
+ou **managed** (Grafana Cloud,
+Honeycomb).
+
+**Alerting vs Anomaly detection.**
+Alerting tradicional: "se p99 > 5s,
+notifica". Anomaly detection: **ML**
+detecta desvios do padrao ("p99
+subiu 2x mesmo abaixo do threshold").
+Use anomaly detection em sistemas
+**grandes** onde thresholds manuais
+sao **frageis**.
+
+**Logs vs Events vs Metrics - quando
+armazenar onde.** Hot path (search
+frequente): logs estruturados em
+**Elasticsearch/Datadog**. Cold path
+(retention longa): logs antigos em
+**S3/BigQuery**. Aggregated: metrics
+em **Prometheus/Thanos**. Distributed
+tracing: **Jaeger/Tempo/Honeycomb**.
+
+**RED method (Google SRE).** Metricas
+essenciais pra **todo servico**:
+
+- **Rate:** requests/s.
+- **Errors:** failures/s.
+- **Duration:** latencia (p50, p95, p99).
+
+**USE method (utilization, saturation,
+errors)** pra **infra** (CPU, memory,
+disk, network).
+
+**Leitura recomendada:**
+
+- [OpenTelemetry - Observability primer](https://opentelemetry.io/docs/concepts/observability-primer/) - introducao a logs/metrics/traces, OTel ecosystem.
+- [Google SRE Book - Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) - conceitos SRE, SLO, error budget.
+- [Sentry - Application Observability](https://sentry.io/solutions/application-observability/) - visao pratica de RUM, error tracking, e performance.
+
+> Dica: o erro mais comum em observabilidade
+> e' **"vou adicionar quando precisar"**.
+> Resultado: incidente em prod, **voce
+> nao tem dado nenhum**, e fica
+> "tentando reproduzir" por horas. **Instale
+> Sentry/OTel no dia 1** do projeto -
+> custa 30 min de setup, **economiza
+> semanas** de "que bug estranho" no
+> futuro. **Sampling 100%** no inicio
+> (depois ajusta) e **retention 30
+> dias** (depois aumenta). **Sentry
+> free tier** = 5K eventos/mes -
+> suficiente pra maioria dos apps
+> pessoais/early-stage.
+
+No proximo no, vamos **error tracking com
+Sentry**: como capturar exceptions,
+configurar **source maps** pra ver
+stack traces reais (nao minified),
+**release health** (crash-free
+sessions), e **sampling** pra
+controlar volume vs custo.
+
+<Quiz
+  question="Qual a diferenca fundamental entre os 3 sinais classicos de observabilidade (logs, metrics, traces) + RUM, e quando usar cada um?"
+  options={[
+    {
+      text: "Logs = eventos discretos com timestamp (debugging detalhado), Metrics = valores numericos agregados ao longo do tempo (dashboards e alertas), Traces = jornada completa de uma request atraves de servicos (identificar gargalos), RUM = experiencia real do usuario final (Web Vitals, crashes). Sao complementares, nao substitutos - use os 4 juntos em prod.",
+      correct: true,
+      explanation:
+        "Os 4 sinais respondem **perguntas diferentes**: (1) **Logs** ('o que aconteceu nesse momento?' - 'API retornou 500 user=456 cart=5'). Use pra **debugging de evento especifico** - texto pesquisavel, alta cardinalidade. (2) **Metrics** ('quanto, com que frequencia?' - 'p99 LCP = 4.2s', 'requests/s = 1.2K'). Use pra **dashboards e alertas** - agregados, baixa cardinalidade, eficiente. (3) **Traces** ('por que essa request demorou?' - 50ms frontend, 200ms backend, 100ms DB). Use pra **identificar gargalos** em sistemas distribuidos. (4) **RUM** ('o que o usuario sente?' - LCP, INP, CLS, crashes em browsers reais). Use pra **entender experiencia real** - diferente de synthetic monitoring. **Em prod, use os 4 juntos** - cada um responde uma pergunta. Logs sem traces = sabe que erro aconteceu mas nao onde. Metrics sem logs = sabe que tem problema mas nao qual. Traces sem RUM = sabe que backend demora mas nao quanto user sofre. RUM sem traces = sabe user sofre mas nao onde. **Combinados = visibilidade total**.",
+    },
+    {
+      text: "Logs e metrics sao a mesma coisa, so' que em formatos diferentes. Escolha um e ignore o outro.",
+      correct: false,
+      explanation:
+        "Falso. Logs e metrics sao **fundamentais diferentes**: (1) **Logs** sao **eventos discretos** com alta cardinalidade (cada evento tem userId, requestId, contexto unico) - ideais pra debugging de caso especifico. (2) **Metrics** sao **valores agregados** com baixa cardinalidade (count, sum, percentiles) - ideais pra dashboards e alertas. Voce **nao pode** agregar log sem virar metric, e nao pode** drill em metric sem log. Use os **dois juntos**: log pra drill-down ('esse user especifico'), metric pra overview ('p99 global').",
+    },
+    {
+      text: "RUM substitui logs - se voce tem o que o user ve, nao precisa de logs.",
+      correct: false,
+      explanation:
+        "Falso. RUM e' **excelente** pra experiencia do user, mas **nao mostra logica interna**. RUM diz 'o user teve LCP de 4s' - mas nao diz 'payment_gateway retornou timeout'. Sem **logs e traces**, voce sabe que user sofre mas nao **por que**. RUM **complementa** logs e traces - sao sinais **diferentes** respondendo perguntas diferentes. Em prod, os 4 juntos. Sem logs/traces, RUM sozinho deixa voce 'voando as cegas' sobre o stack tecnico.",
+    },
+  ]}
+/>

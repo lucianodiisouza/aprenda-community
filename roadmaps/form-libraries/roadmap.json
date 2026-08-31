@@ -1,0 +1,73 @@
+{
+  "slug": "form-libraries",
+  "title": "Form Libraries: React Hook Form + Zod",
+  "description": "Trilha sobre formulários em produção com React Hook Form (performance via uncontrolled inputs) e Zod (schema declarativo reutilizável no client e no server). Cobre o que falta entre forms básicos da `frontend` e a complexidade de um checkout real: validação declarativa, type-safety ponta a ponta, multi-step com persistência, e reuso de schema no backend.",
+  "difficulty": "intermediario",
+  "skills": [
+    "react-hook-form",
+    "rhf",
+    "zod",
+    "forms",
+    "validation",
+    "schema",
+    "typescript",
+    "react"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "por-que-form-libraries",
+      "title": "Por que existem libs de form: re-render, validação, UX",
+      "type": "topic",
+      "recommended": true,
+      "children": ["react-hook-form-basico"]
+    },
+    {
+      "id": "react-hook-form-basico",
+      "title": "React Hook Form: useForm, register, handleSubmit, errors",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["validacao-com-zod"]
+    },
+    {
+      "id": "validacao-com-zod",
+      "title": "Validação com Zod: schema, zodResolver, type-safety",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["padroes-form"]
+    },
+    {
+      "id": "padroes-form",
+      "title": "Padrões: field arrays, controlled vs uncontrolled, condicionais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["multi-step-forms"]
+    },
+    {
+      "id": "multi-step-forms",
+      "title": "Multi-step forms: wizard, validação por step, persistência local",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["validacao-server"]
+    },
+    {
+      "id": "validacao-server",
+      "title": "Validação no server: reuso de schema, erros remotos, UX de loading",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: checkout completo com validação ponta a ponta",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

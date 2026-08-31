@@ -1,0 +1,549 @@
+---
+id: indexeddb
+title: "IndexedDB: API nativa, Dexie, queries, indices, migrations"
+resources:
+  - title: "MDN - IndexedDB API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
+    lang: en
+    type: doc
+    free: true
+  - title: "Dexie.js - Docs (oficial, EN)"
+    url: https://dexie.org/docs/Tutorial/Getting-started
+    lang: en
+    type: doc
+    free: true
+  - title: "web.dev - IndexedDB best practices (oficial, EN)"
+    url: https://web.dev/articles/indexeddb-best-practices
+    lang: en
+    type: doc
+    free: true
+---
+
+Ate agora vimos Service Worker + Cache API
+pra **resources HTTP** (JS, CSS, imagens).
+Mas o usuario tambem **gera dados** (post,
+comentario, foto, draft) que precisam
+**persistir offline**. E' ai que entra o
+**IndexedDB** - o "banco de dados" do
+browser.
+
+IndexedDB e' o storage certo pra
+**datasets grandes** (>5MB, ate GBs),
+**queries indexadas**, e **transacoes
+ACID**. `localStorage` (5MB sync) nao
+aguenta. IndexedDB aguenta - mas a API
+nativa e' **notoriamente verbose e
+callback-based**. Em 2026, voce usa
+**Dexie.js** (wrapper moderno) que torna
+IndexedDB usavel.
+
+Se voce entende a API nativa do IndexedDB
+(quando usar, como funciona), o Dexie
+que simplifica 90%, indices pra queries
+rapidas, e migrations pra evoluir schema,
+voce sai de "save em localStorage" pra
+"app offline-first com banco local".
+
+## O essencial 🟢
+
+**IndexedDB em uma frase: banco NoSQL
+orientado a objeto no browser, com
+transacoes ACID e queries indexadas.** E' o
+storage certo pra **dados estruturados**
+que persistem entre sessoes e excedem 5MB.
+
+| Storage       | Tamanho     | Sync | Queries | Caso de uso                  |
+| ------------- | ----------- | ---- | ------- | ---------------------------- |
+| `localStorage`| ~5MB        | sim  | nao     | UI prefs                    |
+| `sessionStorage` | ~5MB    | sim  | nao     | Form drafts                 |
+| `IndexedDB`   | ~50% disco  | nao  | sim (indices) | **Cache de dados, offline-first** |
+| `Cache API`   | depende do browser | nao | nao | Service Worker resources |
+
+IndexedDB **persiste** entre sessoes (ate
+o usuario limpar dados do site), e suporta
+**transactions** (ACID) e **indices**
+(queries por campo, O(log n)).
+
+**API nativa do IndexedDB - verbosa mas
+poderosa.** A API nativa usa **request
+objects** e **eventos** (estilo XHR):
+
+```ts
+// API nativa - CRUD basico
+const request = indexedDB.open("my-db", 1);
+
+request.onupgradeneeded = (event) => {
+  const db = event.target.result;
+  if (!db.objectStoreNames.contains("users")) {
+    const store = db.createObjectStore("users", { keyPath: "id" });
+    store.createIndex("email", "email", { unique: true });
+  }
+};
+
+request.onsuccess = (event) => {
+  const db = event.target.result;
+
+  // Adicionar
+  const tx = db.transaction("users", "readwrite");
+  const store = tx.objectStore("users");
+  store.add({ id: 1, name: "Ana", email: "ana@example.com" });
+
+  // Buscar
+  const getReq = store.get(1);
+  getReq.onsuccess = () => console.log(getReq.result);
+};
+```
+
+Voce **abre o DB**, **escuta eventos**
+(`onupgradeneeded`, `onsuccess`,
+`onerror`), **cria stores** (tabelas),
+**abre transacoes** (readwrite/readonly),
+**adiciona/busca objetos**. **Verbosissimo** -
+50 linhas pra CRUD basico. Por isso, use
+**Dexie** em prod.
+
+**Dexie.js - o wrapper idiomatico.** Dexie
+reduz o mesmo CRUD a **3 linhas**:
+
+```ts
+import Dexie from "dexie";
+
+const db = new Dexie("my-db");
+db.version(1).stores({
+  users: "++id, email",  // ++id = auto-increment, email = index
+});
+
+// Adicionar
+await db.users.add({ name: "Ana", email: "ana@example.com" });
+
+// Buscar
+const user = await db.users.get(1);
+
+// Buscar por index
+const byEmail = await db.users.where("email").equals("ana@example.com").first();
+
+// Listar todos
+const all = await db.users.toArray();
+
+// Atualizar
+await db.users.update(1, { name: "Ana Silva" });
+
+// Deletar
+await db.users.delete(1);
+```
+
+Dexie:
+- **Schema declarativo** - `++id, email` =
+  auto-increment primary key + index em
+  `email`.
+- **Promises** (nao callbacks) - async/await
+  funciona.
+- **Queries fluentes** - `where().equals().first()`.
+- **Transactions implicitas** - Dexie cria
+  transacao automaticamente.
+
+**`schema` no Dexie - o equivalente ao
+`CREATE TABLE`.** No `version().stores()`,
+voce declara o schema:
+
+```ts
+db.version(1).stores({
+  users: "++id, email, [userId+postId]",  // composite index
+  posts: "++id, userId, createdAt",
+});
+```
+
+- **`++id`:** primary key auto-increment
+  (integer).
+- **`id`:** primary key (deve ser unique
+  no objeto).
+- **`name`:** index simples.
+- **`[userId+postId]`:** composite index
+  (queries por ambos).
+
+**Indices e queries - O(log n).** Sem
+indice, query por campo e' O(n) (scan
+inteiro). Com indice, O(log n) (B-tree).
+
+```ts
+// SEM indice: scan inteiro
+const user = await db.users.filter((u) => u.email === "ana@x.com").first();
+// O(n)
+
+// COM indice (declarado no schema):
+const user = await db.users.where("email").equals("ana@x.com").first();
+// O(log n)
+```
+
+Em datasets grandes (>1000 items), indice
+**faz diferenca brutal**. **Sempre** declare
+indices pros campos que voce vai buscar.
+
+**Compound queries (`and` / `or`).** Para
+queries multi-campo:
+
+```ts
+// AND (compound index)
+const posts = await db.posts
+  .where("[userId+status]").equals([1, "published"])
+  .toArray();
+
+// OR (usar .filter apos .where)
+const posts = await db.posts
+  .where("userId").equals(1)
+  .or("status").equals("draft")
+  .toArray();
+```
+
+Ou com filter (post-fetch, mais lento):
+
+```ts
+const posts = await db.posts
+  .where("userId").equals(1)
+  .filter((p) => p.status === "published" || p.title.includes("urgent"))
+  .toArray();
+```
+
+**Migrations - evoluir schema sem perder
+dados.** IndexedDB **nao** aceita alterar
+schema inplace. Voce precisa de uma
+**nova versao**:
+
+```ts
+// v1: schema inicial
+db.version(1).stores({
+  users: "++id, email",
+});
+
+// v2: adicionar campo `avatar`
+db.version(2).stores({
+  users: "++id, email, avatar",  // novo campo no schema
+}).upgrade(async (tx) => {
+  // Migra dados: adiciona avatar default em users existentes
+  await tx.table("users").toCollection().modify((user) => {
+    user.avatar = "/default-avatar.png";
+  });
+});
+
+// v3: nova tabela `posts`
+db.version(3).stores({
+  users: "++id, email, avatar",
+  posts: "++id, userId, createdAt",  // nova tabela
+});
+```
+
+**NUNCA** edite o schema de uma versao
+existente. Sempre **crie nova versao**.
+Senao, usuarios existentes quebram a app
+("version error" no DevTools).
+
+**`bulkPut`, `bulkAdd`, `bulkDelete` - pra
+muitos records.** Inserir 1 por 1 e' lento
+(devtools/UI travam). Use bulk:
+
+```ts
+// Inserir 1000 users de uma vez
+await db.users.bulkAdd([
+  { name: "Ana", email: "ana@x.com" },
+  { name: "Bob", email: "bob@x.com" },
+  // ...
+]);
+```
+
+Bulk operations sao **10-100x mais rapidas**
+que loops. Use em importacao de dados,
+sync inicial, etc.
+
+**`transaction` explicita pra operacoes
+multi-store.** Quando voce precisa
+**atomicidade** entre multiplas tabelas
+(rollback se uma falhar):
+
+```ts
+await db.transaction("rw", db.users, db.posts, async () => {
+  const userId = await db.users.add({ name: "Ana" });
+  await db.posts.add({ userId, title: "Post da Ana" });
+  // Se posts.add falhar, users.add tb da rollback
+});
+```
+
+**Transactions em Dexie** sao **zone-based**
+- tudo dentro de `db.transaction()` roda
+atomicamente. Util pra "criar user + perfil
+inicial" (2 inserts relacionados).
+
+## Aprofundamento 🟡
+
+**IndexedDB quotas e limites.** O
+IndexedDB usa **ate 50% do disco disponivel**
+(Chrome, Firefox, Safari). Mas **cada origin
+tem quota** (varia por browser, ~10% do
+disco no Chrome). Se exceder, `QuotaExceededError`.
+
+Como descobrir a quota:
+
+```ts
+const estimate = await navigator.storage.estimate();
+console.log(`Usado: ${estimate.usage / 1e6} MB`);
+console.log(`Quota: ${estimate.quota / 1e6} MB`);
+
+if (estimate.usage / estimate.quota > 0.8) {
+  // 80% cheio - limpar caches antigos
+  console.warn("Storage quase cheio");
+}
+```
+
+**IndexedDB em modo privado Safari.** Em
+Safari modo privado (janela anonima),
+IndexedDB e' tratado como **in-memory** -
+**nao persiste** entre sessoes. Mesmo
+codigo, comportamento diferente. Teste em
+Safari privado se o user usa esse modo.
+
+**`live queries` no Dexie - reagir a
+mudancas.** Dexie oferece **observables**
+que re-emitem quando o DB muda:
+
+```ts
+import { useLiveQuery } from "dexie-react-hooks";
+
+function UserList() {
+  const users = useLiveQuery(() => db.users.toArray());
+  // users atualiza automaticamente quando db.users.add() e' chamado
+  return <ul>{users?.map((u) => <li key={u.id}>{u.name}</li>)}</ul>;
+}
+```
+
+Excelente pra **UI que reflete o DB em
+tempo real**. **Sem** polling, sem
+WebSocket proprio. `useLiveQuery` (em
+`dexie-react-hooks`) e' o pattern moderno
+pra apps com dados locais.
+
+**Criptografia em IndexedDB.** IndexedDB
+e' **plaintext** no disco. Se o usuario
+tem dados sensiveis (notas, passwords,
+chaves), **criptografe antes de salvar**:
+
+```ts
+import { encrypt, decrypt } from "./crypto";
+
+// Save
+const encrypted = await encrypt(JSON.stringify(secret), key);
+await db.secrets.add({ id: 1, data: encrypted });
+
+// Load
+const row = await db.secrets.get(1);
+const decrypted = JSON.parse(await decrypt(row.data, key));
+```
+
+Web Crypto API + chave derivada de
+password do usuario. **Crypto** em si
+cobre em `seguranca-frontend`. Aqui, saiba
+que **IndexedDB nao protege dados
+sensiveis por default**.
+
+**Sync entre abas via BroadcastChannel.**
+A mesma DB em **multiplas abas** tem
+**duplicacao de dados**. Pattern de sync
+entre abas:
+
+```ts
+// Tab A
+await db.users.add({ name: "Ana" });
+const channel = new BroadcastChannel("db-changes");
+channel.postMessage({ type: "add", table: "users", id: 1 });
+
+// Tab B
+const channel = new BroadcastChannel("db-changes");
+channel.addEventListener("message", (event) => {
+  if (event.data.type === "add") {
+    // Re-fetch or invalidate cache
+  }
+});
+```
+
+Alternativa: `BroadcastChannel` + invalidacao
+de UI. Pra sync real (server ↔ client),
+cobre em `background-sync`.
+
+**`count`, `limit`, `offset` em queries.**
+
+```ts
+// Count
+const total = await db.users.count();
+
+// Pagination
+const page1 = await db.users
+  .orderBy("createdAt")
+  .reverse()  // mais recentes primeiro
+  .offset(0)
+  .limit(20)
+  .toArray();
+
+const page2 = await db.users
+  .orderBy("createdAt")
+  .reverse()
+  .offset(20)
+  .limit(20)
+  .toArray();
+```
+
+Use **`offset` + `limit`** (mais simples) ou
+**`lastKey`** (cursor-based, melhor para
+dados que mudam durante pagination).
+
+## Pra quem quer ir mais alem 🔴
+
+**Por que IndexedDB e' async ate pra
+abrir.** A API nativa usa **eventos** (nao
+promises), e o `indexedDB.open()` retorna
+um `IDBOpenDBRequest` - **nao** e' sincrono.
+Por que? Porque o browser **nao bloqueia
+a main thread** - abrir DB pode envolver
+disk I/O. Mesmo no `localStorage` (sync),
+writes podem bloquear a thread. IndexedDB
+**sempre** async = **sempre** nao-bloqueia.
+
+**Multi-tab e versionamento.** Quando
+multiplas abas estao abertas e voce faz
+`db.version(2).upgrade(...)`, o browser
+**bloqueia** todas as abas ate a migration
+terminar. Por isso, mantenha migrations
+**rapidas** e teste em multi-tab antes de
+deploy.
+
+**Criptografia de DB inteiro (avancado).**
+Pra apps que armazenam dados muito
+sensiveis (LUKS-style), bibliotecas como
+**ciphered** (Dexie wrapper) encriptam o
+DB inteiro com senha do usuario. Custo:
+performance (10-50%). Justifica so em
+apps finance/health.
+
+**IndexedDB e SSR.** IndexedDB e'
+**client-only** (nao existe no server).
+Em SSR (Next.js, Remix), qualquer uso
+deve estar em `useEffect` ou dinamico
+(`dynamic import`). Senao, build quebra.
+
+**`@types/dexie` e TypeScript.** Dexie tem
+suporte **excelente** a TypeScript via
+`Table<T, KeyType>`:
+
+```ts
+import Dexie, { type Table } from "dexie";
+
+interface User {
+  id?: number;
+  name: string;
+  email: string;
+}
+
+class MyDB extends Dexie {
+  users!: Table<User, number>;
+
+  constructor() {
+    super("my-db");
+    this.version(1).stores({ users: "++id, email" });
+  }
+}
+
+const db = new MyDB();
+await db.users.add({ name: "Ana", email: "ana@x.com" });
+// TypeScript sabe que add recebe User, e que get(1) retorna User | undefined
+```
+
+**Leitura recomendada:**
+
+- [MDN - IndexedDB API](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) - doc oficial MDN.
+- [Dexie.js docs](https://dexie.org/docs/Tutorial/Getting-started) - tutorial oficial Dexie, com exemplos.
+- [web.dev - IndexedDB best practices](https://web.dev/articles/indexeddb-best-practices) - patterns avancados.
+
+> Dica: o erro mais comum em IndexedDB e'
+> **tentar usar a API nativa direto**. Em
+> 2026, **sempre use Dexie** (ou idb). A
+> API nativa existe desde 2010 e nunca
+> foi melhorada - a verbosidade e' proposital
+> (baixo nivel). Dexie expoe **o que voce
+> realmente precisa**: schema declarativo,
+> promises, queries fluentes. **A economia
+> e' brutal**: 50 linhas viram 5. Use Dexie.
+
+No proximo no, vamos **background sync**:
+a API que ativa **retry automatico** de
+requests que falharam offline. Quando o
+usuario faz POST offline, o SW guarda o
+request, e quando volta online, re-executa.
+**O usuario nunca perde uma acao**.
+
+<Checkpoint
+  challenge="Implemente a função `montarQueryDexie(tabela, indice, opcoes)` que recebe um nome de tabela ('users' ou 'posts'), o indice a usar ('id', 'email', 'userId', 'createdAt' ou 'index' para primary key ++id), e opcoes { valor, limite, offset, ordem }. Retorna a string de query no formato do Dexie: 'tabela.where(&quot;indice&quot;).equals(valor).offset(offset).limit(limite).toArray()' ou variantes conforme a operacao. Quando ordem = 'desc', usa .reverse(). order 'asc' ou undefined = ordem natural."
+  starterCode={`// Implemente montarQueryDexie(tabela, indice, opcoes) que monta uma
+// query string do Dexie 3.x.
+//
+// tabela: 'users' | 'posts'
+// indice: 'id' | 'email' | 'userId' | 'createdAt' | 'index' (primary key ++id)
+// opcoes: { valor, limite: number, offset: number, ordem: 'asc' | 'desc' }
+//
+// Formato da string:
+// - Se opcoes.valor: 'tabela.where(&quot;indice&quot;).equals(valor).toArray()'
+//   (com .offset(N).limit(M) e .reverse() se necessario)
+// - Sem opcoes.valor: 'tabela.toArray()' (com .offset/limit/reverse opcionais)
+//
+// Use 'index' quando o indice for primary key (++id), nesse caso a
+// consulta via .get() e nao .where().equals(). Mas pra simplificar,
+// sempre use .where(&quot;indice&quot;).equals() ou .toArray().
+//
+// Regras:
+// - ordem 'desc' → adicionar .reverse() antes de .offset().limit().
+// - ordem 'asc' ou undefined → sem .reverse().
+// - Sempre terminar com .toArray().
+// - .offset() e .limit() vem antes de .toArray() e depois de
+//   .equals() (se existir).
+function montarQueryDexie(tabela, indice, opcoes) {
+  return "";
+}
+
+const _r1 = montarQueryDexie("users", "email", { valor: "ana@x.com" });
+console.log(JSON.stringify(_r1));
+
+const _r2 = montarQueryDexie("posts", "userId", { valor: 1, limite: 10 });
+console.log(JSON.stringify(_r2));
+
+const _r3 = montarQueryDexie("users", "index", { limite: 20, offset: 0, ordem: "desc" });
+console.log(JSON.stringify(_r3));
+
+const _r4 = montarQueryDexie("posts", "createdAt", { limite: 5, ordem: "asc" });
+console.log(JSON.stringify(_r4));`}
+  expected='"users.where(\\\\\\&quot;email\\\\\\&quot;).equals(\\\\\\&quot;ana@x.com\\\\\\&quot;).toArray()"
+"posts.where(\\\\\\&quot;userId\\\\\\&quot;).equals(1).limit(10).toArray()"
+"users.where(\\\\\\&quot;id&quot;).limit(20).offset(0).reverse().toArray()"
+"posts.where(\\\\\\&quot;createdAt\\\\\\&quot;).limit(5).toArray()"'
+  slug="pwa"
+  nodeId="indexeddb"
+/>
+
+<Quiz
+  question="Por que usar Dexie.js em vez da API nativa do IndexedDB?"
+  options={[
+    {
+      text: "Porque a API nativa usa callbacks e request objects, verbosa. Dexie expoe promises, schema declarativo, queries fluentes - reduz 50 linhas em 5, mantendo a mesma funcionalidade ACID.",
+      correct: true,
+      explanation:
+        "API nativa do IndexedDB foi desenhada em 2010 e nunca foi melhorada. Usa IDBRequest + eventos (onsuccess, onerror, onupgradeneeded) - verbosa, callback hell, facil de errar. Dexie expoe: schema declarativo (version().stores({ users: '++id, email' })), promises (await db.users.add(...)), queries fluentes (where('email').equals('x').first()), transactions implicitas. Mesmo exemplo: 50 linhas viram 5. E' ACID, transacional, e suporta indices - mesma API nativa, melhor DX. A performance e' identica (Dexie e' wrapper fino). Use Dexie (ou idb) em 2026. Use API nativa so em casos extremos (compatibilidade com lib que exige).",
+    },
+    {
+      text: "Porque Dexie e' mais rapido que a API nativa.",
+      correct: false,
+      explanation:
+        "Nao. Dexie NAO e' mais rapido - e' um wrapper fino sobre a API nativa, adiciona overhead marginal (1-5% na maioria dos casos). A razao de usar Dexie e' ERGONOMIA e PRODUTIVIDADE, nao performance. A API nativa exige 50 linhas pra CRUD basico; Dexie faz em 5. Mas a performance e' praticamente identica (mesma engine por baixo).",
+    },
+    {
+      text: "Porque a API nativa foi descontinuada em 2026.",
+      correct: false,
+      explanation:
+        "Nao. A API nativa NAO foi descontinuada - e' estavel desde 2010 e mantida. O que mudou e' que **libs de wrapper** (Dexie, idb) se tornaram o default recomendado em 2026. A API nativa existe, funciona, e e' usada por baixo dos panos. Mas pra **novo codigo**, o ecossistema concorda que wrappers sao a melhor pratica (produtividade, manutencao, menos bugs).",
+    },
+  ]}
+/>

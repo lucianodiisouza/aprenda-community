@@ -1,0 +1,612 @@
+---
+id: reconexao-e-estado
+title: "Reconexao e estado: exponential backoff, heartbeat, fila offline"
+resources:
+  - title: "MDN - WebSocket readyState (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState
+    lang: en
+    type: doc
+    free: true
+  - title: "AWS Architecture Blog - Exponential backoff and jitter (EN)"
+    url: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+    lang: en
+    type: artigo
+    free: true
+  - title: "Socket.IO - Connection state recovery (oficial, EN)"
+    url: https://socket.io/docs/v4/connection-state-recovery
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce tem um chat com WebSocket e Socket.IO
+funcionando. Ate o **Wi-Fi cair** (ou o
+usuario **entrar num elevador**). A real-
+time app nao pode **morrer** com a conexao:
+precisa **tentar de novo**, com backoff,
+e **guardar as mensagens** que o usuario
+tentou mandar enquanto estava offline.
+**Esse no cobre o lado "resiliente" de
+real-time**.
+
+Conexoes em mobile (3G, 4G, elevador,
+metro, transicao Wi-Fi → 4G) caem o
+**tempo todo**. **Reconexao robusta** nao
+e' opcional - e' o que diferencia "demo
+de chat" de "chat em producao". Tres
+patterns resolvem isso: **exponential
+backoff com jitter** (nao derrubar o
+server com 1000 clients ao mesmo tempo),
+**heartbeat / ping-pong** (detectar
+conexao morta antes do usuario notar), e
+**fila offline** (nao perder mensagens
+durante a queda).
+
+Voce sai de "chat funciona quando a rede
+e' boa" pra "chat funciona **quando a rede
+e' um inferno**".
+
+## O essencial 🟢
+
+**Reconexao em 3 problemas:**
+
+1. **Quando tentar reconectar?** Imediato
+   pode derrubar o server (cascata). Atrasado
+   demais e o usuario fica olhando pra tela
+   morta.
+2. **Como saber que a conexao caiu?** TCP
+   **nao notifica** se o outro lado cair
+   (firewall, sleep do celular). Sem ping,
+   a app **acha** que esta' conectada.
+3. **O que fazer com mensagens enviadas
+   durante a queda?** **Perder** (ruim) ou
+   **guardar** (bom).
+
+**Exponential backoff com jitter.** Sem
+backoff, **1000 clients** que perdem
+conexao ao mesmo tempo (ex: load balancer
+restart) tentam reconectar **todos no
+mesmo instante** - **thundering herd**.
+Backoff distribui as tentativas:
+
+```ts
+function proximoDelay(tentativa: number, base = 1000, max = 30000) {
+  // 1, 2, 4, 8, 16, 32... ate max
+  const exponencial = Math.min(max, base * 2 ** (tentativa - 1));
+
+  // Jitter: random 0-50% do delay (evita sincronizacao)
+  const jitter = Math.random() * exponencial * 0.5;
+
+  return exponencial + jitter;
+}
+
+// tentativa 1: 1000-1500ms
+// tentativa 2: 2000-3000ms
+// tentativa 3: 4000-6000ms
+// tentativa 4: 8000-12000ms
+// tentativa 5: 16000-24000ms
+// tentativa 6+: 30000-45000ms (cap)
+```
+
+**Por que jitter?** 2^N e' **determinista**:
+1000 clients calculam **exatamente** o mesmo
+delay. Com jitter, cada um calcula um delay
+**diferente** - o server recebe tentativas
+espalhadas no tempo, nao em pico. **50% de
+jitter** (0-50% do delay) e' o sweet spot
+(Marc Brooker, AWS).
+
+**Heartbeat / ping-pong - detectar
+conexao morta.** TCP nao avisa se a outra
+ ponta cair. Celular em sleep = socket
+"vivo" por horas ate o usuario abrir a app
+e **nada funcionar**. Solucao: **pings
+periodicos**:
+
+```ts
+// Server (Socket.IO ja faz isso, exemplo manual pra WebSocket puro)
+const WS_PORT = 3001;
+const HEARTBEAT_INTERVAL = 30000; // 30s
+
+wss.on("connection", (ws) => {
+  ws.isAlive = true;
+
+  ws.on("pong", () => {
+    ws.isAlive = true; // client respondeu, ta vivo
+  });
+
+  const interval = setInterval(() => {
+    if (!ws.isAlive) {
+      // client nao respondeu o ultimo ping, morreu
+      ws.terminate();
+      return;
+    }
+    ws.isAlive = false;
+    ws.ping(); // ping
+  }, HEARTBEAT_INTERVAL);
+
+  ws.on("close", () => clearInterval(interval));
+});
+```
+
+```ts
+// Client (Socket.IO ja faz automatico, exemplo manual)
+const WS_URL = "ws://localhost:3001";
+const socket = new WebSocket(WS_URL);
+
+const heartbeat = setInterval(() => {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "ping" }));
+  }
+}, 30000);
+
+socket.addEventListener("close", () => {
+  clearInterval(heartbeat);
+  iniciarReconexao();
+});
+```
+
+**Por que 30s?** Mais curto = mais bandwidth
+(~1% overhead). Mais longo = demora pra
+detectar queda. **30s e' o padrao** da
+industria (Socket.IO usa 25s por default,
+Engine.IO usa 25s com 20s timeout).
+
+**Socket.IO faz heartbeat automatico**
+(`pingInterval: 25000`, `pingTimeout: 20000`).
+Voce **so configura** se quiser mudar o
+intervalo:
+
+```ts
+// Server
+const io = new Server(3001, {
+  pingInterval: 25000, // 25s entre pings
+  pingTimeout: 20000,  // 20s sem pong = dead
+});
+```
+
+**Fila de mensagens offline - nao perder
+dados.** Usuario manda "Oi" **durante queda**.
+3 cenarios:
+
+```ts
+// ❌ 1. Perde: manda e esquece
+socket.send("Oi");
+// se cair agora, "Oi" some, server nunca recebe
+
+// ❌ 2. Bloqueia: throw error
+function enviar(msg) {
+  if (socket.readyState !== WebSocket.OPEN) {
+    throw new Error("Desconectado");
+  }
+  socket.send(msg);
+}
+// usuario precisa adivinhar "tentar de novo"
+
+// ✅ 3. Fila: guarda e envia quando reconectar
+class ClienteComFila {
+  constructor(url) {
+    this.url = url;
+    this.socket = null;
+    this.fila = []; // mensagens pendentes
+    this.conectado = false;
+    this.conectar();
+  }
+
+  conectar() {
+    this.socket = new WebSocket(this.url);
+
+    this.socket.addEventListener("open", () => {
+      this.conectado = true;
+      // drena fila ao reconectar
+      while (this.fila.length > 0) {
+        const msg = this.fila.shift();
+        this.socket.send(msg);
+      }
+    });
+
+    this.socket.addEventListener("close", () => {
+      this.conectado = false;
+      this.tentarReconectar();
+    });
+
+    this.socket.addEventListener("error", () => {
+      this.conectado = false;
+    });
+  }
+
+  enviar(msg) {
+    const payload = JSON.stringify(msg);
+    if (this.conectado) {
+      this.socket.send(payload);
+    } else {
+      this.fila.push(payload); // guarda, manda depois
+    }
+  }
+
+  tentarReconectar() {
+    const delay = proximoDelay(this.tentativa++);
+    setTimeout(() => this.conectar(), delay);
+  }
+}
+```
+
+**Trade-off da fila**: se a fila ficar muito
+grande (usuario offline por horas mandando
+spam), **estoura memoria**. **Limite** com
+quantidade maxima (ex: 100 mensagens) ou
+TTL (ex: 1 hora):
+
+```ts
+const FILA_MAX = 100;
+const FILA_TTL_MS = 60 * 60 * 1000; // 1h
+
+class ClienteComFila {
+  fila = []; // { payload, timestamp }
+
+  enviar(msg) {
+    const agora = Date.now();
+    // Limpa expirados
+    this.fila = this.fila.filter((m) => agora - m.timestamp < FILA_TTL_MS);
+
+    if (this.conectado) {
+      this.socket.send(JSON.stringify(msg));
+    } else {
+      if (this.fila.length >= FILA_MAX) {
+        // drop oldest
+        this.fila.shift();
+      }
+      this.fila.push({ payload: JSON.stringify(msg), timestamp: agora });
+    }
+  }
+}
+```
+
+**Visualizar o estado da conexao no UI.**
+Usuario precisa **saber** que esta' offline.
+Sem isso, parece "app quebrada":
+
+```ts
+// Estado possivel
+type EstadoConexao =
+  | { tipo: "conectando" }
+  | { tipo: "conectado"; desde: number }
+  | { tipo: "reconectando"; tentativa: number; proximaEm: number }
+  | { tipo: "desconectado"; erro?: string };
+
+// UI - "Reconectando (3a tentativa)..."
+// UI - "Offline - suas mensagens serao enviadas quando voltar"
+// UI - "Conectado"
+```
+
+Mostra o estado no header. Quando o usuario
+**sabe** que esta' reconectando, **tolera
+a latencia**. Quando **nao sabe**, fecha a
+aba achando que quebrou.
+
+**O fluxo completo:**
+
+```ts
+class ConexaoResiliente {
+  socket: WebSocket | null = null;
+  estado: EstadoConexao = { tipo: "conectando" };
+  tentativa = 0;
+  fila: { payload: string; timestamp: number }[] = [];
+  heartbeat: number | null = null;
+
+  constructor(private url: string) {
+    this.conectar();
+  }
+
+  private conectar() {
+    this.estado = { tipo: "conectando" };
+    this.notificar();
+
+    this.socket = new WebSocket(this.url);
+
+    this.socket.addEventListener("open", () => {
+      this.estado = { tipo: "conectado", desde: Date.now() };
+      this.tentativa = 0;
+      this.notificar();
+      this.iniciarHeartbeat();
+      this.drenarFila();
+    });
+
+    this.socket.addEventListener("close", () => {
+      this.pararHeartbeat();
+      this.agendarReconexao();
+    });
+
+    this.socket.addEventListener("error", () => {
+      this.socket?.close();
+    });
+  }
+
+  private agendarReconexao() {
+    this.tentativa++;
+    const delay = proximoDelay(this.tentativa);
+    this.estado = {
+      tipo: "reconectando",
+      tentativa: this.tentativa,
+      proximaEm: delay,
+    };
+    this.notificar();
+    setTimeout(() => this.conectar(), delay);
+  }
+
+  private iniciarHeartbeat() {
+    this.heartbeat = window.setInterval(() => {
+      this.socket?.send(JSON.stringify({ type: "ping" }));
+    }, 30000);
+  }
+
+  private pararHeartbeat() {
+    if (this.heartbeat) clearInterval(this.heartbeat);
+  }
+
+  private drenarFila() {
+    while (this.fila.length > 0) {
+      const { payload } = this.fila.shift()!;
+      this.socket?.send(payload);
+    }
+  }
+
+  enviar(msg: unknown) {
+    const payload = JSON.stringify(msg);
+    if (this.estado.tipo === "conectado" && this.socket?.readyState === 1) {
+      this.socket.send(payload);
+    } else {
+      this.fila.push({ payload, timestamp: Date.now() });
+    }
+  }
+
+  private notificar() {
+    // emite evento, atualiza UI, etc
+    document.dispatchEvent(
+      new CustomEvent("conexao-estado", { detail: this.estado })
+    );
+  }
+}
+```
+
+## Aprofundamento 🟡
+
+**Socket.IO ja faz 90% disso.** Se voce
+usa Socket.IO, a reconexao, heartbeat, e
+queue de eventos **vem de graca**. Mas
+**fila offline** (mensagens que o usuario
+gerou offline) ainda e' sua responsabilidade
+- Socket.IO conecta de novo, mas mensagens
+que voce tentou mandar **durante a queda
+sao perdidas** (o `emit()` falha silencioso
+ou dispara erro).
+
+**Exponential backoff: "full" vs "equal"
+vs "decorrelated" jitter.** O AWS post
+classico mostra 3 formulas:
+
+```ts
+// 1. Full jitter (recomendado, simples)
+const delay = Math.random() * Math.min(max, base * 2 ** tentativa);
+
+// 2. Equal jitter (50% determinista + 50% random)
+const expo = Math.min(max, base * 2 ** tentativa);
+const delay = expo / 2 + Math.random() * (expo / 2);
+
+// 3. Decorrelated jitter (proxima tentativa = random entre base e anterior*3)
+let anterior = base;
+const delay = Math.min(max, Math.random() * anterior * 3);
+anterior = delay;
+```
+
+**Full jitter** e' o mais simples e tem
+**performance similar** aos outros. Use
+esse. Socket.IO usa `randomizationFactor: 0.5`
+que e' equivalente a "equal jitter".
+
+**Detectar "tab em background" (browser
+throttling).** Quando o usuario **minimiza**
+a aba, o browser **throttla** timers
+(1s → 1min em background). Isso **quebra**
+heartbeat e backoff. Solucao: use
+**Page Visibility API**:
+
+```ts
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    // Tab voltou, verificar conexao
+    if (conexao.estado.tipo !== "conectado") {
+      conexao.reconectarAgora(); // pula o backoff
+    }
+  }
+});
+```
+
+**Resumability: pattern de re-conectar e
+sincronizar tudo.** Em chat multi-device
+(voce manda "Oi" no celular, abre o laptop,
+precisa ver o "Oi" la'), o server precisa
+**lembrar** das mensagens. Padroes comuns:
+
+- **Last-Event-ID** (SSE): browser manda o
+  ultimo ID que viu, server re-envia tudo
+  desde la'.
+- **Snapshot + delta**: ao conectar, server
+  manda **estado atual** (snapshot) + socket
+  segue mandando **deltas**.
+- **CRDT** (Yjs, Automerge): **estado
+  distribuido** sem servidor central de
+  "verdade". Cobre em `presence-e-colaboracao`.
+
+**Indicador de "typing" - nao enfileirar.**
+Volatile, nao ack, nao enfileirar. Usuario
+para de digitar, manda **uma vez** "stopped
+typing". O padrao:
+
+```ts
+// ❌ Errado: enfileira "typing" durante offline
+socket.emit("typing", true);
+// se cair agora, server recebe 50x "typing: true" ao reconectar
+
+// ✅ Correto: volatile ou debounce
+socket.volatile.emit("typing", true);
+// ou checa estado antes de mandar
+if (conexao.estado === "conectado") socket.emit("typing", true);
+```
+
+**A real diferenca entre reconectar e
+sincronizar.** Reconectar = **o canal
+voltou**. Sincronizar = **o estado voltou**.
+Em apps com **estado compartilhado**
+(documentos, dashboards, jogos), reconectar
+nao basta - precisa **re-baixar o estado**
+do server. Padrao:
+
+```ts
+socket.addEventListener("open", () => {
+  socket.send(JSON.stringify({ type: "sync", ultimaVersaoConhecida: estado.versao }));
+});
+
+socket.addEventListener("message", (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.type === "sync-response") {
+    // server mandou tudo que mudou desde a versao X
+    aplicarMudancas(msg.mudancas);
+    estado.versao = msg.versaoAtual;
+  }
+});
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**WebTransport - o "proximo WebSocket".**
+API nova (Chrome 97+, Firefox parcial 2024)
+que usa **HTTP/3 + UDP** sob o capô.
+Promessas: **menor latencia** (0-RTT),
+**multiplexing nativo** (varios streams em
+1 conexao), **datagramas** (fire-and-forget
+sem garantias, tipo UDP). Em 2026, **ainda
+em rollout** - Chrome e Edge suportam,
+Safari e Firefox **parcial**. Use so se
+**latencia < 50ms** e' critica (jogos,
+colaboracao em tempo real) e seus users
+estao em browsers **modernos**.
+
+**Server-side state: Redis pra escalar.**
+Quando o server WebSocket **escala
+horizontalmente** (3 instancias atras de
+load balancer), o socket do user pode cair
+em **qualquer** instancia. Reconexao vai
+pra instancia **aleatoria** - o estado
+(rooms, presence) precisa ser **compartilhado**
+via Redis (ou similar). Socket.IO tem
+`@socket.io/redis-adapter` que faz isso
+automaticamente. Cobre em `edge-deploy`.
+
+**Bibliotecas de resync: Yjs, Automerge.**
+CRDTs (Conflict-free Replicated Data Types)
+resolvem **concorrencia sem servidor
+central**. Yjs e' a mais usada (Figma, Notion,
+etc). Em vez de "o server decide quem
+ganhou", cada client tem um **estado que
+converge**. Cobre em `presence-e-colaboracao`
+mas o **[Yjs docs](https://docs.yjs.dev/)**
+e' otimo ponto de partida.
+
+**Service Worker + push notification =
+"mensagens offline".** Quando o app ta'
+**fechado**, voce nao tem WebSocket aberto.
+Push notification (via Service Worker) e'
+o **unico jeito** de entregar mensagem
+quando o usuario nao ta' com a app aberta.
+Cobre em `pwa` (notificacoes-push).
+
+**Connection state machine formal.**
+Tratar a conexao como **state machine**
+torna o codigo mais robusto. Estados:
+`CONNECTING`, `OPEN`, `CLOSING`, `CLOSED`,
+`RECONNECTING`. Transicoes sao **explicitas**.
+Use [`xstate`](https://stately.ai/docs/xstate)
+ou implemente manual. Cobre em
+`engenharia-ia` (state machines) mas o
+conceito se aplica aqui.
+
+**Leitura recomendada:**
+
+- [MDN - WebSocket readyState](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState) - estados e constantes.
+- [AWS - Exponential backoff and jitter](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/) - post classico sobre backoff + jitter, explica por que funciona.
+- [Socket.IO - Connection state recovery](https://socket.io/docs/v4/connection-state-recovery) - como Socket.IO lida com queda e re-sync de eventos perdidos.
+
+> Dica: o erro mais comum em reconexao e'
+> **esquecer de limpar estado entre tentativas**
+> (timers, sockets, listeners). Cada
+> `setInterval` que nao e' limpo **vaza
+> memoria**. Cada `addEventListener` sem
+> `removeEventListener` correspondente
+> **acumula listeners** e depois dispara
+> N vezes o mesmo handler. **Centralize
+> em uma classe** (como o exemplo acima)
+> pra ter **um lugar** de limpar tudo.
+
+No proximo no, vamos **presence e
+colaboracao**: como mostrar "X esta'
+digitando...", cursores colaborativos
+(Figma-like), e a **introducao a CRDTs**
+(Yjs, Automerge) - o pattern que resolve
+colaboracao sem servidor central de verdade.
+
+<Checkpoint
+  challenge="Implemente a função `calcularBackoff(tentativa, opcoes, random)` que retorna o delay (em ms) da proxima tentativa de reconexao. Recebe: tentativa (number, comeca em 1), opcoes = { base: number, max: number, jitter: number (0-1) }, random (funcao que retorna numero 0-1, default Math.random). Formula: expo = min(max, base * 2^(tentativa-1)). Com jitter > 0: delay = expo * (1 - jitter) + random() * expo * jitter. Sem jitter (jitter=0): delay = expo. Retorne o delay em ms (numero inteiro via Math.floor)."
+  starterCode={`// Implemente calcularBackoff(tentativa, opcoes, random) que
+// retorna o delay (em ms) pra proxima tentativa de reconexao.
+//
+// random e' uma funcao que retorna numero 0-1 (default Math.random).
+// Em producao use Math.random; em testes passe uma funcao fixa
+// pra ter resultado deterministico.
+//
+// Formula:
+//   expo = min(max, base * 2^(tentativa-1))
+//   se jitter > 0: delay = expo * (1 - jitter) + random() * expo * jitter
+//   se jitter === 0: delay = expo
+//
+// Retorne numero inteiro (Math.floor).
+function calcularBackoff(tentativa, opcoes, random) {
+  return 1000;
+}
+
+const _b1 = calcularBackoff(1, { base: 1000, max: 30000, jitter: 0.5 }, () => 0.5);
+console.log(_b1);
+
+const _b2 = calcularBackoff(3, { base: 1000, max: 30000, jitter: 0 }, () => 0.5);
+console.log(_b2);
+
+const _b3 = calcularBackoff(5, { base: 500, max: 10000, jitter: 0.5 }, () => 0.5);
+console.log(_b3);`}
+  expected='750\n4000\n6000'
+  slug="real-time"
+  nodeId="reconexao-e-estado"
+/>
+
+<Quiz
+  question="Por que exponential backoff COM jitter e' melhor que backoff puro (sem randomizacao)?"
+  options={[
+    {
+      text: "Backoff puro (2^N) e' determinista: 1000 clients que perdem conexao ao mesmo tempo tentam reconectar exatamente no mesmo instante, criando um pico de carga (thundering herd) no server. Jitter espalha as tentativas no tempo, evitando o pico.",
+      correct: true,
+      explanation:
+        "O ponto central: backoff puro (1s, 2s, 4s, 8s...) e' determinista. Se 1000 clients perdem conexao ao mesmo tempo (load balancer restart, por exemplo), todos calculam o **mesmo** delay. Resultado: o server recebe 1000 requests de reconexao no **mesmo milissegundo** = pico de carga = potencial queda em cascata. Jitter (random 0-50% do delay) **desincroniza** os clients - cada um calcula um delay levemente diferente, server recebe tentativas **espalhadas** no tempo, sem pico. Marc Brooker (AWS) mostrou que full jitter (random * 2^N) tem performance similar a outras formulas, mas e' o mais simples. Use randomizationFactor: 0.5 (Socket.IO) ou full jitter manual.",
+    },
+    {
+      text: "Jitter reduz o tempo total de reconexao, fazendo o app voltar mais rapido.",
+      correct: false,
+      explanation:
+        "Falso. Jitter **aumenta** o tempo medio de reconexao (em media, ~25% a mais que backoff puro). A vantagem e' **distribuir a carga** no server, nao ser mais rapido pro client. Em sistemas com **muitos** clients, voce **prefere** uma reconexao 25% mais lenta pra **nao derrubar** o server. E' um trade-off de **fairness vs velocidade individual**.",
+    },
+    {
+      text: "Backoff puro pode causar loops infinitos. Jitter garante que o loop termina.",
+      correct: false,
+      explanation:
+        "Falso. Backoff puro com cap (max delay) **termina** - depois de N tentativas, o delay fica em 'max' e nao cresce mais. O loop so' e' infinito se voce **nao tiver** reconnectionAttempts limit. Jitter nao muda isso. A questao de jitter nao e' 'terminar' - e' 'distribuir carga'.",
+    },
+  ]}
+/>

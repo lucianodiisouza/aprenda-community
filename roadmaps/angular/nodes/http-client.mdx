@@ -1,0 +1,80 @@
+---
+id: http-client
+title: "HTTP e Integração com APIs"
+resources:
+  - title: "Angular: HTTP client"
+    url: https://angular.dev/guide/http
+    type: doc
+    lang: en
+    free: true
+  - title: "MDN: HTTP overview"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview
+    type: doc
+    lang: en
+    free: true
+---
+
+Quase todo app Angular conversa com uma API. A tela pede dados, envia formulário,
+mostra loading, recebe erro e atualiza estado.
+
+O erro comum é colocar `HttpClient` direto em todo componente. Funciona, mas
+espalha URL, tipos, tratamento de erro e regra de negócio pela aplicação.
+
+## Configurando e usando
+
+Em apps modernos, o HTTP entra na configuração da aplicação:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [provideHttpClient()],
+})
+```
+
+Depois, o service injeta `HttpClient`:
+
+```ts
+type Trilha = { id: string; titulo: string }
+
+listar() {
+  return this.http.get<Trilha[]>("/api/trilhas")
+}
+```
+
+Use métodos diferentes para intenções diferentes:
+
+- `get` busca dados
+- `post` cria
+- `put` substitui
+- `patch` altera parte
+- `delete` remove
+
+## Tipos, params e headers
+
+O tipo genérico ajuda o TypeScript, mas não valida resposta em runtime.
+
+```ts
+this.http.get<Trilha[]>("/api/trilhas", {
+  params: { status: "em-andamento" },
+  headers: { "X-App": "aprenda" },
+})
+```
+
+Headers repetidos normalmente pertencem a interceptors. Params de filtro podem
+ficar perto do método do service.
+
+## A resposta pode falhar
+
+Para cada chamada, pense em quatro estados: carregando, sucesso com dados,
+sucesso vazio e erro. Se você implementa só o caminho feliz, a aplicação quebra
+justamente quando o usuário precisa de orientação.
+
+Três ideias pra levar deste nó:
+
+- **HTTP deve ficar em service, não espalhado em componente.**
+- **Tipo genérico descreve contrato esperado, não valida runtime.**
+- **Loading, vazio e erro fazem parte da integração.**
+
+> Dica: se todo componente conhece a URL da API, o app já está acoplado demais.
+
+No próximo nó, vamos entender por que muitas APIs do Angular trabalham com
+Observables.

@@ -1,0 +1,599 @@
+---
+id: open-telemetry-web
+title: "OpenTelemetry Web: traces distribuidos no browser, OTLP, contexto"
+resources:
+  - title: "OpenTelemetry JS - Getting Started (EN)"
+    url: https://opentelemetry.io/docs/languages/js/getting-started/
+    lang: en
+    type: doc
+    free: true
+  - title: "OpenTelemetry - W3C Trace Context (EN)"
+    url: https://www.w3.org/TR/trace-context/
+    lang: en
+    type: doc
+    free: true
+  - title: "OpenTelemetry - Browser Instrumentation (EN)"
+    url: https://opentelemetry.io/docs/zero-code/js/configuration/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce tem **error tracking** (Sentry) e
+**RUM** (Web Vitals). Mas e' a
+pergunta mais importante em
+**sistemas distribuidos**: "por que
+essa request **inteira** (frontend →
+backend → DB → payment gateway)
+demorou 8s?". **Error tracking** da
+o erro local, **RUM** da o Web
+Vital. So' **traces distribuidos**
+mostram a **jornada completa**. **Esse
+no cobre OpenTelemetry (OTel) Web**:
+o padrao CNCF **vendor-neutral** pra
+emitir traces, com **W3C Trace
+Context** propagado via **headers
+HTTP**, e exportacao pra qualquer
+backend (Jaeger, Tempo, Honeycomb,
+Sentry, Datadog).
+
+OpenTelemetry e' o **spec**; as
+**implementacoes** sao libs pra
+cada linguagem (no JS, e' o pacote
+`@opentelemetry/sdk-web`). Em 2026,
+OTel e' o **padrao de fato** - Sentry,
+Datadog, Honeycomb **todos** aceitam
+OTel como input. **Sem vendor lock-in**.
+
+Voce sai de "acho que o backend
+demorou" pra "request 1234: 50ms
+frontend, 200ms backend, 100ms DB,
+1.5s payment gateway - ah, e' o
+payment".
+
+## O essencial 🟢
+
+**O que e' OpenTelemetry (OTel).** Um
+**projeto CNCF** (mesma fundacao do
+Kubernetes) que define **spec, API, e
+SDK** pra emitir **logs, metrics, e
+traces** de forma **vendor-neutral**.
+Antes do OTel, cada vendor tinha
+proprio formato (Datadog, New Relic,
+Jaeger, Zipkin), e voce ficava
+**preso** ao vendor. Com OTel, **1 SDK
+no client**, **N backends** possiveis.
+
+**Conceitos fundamentais.**
+
+- **Trace:** jornada completa de uma
+  request. Ex: "user clica em checkout"
+  → 1 trace.
+- **Span:** unidade atomica de trabalho
+  dentro de um trace. Ex: "fetch
+  /api/checkout" = 1 span de 200ms.
+- **Span context:** ID unico (traceId,
+  spanId), atributos, parent-child
+  relationship.
+- **Propagation:** passar trace context
+  entre servicos (frontend → backend →
+  DB) via **W3C Trace Context**
+  (headers HTTP).
+
+**Estrutura de um trace.**
+
+```text
+Trace (traceId: abc-123)
+  Span: page.click_checkout (50ms) [frontend]
+    Span: fetch /api/checkout (200ms) [frontend]
+      Span: POST /api/checkout (180ms) [backend]
+        Span: db.query (100ms) [backend]
+        Span: payment_gateway (50ms) [backend]
+```
+
+**Cada span** tem: nome, duracao,
+atributos, status (OK/ERROR), e
+**parent_span_id** (criando arvore).
+
+**Setup basico de OTel no browser.**
+
+```bash
+pnpm add @opentelemetry/sdk-web
+pnpm add @opentelemetry/api
+pnpm add @opentelemetry/exporter-trace-otlp-http
+```
+
+```ts
+// instrumentation.ts
+import { WebTracerProvider } from "@opentelemetry/sdk-web";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { Resource } from "@opentelemetry/resources";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-web";
+import { trace, context } from "@opentelemetry/api";
+
+const provider = new WebTracerProvider({
+  resource: new Resource({
+    [SemanticResourceAttributes.SERVICE_NAME]: "my-app-web",
+    [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: "production",
+  }),
+});
+
+const exporter = new OTLPTraceExporter({
+  url: "https://api.honeycomb.io/v1/traces",
+  headers: { "x-honeycomb-team": "your-api-key" },
+});
+
+provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+provider.register();
+
+// Agora pode usar em qualquer lugar:
+const tracer = trace.getTracer("my-app");
+const span = tracer.startSpan("user.click_checkout");
+span.setAttribute("user.id", "u-456");
+span.end();
+```
+
+**Auto-instrumentation.** OTel detecta
+**automaticamente** fetch, XHR, e
+outras operacoes. **Sem instrumentar
+manualmente** cada chamada:
+
+```ts
+import { getWebAutoInstrumentations } from "@opentelemetry/auto-instrumentations-web";
+
+provider.addSpanProcessor(new BatchSpanProcessor(exporter));
+// Auto-instrumentation:
+const instrumentations = [
+  new DocumentLoadInstrumentation(),
+  new UserInteractionInstrumentation(),
+  new FetchInstrumentation(),
+  // ...
+];
+```
+
+**Auto-instrumentation captura**:
+clicks, navigations, fetch, XHR,
+**sem codigo** no app.
+
+**W3C Trace Context - propagacao
+via headers HTTP.** O **padrao W3C**
+define como passar trace context
+**entre servicos**:
+
+```http
+traceparent: 00-{traceId}-{parentSpanId}-{flags}
+tracestate: vendor-specific-data
+```
+
+**`traceparent` e' gerado pelo
+frontend** ao fazer fetch. **Backend
+le** o header, **continua o trace**
+com mesmo traceId, **gera novo
+spanId** (span filho), e propaga
+pros proximos servicos. **Sem isso**,
+traces ficam **quebrados** entre
+client e server.
+
+**Exemplo de fetch instrumentado.**
+
+```ts
+// Auto-instrumentation adiciona traceparent automaticamente
+fetch("/api/checkout", { method: "POST" });
+
+// Manual span (se quiser adicionar contexto)
+import { trace } from "@opentelemetry/api";
+
+const tracer = trace.getTracer("my-app");
+const span = tracer.startSpan("checkout.process");
+span.setAttribute("cart.size", 5);
+span.setAttribute("cart.value", 1234.56);
+
+try {
+  const response = await fetch("/api/checkout", { method: "POST" });
+  span.setAttribute("http.status_code", response.status);
+  if (!response.ok) {
+    span.setStatus({ code: 2, message: "HTTP error" });  // ERROR
+  }
+} catch (err) {
+  span.recordException(err);
+  span.setStatus({ code: 2, message: err.message });
+} finally {
+  span.end();
+}
+```
+
+**OTLP - OpenTelemetry Protocol.** O
+**protocolo** de exportacao. OTLP
+sobre HTTP ou gRPC, **padrao** que
+todo backend OTel aceita.
+
+```ts
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+
+const exporter = new OTLPTraceExporter({
+  url: "https://api.honeycomb.io/v1/traces",
+  headers: { "x-honeycomb-team": "your-api-key" },
+});
+```
+
+**Vendor-specific extensions.** Cada
+backend tem **extensoes proprias**
+(como Datadog adiciona metric), mas
+**core OTLP funciona em todos**.
+
+**Span attributes - "contexto rico".**
+**Attributes** sao key-value pairs que
+dizem **o que** o span representa:
+
+```ts
+span.setAttribute("user.id", "u-456");
+span.setAttribute("user.country", "BR");
+span.setAttribute("cart.size", 5);
+span.setAttribute("cart.value", 1234.56);
+span.setAttribute("payment.method", "credit_card");
+span.setAttribute("payment.gateway", "stripe");
+```
+
+**Boa pratica:** attributes sao
+**buscados** no backend. **Use nomes
+consistentes** (lowercase, dot.separated).
+
+**Semantic conventions.** OTel define
+**nomes padrao** pra atributos
+comuns (http.method, db.system,
+messaging.system, etc). **Use-os** -
+backend ja' sabe como indexar.
+
+```ts
+span.setAttribute("http.method", "POST");
+span.setAttribute("http.url", "/api/checkout");
+span.setAttribute("http.status_code", 200);
+span.setAttribute("db.system", "postgresql");
+span.setAttribute("db.statement", "SELECT * FROM users WHERE id = $1");
+```
+
+**Context propagation - o conceito
+mais importante.** OTel usa **Context
+API** pra propagar trace info
+**sem voce gerenciar**:
+
+```ts
+import { trace, context } from "@opentelemetry/api";
+
+const span = tracer.startSpan("outer");
+
+// Dentro do span, fetch e' automaticamente filho
+context.with(trace.setSpan(context.active(), span), () => {
+  fetch("/api/checkout");  // child span do "outer"
+});
+```
+
+**OTel + Sentry.** Sentry **aceita
+OTel** como input:
+
+```ts
+import { trace } from "@opentelemetry/api";
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  tracesSampleRate: 0.1,
+  integrations: [Sentry.browserTracingIntegration()],
+});
+
+// Sentry ve spans de OTel SDK
+const span = trace.getTracer("my-app").startSpan("checkout");
+span.end();
+```
+
+Use OTel SDK no client, **envie pra
+Sentry** via OTLP. **Vendor-neutral
++ RUM benefits**.
+
+**OTel backend options.**
+
+| Backend        | Open source | Self-host | Free tier        | Notes |
+| -------------- | ----------- | --------- | ---------------- | ----- |
+| **Jaeger**     | sim         | sim       | yes              | traces, CNCF, Grafana UI |
+| **Tempo**      | sim         | sim       | yes              | traces, Grafana native, mais novo que Jaeger |
+| **Honeycomb**  | nao         | nao       | sim (limitado)   | traces, query poderosa, $$ |
+| **Sentry**     | sim         | sim       | sim (5K/mes)     | errors + traces + RUM |
+| **Datadog**    | nao         | nao       | nao (free trial) | tudo (logs/metrics/traces/RUM) |
+| **Grafana Cloud** | nao     | nao       | sim (10K series) | Grafana stack as service |
+
+**Em 2026**, **Grafana Tempo** e' a
+opcao **open source** mais usada pra
+traces (substituindo Jaeger).
+
+## Aprofundamento 🟡
+
+**Sampling strategies.** Enviar
+**100%** dos traces e' **caro**. OTel
+suporta **sampling** via `Sampler`:
+
+```ts
+import { ParentBasedSampler, TraceIdRatioBasedSampler } from "@opentelemetry/sdk-trace-web";
+
+const provider = new WebTracerProvider({
+  sampler: new ParentBasedSampler({
+    root: new TraceIdRatioBasedSampler(0.1),  // 10% dos traces
+  }),
+});
+```
+
+- **ParentBased:** se trace ja' tem
+  sampling decision (do backend),
+  respeita.
+- **TraceIdRatioBased:** 10% dos
+  traces aleatoriamente.
+- **AlwaysOn:** 100% (debug).
+- **AlwaysOff:** 0% (testes).
+
+**Head vs tail sampling.** OTel SDK
+faz **head sampling** (decide no
+inicio). **Tail sampling** (decide
+no fim, baseado em erro/latencia)
+requer **collector** (proxy).
+
+**Span limits.** OTel tem **limits**
+pra evitar OOM:
+
+```ts
+new WebTracerProvider({
+  spanLimits: {
+    maxAttributeValueLength: 4096,
+    maxAttributeCount: 128,
+    maxEventCount: 256,
+  },
+});
+```
+
+**Context API - bagagem do trace.**
+Context carrega trace state atraves
+de **callbacks, promises, e
+async/await**:
+
+```ts
+import { context, trace } from "@opentelemetry/api";
+
+const outerSpan = tracer.startSpan("outer");
+
+// Tudo dentro deste callback e' child de outerSpan
+context.with(trace.setSpan(context.active(), outerSpan), () => {
+  setTimeout(() => {
+    // Ainda e' child de outerSpan
+    const innerSpan = tracer.startSpan("inner");
+    innerSpan.end();
+  }, 1000);
+});
+```
+
+**Auto-instrumentation details.** OTel
+auto-detecta:
+
+- **DocumentLoad** - navigation,
+  resource loading.
+- **UserInteraction** - clicks, key
+  presses.
+- **Fetch / XHR** - HTTP requests.
+- **WebSocket** - send/receive.
+- **Long task** - tasks > 50ms.
+- **Console** - log, warn, error.
+
+**Custom instrumentation.** Pra
+operacoes que auto-instrumentation
+nao cobre:
+
+```ts
+const span = tracer.startSpan("custom.operation");
+span.setAttribute("custom.key", "value");
+
+try {
+  await customOp();
+  span.setStatus({ code: 1 });  // OK
+} catch (err) {
+  span.recordException(err);
+  span.setStatus({ code: 2, message: "Error" });
+} finally {
+  span.end();
+}
+```
+
+**Span events - "log dentro do
+span".** Use events pra adicionar
+contexto a um span **sem criar
+sub-span**:
+
+```ts
+const span = tracer.startSpan("checkout.process");
+span.addEvent("payment.started", { method: "credit_card" });
+span.addEvent("payment.completed", { duration_ms: 200 });
+span.end();
+```
+
+Events aparecem no **timeline** do
+trace, nao como spans separados.
+
+**Span links - "causal relationship
+sem hierarchy".** Use quando um
+span **e' causado por** outro sem
+ser **filho**:
+
+```ts
+const parent = tracer.startSpan("user.request");
+const link = { context: parent.spanContext() };
+
+const child = tracer.startSpan("background.process", { links: [link] });
+// child e' child mas tambem linkado a parent
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**OTel Collector.** Em prod enterprise,
+**OTel Collector** e' um **proxy**
+que recebe traces/metrics/logs,
+processa, e envia pra **multiplos
+backends**. **Self-hosted** (Go) ou
+**managed** (Grafana Cloud, Honeycomb).
+
+```yaml
+# otel-collector-config.yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+    timeout: 5s
+  memory_limiter:
+    limit_mib: 512
+
+exporters:
+  otlp:
+    endpoint: api.honeycomb.io:443
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp, debug]
+```
+
+**Span metrics - "metrics de trace
+data".** OTel pode gerar **metrics**
+a partir de **traces** (latencia por
+rota, error rate, etc). **Combina
+traces + metrics** num so' sistema.
+
+**Tail-based sampling no Collector.**
+Collector pode decidir **no fim** se
+manda trace (baseado em erro, latencia,
+custom rules). **So' envia traces
+interessantes** - economiza bandwidth
+e storage.
+
+**OTel + eBPF (2024+).** Novas versoes
+de OTel Collector usam **eBPF** pra
+auto-instrumentar **kernel-level** -
+capture traces **sem codigo** em
+qualquer linguagem. **Futuro** da
+observability.
+
+**OpenTelemetry Logs (ainda em
+desenvolvimento).** OTel tem **spec
+pra logs** mas a implementacao JS
+ainda esta' em alpha. Em 2026, **use
+Sentry** ou **Pino/Winston** pra
+logs, OTel pra **traces** e
+**metrics**.
+
+**Custom propagators.** Em casos
+especiais (legacy systems, vendor
+proprietary), OTel suporta **custom
+propagators** que interpretam outros
+formatos:
+
+```ts
+import { W3CTraceContextPropagator } from "@opentelemetry/core";
+import { B3Propagator } from "@opentelemetry/propagator-b3";
+
+propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+// ou B3 (Zipkin format):
+propagation.setGlobalPropagator(new B3Propagator());
+```
+
+**Leitura recomendada:**
+
+- [OpenTelemetry JS - Getting Started](https://opentelemetry.io/docs/languages/js/getting-started/) - setup basico, primeiro span.
+- [W3C Trace Context](https://www.w3.org/TR/trace-context/) - spec oficial de propagacao.
+- [OpenTelemetry - Browser Instrumentation](https://opentelemetry.io/docs/zero-code/js/configuration/) - auto-instrumentation, zero-code setup.
+
+> Dica: o erro mais comum em OTel Web
+> e' **esquecer de configurar o
+> propagator**. Sem W3C Trace
+> Context, traces ficam **quebrados**
+> entre client e server - cada um
+> gera seu proprio traceId, sem
+> continuity. **Solucao**: garantir
+> que `propagation.setGlobalPropagator(new
+> W3CTraceContextPropagator())` e'
+> chamado **antes** de qualquer
+> fetch. **Default** no OTel SDK
+> e' W3C, mas **verifique** se
+> nenhum codigo custom substituiu.
+
+No proximo no, vamos **feature flags**:
+como fazer **rollout progressivo** de
+uma feature (10% → 50% → 100%),
+**kill switch** rapido, e **A/B
+testing** com **LaunchDarkly**,
+**Flagsmith**, ou **Cloudflare
+Flagship**.
+
+<Checkpoint
+  challenge="Implemente a função `criarSpan(nome, opcoes)` que monta o objeto de opcoes para tracer.startSpan do OpenTelemetry. Recebe: nome (string, ex: 'checkout.process'), opcoes = { atributos: object (ex: { 'user.id': 'u-456' }), parent: object|null (span context, ex: { traceId, spanId }), kind: number (1=INTERNAL, 2=SERVER, 3=CLIENT, 4=PRODUCER, 5=CONSUMER, default 1) }. Retorna: { name: nome, kind: opcoes.kind ?? 1, attributes: { ...opcoes.atributos }, links: [] }. Se parent for fornecido, retorna tambem a chave 'links' com [{ context: parent }]."
+  starterCode={`// Implemente criarSpan(nome, opcoes) que monta o objeto de
+// opcoes para tracer.startSpan do OpenTelemetry.
+//
+// Schema de entrada:
+//   nome: string, ex: 'checkout.process'
+//   opcoes: {
+//     atributos?: object,   // ex: { 'user.id': 'u-456' }
+//     parent?: object|null, // span context, ex: { traceId, spanId }
+//     kind?: number         // 1=INTERNAL, 2=SERVER, 3=CLIENT, 4=PRODUCER, 5=CONSUMER, default 1
+//   }
+//
+// Schema de saida:
+//   {
+//     name: nome,
+//     kind: opcoes.kind ?? 1,
+//     attributes: { ...(opcoes.atributos || {}) },
+//     links: opcoes.parent ? [{ context: opcoes.parent }] : []
+//   }
+function criarSpan(nome, opcoes) {
+  return { name: '' };
+}
+
+const _r1 = criarSpan('user.click_checkout', { atributos: { 'user.id': 'u-456' } });
+console.log(JSON.stringify(_r1));
+
+const _r2 = criarSpan('http.fetch', { kind: 3, atributos: { 'http.method': 'POST' }, parent: { traceId: 'abc', spanId: 'def' } });
+console.log(JSON.stringify(_r2));
+
+const _r3 = criarSpan('server.checkout', { kind: 2 });
+console.log(JSON.stringify(_r3));`}
+  expected='{"name":"user.click_checkout","kind":1,"attributes":{"user.id":"u-456"},"links":[]}
+{"name":"http.fetch","kind":3,"attributes":{"http.method":"POST"},"links":[{"context":{"traceId":"abc","spanId":"def"}}]}
+{"name":"server.checkout","kind":2,"attributes":{},"links":[]}'
+  slug="observabilidade-frontend"
+  nodeId="open-telemetry-web"
+/>
+
+<Quiz
+  question="Por que OpenTelemetry (OTel) e' considerado o padrao vendor-neutral de observabilidade e quando usar OTel vs Sentry direto?"
+  options={[
+    {
+      text: "OTel e' o spec CNCF que define API + SDK + protocolo (OTLP) pra emitir logs/metrics/traces de forma vendor-neutral. 1 SDK no client envia pra qualquer backend (Sentry, Datadog, Honeycomb, Jaeger, Tempo). Use OTel quando precisa de traces distribuidos cross-service, vendor-neutrality, ou ja' tem OTel no backend. Use Sentry direto pra simplicidade (errors + RUM + traces em 1 setup).",
+      correct: true,
+      explanation:
+        "OTel = **spec + SDK + protocolo** (OTLP) **vendor-neutral**. **Vendor-neutral** significa: 1 SDK no client, **N backends** possiveis. Voce **nao fica preso** - troca de Sentry pra Datadog sem mudar codigo, so' o exporter URL. **Sentry SDK** = opinionated, **opinionated** = opinionated. **Sentry** da error tracking + RUM + traces em 1 setup - **mais facil**, mas se voce quiser Datadog ou Honeycomb, **reescreve**. Use **OTel** quando: (1) **traces distribuidos cross-service** (precisa de profundidade em sistemas complexos), (2) **vendor-neutrality** (pode trocar backend sem rewrite), (3) **ja' tem OTel no backend** (consistencia). Use **Sentry direto** quando: (1) **simplicidade** > profundidade, (2) so' precisa de errors + RUM basico, (3) nao quer aprender OTel API. **Em 2026, Sentry aceita OTel como input** - pode usar OTel SDK + Sentry backend. **Mix and match**.",
+    },
+    {
+      text: "OTel e' melhor que Sentry sempre - use Sentry so' se nao puder usar OTel.",
+      correct: false,
+      explanation:
+        "Falso. OTel e' **mais poderoso** mas **mais complexo**. Sentry e' **mais simples** mas **opinionated**. Para apps pequenos, Sentry e' melhor (5 min de setup vs 30 min). Para sistemas distribuidos complexos, OTel e' melhor (traces cross-service). A decisao e' **trade-off simplicidade vs flexibilidade**. **Nenhum e' 'sempre melhor'**. Use Sentry pra **comecar** (5 min), migre pra OTel quando precisar de **traces cross-service** ou **vendor-neutrality**.",
+    },
+    {
+      text: "OTel so' funciona em backend, nao em browser.",
+      correct: false,
+      explanation:
+        "Falso. OTel tem **SDK pra browser** (`@opentelemetry/sdk-web`) que roda **inteiramente no client** - emite traces do browser, propaga via W3C Trace Context, e exporta via OTLP pra backend. **E' um dos principais casos de uso** - distributed tracing cross-service comeca no browser. OTel tambem funciona em Node, Python, Go, Java, Rust, .NET, etc - **toda linguagem**. Em 2026, OTel e' o **spec** da CNCF, **multi-linguagem**, com implementacoes oficiais pra 11+ linguagens.",
+    },
+  ]}
+/>

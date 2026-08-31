@@ -6,8 +6,9 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-16-success.svg)](./roadmaps)
-[![Projetos](https://img.shields.io/badge/projetos-15-blue.svg)](./projects)
+[![Trilhas](https://img.shields.io/badge/trilhas-38-success.svg)](./roadmaps)
+[![Projetos](https://img.shields.io/badge/projetos-17-blue.svg)](./projects)
+[![Bootcamps](https://img.shields.io/badge/bootcamps-2-orange.svg)](./bootcamps)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
 [![Issues](https://img.shields.io/badge/💬-Issues-blueviolet.svg)](https://github.com/lucianodiisouza/aprenda-community/issues)
 
@@ -19,106 +20,48 @@ O **Aprenda** é um projeto de roadmaps de aprendizado de programação. Este
 repositório é a **face pública e colaborativa** dele: aqui a comunidade abre PRs
 sugerindo trilhas, corrigindo erros, melhorando recursos e adicionando conteúdo.
 
-Trilhas hoje:
+São **38 trilhas** hoje, cada uma um grafo de nós (do básico ao
+avançado) com Quiz, Mermaid e projeto final, organizadas em 5 áreas:
 
-- 📘 [**HTML**](./roadmaps/html) - a linguagem de marcação que estrutura toda a web.
-  **18 nós**, do zero absoluto até projeto final. Ideal como primeira
-  trilha antes de CSS ou JavaScript.
-- 🟢 [**Programação do Zero**](./roadmaps/programacao-do-zero) - para
-  quem nunca programou: pensamento computacional, lógica, primeira
-  linguagem, primeiro projeto. **13 nós**, em PT-BR.
-- 🟣 [**Frontend**](./roadmaps/frontend) - para quem quer construir a
-  parte visual e interativa da web: HTML, CSS, JavaScript, React.
-  **12 nós**. Assume o básico de JS.
-- 🟠 [**Backend**](./roadmaps/backend) - para quem quer construir a
-  parte que roda no servidor: HTTP, Node.js, Express, REST, banco de
-  dados, ORM, autenticação JWT, validação, testes, async profundo,
-  error handling e debugging. **15 nós**. Stack curado: Node.js +
-  Express + Prisma + PostgreSQL + JWT + Zod + Vitest.
-- 🔷 [**TypeScript**](./roadmaps/typescript) - o superconjunto tipado
-  do JavaScript, hoje default do mercado backend. Do "o que é TS" até
-  a integração completa com Express e ORM, passando por tipos
-  primitivos, unions, generics, utilitários (`Partial`, `Pick`,
-  `Omit`, `Record`), `tsconfig.json`, `tsx` + `tsc` em Node, e
-  tipagem de `req`/`res`/middlewares. **12 nós**. Pré-requisito
-  recomendado (não bloqueante) da trilha Backend.
-- 🗃️ [**NoSQL**](./roadmaps/nosql) - complemento à trilha de SQL:
-  o que é NoSQL, **modelo de documento** (MongoDB: setup, CRUD,
-  consultas, agregação, embed vs reference) e **chave-valor**
-  (Redis: tipos de dados, cache, sessão, rate limit), fechando
-  com um guia prático de decisão SQL vs NoSQL e um projeto final
-  de API com **Postgres + Redis**. **10 nós**.
-- 🔀 [**Git**](./roadmaps/git) - controle de versão do zero ao avançado:
-  commits, branches, merge, remotos, rebase, reflog, workflows e uma
-  primeira contribuição open source. **23 nós**, cobrindo básico,
-  intermediário e avançado com prática.
-- 📊 [**Complexidade de Algoritmos**](./roadmaps/complexidade-de-algoritmos)
-  - do "o que é um algoritmo lento" à análise amortizada e Master
-  Theorem. **13 nós**, cobrindo básico (O(1), O(n), O(n²)),
-  intermediário (Big O formal, O(log n), análise de loops) e
-  avançado (Big Ω/Θ, complexidade de espaço, recursão, análise
-  amortizada) com prática de medição no projeto final.
-- 🎨 **CSS** (4 trilhas, **40 nós** no total) - a linguagem de
-  estilo da web, dividida para aprofundar o que importa:
-  - [**CSS Fundamentos**](./roadmaps/css-fundamentos) (15 nós,
-    iniciante): o que é CSS, sintaxe, inclusão, seletores, cores,
-    unidades, tipografia, box model, display, backgrounds, sombras,
-    pseudo-classes, pseudo-elementos, cascata/especificidade,
-    DevTools.
-  - [**CSS Layout**](./roadmaps/css-layout) (10 nós,
-    intermediário): position, **Flexbox aprofundado em 4 nós**,
-    **Grid aprofundado em 4 nós**, responsividade mobile-first.
-  - [**CSS Animações**](./roadmaps/css-animacoes) (6 nós,
-    intermediário): transitions, transform (2D/3D), `@keyframes`
-    básico e avançado, casos clássicos (spinner, skeleton, modal,
-    toast) e **acessibilidade visual** (`prefers-reduced-motion`,
-    `prefers-color-scheme`, `prefers-contrast`).
-  - [**CSS Moderno**](./roadmaps/css-moderno) (9 nós, avançado):
-    custom properties, `clamp()`/`min()`/`max()`/`calc()`, Container
-    Queries, `:has()`, Logical Properties, arquitetura (BEM, Tailwind,
-    CSS-in-JS), performance, frameworks como mapa de opções, e
-    projeto final de landing page.
-- 🐳 **Containers e Orquestração** (3 trilhas, **30 nós** no total)
-  - [**Docker Fundamentos**](./roadmaps/docker-fundamentos) (10 nós,
-    intermediário): o que é container vs VM, ciclo de vida
-    (`run`/`ps`/`logs`/`exec`/`stop`/`rm`), imagens e layers, Dockerfile
-    (FROM, WORKDIR, COPY, RUN, CMD), volumes, networks bridge com DNS
-    interno, imagens enxutas (alpine, `.dockerignore`, multi-stage
-    build) e projeto final de empacotar uma aplicação com `HEALTHCHECK`.
-  - [**Docker Compose e Workflows**](./roadmaps/docker-compose-e-workflows)
-    (8 nós, intermediário): orquestrar uma stack com
-    `docker-compose.yml`, `services` + `depends_on` + `healthcheck`,
-    variáveis em `.env` (com `.env.example` no Git), volumes nomeados
-    vs bind mounts, profiles (dev/prod), watch/hot reload e projeto
-    final de uma stack realista (app + banco + cache) com healthcheck
-    e `depends_on: condition: service_healthy`.
-  - [**Kubernetes**](./roadmaps/kubernetes) (12 nós, avançado):
-    arquitetura do cluster (control plane + workers), cluster local
-    com `minikube` ou `k3d`, `kubectl` no dia a dia, Pods, Deployments
-    (rolling update, rollback, scaling), Services (ClusterIP, NodePort,
-    LoadBalancer), ConfigMaps, Secrets, PV/PVC com StatefulSet,
-    Ingress, probes (startup/liveness/readiness) + HPA + resource
-    limits, Helm (charts, values, Artifact Hub) e projeto final
-    de stack completa no cluster.
+- 🧱 **Fundamentos** - Programação do Zero, Terminal, Git, Estruturas de Dados…
+- 🎨 **Frontend & Web** - HTML, CSS, React, TypeScript, Angular, Next.js, a11y…
+- 🗄️ **Backend & Dados** - Backend (Node/Express), SQL, NoSQL, RabbitMQ.
+- 🐳 **DevOps & Infra** - Docker, Docker Compose, Kubernetes.
+- 🤖 **IA & Conteúdo** - Prompt Engineering, Engenharia assistida por IA.
 
-- 🤖 [**Prompt Engineering**](./roadmaps/prompt-engineering) -
-  ensinar a usar IA na era dos LLMs. **24 nós** em 3 fases lineares
-  (Básico, Intermediário, Avançado), do zero absoluto (o que é um LLM)
-  até construir produtos com IA. Agnóstica de stack: não exige saber
-  programar, com Mermaid, Quiz e projeto final de prompt design.
+👉 **Veja a lista completa, com contagem de nós e nível, no
+[Catálogo](./CATALOGO.md).**
 
-> Mais trilhas chegando: Python, Estruturas de Dados…
-> Acompanhe nas [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).
+## 🎓 Bootcamps
+
+Um [**bootcamp**](./bootcamps) é uma **jornada curada** que encadeia
+trilhas e projetos numa ordem com começo, meio e fim - do zero a
+"pronto pro mercado". Ele **não tem conteúdo próprio**: é curadoria
+que aponta pra trilhas e projetos que já existem, e o progresso é
+calculado a partir do progresso delas.
+
+- 🟣 [**Desenvolvedor Frontend**](./bootcamps/desenvolvedor-frontend) -
+  do zero absoluto ao frontend de produção (React + TypeScript, Next.js,
+  testes, performance, a11y, segurança e edge deploy). **24 módulos**,
+  ~7 meses. Nível iniciante.
+- 🟠 [**Desenvolvedor Backend**](./bootcamps/desenvolvedor-backend) -
+  a jornada server-side com Node, banco de dados, mensageria e deploy.
+  **16 módulos**, ~5 meses. Nível intermediário.
+
+Cada bootcamp vive em `bootcamps/<slug>/bootcamp.json`. Veja a
+[Anatomia de um `bootcamp.json`](./CONTRIBUTING.md#anatomia-de-um-bootcampjson)
+no CONTRIBUTING pra propor ou editar um.
 
 ## 🛠️ Projetos práticos
 
 Além das trilhas, o repositório também guarda [**Projetos**](./projects):
-desafios práticos que exercitam o que as trilhas ensinam. São **9
+desafios práticos que exercitam o que as trilhas ensinam. São **17
 projetos** (do "olá mundo" em HTML/CSS até system design), cada um
 com um brief em MDX: objetivo, requisitos, desafios extras, dicas.
 
 Diferente de uma trilha (que é um grafo de conceitos), um projeto é
-um **documento único** - o "brief" do desafio. Veja
+um **documento único** - o "brief" do desafio. A lista completa está
+no [Catálogo](./CATALOGO.md); veja
 [`projects/README.md`](./projects/README.md) para o formato e
 [`templates/project.mdx`](./templates/project.mdx) para o esqueleto.
 
@@ -164,6 +107,26 @@ passo. Se for editar texto, dê uma olhada no
 fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge → vira tag
 ```
 
+## 👀 Preview local (veja sua trilha renderizada)
+
+Antes de abrir o PR, dá pra ver sua trilha com o **mesmo visual do site**,
+rodando na sua máquina:
+
+```bash
+cd preview
+npm install
+npm run dev
+```
+
+Abra o endereço que o Vite mostrar (por padrão `http://localhost:5173`). O app
+lê `roadmaps/` **direto** - sem sync, sem o app principal, sem login - e
+recarrega sozinho quando você edita um `.mdx` ou o `roadmap.json`.
+
+É uma **prévia de conteúdo**: reproduz tema, fontes, tipografia, a árvore de nós,
+`Quiz` e `Mermaid`. Progresso, login e busca não estão aqui, e alguns componentes
+interativos aparecem como marcador. Detalhes em
+[`preview/README.md`](./preview/README.md).
+
 ## 📂 Estrutura do repositório
 
 ```
@@ -176,19 +139,27 @@ fork → edite (ou crie) um .mdx → abra PR → CI valida → review → merge 
 │       └── meta/                 # (opcional) notas editoriais da trilha
 ├── projects/
 │   └── <slug-do-projeto>.mdx     # um arquivo por projeto (brief)
+├── bootcamps/
+│   └── <slug-do-bootcamp>/
+│       └── bootcamp.json         # jornada curada: trilhas + projetos em ordem
+├── contributors.json             # contribuidores por release (gerado)
 ├── templates/
 │   ├── node.mdx                  # esqueleto de um nó
 │   ├── project.mdx               # esqueleto de um projeto
 │   └── roadmap.json              # esqueleto de roadmap.json
+├── preview/
+│   └── ...                       # app local pra ver a trilha renderizada (Vite)
+├── scripts/
+│   └── ...                       # validação (validate.mjs) e build-contributors
 ├── docs/
-│   └── style-guide.md            # como escrever (voz, tom, curadoria)
-├── meta/
-│   ├── editorial-decisions.md    # decisões de escopo (ADRs de conteúdo)
-│   └── changelog.md              # o que mudou em cada release
+│   ├── style-guide.md            # como escrever (voz, tom, curadoria)
+│   └── proposals/                # propostas de trilha em discussão
 ├── .github/
 │   ├── ISSUE_TEMPLATE/           # templates de issue (bug, trilha, nó, recurso)
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── workflows/                # CI: valida JSON, frontmatter e links
+├── CATALOGO.md                   # lista completa de trilhas, projetos e bootcamps
+├── CHANGELOG.md                  # o que mudou em cada release
 ├── CODE_OF_CONDUCT.md
 ├── CODEOWNERS
 ├── CONTRIBUTING.md
@@ -213,9 +184,11 @@ conteúdo aberto.
 
 ## 🌟 Reconhecimento
 
-Cada nó tem no frontmatter um campo opcional `credits` (em breve) pra credit
-ar contribuidores. Versão inicial: seu nome vai pro changelog e pro README de
-contribuidores da release.
+Todo mundo que contribui entra em [`contributors.json`](./contributors.json)
+- gerado por [`scripts/build-contributors.mjs`](./scripts) a partir do
+histórico do repo - além de aparecer no [CHANGELOG](./CHANGELOG.md) da
+release. Nós também aceitam um campo opcional `credits` no frontmatter
+pra creditar quem escreveu aquele conteúdo específico.
 
 ## 📣 Onde nos encontrar
 

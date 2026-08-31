@@ -1,0 +1,124 @@
+---
+id: dialogos-acessiveis
+title: "Diálogos Acessíveis: Foco, Escape e Retorno"
+resources:
+  - title: "Padrão de diálogo modal"
+    url: https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
+    type: doc
+    lang: en
+    free: true
+  - title: "Elemento dialog"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/dialog
+    type: doc
+    lang: pt
+    free: true
+---
+
+Modal não é só uma caixa central com fundo escuro. Quando ele abre, **o contexto
+de interação muda**: conteúdo de fundo fica indisponível, o foco entra no diálogo
+e depois volta ao ponto de origem.
+
+```html
+<button id="abrir-exclusao" type="button">Excluir relatório</button>
+
+<dialog id="confirmacao" aria-labelledby="titulo-confirmacao">
+  <h2 id="titulo-confirmacao">Excluir relatório?</h2>
+  <p>Essa ação não poderá ser desfeita.</p>
+  <form method="dialog">
+    <button value="cancelar">Cancelar</button>
+    <button value="excluir">Excluir definitivamente</button>
+  </form>
+</dialog>
+```
+
+### Prefira `<dialog>` quando ele atende ao caso
+
+O elemento nativo já oferece uma base melhor do que começar com uma `div` e
+reconstruir tudo. `showModal()` cria a modalidade e mantém a navegação de foco no
+diálogo nos navegadores compatíveis.
+
+### O foco precisa acompanhar o diálogo
+
+Ao abrir, mova o foco para um ponto apropriado dentro dele. Em uma confirmação
+destrutiva, "Cancelar" pode ser o destino mais seguro. Em um formulário longo, o
+título ou o primeiro campo pode fazer mais sentido.
+
+### Ao fechar, devolva o foco
+
+```js
+const abrir = document.querySelector('#abrir-exclusao');
+const dialogo = document.querySelector('#confirmacao');
+const cancelar = dialogo.querySelector('[value="cancelar"]');
+
+abrir.addEventListener('click', () => {
+  dialogo.showModal();
+  cancelar.focus();
+});
+
+dialogo.addEventListener('close', () => {
+  if (dialogo.returnValue === 'excluir') {
+    excluirRelatorio();
+  }
+  abrir.focus();
+});
+```
+
+O `<dialog>` fecha com `Escape` por padrão. Não remova essa saída sem uma razão
+forte. Também mantenha um botão visível para quem não conhece o atalho.
+
+```css
+dialog {
+  max-width: min(32rem, calc(100% - 2rem));
+  border: 0;
+  border-radius: 0.5rem;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 65%);
+}
+```
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Gatilho
+    Gatilho --> Dialogo: showModal
+    Dialogo --> Dialogo: Tab entre controles
+    Dialogo --> Gatilho: Cancelar ou Escape
+    Dialogo --> Gatilho: Confirmar ação`}
+  caption="Ciclo de foco de um diálogo: sair do gatilho, permanecer no modal e retornar ao fechar."
+/>
+
+- **Diálogo modal** muda temporariamente a área de interação.
+- **Foco** entra no diálogo e não passeia pelo conteúdo de fundo.
+- **Retorno de foco** leva a pessoa de volta ao ponto de onde veio.
+- **Nome e descrição** explicam a decisão antes dos botões de ação.
+
+### Checklist de teste do diálogo
+
+1. Abra pelo teclado e confira onde o foco entrou.
+2. Pressione `Tab` várias vezes: nenhum controle do fundo deve receber foco.
+3. Feche com `Escape` e confirme o retorno ao botão de abertura.
+4. Abra de novo, confirme a ação e confira o retorno ou o próximo foco lógico.
+5. Com zoom alto, verifique se título, texto e botões continuam visíveis e roláveis.
+
+No próximo nó, vamos sair dos controles e olhar para conteúdo em **áudio e vídeo**.
+
+<Quiz
+  question="O que deve acontecer com o foco quando um modal é fechado?"
+  options={[
+    {
+      text: "Ele deve voltar para o controle que abriu o modal",
+      correct: true,
+    },
+    {
+      text: "Ele deve ir para o começo do body",
+      correct: false,
+      explanation: "Isso tira a pessoa do contexto e força navegação desnecessária.",
+    },
+    {
+      text: "Ele deve sumir até a pessoa clicar em outro lugar",
+      correct: false,
+      explanation: "Foco previsível é essencial para continuidade da interação.",
+    },
+  ]}
+/>

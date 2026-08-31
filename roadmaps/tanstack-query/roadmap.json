@@ -1,0 +1,72 @@
+{
+  "slug": "tanstack-query",
+  "title": "TanStack Query: server state na prática",
+  "description": "Trilha sobre TanStack Query (React Query) pra gerenciar o estado que vem do servidor: queries, mutations, cache, invalidação, optimistic updates e devtools. Complementa o data fetching da `frontend` (que é vanilla `fetch` + `useEffect`) e da `nextjs` (que é server-side) com o lado client-side, o paradigma que a maioria das SPAs precisa dominar.",
+  "difficulty": "intermediario",
+  "skills": [
+    "tanstack-query",
+    "react-query",
+    "server-state",
+    "cache",
+    "invalidation",
+    "optimistic-updates",
+    "react"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "o-que-e-server-state",
+      "title": "O que é server state (e por que não cabe em useState)",
+      "type": "topic",
+      "recommended": true,
+      "children": ["queries-basico"]
+    },
+    {
+      "id": "queries-basico",
+      "title": "Queries na prática: useQuery, query keys, staleTime, gcTime",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["mutations"]
+    },
+    {
+      "id": "mutations",
+      "title": "Mutations: useMutation, onSuccess, onError, optimistic updates",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cache-invalidation"]
+    },
+    {
+      "id": "cache-invalidation",
+      "title": "Invalidação de cache: refetch, structural sharing, when to invalidate",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["padroes-avancados"]
+    },
+    {
+      "id": "padroes-avancados",
+      "title": "Padrões avançados: dependent, parallel, infinite queries, suspense",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["devtools-debugging"]
+    },
+    {
+      "id": "devtools-debugging",
+      "title": "Devtools e debugging: React Query Devtools, network tab, erros comuns",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: app de tarefas com fetch, mutations, cache e offline",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

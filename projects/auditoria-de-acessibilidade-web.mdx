@@ -1,0 +1,65 @@
+---
+slug: auditoria-de-acessibilidade-web
+title: "Auditoria de Acessibilidade Web"
+description: "Escolha um fluxo real ou fictício, corrija barreiras de acessibilidade e entregue um relatório com testes manuais e automatizados."
+difficulty: intermediario
+published: "2026-08-30"
+skills:
+  - acessibilidade
+  - wcag
+  - html-semantico
+  - css
+  - testes
+  - aria
+trilhas:
+  - acessibilidade-web
+  - html
+  - css-fundamentos
+estimate: "1 fim de semana"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Pegue uma tela de cadastro, checkout, login ou contato e transforme em um fluxo
+mais acessível. Você pode partir de um projeto próprio, de uma tela fictícia ou de
+um HTML simples criado só para este desafio.
+
+## Objetivo
+
+Praticar a trilha de **Acessibilidade Web** de ponta a ponta: semântica,
+estrutura, teclado, foco, formulários, mensagens de erro, contraste, conteúdo
+dinâmico e testes. No fim, a entrega não é só uma tela melhor: é também um
+relatório que mostra o que foi encontrado, corrigido e validado.
+
+## Requisitos
+
+- [ ] Escolher um fluxo com pelo menos 3 etapas ou estados, como abrir a página, preencher dados e concluir a ação
+- [ ] Usar HTML semântico com landmarks, headings em ordem e controles nativos sempre que possível
+- [ ] Garantir navegação completa por teclado, sem keyboard trap e com foco visível
+- [ ] Criar formulários com `label`, instruções, mensagens de erro específicas e associação por `aria-describedby`
+- [ ] Validar contraste de textos, botões, bordas importantes e estados de foco/erro
+- [ ] Conferir zoom de 200%, reflow e redução de movimento quando houver animações
+- [ ] Rodar pelo menos uma ferramenta automática, como Lighthouse, WAVE, axe DevTools, Accessibility Insights ou Pa11y
+- [ ] Testar o fluxo com leitor de tela ou painel de acessibilidade do navegador
+- [ ] Entregar um relatório curto com barreiras encontradas, impacto, correção feita e evidência do reteste
+
+## Desafios extras
+
+- [ ] Automatizar uma verificação com axe-core, Playwright ou Pa11y CI
+- [ ] Incluir um modal, toast ou atualização dinâmica com foco e anúncio acessíveis
+- [ ] Criar uma comparação "antes e depois" com prints, checklist ou vídeo curto
+- [ ] Testar com outra pessoa e registrar um problema que ferramenta automática não encontrou
+- [ ] Publicar a versão corrigida e anexar o relatório no README do projeto
+
+## Dicas
+
+- Comece pelo fluxo principal. Uma página bonita, mas impossível de concluir por
+  teclado, ainda não resolveu o problema.
+- Não tente corrigir tudo de uma vez. Faça uma passada para semântica, outra para
+  teclado/foco, outra para formulários e outra para contraste.
+- Ferramenta automática é apoio, não certificado. Ela ajuda a encontrar problemas
+  repetíveis, mas não sabe se o texto alternativo, a ordem do fluxo ou a mensagem
+  de erro fazem sentido para uma pessoa.
+- Escreva achados de forma reproduzível: onde aconteceu, como chegar no problema,
+  qual o impacto e o que mudou depois da correção.

@@ -1,0 +1,502 @@
+---
+id: real-time-no-browser
+title: "Real-time no browser: polling, long-polling, SSE, WebSocket"
+resources:
+  - title: "MDN - WebSocket API (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - EventSource (oficial, EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/EventSource
+    lang: en
+    type: doc
+    free: true
+  - title: "HTML Spec - Server-Sent Events (oficial, EN)"
+    url: https://html.spec.whatwg.org/multipage/server-sent-events.html
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce terminou o `frontend` e o
+`backend`. App funcionando, com REST API,
+fetch, e o modelo classico request/response.
+Mas ha uma categoria de apps que o REST
+nao atende: **notificacoes em tempo real**,
+**chat**, **dashboards que atualizam ao
+vivo**, **colaboracao multi-user**. O REST
+e' request/response: client pede, server
+responde. Mas e quando o **server precisa
+mandar dados sem o client pedir**? (chat
+nova mensagem, cotacao mudou, etc). O REST
+nao cobre isso.
+
+Em 2026, ha **3 abordagens canonicas** pra
+real-time no browser: **polling**, **long-
+polling**, **Server-Sent Events (SSE)** e
+**WebSocket**. Cada uma com tradeoffs
+diferentes de latencia, complexidade, e
+suporte. Saber **quando usar cada** e' o
+ponto de entrada pra real-time.
+
+Se voce entende as 4 abordagens, a
+**comparacao de tradeoffs** (latencia,
+custo de conexao, complexidade, suporte), e
+o "**quando usar cada**" (notificacao
+one-way vs chat bidirecional vs dashboard
+real-time), voce sai de "como eu faco
+real-time?" pra "qual ferramenta resolve
+meu caso?".
+
+## O essencial 🟢
+
+**Real-time no browser em uma frase: o
+server precisa **mandar dados pro client**
+sem o client pedir, ou **ambos** trocam
+dados em alta frequencia. Diferente do
+REST classico (client pede, server
+responde).**
+
+Os 3 cenarios:
+
+1. **Server-push (one-way):** server manda
+   pro client. Ex: notificacao de novo
+   email, cotacao, log stream.
+2. **Bidirecional:** ambos mandam. Ex:
+   chat, jogo multiplayer, colaboracao.
+3. **Subscription-based:** client
+   "inscrito" em um canal, recebe updates.
+   Ex: dashboard de metricas, status de
+   job.
+
+**As 4 abordagens, em ordem cronologica:**
+
+| Abordagem         | Como funciona                       | Latencia | Custo | Caso de uso           |
+| ----------------- | ----------------------------------- | -------- | ----- | --------------------- |
+| **Polling**       | Client faz GET a cada N segundos   | 1-Ns     | Alto (requests constantes) | Notificacao low-prio  |
+| **Long Polling**  | Client faz GET, server segura a response ate ter data | 0-100ms  | Medio | Substitui polling, simples |
+| **SSE**           | Conexao HTTP persistente, server streama events | 0-100ms | Baixo | One-way push, log streams |
+| **WebSocket**     | Conexao full-duplex, bidirecional   | 0-50ms   | Baixo | Chat, games, colaboracao |
+
+**Polling - "pergunta de novo em Ns".** O
+pattern mais simples: `setInterval` chama
+fetch a cada X segundos.
+
+```ts
+setInterval(async () => {
+  const data = await fetch("/api/notifications").then((r) => r.json());
+  if (data.length > 0) {
+    setNotifications(data);
+  }
+}, 5000);  // a cada 5s
+```
+
+**Problemas**:
+- **Latencia minima = 5s** (intervalo do
+  poll). Pra real-time, ruim.
+- **Custo alto**: cada poll = request.
+  1000 users × 12 polls/min = 12000
+  req/min so pra "verificacao".
+- **Bateria**: celular acordando radio a
+  cada 5s = bateria morre.
+
+**Use polling quando**: notificacao
+**low-prio** que pode esperar minutos
+(atualizar contadores, status de
+background job) e a implementacao tem que
+ser simples (sem WebSocket server).
+
+**Long Polling - "server segura ate ter
+algo".** O client faz request, mas o
+**server NAO responde imediatamente** -
+ele **segura** a conexao ate ter data
+para mandar (ou ate timeout).
+
+```ts
+async function longPoll() {
+  while (true) {
+    const res = await fetch("/api/poll");
+    const data = await res.json();
+    if (data) {
+      handleData(data);
+    }
+    // Apos receber, abre nova conexao
+  }
+}
+```
+
+O server-side:
+
+```ts
+app.get("/api/poll", async (req, res) => {
+  // Espera ate ter data OU 30s
+  const data = await waitForNewData(30000);
+  res.json(data);
+});
+```
+
+**Pro**: latencia ~0 (assim que server tem
+data, manda). **Contra**: request HTTP
+constante (overhead de abrir/fechar
+conexao).
+
+**Use long polling quando**: voce precisa
+de push-like behavior mas nao pode usar
+WebSocket/SSE (compat com IE11, proxy
+anti-websocket, etc).
+
+**Server-Sent Events (SSE) - "server
+empurra via HTTP".** Conexao HTTP
+persistente (Content-Type: text/event-stream).
+Server **streama** events, client recebe
+via `EventSource`. **One-way only**
+(server → client).
+
+```ts
+// Client
+const source = new EventSource("/api/events");
+
+source.addEventListener("message", (e) => {
+  const data = JSON.parse(e.data);
+  handleData(data);
+});
+
+source.addEventListener("error", (e) => {
+  // SSE reconecta automaticamente!
+});
+```
+
+```ts
+// Server
+app.get("/api/events", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const interval = setInterval(() => {
+    res.write(`data: ${JSON.stringify(getData())}\n\n`);
+  }, 1000);
+
+  req.on("close", () => clearInterval(interval));
+});
+```
+
+**Vantagens do SSE:**
+- **Reconexao automatica** (browser cuida).
+- **Event types** (`event: foo\ndata: ...`).
+- **HTTP puro** - funciona com qualquer
+  proxy/firewall/CDN.
+- **Last-Event-ID** - re-conecta com
+  header, server pode re-enviar eventos
+  perdidos.
+
+**Use SSE quando:** one-way push do server
+(notificacao, log stream, status de job,
+cotacao, dashboard "live"). **NAO use
+SSE para** chat bidirecional, jogos,
+colaboracao (esses precisam WebSocket).
+
+**WebSocket - "full duplex sobre TCP".**
+Protocolo **separado do HTTP** (mas faz
+"upgrade" via HTTP na conexao inicial).
+Apos handshake, **conexao persistente
+bidirecional** - ambos podem mandar a
+qualquer momento.
+
+```ts
+// Client
+const ws = new WebSocket("wss://api.example.com/ws");
+
+ws.addEventListener("open", () => {
+  console.log("Conectado");
+});
+
+ws.addEventListener("message", (event) => {
+  const data = JSON.parse(event.data);
+  handleData(data);
+});
+
+ws.send(JSON.stringify({ type: "ping" }));
+```
+
+**Vantagens do WebSocket:**
+- **Latencia minima** (0-50ms, dependendo
+  de network).
+- **Bidirecional** - client e server
+  trocam dados livremente.
+- **Binario** suportado (Blob, ArrayBuffer).
+- **Eficiente** - 1 conexao, sem overhead
+  HTTP por mensagem.
+
+**Use WebSocket quando:** chat, jogos,
+colaboracao, qualquer caso onde **client
+tambem precisa mandar muito** (nao so
+receber).
+
+**A decision tree: qual abordagem usar.**
+
+| Caso                                  | Recomendado   | Por que                                |
+| ------------------------------------- | ------------- | -------------------------------------- |
+| Notificacao low-prio (1-5 min tolera) | Polling       | Mais simples, sem server complexo     |
+| Notificacao high-prio, 1-way          | SSE           | Reconexao automatica, HTTP puro      |
+| Chat / mensagens                       | WebSocket     | Bidirecional, baixa latencia           |
+| Dashboard de metricas ao vivo         | SSE           | One-way, simple                         |
+| Multiplayer game                       | WebSocket     | Latencia minima + bidirecional         |
+| Log streaming / monitoring             | SSE           | Text/event-stream nativo              |
+| Presence (cursor, online status)      | WebSocket     | Bidirecional, presence events         |
+| Compat com IE11 / proxy antigo        | Long Polling  | Funciona em todo lugar                |
+| File transfer real-time                | WebSocket (binario) | Suporta blob/arraybuffer         |
+
+**Regra 2026**: se voce precisa real-time,
+comece com **SSE** (one-way) ou **WebSocket
+nativo** (bidirecional). Se precisar de
+**fallback automatico**, **rooms**, ou
+**ack**, use **Socket.IO** (lib que
+abstrai tudo isso).
+
+**A "linha do tempo" do real-time.** Em
+2000-2010: polling e long-polling (limitado
+por HTTP). Em 2011: WebSocket API. Em 2015:
+SSE padronizado. Em 2018+: Socket.IO v3+.
+Em 2026: WebTransport (HTTP/3, ainda em
+rollout). **Padrao moderno**: SSE pra
+one-way, WebSocket pra bidirecional.
+
+## Aprofundamento 🟡
+
+**`EventSource` vs `fetch` + ReadableStream
+(custom SSE).** `EventSource` e' a API
+nativa, mas tem limitacoes:
+- So GET.
+- Sem custom headers (cookie OK, mas
+  `Authorization: Bearer` requer polyfill).
+- Sem request body.
+
+Pra casos que precisam de custom headers
+ou POST, use `fetch` com
+`ReadableStream`:
+
+```ts
+const response = await fetch("/api/events", {
+  headers: { "Authorization": `Bearer ${token}` },
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const chunk = decoder.decode(value);
+  // Parse SSE format manualmente
+  for (const line of chunk.split("\n")) {
+    if (line.startsWith("data: ")) {
+      handleData(JSON.parse(line.slice(6)));
+    }
+  }
+}
+```
+
+**Mais codigo**, mas controle total. Em
+2026, o `EventSource` puro resolve 90% -
+use o custom so quando precisar.
+
+**WebSocket vs HTTP/2 streams vs WebTransport.**
+HTTP/2 trouxe **server push** (server
+manda sem request), mas **foi removido**
+em Chrome desde 2022 (overhead, pouco uso).
+WebTransport e' o **sucessor moderno**:
+HTTP/3 + UDP + bidirecional, baixa latencia.
+Em 2026, **suporte parcial** (Chrome OK,
+Firefox 114+, Safari 17+). Para real-time
+moderno, WebSocket ainda e' o **default
+estavel** - WebTransport so faz sentido
+em apps de gaming/colaboracao de alta
+performance.
+
+**`ReadableStream` com cancelamento.**
+Long-lived streams precisam de **cleanup**
+quando o usuario sai:
+
+```ts
+const controller = new AbortController();
+
+async function stream() {
+  const res = await fetch("/api/events", {
+    signal: controller.signal,  // cancela quando controller.abort()
+  });
+  // ...
+}
+
+// Cleanup ao desmontar
+useEffect(() => {
+  return () => controller.abort();
+}, []);
+```
+
+Sem cleanup, **request fica aberta** mesmo
+depois do componente desmontar, gerando
+"Cannot read property of undefined" em
+codigo que tenta usar o response.
+
+**`EventSource` polyfill.** Pra IE11
+(muitos sistemas corporativos ainda usam
+em 2026) e browsers antigos, use
+`event-source-polyfill`. Adiciona
+`EventSource` se nao existir, com pequenos
+shims (custom headers via query string).
+
+**WebSocket subprotocols.** Alem de URL,
+WebSocket pode especificar **subprotocol**
+(via header `Sec-WebSocket-Protocol`):
+
+```ts
+// Client
+const ws = new WebSocket("wss://api.example.com/ws", "graphql-ws");
+
+// Server
+const wss = new WebSocket.Server({
+  noServer: true,
+  handleProtocols: (protocols, request) => {
+    if (protocols.has("graphql-ws")) return "graphql-ws";
+    return false;  // rejeita
+  },
+});
+```
+
+Util pra **graphql-ws** (subscriptions
+GraphQL), **wamp** (Web Application
+Messaging Protocol), ou **protocolos
+proprietarios**. Em 2026, graphql-ws e' o
+caso mais comum.
+
+## Pra quem quer ir mais alem 🔴
+
+**`EventSource` reconexao automatica e
+Last-Event-ID.** Quando o browser detecta
+que a conexao caiu, ele **re-conecta
+automaticamente** com o header
+`Last-Event-ID` (o ID do ultimo evento
+recebido). O server pode usar isso pra
+**re-enviar eventos perdidos** desde
+a desconexao:
+
+```ts
+// Server
+app.get("/api/events", (req, res) => {
+  const lastId = req.headers["last-event-id"];
+
+  if (lastId) {
+    // Re-envia eventos desde lastId ate agora
+    const missed = events.filter((e) => e.id > lastId);
+    for (const e of missed) {
+      res.write(`id: ${e.id}\ndata: ${e.data}\n\n`);
+    }
+  }
+  // Continua stream normal...
+});
+```
+
+E o client precisa setar IDs nos eventos:
+
+```ts
+res.write(`id: ${event.id}\ndata: ${JSON.stringify(event.data)}\n\n`);
+```
+
+**Sem isso, SSE perde eventos na
+reconexao.** Cobre em `sse` com mais
+detalhes.
+
+**WebSocket compression (`permessage-
+deflate`).** WebSocket suporta **compressao
+por mensagem** (RFC 7692). Reduz ate 80%
+do bandwidth. Suportado por todos os
+browsers modernos. Server (Node `ws`):
+
+```ts
+const wss = new WebSocket.Server({
+  port: 8080,
+  perMessageDeflate: true,  // habilita compressao
+});
+```
+
+**Cuidado**: em redes lentas, compressao
+pode adicionar latencia. Em LAN, nao
+usar. Em mobile 3G/4G, **sempre usar**.
+
+**`ping/pong` - o heartbeat do WebSocket.**
+WebSocket nao detecta conexao morta (NAT
+timeout, proxy timeout, etc). **Ping/pong**
+e' o "heartbeat" que detecta:
+
+```ts
+// Server
+setInterval(() => {
+  ws.ping();
+}, 30000);  // ping a cada 30s
+
+ws.on("pong", () => {
+  ws.isAlive = true;
+});
+
+// Browser
+ws.addEventListener("pong", () => {
+  // marcar como vivo
+});
+```
+
+Sem ping/pong, **conexao "zumbi"** parece
+viva mas nao manda dados. O usuario ve
+"conectado" mas nao recebe nada. Cobre em
+`reconexao-e-estado`.
+
+**Leitura recomendada:**
+
+- [MDN - WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket) - doc oficial MDN, completa.
+- [MDN - EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) - a API SSE.
+- [HTML spec - Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html) - a spec W3C, definitiva.
+
+> Dica: o erro mais comum em real-time e'
+> **comecar com polling**. "Vou fazer
+> setInterval a cada 1s, simples". Em
+> producao, **mata a bateria** do celular
+> e **aumenta a conta de servidor** (mil
+> requests/minuto por mil usuarios). Para
+> **one-way push**, use **SSE** -
+> reconexao automatica, 1 conexao
+> persistente, suporte em todos os
+> browsers modernos. Para **bidirecional**,
+> use **WebSocket**. Polling so faz sentido
+> pra latencia > 1min e implementacao
+> simples (background jobs, status check).
+
+No proximo no, vamos **WebSocket nativo** a
+fundo: a API completa, `readyState` e os
+eventos, mensagens texto/binario, e o
+**state machine** que governa o ciclo de
+vida de uma conexao.
+
+<Quiz
+  question="Qual a diferenca fundamental entre SSE (Server-Sent Events) e WebSocket?"
+  options={[
+    {
+      text: "SSE e' one-way (server -> client apenas) sobre HTTP. WebSocket e' full-duplex (bidirecional) sobre um protocolo separado. SSE para notificacoes/dashboards; WebSocket para chat/jogos/colaboracao.",
+      correct: true,
+      explanation:
+        "SSE e' um canal HTTP persistente (text/event-stream) que server usa para empurrar dados pro client. **One-way only** - nao da pro client mandar pelo mesmo canal (tem que usar fetch separado). WebSocket faz upgrade de uma conexao HTTP para um protocolo proprio (ws:// ou wss://), full-duplex - ambos lados podem mandar a qualquer momento. SSE funciona com qualquer CDN/proxy/firewall (HTTP puro). WebSocket pode ter problemas com proxies antigos. SSE reconecta automaticamente (browser cuida). WebSocket exige codigo proprio de reconexao. SSE para one-way push, WebSocket para bidirecional. Escolha pela direcionalidade do dado, nao pela popularidade.",
+    },
+    {
+      text: "Sao a mesma coisa com nomes diferentes - WebSocket e' o nome antigo de SSE.",
+      correct: false,
+      explanation:
+        "Nao. Sao protocolos diferentes. SSE = Server-Sent Events (text/event-stream, HTTP, one-way, browser faz reconexao). WebSocket = protocolo proprio (ws://, full-duplex, bidirecional, dev faz reconexao). Escolha pela direcionalidade. WebSocket e' o 'padrão' para chat/colaboracao, SSE e' o padrão para notificacoes/dashboards. Ambos coexistem em 2026, com casos de uso diferentes.",
+    },
+    {
+      text: "WebSocket e' sempre melhor que SSE - tem mais features e suporte.",
+      correct: false,
+      explanation:
+        "Nao. WebSocket tem **mais features** (bidirecional, binario), mas SSE tem **vantagens reais** em certos cenarios: (1) HTTP puro - funciona com qualquer proxy/CDN/firewall, (2) reconexao automatica nativa, (3) EventSource API mais simples, (4) menor overhead quando one-way. Para notificacao de novo email, SSE e' MELHOR que WebSocket (one-way, mais simples, melhor compat). WebSocket brilha em chat/jogos onde bidirecional importa. E' questao de caso de uso, nao de 'melhor'.",
+    },
+  ]}
+/>

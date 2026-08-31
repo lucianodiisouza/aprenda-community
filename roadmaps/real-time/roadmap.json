@@ -1,0 +1,83 @@
+{
+  "slug": "real-time",
+  "title": "Real-time: WebSockets, SSE, Socket.IO, reconexao e presence",
+  "description": "Trilha sobre comunicacao real-time no browser: WebSocket nativo (API, readyState, eventos), Server-Sent Events (EventSource, reconexao automatica), Socket.IO (rooms, namespaces, fallback), reconexao e estado (exponential backoff, fila de mensagens offline, heartbeat), e presence e colaboracao (presence indicators, CRDTs, intro). Cobre o lado client; o lado server coberto em backend.",
+  "difficulty": "intermediario",
+  "skills": [
+    "real-time",
+    "websocket",
+    "server-sent-events",
+    "sse",
+    "eventsource",
+    "socket-io",
+    "long-polling",
+    "reconexao",
+    "exponential-backoff",
+    "heartbeat",
+    "presence",
+    "rooms",
+    "namespaces",
+    "crdt",
+    "yjs",
+    "automerge",
+    "colaboracao",
+    "broadcast"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "real-time-no-browser",
+      "title": "Real-time no browser: polling, long-polling, SSE, WebSocket",
+      "type": "topic",
+      "recommended": true,
+      "children": ["websockets-nativo"]
+    },
+    {
+      "id": "websockets-nativo",
+      "title": "WebSockets nativo: readyState, eventos, mensagens binarias e texto",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["sse"]
+    },
+    {
+      "id": "sse",
+      "title": "Server-Sent Events: EventSource, reconexao automatica, tipos de mensagem",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["socket-io"]
+    },
+    {
+      "id": "socket-io",
+      "title": "Socket.IO: rooms, namespaces, fallback, ack, broadcast",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["reconexao-e-estado"]
+    },
+    {
+      "id": "reconexao-e-estado",
+      "title": "Reconexao e estado: exponential backoff, heartbeat, fila offline",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["presence-e-colaboracao"]
+    },
+    {
+      "id": "presence-e-colaboracao",
+      "title": "Presence e colaboracao: presence indicators, cursors, CRDTs (intro)",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: chat real-time com rooms, presence e sync de estado",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

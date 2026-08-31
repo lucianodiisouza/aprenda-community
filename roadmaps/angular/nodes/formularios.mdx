@@ -1,0 +1,70 @@
+---
+id: formularios
+title: "Formulários"
+resources:
+  - title: "Angular: Forms"
+    url: https://angular.dev/guide/forms
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Reactive forms"
+    url: https://angular.dev/guide/forms/reactive-forms
+    type: doc
+    lang: en
+    free: true
+---
+
+Formulário parece simples até virar produto: campo obrigatório, erro de formato,
+botão desabilitado, submit duplicado, mensagem da API e edição de dado já
+existente.
+
+Angular trata formulário como estado. Isso é importante porque o valor digitado,
+a validade, o toque no campo e os erros fazem parte do comportamento da tela.
+
+## Reactive Forms
+
+```ts
+import { FormControl, FormGroup, Validators } from "@angular/forms"
+
+form = new FormGroup({
+  titulo: new FormControl("", {
+    nonNullable: true,
+    validators: [Validators.required],
+  }),
+})
+```
+
+No template, o formulário se conecta ao HTML:
+
+```html
+<form [formGroup]="form" (ngSubmit)="salvar()">
+  <input type="text" formControlName="titulo" />
+  <button type="submit" [disabled]="form.invalid">Salvar</button>
+</form>
+```
+
+Reactive Forms são bons quando o formulário tem regra, validação, campos
+dinâmicos ou teste.
+
+## Template-driven forms
+
+Angular também tem template-driven forms, em que mais coisa fica no template.
+Eles servem para formulários simples, mas em apps maiores tendem a esconder
+regra demais no HTML.
+
+## Validação
+
+Validação pode ser síncrona ou assíncrona. A síncrona resolve regras locais,
+como obrigatório e tamanho mínimo. A assíncrona consulta algo externo, como
+verificar se um nome já está em uso.
+
+Três ideias pra levar deste nó:
+
+- **Formulário é estado**, não só marcação HTML.
+- **Validação precisa aparecer no fluxo da tela.**
+- **Reactive Forms deixam regras explícitas no TypeScript.**
+
+> Dica: não espere o usuário clicar em salvar para descobrir tudo. Desabilite o
+> que não pode acontecer e mostre mensagens claras quando fizer sentido.
+
+No próximo nó, vamos enviar e buscar dados usando `HttpClient`.

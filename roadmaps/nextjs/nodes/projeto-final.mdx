@@ -1,0 +1,192 @@
+---
+id: projeto-final
+title: "Projeto Final: app full-stack com auth, CRUD, ISR e deploy"
+---
+
+Hora de unir tudo. Você vai construir uma **app de blog** (ou
+tarefas, ou qualquer CRUD público) com auth, RSC, data fetching
+com cache, Server Actions, streaming, e deploy em produção. A
+ideia é fazer o ciclo completo: código local → CI verde → URL
+pública.
+
+Esse projeto não segue o esqueleto de 3 camadas dos outros nós.
+É um brief de projeto, no estilo de `projects/<slug>.mdx` do
+aprenda-community. Lê até o fim antes de começar.
+
+## O que você vai construir
+
+Um app de **blog com posts** (ou tasks, anotações, links - o
+domínio é seu, mas o esqueleto é blog). Cada user logado pode
+**criar, listar, ver, editar e deletar** os próprios posts. A
+home mostra os posts públicos com **streaming** (cada post
+carrega em Suspense). A página de detalhe é **ISR** (revalida
+quando há mudança). Auth via **GitHub** com Auth.js. Deploy em
+**Vercel** com URL pública.
+
+A escolha do domínio (blog vs tasks) é sua. O que importa é o
+**shape**: lista pública com streaming, detalhe com cache,
+CRUD autenticado, deploy real.
+
+## Objetivo
+
+- Consolidar App Router + RSC + Server Actions + Auth.js em
+  uma app real.
+- Praticar o ciclo "fetch → cache → revalidate" de verdade, em
+  código que vai pra produção.
+- Ver **streaming funcionando** em pages lentas (página com
+  fetch lento mostra skeleton, conteúdo chega aos poucos).
+- Subir pra produção e mostrar URL pública.
+
+## Requisitos (mínimo)
+
+Setup inicial:
+
+- [ ] `pnpm create next-app@latest meu-blog --typescript --app --no-tailwind`
+  (use TypeScript + App Router; Tailwind é opcional)
+- [ ] Estrutura: home `/`, `/posts/[slug]`, `/dashboard`,
+  `/dashboard/new`, `/dashboard/posts/[id]/edit`, `/login`
+- [ ] Schema do banco: `User` (id, name, email, image) e `Post`
+  (id, title, slug, body, published, authorId, createdAt,
+  updatedAt). Use Prisma + SQLite pra simplicidade local
+  (`pnpm add prisma @prisma/client`).
+
+Auth:
+
+- [ ] Auth.js v5 configurado com provider GitHub
+  (`@auth/prisma-adapter`).
+- [ ] `middleware.ts` protegendo `/dashboard/*` (redirect pra
+  `/login` se não autenticado).
+- [ ] Botão "Entrar com GitHub" em `/login` e UserMenu no
+  header com `signOut()`.
+
+CRUD (Server Actions):
+
+- [ ] **Create**: `/dashboard/new` com form + Server Action
+  `createPost(formData)`. Validação com Zod. `revalidatePath("/")`
+  + `redirect("/posts/<slug>")`.
+- [ ] **Read (home)**: `/` lista posts publicados com fetch
+  cacheado por `revalidate: 60`. `<Suspense>` em volta de cada
+  post pra streaming.
+- [ ] **Read (detalhe)**: `/posts/[slug]` com `generateStaticParams`
+  + `revalidateTag("posts")` na update. Async `params` (Next 15).
+- [ ] **Update**: `/dashboard/posts/[id]/edit` carrega post,
+  form pré-preenchido, Server Action `updatePost(formData)`.
+  Verifica ownership (post.authorId === session.user.id).
+- [ ] **Delete**: botão "Deletar" no dashboard com Server
+  Action `deletePost(id)`. Confirmação via `<dialog>` HTML
+  nativo (sem lib).
+
+UI/UX:
+
+- [ ] Loading skeleton no `loading.tsx` da rota `/posts`.
+- [ ] Error boundary no `error.tsx` da rota `/posts` com botão
+  "Tentar de novo".
+- [ ] Metadata API: `generateMetadata` em `/posts/[slug]`
+  com title, description, openGraph.
+- [ ] `<Mermaid>` ou diagrama **não é necessário** - mas
+  adicione um `<Figure>` com screenshot da app rodando no
+  README do projeto (opcional).
+
+Deploy:
+
+- [ ] Push pro GitHub.
+- [ ] Conecta na Vercel (botão "Import Project" no dashboard).
+- [ ] Configura env vars (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`,
+  `AUTH_SECRET`, `DATABASE_URL`).
+- [ ] Adiciona a URL da Vercel nas callback URLs do GitHub OAuth
+  app (`https://meu-blog.vercel.app/api/auth/callback/github`).
+- [ ] URL pública funcional. **Compartilha o link no PR.**
+
+Testes:
+
+- [ ] **1 teste E2E mínimo** com Playwright: login com mock
+  user → criar post → ver no feed. (Opcional, mas conta como
+  stretch goal se você pular.)
+
+## Desafios extras (stretch goals)
+
+Se você terminou o mínimo e quer ir além:
+
+- [ ] **Comentários nos posts** (outra tabela, outra Server
+  Action, `revalidateTag("comments")`).
+- [ ] **Markdown nos posts** com `react-markdown` (server-side
+  rendering do HTML).
+- [ ] **Imagem de capa** com `next/image` (upload local em
+  `/public/uploads`).
+- [ ] **Sentry** pra error tracking (1 linha: `<SentryProvider>`
+  no layout, captura exceptions no `error.tsx`).
+- [ ] **Lighthouse score > 90** em mobile (core web vitals).
+- [ ] **Theme toggle** (light/dark) com `next-themes` (Context
+  Provider no layout).
+- [ ] **Server-side search** (full-text no Prisma) com search
+  params na URL.
+- [ ] **Webhook do GitHub** pra rebuild automático quando push
+  (mais útil se você não tá usando Vercel).
+- [ ] **Background job** pra cleanup de posts antigos
+  (Vercel Cron, Upstash QStash, ou similar).
+
+## Dicas
+
+**Por onde começar:**
+
+1. **Setup + schema primeiro**: `create-next-app`, Prisma
+   schema, primeira migration. Sem isso, nada funciona.
+2. **Auth segundo**: Auth.js v5 com GitHub. Faça login
+   funcionar local antes de partir pra CRUD.
+3. **CRUD mínimo**: crie uma Server Action que insere um post
+   hardcoded. Depois adicione validação. Depois UI.
+4. **Read (lista) e Read (detalhe)**: agora que tem dado, faz
+   a UI consumir.
+5. **Streaming + cache**: refine com `loading.tsx`, `<Suspense>`,
+   `revalidateTag`.
+6. **Deploy por último**: deploy cedo vai pegar bugs de runtime
+   que local não pega (env vars, OAuth callback URL, etc.).
+
+**Armadilhas comuns:**
+
+- **Esquecer de marcar `params` como `Promise` no Next 15.** Se
+  você tá em Next 15, `params` é `Promise<{ slug: string }>`, não
+  `{ slug: string }`. Esquecer o `await params` resulta em
+  "params is a Promise" no console.
+- **Confundir `revalidateTag` com `revalidatePath`.** Comece
+  usando `revalidatePath('/')` em todo lugar - funciona, só é
+  menos cirúrgico. Refine pra `revalidateTag('posts')` quando
+  sentir necessidade.
+- **Esquecer o `await cookies()` pra forçar dynamic.** Se você
+  quer dados por usuário, o cache do Next pode te surpreender.
+- **Não checar ownership no delete/update.** A action é
+  pública. Sempre cheque `post.authorId === session.user.id`
+  antes de mutar.
+- **Callback URL do GitHub errada no deploy.** Esquecer de
+  adicionar `https://<deploy-url>/api/auth/callback/github` no
+  GitHub OAuth app → login funciona local mas quebra em prod.
+- **Esquecer `AUTH_SECRET` em prod.** Auth.js exige um secret
+  pra assinar o JWT. Sem ele, erro genérico de "configuration
+  error" em prod.
+
+**Como validar que terminou:**
+
+- [ ] `pnpm dev` roda sem warning de hydration/serialization.
+- [ ] Clicar em "Entrar com GitHub" → volta logado.
+- [ ] Criar post → aparece na home **sem refresh** (revalidate
+  funcionou).
+- [ ] Recarregar a home → posts continuam lá (cache funcionou).
+- [ ] Abrir DevTools → Network → ver HTML chegando em chunks
+  (streaming funcionou).
+- [ ] Visitar a URL pública da Vercel → tudo funciona igual
+  ao local.
+- [ ] Lighthouse mobile > 90 em Performance, Accessibility,
+  Best Practices, SEO.
+
+**Leituras que ajudam durante o projeto:**
+
+- [Next.js: Deploying to Vercel](https://nextjs.org/docs/app/building-your-application/deploying) - o caminho mais rápido pra deploy.
+- [Auth.js: Database sessions](https://authjs.dev/getting-started/adapters/prisma) - setup do adapter Prisma.
+- [Prisma: Quickstart](https://www.prisma.io/docs/getting-started/quickstart) - se você nunca usou Prisma.
+
+> O projeto final é onde a trilha vira "sua". As escolhas de
+> domínio (blog vs tasks vs links), de banco (SQLite vs
+> Postgres), de deploy (Vercel vs Cloudflare vs self-hosted)
+> são todas suas. O esqueleto dado é o **caminho feliz**,
+> desvie quando precisar, e anote as decisões no
+> `editorial-decisions.md` da trilha.

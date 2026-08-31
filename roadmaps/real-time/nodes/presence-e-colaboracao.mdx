@@ -1,0 +1,565 @@
+---
+id: presence-e-colaboracao
+title: "Presence e colaboracao: presence indicators, cursors, CRDTs (intro)"
+resources:
+  - title: "Yjs Docs - Getting Started (EN)"
+    url: https://docs.yjs.dev/
+    lang: en
+    type: doc
+    free: true
+  - title: "Automerge Docs - Tutorial (EN)"
+    url: https://automerge.org/docs/tutorial/
+    lang: en
+    type: doc
+    free: true
+  - title: "Liveblocks - Presence tutorial (EN)"
+    url: https://liveblocks.io/docs/tutorial/react/getting-started/presence
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce tem um chat com Socket.IO funcionando.
+Mas **apps reais** precisam de mais:
+**"X esta' digitando..."**, **"Y entrou
+na sala"**, **cursores de outros usuarios
+em tempo real** (como Figma), e em casos
+avancados, **colaboracao em documentos**
+(Google Docs-like). **Esse no cobre o
+"presenca" + "colaboracao"** - patterns
+que vao de 30 linhas de codigo (presence
+simples) ate **CRDTs** (state-of-the-art
+de colaboracao distribuida).
+
+Presence (saber quem esta' online e o que
+esta' fazendo) e' **trivial** com WebSocket:
+manda um evento "user-online" ao conectar,
+"user-offline" ao desconectar, e pronto.
+**Colaboracao real** (multiplos users
+editando o mesmo doc) e' **muito mais
+complexa** - requer resolver **conflitos**
+(2 users editaram a mesma frase ao mesmo
+tempo, quem ganha?). A solucao canonica
+sao **CRDTs** (Conflict-free Replicated
+Data Types): estruturas de dados que
+**convergem** sem servidor central de
+verdade.
+
+Voce sai de "chat funciona" pra "app
+colaborativo de verdade" (com caveats -
+CRDTs sao um topico avancado, coberto
+aqui como **intro**).
+
+## O essencial 🟢
+
+**Presence - "quem esta' online e fazendo
+o que".** Pattern classico: cada user tem
+um **objeto de presenca** sincronizado via
+WebSocket/Socket.IO:
+
+```ts
+// Tipo do estado de presenca de um user
+type Presenca = {
+  userId: string;
+  nome: string;
+  cor: string;        // cor do cursor (hash do userId)
+  online: boolean;
+  digitando?: boolean; // typing indicator
+  cursor?: { x: number; y: number };
+  visualizando?: string; // secao do doc que ta' lendo
+};
+
+// Server (Socket.IO) - guarda presenca em memoria
+const presencaPorSala = new Map<string, Map<string, Presenca>>();
+
+io.on("connection", (socket) => {
+  socket.data.userId = "user-" + socket.id; // ou do JWT
+
+  socket.on("join-room", ({ roomId, nome, cor }) => {
+    socket.join(roomId);
+
+    if (!presencaPorSala.has(roomId)) {
+      presencaPorSala.set(roomId, new Map());
+    }
+
+    const sala = presencaPorSala.get(roomId);
+    sala.set(socket.data.userId, {
+      userId: socket.data.userId,
+      nome,
+      cor,
+      online: true,
+    });
+
+    // manda a lista de quem ja' estava la'
+    socket.emit("presenca-inicial", Array.from(sala.values()));
+    // avisa os outros
+    socket.to(roomId).emit("user-joined", sala.get(socket.data.userId));
+  });
+
+  socket.on("presenca-update", (update) => {
+    const sala = presencaPorSala.get(socket.data.roomId);
+    if (!sala) return;
+    const atual = sala.get(socket.data.userId);
+    if (atual) {
+      Object.assign(atual, update);
+      socket.to(socket.data.roomId).emit("presenca-update", atual);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    const sala = presencaPorSala.get(socket.data.roomId);
+    if (sala) {
+      sala.delete(socket.data.userId);
+      socket.to(socket.data.roomId).emit("user-left", socket.data.userId);
+    }
+  });
+});
+```
+
+```ts
+// Client
+const socket = io("http://localhost:3001");
+
+socket.emit("join-room", { roomId: "doc-123", nome: "Ana", cor: "#ff6b6b" });
+
+socket.on("presenca-inicial", (users) => {
+  // Renderiza lista de quem esta' na sala
+});
+
+socket.on("user-joined", (user) => {
+  // Adiciona user novo
+});
+
+socket.on("user-left", (userId) => {
+  // Remove user
+});
+
+socket.on("presenca-update", (user) => {
+  // Atualiza cursor, typing, etc
+});
+```
+
+**Typing indicator - o caso mais comum de
+presence.** "X esta' digitando..." - pattern
+**throttled** (nao manda a cada keystroke):
+
+```ts
+// Client
+let digitandoTimeout;
+const input = document.querySelector("#message");
+
+input.addEventListener("input", () => {
+  if (!digitando) {
+    digitando = true;
+    socket.emit("presenca-update", { digitando: true });
+  }
+  clearTimeout(digitandoTimeout);
+  digitandoTimeout = setTimeout(() => {
+    digitando = false;
+    socket.emit("presenca-update", { digitando: false });
+  }, 2000); // para de digitar apos 2s sem input
+});
+```
+
+**Importante**: use `socket.volatile.emit` pra
+typing indicator (se cair, nao importa - e'
+volatil por natureza):
+
+```ts
+socket.volatile.emit("presenca-update", { digitando: true });
+```
+
+**Cursors colaborativos (Figma-like).**
+Mostra **cursor do mouse** de outros users
+em tempo real. Pattern: throttle mousemove
+(manda a cada 50-100ms, nao a cada pixel):
+
+```ts
+// Client
+let cursorThrottle = 0;
+document.addEventListener("mousemove", (e) => {
+  const agora = Date.now();
+  if (agora - cursorThrottle < 80) return; // throttle 80ms (~12fps)
+  cursorThrottle = agora;
+
+  socket.volatile.emit("presenca-update", {
+    cursor: { x: e.clientX, y: e.clientY },
+  });
+});
+```
+
+**Render**: cada cursor e' um **div
+absoluto** com `transform: translate3d`:
+
+```ts
+function renderCursor(user) {
+  if (!user.cursor) return;
+  const el = document.createElement("div");
+  el.className = "user-cursor";
+  el.style.backgroundColor = user.cor;
+  el.style.transform = `translate3d(${user.cursor.x}px, ${user.cursor.y}px, 0)`;
+  el.textContent = user.nome;
+  document.body.appendChild(el);
+}
+```
+
+**`transform: translate3d`** ativa GPU
+acceleration - 50 cursores na tela fluem
+a 60fps. Se voce usar `top`/`left`, **trava**.
+
+**Colaboracao: o problema do conflito.**
+Imagine 2 users editando o mesmo doc
+(Google Docs):
+
+```text
+User A: "Hello world" -> insere "!" no meio -> "Hello !world"
+User B: "Hello world" -> insere "?" no meio -> "Hello ?world"
+```
+
+**Sem resolucao de conflito**: o server (ou
+o "vencedor") sobrescreve - **perda de
+dados**. Solucao: **OT** (Operational
+Transform, usado pelo Google Docs original)
+ou **CRDTs** (Yjs, Automerge - mais moderno).
+
+**CRDTs - o estado da arte.** CRDT =
+**Conflict-free Replicated Data Type**.
+Estrutura de dados que **garante** que 2
+ou mais replicas **convergem** pro mesmo
+estado depois de **sincronizar**, sem
+servidor central. Cada operacao tem um
+**ID unico** (timestamp + userId), e a
+"merge" e' **determinista**.
+
+**Yjs - a lib CRDT mais usada.** Mantida
+pelo time do Figma, Notion, etc. API simples:
+
+```bash
+pnpm add yjs y-websocket
+```
+
+```ts
+import * as Y from "yjs";
+import { WebsocketProvider } from "y-websocket";
+
+// Cria um doc Yjs (estado compartilhado)
+const ydoc = new Y.Doc();
+
+// Conecta via WebSocket ao server Yjs (ou usa o public y-webrtc pra P2P)
+const provider = new WebsocketProvider("ws://localhost:1234", "doc-123", ydoc);
+
+// Texto compartilhado
+const ytext = ydoc.getText("content");
+
+// User A digita
+ytext.insert(0, "Hello ");
+
+// User B digita (em outro client conectado ao mesmo doc)
+ytext.insert(6, "world");
+
+// Ambos os clients convergem pra "Hello world" (ordem pode variar,
+// mas **sempre converge**)
+```
+
+**O server Yjs** (`y-websocket`) **nao tem
+logica de negocio** - so' **roteia
+atualizacoes** entre clients. A "verdade"
+e' **distribuida** (cada client tem copia
+completa). Pode usar **y-webrtc** pra P2P
+sem server.
+
+**Tipos de dados Yjs** (CRDTs especializados):
+
+- `Y.Text` - texto colaborativo (Google Docs).
+- `Y.Array` - array com insert/delete em qualquer posicao.
+- `Y.Map` - mapa de chaves/valores.
+- `Y.XmlFragment` - XML/HTML estruturado.
+
+**Awareness - presence built-in do Yjs.**
+Yjs tem **awareness protocol** pra presence
+(cursor, nome, cor, etc) **embutido** - nao
+precisa implementar manualmente:
+
+```ts
+provider.awareness.setLocalStateField("user", {
+  name: "Ana",
+  color: "#ff6b6b",
+  cursor: { x: 100, y: 200 },
+});
+
+// Escuta awareness de outros users
+provider.awareness.on("change", () => {
+  const states = provider.awareness.getStates(); // Map<clientId, state>
+  // Renderiza cursores
+});
+```
+
+**Quando usar CRDTs:**
+
+- Editor de texto colaborativo (Google Docs, Notion).
+- Whiteboard (Figma, FigJam, tldraw).
+- Code editor colaborativo (VS Code Live Share).
+- Qualquer app com **estado mutavel compartilhado**.
+
+**Quando NAO usar CRDTs:**
+
+- Chat (Yjs **funciona** mas e' overkill - Socket.IO + rooms resolve).
+- Dashboards read-only (use SSE/WebSocket simples).
+- Apps single-user (estado local, sem rede).
+
+**Liveblocks - "CRDTs + infra" como
+servico.** Implementar CRDT em prod e'
+**complexo** (scaling, presence, auth,
+persistence). **Liveblocks** oferece
+CRDTs + WebSocket + presence + auth + storage
+como API:
+
+```ts
+import { createRoom } from "@liveblocks/client";
+
+const room = createRoom({ id: "doc-123" });
+
+const me = room.create("me", { name: "Ana", color: "#ff6b6b" });
+const others = room.getOthers(); // presence dos outros
+
+room.subscribe(others, (others) => {
+  // Renderiza cursores
+});
+```
+
+**Alternativas gerenciadas**:
+
+- **Liveblocks** - CRDTs + presence + storage, plano free generoso.
+- **PartyKit** (Cloudflare) - WebSocket rooms + state, mais baixo nivel.
+- **Supabase Realtime** - Postgres + broadcast + presence.
+- **Pusher / Ably** - pub/sub real-time gerenciado.
+- **Firebase Realtime DB** - NoSQL + real-time.
+
+Pra apps com **CRDTs reais** (editor, board),
+**Liveblocks** e' o caminho mais rapido. Pra
+**chat / presence / dashboards**, **Socket.IO
+custom** resolve 95% dos casos.
+
+## Aprofundamento 🟡
+
+**OT vs CRDT.** Antes dos CRDTs (que viraram
+pratica nos anos 2010), a solucao era
+**Operational Transform** (Google Docs,
+2006). OT **transforma** a operacao B com
+base na operacao A para resolver o conflito.
+Mais complexo de implementar (servidor
+central de "verdade" que serializa
+operacoes). **CRDTs sao mais modernos** e
+descentralizados.
+
+**Yjs vs Automerge.** 2 libs CRDT principais:
+
+- **Yjs** (2015, mantida ativa): mais
+  performatica, **foco em apps reais**
+  (Figma, Notion). API minima. Implementada
+  em JS, Rust, Java, etc. Usa algoritmo
+  proprio (YATA - Yet Another Transformation
+  Approach).
+- **Automerge** (2017, comunidade academica
+  + Ink & Switch): mais "pura" em relacao
+  ao modelo CRDT teorico, **foco em
+  correctude**. Mais lenta que Yjs em
+  alguns cenarios, mas **mais facil de
+  auditar**.
+
+**Em 2026, Yjs e' o default** pra apps em
+producao. Automerge tem niche (apps com
+sincronizacao eventual onde correctude
+matematica importa mais que performance).
+
+**Persistir estado CRDT.** Yjs e' in-memory.
+Pra **salvar** (no banco, no IndexedDB do
+client, no S3), use **provider de storage**:
+
+```ts
+// IndexedDB (client - offline-first)
+import { IndexeddbPersistence } from "y-indexeddb";
+new IndexeddbPersistence("doc-123", ydoc);
+
+// Postgres (server) ou S3 (serverless)
+import { yLeveldbPersistence } from "y-leveldb";
+// ou implemente custom (salvar updates binarios do Yjs)
+```
+
+**Yjs updates sao binarios** (Uint8Array) -
+**compacto** (10x menor que JSON). Salvar
+e' so' `Buffer.concat(updates)`.
+
+**Snapshot do Yjs.** Updates incrementais
+crescem ao infinito. Pra "compactar", use
+`Y.encodeStateAsUpdate(ydoc)` (snapshot
+binario) e **dropa** os updates antigos.
+
+**Offline-first com Yjs.** Yjs + IndexedDB
++ WebSocket provider = **CRDT offline-first**.
+Usuario edita offline, mudanças ficam no
+IndexedDB, ao reconectar, **merge automatico**
+com o server. Conflitos? **Nao existem** -
+Yjs resolve.
+
+**Conflict-free nao significa "sem
+conflitos"**. Significa "conflitos resolvem
+**automaticamente** sem perda de dados".
+2 users podem editar a mesma palavra -
+Yjs **escolhe** um resultado (baseado em
+timestamp + userId) e ambos os clients
+convergem. O user **vê** a escolha. Em
+**alguns casos** o resultado e' "estranho"
+(ex: "Hello" e "Hello!" - Yjs pode escolher
+"Hello!" mas a UI mostra os 2 cursores
+e a edição "fundida").
+
+**Cursors colaborativos avancados.** Em
+apps como Figma, alem de cursor, voce ve
+**selecao** (a area que o user selecionou
+com drag). Pattern:
+
+```ts
+// User seleciona retangulo
+socket.volatile.emit("presenca-update", {
+  cursor: { x: 100, y: 200 },
+  selection: { x: 50, y: 50, w: 200, h: 100 },
+});
+
+// Render: <div style="left:50px; top:50px; width:200px; height:100px; border: 2px solid #user.cor">
+```
+
+**Permission de presenca.** Em apps B2B,
+nao **todos** os users veem **todos**. Pattern:
+"viewer", "editor", "admin" - cada um tem
+**awareness** diferente:
+
+```ts
+// Server filtra antes de broadcast
+socket.on("presenca-update", (update) => {
+  // User "viewer" nao tem cursor proprio, mas ve os outros
+  if (socket.data.role === "viewer") {
+    delete update.cursor; // remove antes de broadcast
+  }
+  socket.to(room).emit("presenca-update", update);
+});
+```
+
+## Pra quem quer ir mais alem 🔴
+
+**Conflict resolution visual - "show me
+the merge".** Apps como Google Docs mostram
+**explicitamente** o que mudou durante a
+edicao colaborativa (cor de autor, "Ana
+esta' editando aqui"). Yjs tem **`Y.RelativePosition`** que rastreia **posicao**
+mesmo quando o texto muda:
+
+```ts
+// Marca posicao "onde o cursor do user ta'"
+const relPos = Y.createRelativePositionFromTypeIndex(ytext, 5);
+const absPos = Y.createAbsolutePositionFromRelativePosition(relPos, ydoc);
+// absPos.index = posicao atual (pode ter mudado por causa de edicoes)
+```
+
+**Yjs + TipTap (editor rich text).** TipTap
+e' o editor WYSIWYG mais usado em React
+(ProseMirror por baixo). Integracao com
+Yjs via **`@tiptap/extension-collaboration`**:
+
+```ts
+import { Editor } from "@tiptap/core";
+import Collaboration from "@tiptap/extension-collaboration";
+import * as Y from "yjs";
+
+const ydoc = new Y.Doc();
+const editor = new Editor({
+  extensions: [
+    // ...
+    Collaboration.configure({ document: ydoc }),
+  ],
+});
+```
+
+**Free, 5 minutos de setup, Google-Docs-like
+out of the box.** Cobre em trilhas de
+`frontend` avancado se for expandir.
+
+**Yjs + Y-Sweet (server gerenciado).** Alem
+do Liveblocks, tem **Y-Sweet** (open source,
+server S3-compatible) e **Hocuspocus** (server
+Yjs oficial mantido pelo time de tiptap).
+Pra **self-hosting**, Hocuspocus e' o
+caminho.
+
+**WebRTC com Yjs (P2P puro).** `y-webrtc`
+sincroniza Yjs **sem servidor central** -
+via WebRTC entre peers.
+Excelente pra apps com **poucos users**
+(whiteboards pessoais, demos). **Nao escala**
+pra 100+ users (mesh de WebRTC e' O(n²)).
+
+**Schemas CRDT vs schema-free.** Yjs e'
+**schema-free** (Y.Map, Y.Array, etc sao
+genericos). **Automerge** tem schemas
+mais fortes. Pra apps com **validacao
+estrita** (form data, etc), Yjs + Zod
+(ou similar) **em cima** das estruturas
+CRDT resolve.
+
+**Differential sync - "so manda o que
+mudou".** Yjs usa **differential updates**
+(envia so' o delta, nao o doc inteiro). Em
+doc de 1MB, edit de 1 char = **~50 bytes**
+de update. **Muito eficiente**.
+
+**Awareness state nao persiste.** O
+awareness do Yjs e' **in-memory** (desapaga
+ao desconectar). Pra **persistir** (ex:
+"ultima visualizacao do user"), use
+camada separada (DB relacional, Redis).
+
+**Leitura recomendada:**
+
+- [Yjs Docs](https://docs.yjs.dev/) - getting started, exemplos, providers.
+- [Automerge Quick Tour](https://automerge.org/docs/quickstart/) - intro ao modelo CRDT com exemplos JS.
+- [Liveblocks - Presence tutorial](https://liveblocks.io/docs/tutorial/react/getting-started/presence) - presence como servico, exemplos React.
+
+> Dica: o erro mais comum em colaboracao e'
+> **tentar reinventar CRDT**. "Vou usar
+> WebSocket + timestamp pra resolver
+> conflito" funciona pra 2 users, **quebra**
+> pra 10+. CRDTs sao **a solucao matematica
+> provadamente correta** pro problema de
+> convergencia. Use Yjs (battle-tested em
+> Figma, Notion) e foque no **UX** (cursores
+> bonitos, indicadores, animacoes) - a parte
+> **dura** ja' esta' resolvida.
+
+No proximo no, vamos **projeto final**:
+integrar tudo num **chat real-time com
+rooms, presence e sync de estado** - o
+"hello world" de apps colaborativas.
+
+<Quiz
+  question="Quando voce DEVE usar CRDTs (Yjs, Automerge) em vez de WebSocket/Socket.IO com estado manual?"
+  options={[
+    {
+      text: "Quando multiplos usuarios podem **editar o mesmo estado ao mesmo tempo** (editor de texto, whiteboard, code editor colaborativo) e voce precisa garantir que **nenhuma edicao seja perdida**, mesmo com conflitos.",
+      correct: true,
+      explanation:
+        "CRDTs resolvem o problema de **concorrencia distribuida**: 2+ users editando o mesmo dado **ao mesmo tempo**, e voce precisa que **ambos** os resultados sejam preservados. Em chat (cada mensagem e' um evento append-only, sem 'mesma posicao' pra editar), Socket.IO resolve - cada mensagem e' independente. Em editor de texto colaborativo (2 users digitando na mesma frase), **sem CRDT** voce perde uma das edicoes. CRDTs garantem **convergencia** matematicamente. Use quando: (1) estado e' **mutavel e compartilhado** (texto, array, mapa), (2) **multiplos users** podem editar **simultaneamente**, (3) perda de dados **nao e' aceitavel**. NAO use pra: chat (overkill), dashboards read-only (sem mutacao), apps single-user (sem concorrencia).",
+    },
+    {
+      text: "CRDTs sao sempre melhores que Socket.IO - use sempre.",
+      correct: false,
+      explanation:
+        "Falso. CRDTs tem **custo**: bundle size (~30KB gzipped pra Yjs), complexidade maior (debugar 'por que esse texto ta assim' pode virar pesadelo), overhead de CPU pra merge. Em **chat** (cada mensagem e' um append, nao edicao concorrente), Socket.IO com rooms e' **muito mais simples** e **mais rapido**. CRDTs brilham onde **edicao concorrente do mesmo dado** importa. Use Socket.IO pra 80% dos casos de real-time (chat, presence, dashboards, notifications). Use CRDTs pra **colaboracao real** (editor, whiteboard).",
+    },
+    {
+      text: "CRDTs resolvem problemas de latencia de rede.",
+      correct: false,
+      explanation:
+        "Falso. CRDTs **nao tem nada a ver com latencia** - eles resolvem **conflitos de concorrencia** (2 users editando ao mesmo tempo). Latencia de rede e' um problema **ortogonal** - voce resolve com debouncing, optimistic updates, prefetch, edge servers. CRDTs funcionam **igualmente** com latencia de 10ms ou 500ms - eles garantem que o estado **final** e' o mesmo, mas nao tornam a rede mais rapida.",
+    },
+  ]}
+/>

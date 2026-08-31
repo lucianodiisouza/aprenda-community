@@ -1,0 +1,128 @@
+---
+id: multimidia-acessivel
+title: "Multimídia Acessível: Legendas, Transcrição e Audiodescrição"
+resources:
+  - title: "Áudio e vídeo acessíveis"
+    url: https://www.w3.org/WAI/media/av/
+    type: doc
+    lang: en
+    free: true
+  - title: "Elemento track"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/track
+    type: doc
+    lang: pt
+    free: true
+  - title: "Elemento video (MDN PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/video
+    type: doc
+    lang: pt
+    free: true
+---
+
+Se a informação existe só no áudio ou só na imagem do vídeo, parte do público fica
+sem acesso ao conteúdo. Uma aula acessível oferece alternativas equivalentes, não
+apenas um player visível.
+
+```html
+<video controls>
+  <source src="aula.mp4" type="video/mp4" />
+  <track
+    kind="captions"
+    src="aula-pt.vtt"
+    srclang="pt-BR"
+    label="Português"
+    default
+  />
+  Seu navegador não reproduz o vídeo. Acesse a transcrição abaixo.
+</video>
+
+<details>
+  <summary>Ler transcrição da aula</summary>
+  <p><strong>00:00 — Instrutora:</strong> Vamos criar um botão acessível.</p>
+  <p><strong>00:04 — Som:</strong> Tecla Enter é pressionada.</p>
+</details>
+```
+
+O arquivo de legenda usa o formato WebVTT:
+
+```vtt
+WEBVTT
+
+00:00:00.000 --> 00:00:03.800
+Vamos criar um botão acessível.
+
+00:00:03.800 --> 00:00:06.000
+[tecla Enter é pressionada]
+```
+
+### Legendas representam áudio importante
+
+Elas incluem falas, identificação de quem fala e sons relevantes para acompanhar o
+conteúdo. Legenda automática é um bom rascunho, mas precisa de revisão de nomes,
+pontuação, sincronização e termos técnicos.
+
+### Transcrição oferece uma alternativa textual
+
+Ela ajuda quem não consegue ouvir o áudio e também quem prefere ler, pesquisar,
+traduzir ou consultar trechos rapidamente. Uma transcrição deve trazer a mesma
+informação essencial, em uma ordem compreensível.
+
+### Audiodescrição cobre informação visual essencial
+
+Quando uma ação ou informação importante aparece apenas na imagem, uma descrição em
+áudio pode preencher essa lacuna. Se a pessoa diz "clique aqui" enquanto apenas
+aponta para um campo, a narração precisa identificar qual campo foi usado.
+
+<Mermaid
+  chart={`flowchart LR
+    V["Vídeo"] --> F["Falas e sons"]
+    V --> I["Informação visual"]
+    F --> L["Legendas"]
+    F --> T["Transcrição"]
+    I --> A["Audiodescrição ou narração equivalente"]
+    L --> X["Conteúdo equivalente"]
+    T --> X
+    A --> X`}
+  caption="Cada tipo de informação no vídeo precisa de uma alternativa equivalente adequada."
+/>
+
+### Controles e reprodução
+
+- mantenha controles de pausar, volume, progresso e legenda acessíveis por teclado;
+- evite reprodução automática com som;
+- ofereça uma forma de pausar movimento que dure mais de alguns segundos;
+- não use flashes intensos e repetidos;
+- teste o player escolhido, não apenas o arquivo de vídeo.
+
+- **Legendas** representam fala e sons necessários.
+- **Transcrição** oferece uma versão textual do conteúdo.
+- **Audiodescrição** comunica informação visual essencial.
+
+### Revisão prática de uma aula
+
+Assista uma vez sem som: você entende falas e sons pelas legendas? Depois apenas
+escute, sem olhar: instruções como "aqui" e "este botão" continuam claras? Por fim,
+leia a transcrição e veja se ela funciona como conteúdo independente.
+
+No próximo nó, vamos conhecer softwares que ajudam a testar acessibilidade durante
+o desenvolvimento.
+
+<Quiz
+  question="Qual recurso ajuda alguém que não consegue ouvir o áudio de uma aula em vídeo?"
+  options={[
+    {
+      text: "Legendas e, quando possível, uma transcrição textual",
+      correct: true,
+    },
+    {
+      text: "Apenas uma imagem de capa mais descritiva",
+      correct: false,
+      explanation: "A capa não substitui falas, sons importantes e explicações do conteúdo.",
+    },
+    {
+      text: "Um player com controles em outra cor",
+      correct: false,
+      explanation: "Controles visíveis ajudam, mas não tornam o conteúdo sonoro disponível em texto.",
+    },
+  ]}
+/>

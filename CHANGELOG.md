@@ -6,25 +6,233 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.27.1] - 2026-08-30
+
 ### Adicionado
 
-- 👥 **Índice de contribuidores** (`contributors.json` + `scripts/build-contributors.mjs`):
-  agrega os `creators` espalhados por trilhas, projetos e bootcamps num
-  único índice chaveado pelo handle do GitHub - a chave que também liga o
-  criador ao perfil público. É o contrato estável que a app consome pra
-  exaltar quem contribui (fileira de avatares na home, section de
-  contribuições no perfil público, badge de contribuidor). Um bootcamp
-  também credita quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`).
-  Cada entrada já traz `avatar`, `profile`, `counts` e as listas de
+- 📚 **`CATALOGO.md`**: catálogo navegável com a lista completa de
+  **38 trilhas** (agrupadas em 5 áreas, com contagem de nós e nível),
+  **17 projetos** e **2 bootcamps** em tabelas. Vira a fonte navegável
+  do que existe; o README passa a apontar pra cá.
+
+### Alterado
+
+- 📝 **README**: lista extensa de trilhas trocada por um resumo das 5
+  áreas + link pro `CATALOGO.md` (README muito mais enxuto). Adicionada
+  seção de **Bootcamps**, badge `bootcamps-2`, e a seção "Reconhecimento"
+  agora aponta pro `contributors.json` real (gerado por
+  `scripts/build-contributors.mjs`).
+
+### Corrigido
+
+- 🔢 **README**: contadores desatualizados - badge de trilhas `25 → 38`
+  e prosa de projetos `9 → 17`.
+- 🗂️ **README**: árvore de estrutura apontava pra um `meta/` na raiz
+  que não existe (o changelog é `CHANGELOG.md` na raiz e as decisões
+  editoriais vivem em `roadmaps/<slug>/meta/`); adicionados `bootcamps/`,
+  `contributors.json`, `scripts/`, `docs/proposals/` e `CATALOGO.md`.
+
+## [1.27.0] - 2026-08-30
+
+### Adicionado
+
+- 🎬 **Vídeo de apresentação no bootcamp Desenvolvedor Frontend**
+  (`bootcamps/desenvolvedor-frontend`): campo `intro_video` apontando pro
+  vídeo de apresentação no YouTube, exibido na página do bootcamp (mesmo
+  padrão `intro_video` já usado pelas trilhas).
+
+## [1.26.0] - 2026-08-30
+
+### Adicionado
+
+- 🎨 **Bootcamp Desenvolvedor Frontend**
+  (`bootcamps/desenvolvedor-frontend`, 24 módulos): currículo curado
+  zero-to-hero pra quem começa sem nunca ter programado até sair pronto
+  pra uma vaga de frontend junior. Junta os fundamentos que faltavam
+  (`programacao-do-zero`, `terminal-para-devs`, `git`, `html`,
+  `css-fundamentos`, `css-layout`, `frontend`, `typescript`) com 9 das
+  trilhas de produção do pacote da issue #41 (`form-libraries`,
+  `tanstack-query`, `nextjs`, `testing-frontend`, `performance-web`,
+  `acessibilidade-web`, `seguranca-frontend`, `edge-deploy-frontend`,
+  `engenharia-ia`) e 7 projetos intercalados. Nível iniciante, ~7 meses.
+  Bootcamps não têm conteúdo próprio: só curadoria de trilhas e projetos
+  existentes.
+
+### Créditos
+
+- Bootcamp curado por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
+
+## [1.25.0] - 2026-08-30
+
+### Adicionado
+
+- 🌐 **Trilha Edge Deploy Frontend** (`roadmaps/edge-deploy-frontend`,
+  7 nós): do build output (static, SSR, SSG, ISR, edge) ao runtime
+  (Node, serverless, edge), passando por Cloudflare Workers (V8 isolate,
+  KV, R2, D1, Durable Objects), Vercel Edge, Deno Deploy e estratégias
+  de cache na borda. Posicionada como intermediária.
+- 🤖 **Trilha Engenharia de IA** (`roadmaps/engenharia-ia`, 8 nós):
+  engenharia de software assistida por IA - comparativo de ferramentas
+  (Claude Code, Cursor, Copilot, Cody, Continue), divisão de tarefas
+  para IA (prompt direto vs plano multi-step), validação de saída,
+  custos, latência e governança. Posicionada como intermediária.
+- 📊 **Trilha Observabilidade Frontend** (`roadmaps/observabilidade-frontend`,
+  7 nós): medir, rastrear e depurar a aplicação no navegador do usuário
+  real - 3 sinais clássicos (logs, metrics, traces) aplicados ao
+  client, RUM, error tracking com Sentry (source maps, release health,
+  sampling), Web Vitals e privacidade. Posicionada como intermediária.
+- 🌎 **Trilha i18n** (`roadmaps/i18n`, 7 nós): internacionalização e
+  localização na prática - Intl APIs (`NumberFormat`, `DateTimeFormat`,
+  `Collator`, `ListFormat`) para formatação locale-aware, ICU
+  MessageFormat para pluralização e seleção, RTL, locale negotiation
+  e SEO multilíngue. Posicionada como intermediária.
+- 📡 **Trilha Real-time** (`roadmaps/real-time`, 7 nós): comunicação
+  real-time no browser - WebSocket nativo (API, `readyState`, eventos),
+  Server-Sent Events (EventSource, reconexão automática), Socket.IO
+  (rooms, namespaces, fallback), reconexão e backpressure. Posicionada
+  como intermediária.
+- 🛡️ **Endurecimento do `scripts/validate.mjs`**: projetos passam a
+  exigir `published: YYYY-MM-DD` (ativa o selo "novo" no site) ou
+  `draft: true` (waiver explícito para WIP intencional) no frontmatter.
+  O check morava em `validateProject()` e estava silenciosamente
+  aceitando projetos sem data - o que permitia seed batches sem
+  destaque no academy.
+
+### Corrigido
+
+- 📚 **Publicação retroativa de 10 projetos**: 9 seed projects
+  introduzidos em `9db00ea` (2026-08-24) e `auditoria-de-acessibilidade-web`
+  (PR #61, 2026-08-29) estavam sem `published:` no frontmatter, o que
+  os deixava sem o selo "novo" no site. Adicionado
+  `published: "2026-08-30"` em todos os 10. Com isso, os 17 projetos
+  do repositório agora exibem o selo "novo" no academy.
+
+### Créditos
+
+- 5 trilhas escritas por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
+- `auditoria-de-acessibilidade-web` (publicado retroativamente) escrito
+  por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+
+## [1.24.0] - 2026-08-29
+
+### Adicionado
+
+- 🅰️ **Trilha Angular** (`roadmaps/angular`, 24 nós): framework web
+  completo para construir SPAs com TypeScript, do CLI até SSR e deploy.
+  Posicionada como intermediária (assume HTML, CSS, JavaScript e
+  TypeScript básico). Os 24 nós: `introducao-angular`, `ambiente-cli`,
+  `workspace-config`, `typescript-para-angular`, `componentes-standalone`,
+  `ciclo-de-vida`, `inputs-outputs`, `templates-binding`, `diretivas-pipes`,
+  `estilos-componentes`, `servicos-di`, `roteamento`, `guards-interceptors`,
+  `formularios`, `http-client`, `rxjs`, `signals`, `estado-app`,
+  `angular-material-cdk` (opcional), `acessibilidade-i18n`, `pwa`
+  (opcional), `testes`, `performance-ssr` e `projeto-final` (dashboard
+  Angular com rotas, formulários, HTTP, Signals, RxJS e testes).
+  **Interatividade: 3 quizzes formativos, 1 diagrama Mermaid**. Decisões
+  editoriais em `roadmaps/angular/meta/editorial-decisions.md` (escopo,
+  ordem, nós opcionais e o que ficou de fora: Nx, monorepo avançado,
+  micro-frontends). Trilha escrita por **Lucas Pedro**
+  ([@LucasPedruo](https://github.com/LucasPedruo)).
+- ♿ **Trilha Acessibilidade Web** (`roadmaps/acessibilidade-web`,
+  20 nós): ensinar acessibilidade como parte normal do desenvolvimento
+  web, não como uma correção feita no fim do projeto. Posicionada como
+  iniciante (assume só HTML e CSS básicos). Referência normativa é a
+  WCAG 2.2, mas o objetivo é criar o modelo mental que evita barreiras
+  enquanto a interface é construída. Os 20 nós: `introducao-acessibilidade`
+  (barreiras e diferentes contextos de uso), `wcag-e-pour`,
+  `html-semantico`, `estrutura-headings-landmarks`, `imagens-e-alt`,
+  `tabelas-acessiveis`, `links-e-botoes`, `teclado-e-ordem-de-foco`,
+  `foco-visivel`, `formularios-acessiveis`, `erros-e-validacao`,
+  `linguagem-clara-e-cognicao`, `cor-e-contraste`, `zoom-reflow-e-movimento`,
+  `aria-fundamentos` (depois do HTML nativo), `conteudo-dinamico`
+  (aria-live, polite, assertive), `dialogos-acessiveis`,
+  `multimidia-acessivel` (legendas, transcrição, audiodescrição),
+  `ferramentas-de-teste` (WAVE, Lighthouse, axe DevTools, axe-core,
+  Pa11y, leitores de tela) e `testes-e-auditoria`. **Interatividade:
+  19 quizzes formativos, 12 diagramas Mermaid**. Decisões editoriais
+  em `roadmaps/acessibilidade-web/meta/editorial-decisions.md`. Trilha
+  escrita por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)) - resolve a issue #57.
+- 🆕 **Selo "novo"** nas trilhas Angular e Acessibilidade Web: campo
+  `published: "2026-08-29"` no `roadmap.json` ativa o `<NewBadge>` no
+  `TrilhaCard` (janela de 30 dias, avaliada no client).
+- 🔎 **Projeto Auditoria de Acessibilidade Web**
+  (`projects/auditoria-de-acessibilidade-web`): praticar a trilha de
+  Acessibilidade escolhendo um fluxo real ou fictício, corrigindo
+  barreiras de semântica, teclado, foco, formulários, contraste e
+  conteúdo dinâmico, e entregando um relatório com testes manuais
+  (leitor de tela ou painel de acessibilidade) e automatizados
+  (Lighthouse, WAVE, axe DevTools, axe-core, Pa11y). Pré-requisitos:
+  trilhas `acessibilidade-web`, `html` e `css-fundamentos`. Estimativa:
+  1 fim de semana. Escrito por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+- 👥 **Índice de contribuidores** (`contributors.json` +
+  `scripts/build-contributors.mjs`): agrega os `creators` espalhados
+  por trilhas, projetos e bootcamps num único índice chaveado pelo
+  handle do GitHub - a chave que também liga o criador ao perfil
+  público. É o contrato estável que a app consome pra exaltar quem
+  contribui (fileira de avatares na home, section de contribuições no
+  perfil público, badge de contribuidor). Um bootcamp também credita
+  quem fez as trilhas que ele agrupa (`via: "trilha:<slug>"`). Cada
+  entrada já traz `avatar`, `profile`, `counts` e as listas de
   trilhas/projetos/bootcamps, ordenadas por total de contribuições.
+  **6 contribuidores** na primeira release do índice: Luciano dii
+  Souza, Lucas Pedro, Breno Alvim, Bruno Fernandes Horn, Manoel
+  Carvalho, Rafael Coelho.
 
 ### Alterado
 
 - ✅ **`validate.mjs` agora exige `github` (e `name`) em todo `creators`**,
-  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa some
-  do índice de contribuidores. O CI de validação também roda
+  nas três fontes (trilha, projeto, bootcamp): sem o handle, a pessoa
+  some do índice de contribuidores. O CI de validação também roda
   `build-contributors.mjs --check` - se o `contributors.json` commitado
   estiver desatualizado, o job falha.
+- 📊 **Badges do `README.md`** atualizados: `trilhas-16` → `trilhas-25`
+  (entraram Angular e Acessibilidade Web), `projetos-15` → `projetos-17`
+  (entrou Auditoria de Acessibilidade Web). O badge estava congelado
+  desde a v1.20.0.
+
+## [1.21.0] - 2026-08-28
+
+### Adicionado
+
+- ⚡ **Trilha Next.js e Meta-frameworks** (`roadmaps/nextjs`, 10 nós):
+  o salto de "dev que monta SPA" pra "dev que entrega app production-grade
+  com SSR, SEO e data layer moderna". Usa Next.js como referência
+  canônica (maior ecossistema, melhor doc, implementação mais completa
+  de RSC), mas os conceitos se aplicam a outros meta-frameworks React
+  (Remix, React Router v7, TanStack Start). Pré-requisito: trilha
+  `frontend` (especialmente `react`, `state-hooks`, `rotas`) e noções
+  de TypeScript. Os 10 nós: `ts-no-react` (tipos que salvam a sua
+  vida em React), `meta-frameworks-por-que` (SPA, SSR, RSC e quando
+  cada um), `app-router-mental-model` (layouts, pages, route groups,
+  loading/error/not-found), `rsc-fundamentos` (Server vs Client
+  Components, a fronteira), `composicao-rsc` (server-only e client
+  islands), `data-fetching-server` (cache, revalidação, Suspense),
+  `server-actions` (mutations sem API route, revalidatePath/Tag),
+  `streaming-ssr` (streaming SSR e Suspense boundaries), `middleware-e-auth`
+  (middleware e Auth.js v5) e `projeto-final` (app full-stack com auth,
+  CRUD, ISR e deploy). **Interatividade: 9 quizzes formativos, 4
+  checkpoints validados, 5 diagramas Mermaid**. Decisões editoriais em
+  `roadmaps/nextjs/meta/editorial-decisions.md`. Trilha escrita por
+  **Luciano dii Souza** ([@lucianodiisouza](https://github.com/lucianodiisouza))
+  - resolve a sub-issue #42 da meta-issue #41 (Bootcamp Frontend 2026).
+- 🆕 **Selo "novo"** na trilha Next.js e Meta-frameworks: campo
+  `published: "2026-08-28"` no `roadmaps/nextjs/roadmap.json` ativa o
+  `<NewBadge>` no `TrilhaCard` (janela de 30 dias, avaliada no client).
+- 🔎 **Projeto Auditoria de SEO, AEO e GEO** (`projects/auditoria-seo-aeo-geo`):
+  praticar a trilha `seo-aeo-geo` auditando uma página real nas três
+  camadas (SEO técnico, resposta direta em featured snippets, citação por
+  IA generativa) e aplicando pelo menos uma melhoria verificável em cada
+  uma. Estimativa: 1 fim de semana. Dificuldade: intermediário.
+  Pré-requisito: trilha `seo-aeo-geo`. Projeto escrito por
+  **Breno Alvim** ([@obrenoalvim](https://github.com/obrenoalvim)).
+- 🆕 **Selo "novo"** no projeto acima: campo `published: "2026-08-28"`
+  no frontmatter ativa o `<NewBadge>` (janela de 30 dias, avaliada no
+  client).
 
 ## [1.20.0] - 2026-08-26
 
@@ -584,5 +792,6 @@ check-links    → 80 ok, 0 com problema
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
   Open Graph Protocol.
 
-[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.0.0...HEAD
+[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.25.0...HEAD
+[1.25.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.25.0
 [1.0.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.0.0

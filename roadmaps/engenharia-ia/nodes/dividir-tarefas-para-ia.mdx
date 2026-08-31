@@ -1,0 +1,418 @@
+---
+id: dividir-tarefas-para-ia
+title: "Dividir tarefas pra IA: quando cabe num prompt, quando precisa de plano"
+resources:
+  - title: "Claude Code - Best practices (EN)"
+    url: https://docs.claude.com/en/docs/claude-code/best-practices
+    lang: en
+    type: doc
+    free: true
+  - title: "Anthropic - Prompt Engineering Overview (EN)"
+    url: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+    lang: en
+    type: doc
+    free: true
+  - title: "Cursor - Agent Mode (EN)"
+    url: https://docs.cursor.com/agent
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce pede "faz um app de e-commerce
+completinho" pra IA. **Ela entrega
+codigo generico** que parece funcionar
+mas **nao e' o que voce queria**.
+**Esse no cobre como dividir tarefas
+pra IA**: quando um **prompt direto**
+resolve, quando precisa de **plano
+multi-step**, e como **decompor**
+problemas complexos em **sub-tarefas**
+que IA resolve melhor.
+
+O segredo de usar IA em codigo: **tarefa
+bem definida = resultado bom**. **Tarefa
+vaga = alucinacao**. **Decomposicao** e'
+a skill #1. **Nao** e' sobre o modelo
+ser "bom o suficiente" - e' sobre
+**voce** quebrar o problema em pedacos
+que a IA **consegue resolver**.
+
+Voce sai de "IA entrega codigo errado"
+pra "IA entrega codigo certo porque eu
+decomposei o problema direito".
+
+## O essencial 🟢
+
+**A maquina de decisao: prompt direto
+vs plano multi-step.**
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Preciso gerar codigo com IA]
+    Start --> Q1{Tarefa cabe em 1 arquivo?}
+    Q1 -->|Sim, ate 100 linhas| Q2{Conheco o output esperado?}
+    Q1 -->|Nao, multi-file| Plan1[Plano: dividir em sub-tarefas]
+
+    Q2 -->|Sim, testavel| Direct[Prompt direto + test]
+    Q2 -->|Nao, exploratorio| Chat[Chat: explorar primeiro]
+
+    Plan1 --> Plan2{Quanto contexto precisa?}
+    Plan2 -->|1-3 arquivos| Agent1[Agent mode curto]
+    Plan2 -->|5+ arquivos| Agent2[Agent mode longo com plano explicito]
+
+    Direct --> Done[OK]
+    Chat --> Done
+    Agent1 --> Done
+    Agent2 --> Done`}
+  caption="Decision tree: prompt direto vs plano multi-step. Regra pratica: (1) tarefa pequena + bem definida = prompt direto, (2) tarefa exploratoria = chat primeiro, depois codigo, (3) multi-arquivo = decompor em sub-tarefas. Decomp 5+ arquivos = plano explicito com etapas, testes por etapa, e review no fim."
+/>
+
+**Os 3 niveis de tarefa pra IA.**
+
+1. **Nivel 1 - Boilerplate/canned.**
+   "Escreve uma funcao que valida
+   email", "Cria um componente Button
+   com 3 variants". **IA resolve em
+   1 prompt**. Resultado **bom**, 80%
+   do tempo.
+
+2. **Nivel 2 - Refactor/contexto
+   local.** "Refatora essa funcao pra
+   usar async/await", "Extrai essa
+   logica pra um custom hook". **IA
+   resolve** com **contexto** (1-3
+   arquivos). Resultado **bom** se
+   contexto for claro.
+
+3. **Nivel 3 - Feature nova/arquitetura.**
+   "Adiciona autenticacao OAuth",
+   "Migra de Redux pra Zustand". **IA
+   precisa de plano** - divide em
+   **sub-tarefas**, cada uma com
+   contexto proprio. Resultado
+   **bom se decomposto**; **ruim se
+   pedir tudo de uma vez**.
+
+**Como decompor Nivel 3.** **Exemplo**:
+migrar de Redux pra Zustand.
+
+```text
+Nivel 3: "Migra app de Redux pra Zustand"
+  ↓
+Sub-tarefa 1: "Lista todos os slices Redux
+  e mapeia quais vao virar stores Zustand"
+  ↓
+Sub-tarefa 2: "Cria store Zustand pra
+  userSlice (com testes)"
+  ↓
+Sub-tarefa 3: "Migra componente A (1 por
+  vez, testa cada)"
+  ↓
+Sub-tarefa 4: "Migra componente B"
+  ↓
+... 30+ componentes, 1 por vez
+  ↓
+Sub-tarefa N: "Remove Redux, valida build"
+```
+
+**Cada sub-tarefa** = **1 prompt** com
+**contexto claro** + **teste
+verificando**. **NAO** pedir tudo
+numa vez.
+
+**O framework de prompt: 4 elementos.**
+
+1. **Tarefa:** o que fazer.
+2. **Contexto:** arquivos
+   relacionados, padroes do projeto.
+3. **Constraints:** limitacoes
+   (performance, estilo, libs
+   permitidas).
+4. **Verificacao:** como saber se
+   deu certo (teste, type check,
+   visual).
+
+**Exemplo - Nivel 1 bem feito.**
+
+```text
+Tarefa: "Cria funcao que valida CPF brasileiro"
+Contexto: "TypeScript, ESM, sem dependencias"
+Constraints: "Pure function, nao usar regex
+  exotica, suportar CPF com/sem pontuacao"
+Verificacao: "Deve aceitar 123.456.789-09 e
+  12345678909, rejeitar 111.111.111-11"
+```
+
+**Exemplo - Nivel 2 bem feito.**
+
+```text
+Tarefa: "Refatora UserProfile pra custom hook
+  useUserProfile"
+Contexto:
+  - src/components/UserProfile.tsx
+  - src/api/user.ts (fetch ja existe)
+Constraints:
+  - Manter compat com testes existentes
+  - Nao mudar a API publica do componente
+Verificacao: "yarn test UserProfile passa,
+  yarn typecheck passa"
+```
+
+**Exemplo - Nivel 3 decomposto.**
+
+```text
+Tarefa pai: "Adiciona autenticacao OAuth com
+  Google"
+
+Etapa 1: "Pesquisa e documenta o flow OAuth
+  Google num arquivo docs/oauth-flow.md"
+  ↓ (revisa: o flow ta' certo?)
+Etapa 2: "Cria estrutura /auth/google/ com
+  tipos e interfaces (sem implementacao)"
+  ↓ (revisa: tipos cobrem o flow?)
+Etapa 3: "Implementa /auth/google/callback
+  route handler"
+  ↓ (revisa: callback funciona local?)
+Etapa 4: "Implementa /auth/google/login
+  redirect"
+  ↓ (revisa: redirect gera URL correta?)
+Etapa 5: "Adiciona testes E2E com Playwright"
+  ↓ (revisa: E2E passa?)
+Etapa 6: "Adiciona ao UI (botao 'Login com
+  Google')"
+  ↓ (revisa: UX ta' boa?)
+```
+
+**Cada etapa** = **1 prompt** +
+**review** + **commit**. **Etapa
+separa** evita "IA fez tudo mas tem
+bug em algum lugar".
+
+**Os 4 erros que geram alucinacao.**
+
+1. **Tarefa vaga:** "faz um app bom"
+   - IA inventa requisitos.
+2. **Contexto faltando:** "adiciona X"
+   sem dizer onde/como - IA escolhe
+   pattern errado.
+3. **Sem verificacao:** "implementa
+   Y" sem teste - IA entrega
+   "compila" mas nao "funciona".
+4. **Multiplas tarefas:** "faz A, B,
+   C, D" - IA mistura, faz A direito
+   e B errado.
+
+**Solucao: 1 tarefa por prompt, com
+verificacao.**
+
+**A regra 1-3-5.** **1** objetivo por
+prompt. **3** arquivos maximo de
+contexto. **5** etapas maximo por
+"feature" (decomponha se for mais).
+
+## Aprofundamento 🟡
+
+**Contexto de arquivos: 1, 3, ou 10?**
+**1 arquivo** = simples, IA le e
+entende. **3 arquivos** = IA
+correlaciona, melhor resultado.
+**10+ arquivos** = IA **se perde**,
+tenta adivinhar, gera errado.
+**Solucao**: **resuma** 10 arquivos em
+1 doc de contexto, mande esse doc
+como input.
+
+**Exemplo de resumo de contexto.**
+
+```text
+# Codebase context: auth module
+
+## Estrutura
+- /auth/login: recebe email/password, chama API
+- /auth/callback: recebe OAuth code, troca por token
+- /auth/session: armazena JWT em cookie httpOnly
+
+## Padroes usados
+- Todas as rotas async com try/catch
+- Errors: throw AppError(code, message)
+- Logger: log.info(message, context)
+- Testes: Jest, mocks em __mocks__/
+
+## O que adicionar
+- /auth/google: OAuth com Google (novo)
+- Middleware: verificar token em rotas privadas
+```
+
+**Esse doc de contexto** substitui 10
+arquivos de codigo, IA entende
+**rapido**.
+
+**Quando usar agent mode vs prompt
+direto.** **Agent mode** (Cursor
+Composer, Claude Code agent) e'
+**poderoso mas arriscado**: IA
+planeja, edita, roda testes, **ate dar
+certo**. **Use para**:
+
+- Refactor grande e bem
+  definido ("renomeia X em todo
+  codigo").
+- Boilerplate multi-file ("cria
+  componente + tests + story").
+- Bug **claro** com teste que
+  falha.
+
+**NAO use** para:
+
+- Decisao de arquitetura
+  (IA escolhe errado sem review).
+- Logica de negocio
+  especifica.
+- Codigo de seguranca.
+
+**"Plan mode" do Cursor / Claude
+Code.** Em vez de agente agir
+diretamente, **planeja** primeiro,
+**mostra plano**, **voce aprova**,
+depois agente age. **Recomendado**
+pra Nivel 3.
+
+**Exemplo de fluxo agent com
+plan mode.**
+
+```text
+Voce: "Adiciona paginacao a tabela de users"
+IA: "Plano: 1) criar useUsersPaginated hook,
+    2) modificar UserTable pra aceitar paginacao,
+    3) adicionar botoes next/prev, 4) atualizar
+    testes. Posso prosseguir?"
+Voce: "Sim, prossiga"
+IA: [executa 4 etapas, mostra diffs]
+Voce: revisa cada diff
+```
+
+**1 task** → **plano visivel** → **review
+por etapa** = **resultado confiavel**.
+
+**Iteracao vs geracao.** Em 2026, o
+pattern mais produtivo e' **iterar**:
+
+```text
+Prompt 1: "Cria funcao que valida CPF"
+IA: [codigo inicial]
+Voce: "Botao, agora aceita CPF com pontuacao
+  E sem pontuacao, e remove caracteres nao
+  numericos antes de validar"
+IA: [codigo melhorado]
+Voce: "Adiciona teste pra CPF com letras
+  no meio (deve rejeitar)"
+IA: [codigo com teste]
+```
+
+**3-5 iteracoes** por tarefa = **90%
+do valor**. **1 prompt "perfeito"** e'
+**raro**.
+
+**Context window: o limite real.**
+Modelos tem **limite de contexto**:
+Claude Sonnet = 200K tokens (~150K
+palavras), GPT-4 = 128K. **Mande
+contexto relevante**, nao tudo. **Nao
+cole 50 arquivos** - IA **se perde**,
+**gera pior**.
+
+**Resumo de contexto longo.** Se o
+projeto e' grande, **resuma em 1-2K
+tokens** e mande isso. **Menos
+contexto + mais preciso > mais
+contexto + mais ruido**.
+
+## Pra quem quer ir mais alem 🔴
+
+**Specification-driven development
+(SDD).** Pattern: **antes** de pedir
+codigo, **escreve spec** (1-2
+paginas): objetivo, casos de uso,
+constraints, edge cases. **Depois**
+pede codigo com a spec como input.
+**IA gera 3-5x melhor** com spec
+clara.
+
+**Tools: TaskMaster, claude-task-
+master, BMAD.** **Frameworks** que
+decompem feature em **tasks**, cada
+task com **acceptance criteria**.
+**IA executa task por task**, voce
+**revisa entre tasks**. **Tooling
+state of the art** em 2026.
+
+**AI pair programming com 2 LLMs.**
+**Pair programming classico**: 1
+dev dirige, outro revisa. **Versao
+AI**: **1 LLM gera codigo**, **outro
+LLM revisa** (Claude gera, GPT
+revisa, ou vice-versa). **2 perspectives**
+pegam mais bugs.
+
+**AI em TDD.** **Excelente**. **TDD**
+define **comportamento esperado** (teste
+vermelho), **IA gera codigo que passa
+o teste** (verde). **Fluxo**:
+1. Escreve teste (voce).
+2. IA gera implementacao.
+3. Teste passa (verde).
+4. Refactor (IA ajuda).
+5. Repete.
+
+**Menos alucinacao** porque teste
+define comportamento. **Mais
+rapido** porque IA sabe **exatamente**
+o que precisa.
+
+**Leitura recomendada:**
+
+- [Claude Code - Best Practices](https://docs.claude.com/en/docs/claude-code/best-practices) - workflow, context, agent mode, tips.
+- [Anthropic - Prompt Engineering Overview](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview) - patterns de prompt, system prompt, context.
+- [Cursor - Agent Mode](https://docs.cursor.com/agent) - plan mode, multi-file, agent capabilities.
+
+> Dica: o erro mais comum em IA coding
+> e' **pedir tarefa grande demais**.
+> "Faz um app de e-commerce" ou
+> "migra de Redux pra Zustand" = IA
+> alucina, gera generico, voce
+> refaz. **Decomposicao** em 1-3
+> etapas por vez = **resultado
+> confiavel**. **Gaste 5 min
+> decompondo** = economiza **2h de
+> codigo errado**.
+
+No proximo no, vamos **ler codigo
+gerado**: como auditar um diff grande
+(200+ linhas) que IA produziu, **red
+flags** de seguranca/performance, e
+**checklist** antes de aceitar.
+
+<Quiz
+  question="Quando voce deve decompor uma tarefa em sub-tarefas antes de pedir pra IA gerar codigo?"
+  options={[
+    {
+      text: "Quando a tarefa envolve mais de 3 arquivos OU 100+ linhas OU multi-step com dependencias entre si. Decomposicao evita 'IA fez tudo mas tem bug em algum lugar' - cada sub-tarefa vira 1 prompt com contexto proprio + teste verificando. Tarefas simples (1 arquivo, < 100 linhas) cabem em prompt direto.",
+      correct: true,
+      explanation:
+        "A regra pratica: **1 arquivo, < 100 linhas, tarefa clara** = prompt direto. **3+ arquivos, > 100 linhas, multi-step** = decomp em sub-tarefas. **Por que?** IA tem **context window limitado** (Claude 200K, GPT 128K) e **se perde com muito contexto**. **Decomposicao** da: (1) **contexto focado** por sub-tarefa (IA entende melhor), (2) **review incremental** (voce pega bug entre etapas, nao no fim), (3) **rollback granular** (se etapa 3 falha, rollback so' etapa 3, nao tudo), (4) **commits logicos** (1 commit por sub-tarefa = git history limpo). **Exemplo**: 'migra Redux → Zustand' e' 30+ componentes = 30+ sub-tarefas, 1 por componente, com testes cada. **'Adiciona OAuth'** = 6 etapas (spec → types → callback → redirect → tests → UI). **Pattern 1-3-5**: **1** objetivo por prompt, **3** arquivos max de contexto, **5** etapas max por feature.",
+    },
+    {
+      text: "Sempre - decomp em sub-tarefas ate a menor unidade possivel.",
+      correct: false,
+      explanation:
+        "Falso. **Decomposicao excessiva** = overhead. **Tarefa simples** (1 arquivo, < 100 linhas, claro) = **prompt direto** resolve em 1 iteracao. **Decomposicao** tem custo: **5 sub-tarefas = 5 prompts = 5 reviews = 5x mais tempo**. Use **decomposicao** quando **complexidade justifica** o overhead. **Tarefa Nivel 1** (boilerplate) = prompt direto. **Tarefa Nivel 2** (refactor local) = prompt com contexto. **Tarefa Nivel 3** (feature nova) = decomposicao. **Regra pratica**: se **1 arquivo, < 100 linhas**, **NAO decomp**.",
+    },
+    {
+      text: "Nunca - IA moderna resolve qualquer tarefa em 1 prompt.",
+      correct: false,
+      explanation:
+        "Falso. **IA moderna** (Claude Opus 4, GPT-5) e' muito capaz, mas tem **limitacoes reais**: (1) **context window** finito (mesmo 200K tokens e' 'infinito' ate nao ser), (2) **multi-step com dependencias** = IA **se perde** no meio, (3) **logica de negocio especifica** = IA **inventa** regras. **Decomposicao** nao e' sobre 'IA nao presta' - e' sobre **cognitively loading** a IA com **contexto focado por etapa**. **Resultado**: codigo mais confiavel, mais rapido de revisar, rollback granular. **IA 'moderna' ainda se beneficia** de decomposicao - e' **engenharia**, nao 'falta de capacidade'.",
+    },
+  ]}
+/>

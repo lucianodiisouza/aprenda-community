@@ -1,0 +1,82 @@
+---
+id: templates-binding
+title: "Templates, Binding e Eventos"
+resources:
+  - title: "Angular: Templates"
+    url: https://angular.dev/guide/templates
+    type: doc
+    lang: en
+    free: true
+  - title: "Angular: Event listeners"
+    url: https://angular.dev/guide/templates/event-listeners
+    type: doc
+    lang: en
+    free: true
+---
+
+Template é onde o estado do componente vira interface. É aqui que o usuário vê
+o título da trilha, clica no botão, preenche o campo e entende se algo deu certo
+ou falhou.
+
+O risco é tratar template como "HTML com poderes" e jogar regra demais nele.
+Template bom mostra intenção. Regra mais pesada fica na classe ou no service.
+
+## Os bindings principais
+
+```html
+<h1>{{ trilha.titulo }}</h1>
+
+<img [src]="trilha.capaUrl" [alt]="trilha.titulo" />
+
+<button type="button" [disabled]="salvando" (click)="salvar()">
+  Salvar
+</button>
+```
+
+Nesse exemplo existem ligações diferentes:
+
+- `{{ trilha.titulo }}` mostra texto.
+- `[src]="trilha.capaUrl"` controla uma propriedade.
+- `[disabled]="salvando"` liga estado do componente ao elemento.
+- `(click)="salvar()"` reage a evento.
+
+## Classes, estilos e atributos
+
+Você também controla classe, estilo e atributo acessível:
+
+```html
+<article
+  [class.concluida]="trilha.feita"
+  [style.opacity]="trilha.bloqueada ? 0.5 : 1"
+  [attr.aria-busy]="carregando"
+>
+  {{ trilha.titulo }}
+</article>
+```
+
+Use `[attr.*]` quando estiver lidando com atributos HTML/ARIA que não são
+propriedades diretas do elemento.
+
+## Referências locais
+
+Templates também podem criar referências locais:
+
+```html
+<input #busca type="search" />
+<button type="button" (click)="filtrar(busca.value)">Buscar</button>
+```
+
+Isso é útil para interações simples. Se o campo vira parte de um fluxo maior,
+formulário reativo costuma ser melhor.
+
+Três ideias pra levar deste nó:
+
+- **Interpolação mostra texto.**
+- **Property binding controla propriedades.**
+- **Event binding chama ações do componente.**
+
+> Dica: se uma expressão no template precisa de muita lógica, dê um nome para
+> ela na classe. HTML legível vale mais que esperteza inline.
+
+No próximo nó, vamos controlar listas, condições e formatação com diretivas,
+control flow e pipes.

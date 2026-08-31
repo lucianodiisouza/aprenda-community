@@ -1,0 +1,544 @@
+---
+id: pii-e-privacidade
+title: "PII e privacidade: LGPD/GDPR no client, scrubbing, consentimento, data minimization"
+resources:
+  - title: "LGPD - Lei Geral de Protecao de Dados (PT-BR)"
+    url: https://www.gov.br/cidadania/pt-br/acesso-a-informacao/lgpd
+    lang: pt
+    type: doc
+    free: true
+  - title: "GDPR - Official EU portal (EN)"
+    url: https://gdpr.eu/
+    lang: en
+    type: doc
+    free: true
+  - title: "Sentry - Data Scrubbing (EN)"
+    url: https://docs.sentry.io/security-legal-pii/scrubbing/
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce instalou Sentry, OTel, e feature
+flags. **Tudo funcionando**. Ate que o
+**DPO (Data Protection Officer)** da
+empresa pergunta: "esse Sentry coleta
+dados de usuarios brasileiros? **Voce
+pediu consentimento?** Ta' em
+conformidade com **LGPD**?". **Esse no
+cobre PII e privacidade**: o que
+**observabilidade** pode infringir em
+**LGPD/GDPR**, como fazer **scrubbing**
+de dados sensiveis antes de enviar,
+**consentimento** do usuario, e
+**data minimization** (recolher
+minimo necessario).
+
+A linha de fundo: **observabilidade
+**coleta MUITO dado** (user ID, IP,
+user agent, comportamento, geolocalizacao)
+que pode ser **PII (Personally
+Identifiable Information)**. Sem
+cuidado, voce viola LGPD/GDPR, gera
+multa, e perde confianca do user. **Nao
+e' "sentry, nao precisa se preocupar"**.
+**Sim** precisa.
+
+Voce sai de "instalei e esqueci" pra
+"instalei, configurei privacy, e
+documentei".
+
+## O essencial 🟢
+
+**O que e' PII.** **Personally
+Identifiable Information** = qualquer
+dado que **identifica** uma pessoa:
+direto (nome, email, CPF, IP) ou
+indireto (user ID + cookies +
+geolocalizacao). Em LGPD/GDPR,
+**tratar PII** (recolher, armazenar,
+processar) tem **regras estritas**.
+
+**PII comum em observabilidade.**
+
+- **Direto:** email, nome, telefone,
+  CPF, endereco.
+- **Indireto:** IP, user ID, user
+  agent, cookies, geolocalizacao
+  (lat/long), device ID.
+- **Comportamental:** cliques,
+  navegacao, tempo em pagina.
+
+**Sentry/OTel coletam MUITO** disso
+por default. **Voce** precisa **scrub**.
+
+**LGPD vs GDPR - diferencas
+praticas.**
+
+- **LGPD (Brasil, 2020):** similar a
+  GDPR. **ANPD** e' a autoridade.
+  Multa maxima: 2% do faturamento
+  (cap R$ 50M por infracao).
+- **GDPR (Europa, 2018):** **ICO** (UK),
+  CNIL (FR), etc. Multa maxima: 4% do
+  faturamento global (cap €20M).
+
+**Em 2026**, LGPD e GDPR sao
+**praticamente equivalente** em
+frontend. **Implementar LGPD-compliant
+= GDPR-compliant** (e vice-versa).
+
+**Os 5 principios da LGPD pra
+observabilidade.**
+
+1. **Finalidade:** coletar dado com
+   proposito **especifico** ("medir
+   performance" e' OK; "analisar
+   comportamento" sem consentimento,
+   nao).
+2. **Necessidade (data minimization):**
+   recolher **minimo** necessario. **IP
+   do user** nao e' necessario pra
+   "medir LCP" - **anonimize**.
+3. **Transparencia:** user sabe o que
+   esta' sendo coletado (privacy
+   policy, cookie banner).
+4. **Seguranca:** proteger dado
+   coletado (encryption at rest, in
+   transit). **Sentry HTTPS** e'
+   obrigatorio.
+5. **Direito do titular:** user pode
+   pedir **acesso, correcao, exclusao**
+   dos dados. **Sentry tem API de
+   delete** (`/api/0/projects/{org}/{proj}/users/{user_hash}/`).
+
+**Pipeline de PII em observabilidade.**
+
+<Mermaid
+  chart={`flowchart LR
+    User[User no app] --> Collect[1. Collect: SDK captura eventos]
+    Collect --> Consent{2. Consent?}
+    Consent -->|Sem consent| Drop[Drop evento]
+    Consent -->|Com consent| Scrub[3. Scrub: remove PII]
+    Scrub --> Anon[4. Anonimize: hash userId, drop IP]
+    Anon --> Send[5. Send: HTTPS pro backend]
+    Send --> Retain[6. Retain: 30 dias, depois delete]
+
+    Scrub --> Sub1[Email, telefone, CPF]
+    Scrub --> Sub2[Senhas, tokens, API keys]
+    Scrub --> Sub3[Headers sensiveis: cookie, authorization]
+    Anon --> Sub4[IP -> truncate last octet]
+    Anon --> Sub5[userId -> hash SHA-256]
+    Anon --> Sub6[Geolocation -> country only]`}
+  caption="Pipeline de PII em observabilidade: (1) SDK captura eventos, (2) verifica consent, (3) scrub campos sensiveis (email, token, password), (4) anonimiza user identifier (hash) e remove IP, (5) envia via HTTPS, (6) retem por periodo definido. Cada etapa e' um gate - evento pode ser dropado, scrubbed, ou retido. Falha em qualquer gate = potencial violacao."
+/>
+
+**Sentry scrubbing - `beforeSend`.**
+
+```ts
+Sentry.init({
+  dsn: "...",
+  sendDefaultPii: false,  // NAO envia PII por default
+  beforeSend: (event) => {
+    // 1. Remove user.email
+    if (event.user) {
+      delete event.user.email;
+      delete event.user.ip_address;
+      delete event.user.geo;
+    }
+    // 2. Scrub breadcrumbs (URLs com query params)
+    if (event.breadcrumbs) {
+      event.breadcrumbs = event.breadcrumbs.map((b) => {
+        if (b.data?.url) {
+          const url = new URL(b.data.url);
+          url.search = "";  // remove query params
+          b.data.url = url.toString();
+        }
+        return b;
+      });
+    }
+    // 3. Remove exception values com PII
+    if (event.exception?.values) {
+      event.exception.values = event.exception.values.map((e) => {
+        if (e.value?.includes("@")) {
+          e.value = e.value.replace(
+            /[\w.-]+@[\w.-]+\.\w+/g,
+            "[REDACTED]"
+          );
+        }
+        return e;
+      });
+    }
+    return event;
+  },
+});
+```
+
+**`sendDefaultPii: false`** e' **critico**
+- por default e' `true` (envia IP,
+user agent, cookies). Set `false`
+e **explicitamente adicione** o que
+voce precisa.
+
+**OTel scrubbing.** OTel nao tem
+`beforeSend` nativo, mas da' pra
+**adicionar um processor**:
+
+```ts
+import { SpanProcessor } from "@opentelemetry/sdk-trace-web";
+
+class PIISpanProcessor implements SpanProcessor {
+  onStart(span, parentContext) {}
+  onEnd(span) {
+    // Remove PII attributes
+    const attrs = span.attributes;
+    if (attrs["user.email"]) {
+      delete attrs["user.email"];
+    }
+    if (attrs["http.url"]) {
+      const url = new URL(String(attrs["http.url"]));
+      url.search = "";
+      attrs["http.url"] = url.toString();
+    }
+  }
+  shutdown() {}
+  forceFlush() {}
+}
+
+provider.addSpanProcessor(new PIISpanProcessor());
+```
+
+**Consentimento - "user tem que
+aceitar".** Em LGPD/GDPR, **cookie
+banner** ou **opt-in** e'
+**obrigatorio** pra coleta nao
+essencial. **Sentry, RUM, e feature
+flags** sao **nao essenciais** -
+precisam consent:
+
+```ts
+// Consent mode
+function trackEvent(event) {
+  if (!hasAnalyticsConsent()) return;  // user recusou
+  Sentry.captureMessage(event);
+}
+
+// Ou via tag
+Sentry.setTag("consent.analytics", "granted");
+```
+
+**Google Consent Mode v2.** Padrao do
+Google pra **gerenciar consent** em
+**Google Analytics, Google Ads, e
+ferramentas de ads**. **Adotado** por
+Sentry e outros. **2 modos**:
+`granted` (analytics permitido),
+`denied` (analytics bloqueado).
+
+```ts
+gtag("consent", "update", {
+  ad_storage: "granted",
+  analytics_storage: "granted",
+});
+```
+
+**Data minimization - "recolher
+minimo".** Pergunte: **"eu
+realmente preciso desse dado?"**.
+Exemplos:
+
+- **IP** - precisa pra **geolocation**
+  (Sentry mostra "user de SP"). Mas
+  da' pra usar **CDN header**
+  (`cf-ipcountry`) em vez de IP
+  completo. **Sentry tem opcao de
+  drop IP**.
+- **User agent** - util pra debug
+  ("so' Safari 14 tem esse bug").
+  **Truncar** se nao precisar
+  completo (`Safari/14` em vez de
+  `Mozilla/5.0 (...)Safari/14...`).
+- **Geolocation precisa** (lat/long) -
+  raramente necessario. **Country-only**
+  basta pra maioria dos casos.
+
+**`sendDefaultPii: false` em Sentry =
+sem IP, sem cookies, sem user agent
+completo.** Sentry ainda tem
+**`tracesSampler`** que faz geo via
+**Cloudflare/Vercel headers** (sem
+IP completo).
+
+**Feature flags e privacidade.**
+**LaunchDarkly** envia **user
+attributes** (country, email, plan)
+pro SaaS. **Targeting** = "10% dos
+users em BR ve nova feature". Em
+LGPD, **targeting por atributo pessoal**
+(email, pais) **pode** ser tratamento
+de dado pessoal. **Mitigacoes**:
+
+- **Hash de user identifier** (envie
+  hash, nao email).
+- **Opt-in** explicito.
+- **Privacy policy** declara uso de
+  feature flags.
+
+**Sessao de replay e LGPD.** Sentry
+Session Replay **grava DOM**. Sem
+cuidado, **texto digitado em input**
+(que pode ser **senha**, **CPF**, **email**)
+e' capturado. **Mitigacoes**:
+
+```ts
+Sentry.init({
+  replays: {
+    maskAllText: true,    // texto vira ***
+    blockAllMedia: true,  // imagens/video nao gravados
+  },
+});
+
+// Específico: mascara inputs
+document.querySelectorAll("input[type='password']").forEach((el) => {
+  el.setAttribute("data-sentry-mask", "true");
+});
+```
+
+**Retencao - "quanto tempo guardar?".**
+LGPD/GDPR nao dao numero exato, mas
+**"necessario pra finalidade"** se
+aplica. **Recomendacoes**:
+
+- **Sentry:** 30-90 dias de retencao.
+- **OTel traces:** 7-30 dias (volume
+  alto).
+- **Logs:** 30-90 dias.
+- **Session replay:** 7-30 dias
+  (sensiveis).
+
+**Sentry API delete** (LGPD "right to
+be forgotten"):
+
+```bash
+# Deletar user do Sentry
+curl -X DELETE \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  https://sentry.io/api/0/projects/{org}/{proj}/users/{user_hash}/
+```
+
+**Documente** no privacy policy como
+user pode pedir **exclusao de dados
+de observabilidade**.
+
+## Aprofundamento 🟡
+
+**Cross-border data transfer.** LGPD
+**proibe** transferencia de dados
+pessoais pra paises sem **nivel
+adequado de protecao**. **Sentry**,
+**Datadog** tem data centers em **US
+e EU**. **GDPR** (europeu) requer que
+dados de EU citizens fiquem em EU
+(ou paises adequacy). **Sentry SaaS
+US** viola GDPR pra users europeus
+(a menos que use **Sentry EU
+region**).
+
+**Sentry EU Region**: `de.sentry.io`
+(Germany), `us.sentry.io` (US).
+**Configure** DSN pra apontar pra
+regiao correta:
+
+```ts
+Sentry.init({
+  dsn: "https://...@de.sentry.io/123",  // EU
+});
+```
+
+**Data Processing Agreement (DPA).**
+LGPD/GDPR exigem que **voce (controlador)**
+e **Sentry (operador)** tenham **DPA**
+formal. **Sentry** tem DPA pronto em
+sentry.io/legal/dpa. **Assine** antes
+de usar Sentry em prod.
+
+**Subprocessors.** Sentry usa
+**subprocessors** (Cloudflare, AWS,
+etc). **Documente** no privacy
+policy. **Sentry publica lista em**
+sentry.io/legal/subprocessors.
+
+**OpenTelemetry Collector + PII
+filtering.** Em prod, OTel Collector
+pode **filtrar PII** antes de enviar
+pro backend:
+
+```yaml
+processors:
+  attributes/pii:
+    actions:
+      - key: user.email
+        action: delete
+      - key: http.url
+        action: update
+        value: "%{url.scheme}://%{url.host}%{url.path}"
+      - key: client.address
+        action: hash
+```
+
+**Stronger privacy com differential
+privacy.** Em casos extremos, **adiciona
+"ruido"** aos dados (differential
+privacy). **Apple** faz isso em
+telemetria - coleta "X users fizeram
+Y" mas com **±5% ruido**. User
+individual **nao** e' identificavel.
+**Overkill** pra maioria dos apps,
+util em **regulacao pesada** (saude,
+financas).
+
+**Consent management platforms (CMP).**
+SaaS que gerenciam consent de
+**milhares de vendors** (OneTrust,
+Cookiebot, Osano). Integram com
+**Google Consent Mode v2**, **IAB
+TCF v2.1**, e propagam consent pra
+todas as tags (GTM, Sentry, etc).
+**Use** em apps com **muitos vendors**.
+
+**PII em logs - automatic
+redaction.** Em Node/JS, use libs
+como `pino` com `redact: { paths:
+['*.password', '*.token'] }` ou
+`@logtail/redaction`. **Sentry** tem
+**server-side scrubbing** tambem
+(config no dashboard).
+
+**Privacy by design.** LGPD/GDPR
+favorecem **"privacy by design"** -
+**trate PII desde o design**,
+nao como "depois eu vejo". Concreto:
+
+- **Schema de evento:** defina **quais
+  campos** sao PII e **sempre
+  redacte**.
+- **Data flow diagram:** documente
+  **onde** PII entra e **para onde**
+  vai.
+- **DPIA (Data Protection Impact
+  Assessment):** analise de impacto,
+  obrigatoria pra **alto risco**.
+
+**Anonimizacao vs pseudonimizacao.**
+
+- **Anonimizacao:** remove **toda**
+  possibilidade de re-identificar.
+  Irreversivel. **LGPD/GDPR nao
+  aplicam** (dado nao e' mais
+  pessoal).
+- **Pseudonimizacao:** substitui
+  identifier por hash/token.
+  **Reversivel** (com a chave).
+  **LGPD/GDPR aplicam** (ainda e'
+  dado pessoal).
+
+**Hash SHA-256** do userId e'
+**pseudonimizacao** (reversivel se
+voce tem o userId original). **Anonimizacao**
+seria **drop** completo do userId.
+
+## Pra quem quer ir mais assim 🔴
+
+**HIPAA, PCI-DSS, SOC2.** Alem de
+LGPD/GDPR, **saude (HIPAA)** e
+**financas (PCI-DSS)** tem
+regulacoes mais estritas. **HIPAA**
+proibe Sentry SaaS sem **BAA
+(Business Associate Agreement)**
+- Sentry **nao** oferece. **Self-host
+Sentry** ou use **alternativa
+HIPAA-compliant** (New Relic, Datadog
+com BAA).
+
+**Privacy enhancing technologies
+(PETs).** Federated learning, secure
+multi-party computation, homomorphic
+encryption - **nao enviam dado bruto**
+pra servidor. **Pesquisa ativa**, **nao
+prod-ready** em 2026.
+
+**GDPR Cookie Compliance em SPAs.**
+SPA tem **desafio**: page nao recarrega,
+entao **cookie banner** precisa
+re-checar consent **a cada navigation**.
+**Vue/React/Angular** tem libs (e.g.,
+`@vue-cookie-accept-decline`).
+
+**LGPD enforcement 2024-2026.** ANPD
+aplicou **primeiras multas** em 2023-
+2024. Casos publicos: **Telecom
+(2023)**, **varejista (2024)**. **Valor
+medio**: R$ 5-15M. **Crescente** - LGPD
+**sendo enforced**.
+
+**DPIA template.** Em LGPD, **DPIA
+obrigatoria** para tratamento de
+dado **sensivel** (saude, raca,
+religiao) ou **alto risco**. **Template
+gratis** em
+[https://www.gov.br/anpd/pt-br](https://www.gov.br/anpd/pt-br).
+
+**Leitura recomendada:**
+
+- [LGPD - Portal do Governo](https://www.gov.br/cidadania/pt-br/acesso-a-informacao/lgpd) - texto legal, FAQ, orientacoes.
+- [GDPR - EU Portal](https://gdpr.eu/) - texto legal, guia pratico, checklist.
+- [Sentry - Data Scrubbing](https://docs.sentry.io/security-legal-pii/scrubbing/) - como configurar scrubbing, DPA, sub-processors.
+
+> Dica: o erro mais comum em
+> observabilidade + LGPD e' **"Sentry
+> ja' e' LGPD-compliant"**. **Nao e'**.
+> Sentry tem **ferramentas** (scrubbing,
+> DPA, EU region), mas **voce** precisa
+> **configurar** (`sendDefaultPii: false`,
+> `beforeSend`, region, etc). **Default
+> Sentry coleta IP, user agent
+> completo, cookies** - tudo PII. **Sem
+> configuracao**, voce viola LGPD. **5
+> minutos de setup** (sendDefaultPii +
+> beforeSend) cobrem 80% dos casos.
+> Documente no privacy policy. **DPA
+> assinado** antes de prod.
+
+No proximo no (ultimo), vamos **projeto
+final**: app completo com **Sentry
+integrado**, **RUM** com Web Vitals,
+**OpenTelemetry** com traces
+distribuidos, **feature flag** pra
+rollout progressivo, e **PII
+scrubbing** em conformidade com LGPD.
+O "hello world" de apps observaveis em
+producao.
+
+<Quiz
+  question="Por que `sendDefaultPii: false` em Sentry e' o primeiro passo obrigatorio pra conformidade com LGPD/GDPR?"
+  options={[
+    {
+      text: "Por default, Sentry envia IP do user, user agent completo, cookies, e outras PII sem anonimizar. Com `sendDefaultPii: false`, Sentry para de enviar esses campos automaticamente, e voce adiciona explicitamente o que precisa via setUser. Resultado: 80% da conformidade LGPD/GDPR resolvida em 1 linha de codigo.",
+      correct: true,
+      explanation:
+        "O ponto: Sentry default coleta **muito dado PII** - IP do user, user agent completo (incluindo OS, browser, versao, device), cookies, geo location. Tudo isso e' **PII** (LGPD/GDPR considera IP como PII desde 2016). Sem configuracao, **voce esta' coletando PII sem anonimizar** = violacao. `sendDefaultPii: false` faz Sentry **parar de enviar** IP, user agent completo, e cookies por default. Voce adiciona **explicitamente** o que precisa via `Sentry.setUser({ id: hash(userId) })` (anonimizado). Resultado: 80% da conformidade resolvida em 1 linha. Os outros 20% sao: (1) `beforeSend` pra scrub emails/tokens em mensagens, (2) DPA assinado com Sentry, (3) data region EU se user e' europeu, (4) privacy policy declara uso. **5 minutos** de setup cobrem a parte critica.",
+    },
+    {
+      text: "Sentry ja' e' LGPD-compliant por default - nao precisa fazer nada.",
+      correct: false,
+      explanation:
+        "Falso. Sentry tem **ferramentas** (scrubbing, DPA, EU region, `sendDefaultPii: false`), mas **nao** e' compliant out-of-box. Sentry default envia **IP, user agent completo, cookies** - PII. **Voce** precisa configurar. Em LGPD/GDPR, **controlador** (voce, dev) e **operador** (Sentry) tem **responsabilidades** separadas - Sentry provem ferramentas, voce usa direito. **Sem `sendDefaultPii: false`, voce esta' coletando IP sem consentimento** = violacao.",
+    },
+    {
+      text: "`sendDefaultPii: false` impede Sentry de funcionar - Sentry nao consegue rastrear errors sem PII.",
+      correct: false,
+      explanation:
+        "Falso. Sentry funciona **perfeitamente** sem PII. O que muda: (1) voce nao ve IP do user (mas ve country via CDN header), (2) voce nao ve user agent completo (mas ve browser + OS), (3) voce nao ve cookies (mas ve session ID). 90% da informacao util pra **error tracking** (stack trace, message, breadcrumbs, user hash, URL) **continua funcionando**. PII e' util pra **tracking individual** ('esse user especifico teve 5 errors'), mas **error grouping** (Sentry agrupa errors por stack trace) **funciona sem PII**. **Compliance** > **tracking individual**.",
+    },
+  ]}
+/>

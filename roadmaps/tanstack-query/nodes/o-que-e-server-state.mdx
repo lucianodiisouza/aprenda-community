@@ -1,0 +1,367 @@
+---
+id: o-que-e-server-state
+title: "O que é server state (e por que não cabe em useState)"
+resources:
+  - title: "TanStack Query docs - Practical React Query"
+    url: https://tkdodo.eu/blog/practical-react-query
+    type: artigo
+    lang: en
+    free: true
+  - title: "TkDodo's blog (Dominik Dorfmeister, mantenedor do TanStack Query)"
+    url: https://tkdodo.eu/blog/
+    type: artigo
+    lang: en
+    free: true
+  - title: "Server State - React Query (vídeo introdutório, EN)"
+    url: https://www.youtube.com/watch?v=seU46c6Jz7E
+    type: video
+    lang: en
+    free: true
+---
+
+A maior parte do "estado" numa app real **não vive no seu componente**.
+Vive num banco, numa API, num servidor que você não controla. Esse
+estado - que a gente chama de **server state** - tem regras muito
+diferentes do `useState` que você já conhece: pode mudar sem você
+perceber, pode ficar desatualizado, pode ser compartilhado entre
+vários usuários, e pode falhar por motivos que não são bugs do
+seu código.
+
+Quando você tenta guardar server state em `useState`, você acaba
+reescrevendo o TanStack Query de um jeito pior. Este nó é sobre
+entender o paradigma, pra chegar no `useQuery` com o modelo mental
+certo.
+
+## O essencial 🟢
+
+**Os três tipos de estado na UI.** Antes do TanStack Query, vale
+parar e separar:
+
+- **`client state`** - o estado que **você controla**, e que
+  existe só na sessão do usuário. Tema dark/light, toggle de
+  um menu, valor de um input antes do submit, qual aba está
+  aberta. Vive no React, some quando a aba fecha. Ferramenta
+  certa: `useState`, `useReducer`, Context API, Zustand.
+- **`server state`** - o estado que **vive num lugar que você não
+  controla** (banco, API de terceiros, microserviço). Você só tem
+  uma "foto" dele, e essa foto pode ficar velha. Lista de
+  usuários, contagem de likes, saldo da conta, dados de um
+  formulário que outra pessoa editou. Ferramenta certa: TanStack
+  Query, SWR, RTK Query, Apollo (esse último pra GraphQL).
+- **`URL state`** - o estado que vive na **própria URL**. Filtros,
+  busca, paginação, parâmetros de um modal. Ferramenta certa:
+  `useSearchParams` (Next), `useParams` (React Router), ou
+  `searchParams` em Server Components.
+
+```tsx
+// client state - "qual aba está ativa?". Você controla.
+const [aba, setAba] = useState<"home" | "perfil" | "config">("home");
+
+// server state - "lista de usuários". Você só tem uma cópia.
+const usuarios = await fetch("/api/usuarios").then((r) => r.json());
+
+// URL state - "qual página está aberta?". Vive no navegador.
+const searchParams = new URLSearchParams(location.search);
+const page = Number(searchParams.get("page") ?? "1");
+```
+
+**Por que `useState` quebra com server state.** O `useState` é
+feito pra estado **síncrono, controlado e local**. Server state
+não tem nenhuma dessas três propriedades:
+
+```tsx
+// Código que parece certo mas quebra em produção
+function Perfil({ userId }: { userId: string }) {
+  const [usuario, setUsuario] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/usuarios/${userId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        setUsuario(data);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(e);
+        setLoading(false);
+      });
+  }, [userId]);
+
+  if (loading) return <Spinner />;
+  if (error) return <Erro />;
+  return <Nome valor={usuario.nome} />;
+}
+```
+
+Os problemas que aparecem rápido:
+
+- **Sem cache.** Cada componente que busca o mesmo `userId` faz
+  a mesma request. Se você tem 5 cards de perfil na mesma tela,
+  são 5 requests idênticas.
+- **Sem retry.** Caiu a rede por 200ms? A request falha, e o
+  usuário vê um erro que sumiu sozinho.
+- **Sem refetch quando o foco volta.** Usuário trocou de aba por
+  5 minutos, voltou, e os dados estão velhos. Você precisa
+  escrever `refetchOnFocus` na mão (e nunca vai).
+- **Race conditions.** Se `userId` muda rápido (digitando numa
+  busca), a request antiga pode voltar **depois** da nova, e
+  você mostra dados errados. O `useEffect` cleanup raramente
+  cancela a request - você precisa de `AbortController`.
+- **Estado compartilhado.** Dois componentes que precisam do
+  mesmo dado duplicam o estado. Não tem como saber se são a
+  "mesma" informação.
+- **Loading vs. fetching.** Tem diferença entre "primeira vez"
+  (loading) e "atualizando em background" (fetching). Com
+  `useState`, você só tem um `loading` e perde a nuance.
+
+**O que TanStack Query resolve.** É uma lib de **server state
+cache** - ela guarda a resposta da request em memória, e expõe
+um hook (`useQuery`) que te dá: o dado, o estado de loading,
+o estado de erro, e o poder de revalidar quando você quiser.
+Comparado com `useEffect` + `useState`, o "Hello World" do
+TanStack Query é mais curto e te dá mais:
+
+```tsx
+// Mesmo caso, com TanStack Query
+import { useQuery } from "@tanstack/react-query";
+
+function Perfil({ userId }: { userId: string }) {
+  const { data: usuario, isLoading, isError, error } = useQuery({
+    queryKey: ["usuario", userId],
+    queryFn: () => fetch(`/api/usuarios/${userId}`).then((r) => r.json()),
+  });
+
+  if (isLoading) return <Spinner />;
+  if (isError) return <Erro mensagem={error.message} />;
+  return <Nome valor={usuario.nome} />;
+}
+```
+
+Esse `useQuery` sozinho te dá:
+
+- **Cache** - se outro componente já pediu esse `userId`, o dado
+  vem do cache, sem request.
+- **Deduplicação** - se dois componentes pedem o mesmo `userId`
+  no mesmo render, é **uma** request, não duas.
+- **Retry automático** - falha de rede? TanStack Query tenta de
+  novo, com backoff exponencial.
+- **Refetch on focus** - volta pra aba? O dado é revalidado
+  em background.
+- **Refetch on reconnect** - a rede caiu e voltou? O dado é
+  revalidado.
+- **Cancelamento** - se o componente desmonta no meio da
+  request, ela é cancelada (sem race condition).
+- **Loading vs. fetching** - tem `isLoading` (primeira vez) e
+  `isFetching` (atualizando), separados.
+
+**O que TanStack Query NÃO resolve.** Saber o que ela **não**
+faz é tão importante quanto saber o que faz. Senão você força
+o uso e fica confuso quando algo não funciona.
+
+- **Não substitui `useState` pra client state.** Cor do tema,
+  toggle de modal, valor de um input - isso continua sendo
+  `useState` (ou Context, ou Zustand). Misturar os dois
+  paradigmas é o erro mais comum.
+- **Não substitui a lógica de autenticação.** Token, refresh
+  token, logout - isso é do seu auth provider (Auth.js,
+  Clerk, Lucia). TanStack Query **busca** dados autenticados,
+  mas não **gerencia** a auth.
+- **Não é real-time por padrão.** Quando outro usuário edita
+  um registro, sua UI não atualiza sozinha. Pra isso você
+  precisa de WebSocket / SSE, ou fazer polling com
+  `refetchInterval`. Pertence à trilha
+  `real-time-websockets-sse` (issue #52).
+- **Não persiste entre reloads por padrão.** Recarregou a
+  página? O cache some. Pra persistir (offline-first,
+  multi-tab sync), você precisa de `persistQueryClient`
+  + storage. Menção no projeto final; aprofundamento
+  fica pra `pwa-offline-first` (issue #51).
+- **Não faz GraphQL ou REST - faz ambos.** A camada de
+  transporte é a `queryFn` que você passa. Você pode usar
+  `fetch`, `axios`, `graphql-request`, ou qualquer
+  cliente HTTP. TanStack Query cuida do cache e do
+  estado, não do request.
+
+**O ganho real: separar paradigmas.** O ponto principal não
+é "usar TanStack Query em vez de fetch". É **parar de
+misturar paradigmas** na mesma variável. Se o dado vem do
+servidor, ele tem regras diferentes (cache, invalidação,
+retry). Se é estado local, ele tem regras diferentes
+(síncrono, sem cache, sem retry). Quando você separa,
+o código fica menor e mais previsível.
+
+## Aprofundamento 🟡
+
+**A regra de ouro pra decidir o que vai onde.** Quando você
+abre um componente e não sabe se um pedaço de estado vai em
+`useState` ou `useQuery`, faça duas perguntas:
+
+1. **Esse valor existe se o usuário recarregar a página?**
+   - Se **sim** (lista de produtos, perfil do usuário logado,
+     contagem de likes), é server state → `useQuery`.
+   - Se **não** (toggle do menu, valor de um input antes do
+     submit, scroll position), é client state → `useState`.
+2. **Outro componente pode precisar do mesmo valor ao mesmo
+   tempo?**
+   - Se **sim** (dois componentes mostram o mesmo perfil,
+     três cards puxam o mesmo produto), é server state →
+     `useQuery` (compartilha o cache).
+   - Se **não** (estado de hover de um botão, ref de um
+     input), é client state → `useState` ou `useRef`.
+
+Em caso de dúvida, comece com `useState`. Promova pra
+`useQuery` quando você sentir dor (request duplicada, dados
+velhos, race condition).
+
+**O que TanStack Query é, de verdade, por dentro.** O
+`useQuery` é, internamente, um cache em memória (um `Map`
+chaveado por `queryKey`) + um sistema de subscrição. Quando
+você chama `useQuery({ queryKey: ["usuario", 1], ... })`:
+
+1. Ele checa o cache: "tenho dados pra essa chave?".
+2. Se sim, e o dado é "fresco" (dentro do `staleTime`),
+   retorna o dado sem fazer request.
+3. Se sim, mas o dado está "stale" (passou do
+   `staleTime`), retorna o cache e dispara uma request em
+   background pra revalidar.
+4. Se não tem no cache, dispara a request, e retorna
+   `isLoading: true` enquanto espera.
+5. Quando a request volta, atualiza o cache, e todos os
+   componentes subscritos re-renderizam com o dado novo.
+
+Isso é a base de tudo que vem a partir do próximo nó.
+Se você entender esse ciclo, o resto da trilha fica
+"como eu configuro cada parte desse fluxo".
+
+**Stale-while-revalidate, o padrão de UX.** A ideia de
+"retornar cache stale e revalidar em background" tem um
+nome: **stale-while-revalidate (SWR)**. É o mesmo padrão
+que HTTP define pra cache de CDN: o usuário vê o dado
+velho (rápido), e em paralelo o sistema busca o dado novo
+(que aparece na próxima interação ou na próxima revalidação).
+TanStack Query aplica esse padrão a qualquer fonte de dados
+(client, não só CDN).
+
+**`useQuery` é só o começo.** TanStack Query tem uma família
+de hooks:
+
+- `useQuery` - **read** (buscar dado).
+- `useMutation` - **write** (criar, atualizar, deletar).
+- `useInfiniteQuery` - listas paginadas com "carregar mais".
+- `useSuspenseQuery` - integração com `<Suspense>` do React
+  18+.
+- `useQueries` - múltiplas queries em paralelo, sem precisar
+  de hook manual.
+
+Esta trilha cobre o essencial dos 4 primeiros. O 5º fica
+como aprofundamento no `resources` do nó 5.
+
+**Como TanStack Query se compara a outras libs.** Vale
+saber que existem alternativas, e em que cada uma brilha:
+
+- **SWR** (Vercel) - irmã mais nova e mais simples da
+  TanStack Query. Menos features (não tem `useInfiniteQuery`
+  built-in, não tem `setQueryData`), mas a API é menor e o
+  bundle é menor. Boa pra SPAs pequenas que não precisam
+  de mutations complexas.
+- **RTK Query** (Redux Toolkit) - faz parte do ecossistema
+  Redux. Vantagem: se você já tem Redux na app, a
+  integração é natural. Desvantagem: se você **não** tem
+  Redux, é peso desnecessário.
+- **Apollo Client** - pra GraphQL. Tem cache inteligente
+  baseado em `__typename` e `id`, e faz normalização
+  automática. Se sua API é GraphQL, Apollo é a escolha
+  padrão; pra REST, TanStack Query é mais ergonômica.
+- **`fetch` + `useEffect`** - o caminho "vanilla". Funciona
+  pra protótipo, mas exige que você reimplemente tudo que
+  TanStack Query te dá de graça (cache, retry, refetch,
+  cancelamento). É a comparação implícita desta trilha:
+  a partir de agora, a gente considera o caminho vanilla
+  como "o caso ruim" e TanStack Query como "o caminho
+  certo" pra apps de produção.
+
+## Pra quem quer ir além 🔴
+
+**Como TanStack Query pensa cache invalidation.** O
+mantenedor da lib, Dominik Dorfmeister (TkDodo), escreveu
+um post só sobre isso: **"Mastering React Query Mutations"**.
+A ideia central: invalidação é o problema difícil de
+server state. Não é buscar (que é fácil - é um `fetch`),
+é **garantir que o cache bate com o servidor depois de
+uma escrita**. O TanStack Query te dá as ferramentas
+(`invalidateQueries`, `setQueryData`, `removeQueries`,
+`cancelQueries`), mas a estratégia (qual usar, quando)
+é decisão sua. Veremos isso a fundo nos nós
+`mutations` e `cache-invalidation`.
+
+**React Query e Suspense, a tendência.** O React 18+
+trouxe `<Suspense>` como first-class pra data fetching.
+TanStack Query tem `useSuspenseQuery` (que joga promise
+em vez de retornar `isLoading: true`), e o time da lib
+está migrando o restante da API pra Suspense-first. Em
+2026, a recomendação oficial é: use `useSuspenseQuery`
+em código novo, a menos que você tenha um motivo forte
+pra usar `useQuery` (ex: precisa do `isLoading` separado
+de `isError`). Esta trilha mostra o caminho com
+`useQuery` porque é mais ergonômico pra começar; a
+migração pra `useSuspenseQuery` é direta.
+
+**Inferência de tipo avançada com TanStack Query.** A
+lib usa generics (`useQuery<TQueryFnData, TError,
+TData, TQueryKey>`) que, em apps grandes, viram
+verbosos. Existem padrões com `queryOptions` (que
+encapsula a query e seus tipos) e com `inferência de
+tipo via query factory` que eliminam a repetição. É
+padrão de produção, mas além do escopo introdutório
+desta trilha - a `typescript-frontend` (quando sair)
+cobre com mais profundidade.
+
+**Leitura recomendada:**
+
+- [Practical React Query](https://tkdodo.eu/blog/practical-react-query) -
+  TkDodo, o mantenedor. A referência.
+- [Mastering React Query Mutations](https://tkdodo.eu/blog/mastering-mutations-in-react-query) -
+  invalidação depois de escrita.
+- [Server State - React Query (vídeo introdutório, EN)](https://www.youtube.com/watch?v=seU46c6Jz7E) -
+  overview de 15 minutos.
+
+> Dica: a tentação aqui é pular direto pra "como usar
+> useQuery com minha API". Não pule. O paradigma de
+> server state é a fundação - se você internalizar que
+> server state tem regras diferentes de client state, o
+> resto da trilha flui. Se você pular, vai usar
+> TanStack Query como se fosse `useState` com loading,
+> e perder 80% do ganho.
+
+No próximo nó, vamos abrir o **`useQuery`** de verdade:
+a anatomia do hook, o que cada campo do retorno significa
+(`data`, `isLoading`, `isFetching`, `isError`, `error`,
+`refetch`), e como configurar `staleTime`, `gcTime` e
+`enabled` pra moldar o comportamento.
+
+<Quiz
+  question="Qual a melhor forma de decidir se um pedaço de estado vai em useState ou useQuery?"
+  options={[
+    {
+      text: "Testar: se o valor existe depois de recarregar a página, vai em useQuery; se não, vai em useState.",
+      correct: true,
+      explanation:
+        "É o teste mais simples: server state (que existe no servidor) sobrevive a reload, client state (que vive só na sessão) não. Misturar os dois paradigmas é a fonte mais comum de bug com TanStack Query.",
+    },
+    {
+      text: "Sempre use useQuery pra qualquer estado que vier de uma request HTTP.",
+      correct: false,
+      explanation:
+        "Quase certo, mas não cobre o caso de input controlado (que é server state em potencial mas vive como client state até o submit). E ignora que useQuery tem custo (setup do QueryClientProvider, etc.) que não compensa pra um único fetch simples.",
+    },
+    {
+      text: "Sempre use useState, e migre pra useQuery quando o componente passar de 50 linhas.",
+      correct: false,
+      explanation:
+        "O critério de 'tamanho do componente' é arbitrário. O critério certo é semântico: que tipo de estado é esse, e onde vive a fonte da verdade?",
+    },
+  ]}
+/>

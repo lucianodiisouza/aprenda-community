@@ -1,0 +1,92 @@
+{
+  "slug": "i18n",
+  "title": "i18n / l10n: Intl APIs, ICU MessageFormat, RTL, translation workflow e pseudo-localization",
+  "description": "Trilha sobre internacionalizacao e localizacao: Intl APIs (NumberFormat, DateTimeFormat, Collator, ListFormat) pra formatacao locale-aware, ICU MessageFormat pra pluralizacao e selecao, RTL e bidirecionalidade (dir, logical properties), translation workflow (i18next, Locize, Crowdin), e pseudo-localization em CI pra detectar bugs cedo. Cobre o lado client; back-end de i18n coberto em backend.",
+  "difficulty": "intermediario",
+  "skills": [
+    "i18n",
+    "l10n",
+    "internacionalizacao",
+    "localizacao",
+    "intl",
+    "intl-numberformat",
+    "intl-datetimeformat",
+    "intl-collator",
+    "intl-listformat",
+    "icu",
+    "messageformat",
+    "pluralization",
+    "rtl",
+    "bidirecionalidade",
+    "logical-properties",
+    "i18next",
+    "formatjs",
+    "react-intl",
+    "translation-workflow",
+    "locize",
+    "crowdin",
+    "pseudo-localization",
+    "pseudo-locale",
+    "locale",
+    "language-tag",
+    "bcp47",
+    "cldr"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "i18n-vs-l10n",
+      "title": "i18n vs l10n: o que e cada, separacao codigo/conteudo, Locale vs Language",
+      "type": "topic",
+      "recommended": true,
+      "children": ["intl-apis"]
+    },
+    {
+      "id": "intl-apis",
+      "title": "Intl APIs: NumberFormat, DateTimeFormat, Collator, ListFormat",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["icu-messageformat"]
+    },
+    {
+      "id": "icu-messageformat",
+      "title": "ICU MessageFormat: pluralizacao, selecao, argumentos, MessageFormat 2",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rtl-e-bidirecionalidade"]
+    },
+    {
+      "id": "rtl-e-bidirecionalidade",
+      "title": "RTL e bidirecionalidade: dir, icones espelhados, logical properties",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["translation-workflow"]
+    },
+    {
+      "id": "translation-workflow",
+      "title": "Translation workflow: i18next, Locize/Crowdin, glossarios, plural rules",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pseudo-localization"]
+    },
+    {
+      "id": "pseudo-localization",
+      "title": "Pseudo-localization: testar com locale falso em CI, encontrar bugs cedo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: app multi-idioma com ICU, RTL e formatacao locale-aware",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,442 @@
+---
+id: ia-no-refactor
+title: "IA no refactor: refactor assistido, validar tipos, evitar alucinacao"
+resources:
+  - title: "TypeScript - Handbook (EN)"
+    url: https://www.typescriptlang.org/docs/handbook/intro.html
+    lang: en
+    type: doc
+    free: true
+  - title: "Martin Fowler - Refactoring (EN)"
+    url: https://refactoring.com/
+    lang: en
+    type: artigo
+    free: true
+---
+
+Voce tem uma funcao de 200 linhas que
+**funciona mas e' macarronada**. Pede
+pra IA "refatora isso". Ela entrega
+**codigo "bonito" que nao compila**
+porque alucinou uma API. **Esse no cobre
+IA no refactor**: como refatorar com
+IA **sem quebrar comportamento**,
+**validar tipos automaticamente**, e
+**identificar alucinacao de API** antes
+de aceitar.
+
+Refactor e' a operacao **mais arriscada**
+de AI coding: **muda estrutura sem
+mudar comportamento**. Sem testes, **IA
+introduz bugs sutis**. Com testes, IA
+**valida a si mesma**. **TypeScript** +
+**testes** = rede de seguranca.
+
+Voce sai de "IA quebra meu codigo em
+refactor" pra "IA refatora com seguranca".
+
+## O essencial 🟢
+
+**O fluxo seguro de refactor com IA.**
+
+1. **Testes primeiro.** Antes de
+   pedir refactor, **garanta testes
+   cobrindo o comportamento atual**.
+   Se nao tem, **escreva primeiro**
+   (use IA pra ajudar).
+2. **Refactor pequeno por vez.** "Extrai
+   essa funcao", "renomeia X pra Y",
+   "move pra modulo Z". NAO "refatora
+   tudo".
+3. **Tests passam a cada step.** Rode
+   testes apos cada mudanca. **Se
+   falha, volta**.
+4. **Commit por step.** 1 refactor = 1
+   commit. Facilita rollback.
+5. **Type check.** `tsc --noEmit` (zero
+   errors) **sempre**.
+
+**Exemplo de fluxo seguro.**
+
+```text
+# Estado inicial
+src/legacy.ts (200 linhas, 5 funcoes, sem testes)
+
+# Step 1: adicionar testes
+src/legacy.test.ts (cobre as 5 funcoes)
+git commit -m "test: add tests for legacy module"
+
+# Step 2: extrair funcao 1
+src/legacy.ts (190 linhas) + src/extract1.ts (10 linhas)
+git commit -m "refactor: extract function foo to extract1"
+
+# Step 3: extrair funcao 2
+src/legacy.ts (180 linhas) + src/extract2.ts (10 linhas)
+git commit -m "refactor: extract function bar to extract2"
+
+# ... continua
+
+# Final
+src/legacy.ts (50 linhas) + 5 arquivos extraidos
+```
+
+**Cada step**: testes verdes, type
+check OK, **commit atomico**.
+
+**Os 4 alucinacoes mais comuns em
+refactor.**
+
+1. **API inventada.** IA chama metodo
+   que **nao existe** na versao da lib.
+
+   ```ts
+   // IA gera
+   array.uniqueify();  // metodo inventado
+   // Real
+   [...new Set(array)];  // ou Array.from(new Set(array))
+   ```
+
+2. **Tipo errado.** IA passa tipo
+   errado, TypeScript pega.
+
+   ```ts
+   // IA gera
+   fetchUser(id: string) { ... }
+   // TypeScript pega
+   fetchUser(123);  // Error: number is not string
+   ```
+
+3. **Comportamento mudou.** IA
+   "refatora" mudando logica
+   sutilmente.
+
+   ```ts
+   // Antes
+   if (user.role === "admin" || user.role === "mod") { ... }
+
+   // IA "refatora" pra
+   if (user.isStaff) { ... }  // equivalente? nao
+   // isStaff pode incluir outros roles nao previstos
+   ```
+
+4. **Edge case perdido.** IA "limpa"
+   codigo removendo check que era
+   necessario.
+
+   ```ts
+   // Antes
+   if (!user) return null;
+   if (user.deleted) return null;
+   // ... logica
+
+   // IA "refatora" pra
+   // ... logica
+   // ❌ esqueceu de verificar deleted
+   ```
+
+**Como evitar alucinacao de API.**
+
+- **Use TypeScript.** `tsc --noEmit`
+  pega API inventada em 99% dos casos.
+- **Verifique versao da lib.** IA pode
+  usar API de versao antiga. **Diga
+  explicitamente**: "Use a versao 4.5
+  do Express".
+- **Use `npm view` ou `pnpm view`** pra
+  verificar API antes de aceitar.
+- **Olhe changelog** da lib se refactor
+  grande.
+
+**Como evitar mudanca de
+comportamento.**
+
+- **Tests** (cobre o comportamento
+  **antes** do refactor).
+- **Visual diff** (se UI, compare
+  screenshots).
+- **Code review** (outro dev
+  compara antes/depois).
+
+**Como evitar edge case perdido.**
+
+- **Testes de edge case** (null, 0,
+  "", negative, max).
+- **Property-based testing** (IA
+  gera inputs aleatorios).
+- **Code review** (procurar
+  "removi essa check" no diff).
+
+**O pattern: "behavior-preserving
+refactor".** Um **bom refactor** NAO
+muda comportamento. Como garantir:
+
+1. **Tests antes.** Capture
+   comportamento atual.
+2. **Refactor.** Mude estrutura, NAO
+   logica.
+3. **Tests depois.** Mesmo output, mesmo
+   comportamento.
+4. **Compare.** Se teste passou antes e
+   passa depois, **mesmo
+   comportamento** (com mesmas
+   condicoes).
+
+**Red flags no refactor com IA.**
+
+```text
+- "Simplifiquei a logica" (sem diff de teste)
+- "Removi codigo duplicado" (sem garantir mesmo comportamento)
+- "Melhorei a performance" (sem benchmark)
+- "Adicionei tipagem" (mas tipos diferentes do original)
+- "Refatorei pra ESM" (mas quebrou imports)
+```
+
+**Refactor seguro: 5 patterns.**
+
+1. **Rename** (variavel, funcao, file).
+   Baixo risco. **TypeScript pega
+   quebra**.
+2. **Extract function** (logica longa
+   em funcao nomeada). Baixo risco.
+3. **Move file** (de uma pasta pra
+   outra). Risco medio (imports).
+4. **Change type** (de `any` pra
+   tipo especifico). Risco medio.
+5. **Refactor architecture** (mover
+   logica entre modulos). **Alto
+   risco**. Decomponha.
+
+**A "rule of three".** **Nao refatore
+preemptivamente**. Espere ter **3 casos
+similares** antes de extrair pattern.
+**Refactor cedo demais** = **abstracao
+errada**. **Refactor tarde demais** =
+codigo duplicado.
+
+**IA ajuda com refactor "dificeis".**
+**Code smells** que IA detecta
+automaticamente:
+
+- God class (500+ linhas, 20+
+  metodos).
+- Long function (50+ linhas).
+- Duplicate code (3+ blocos similares).
+- Feature envy (metodo usa mais
+  dados de outra classe).
+- Primitive obsession (string
+  "user_role" em vez de enum).
+
+**Peca pra IA**: "lista code smells
+desse arquivo", "extrai o pattern
+X em funcao".
+
+## Aprofundamento 🟡
+
+**Refactor com type check e testes -
+o "safety net" duplo.**
+
+```text
+1. Antes: rodar testes + tsc → tudo OK
+2. Refactor: IA gera codigo novo
+3. tsc --noEmit → ZERO errors (TypeScript
+   pega tipos errados)
+4. npm test → 100% passing (tests pegam
+   comportamento)
+5. Se ambos passam → refactor OK
+6. Se algum falha → rollback ou fix
+```
+
+**Rede de seguranca**:
+
+- **TypeScript:** tipos errados, API
+  inexistente, null safety.
+- **Tests:** comportamento mudou.
+- **Lint:** patterns ruins.
+- **Code review:** decisao de design.
+
+**Refactor com diff visual.** Em
+refactor UI, compare screenshots:
+
+```ts
+// Playwright
+const before = await page.screenshot();
+await refactor();
+const after = await page.screenshot();
+expect(after).toMatchSnapshot(before);
+```
+
+**Visual diff** pega mudancas
+subtis de **layout, cor, spacing** que
+tests nao pegam.
+
+**Refactor de codigo gerado por IA
+em loop.** Pattern **iterativo**:
+
+```text
+1. Tests cobrem comportamento atual
+2. IA refatora (1 refactor por vez)
+3. Tests passam
+4. Commit
+5. Proximo refactor
+```
+
+**Loop ate** IA nao conseguir mais
+refatorar (codigo "limpo"). **Cada
+loop = 1 commit**. **10-50 commits
+por refactor grande** = **git
+history limpo**.
+
+**Refactor com IA + Behavior-Driven
+Development (BDD).** BDD = **spec
+em linguagem natural** (Gherkin) +
+tests:
+
+```gherkin
+Feature: User login
+  Scenario: Valid credentials
+    Given user exists with email "user@example.com"
+    When user submits login form
+    Then user is redirected to dashboard
+    And user sees "Welcome"
+```
+
+**IA gera implementacao** que **passa
+esses tests**. **Refactor** mantendo
+tests verdes. **BDD** = "behavior
+spec" que IA segue.
+
+**Quando NAO usar IA pra refactor.**
+
+- **Refactor de performance
+  critica.** IA pode introduzir
+  overhead sutil. **Benchmark**
+  antes/depois.
+- **Refactor com mudanca de
+  paradigma.** Migrar de OOP pra
+  functional, ou vice-versa - IA
+  mistura patterns.
+- **Refactor de codigo
+  altamente otimizado.** IA vai
+  "limpar" o que era deliberadamente
+  otimizado.
+- **Refactor sem testes.** Risco
+  alto demais.
+
+**"AI refactor debt" - o novo
+pattern.** **Code gerado por IA** sem
+refactor vira **"AI refactor debt"**:
+codigo "funcional" mas com patterns
+inconsistentes, naming confuso,
+duplicacao sutil. **Auditar** mensal
+e refatorar.
+
+**Leitura recomendada:**
+
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html) - tipos, generics, type narrowing.
+- [Martin Fowler - Refactoring](https://refactoring.com/) - catalogo de code smells, refactorings, behavior-preserving.
+
+> Dica: o erro mais comum em IA refactor
+> e' **pedir refactor sem testes**.
+> "Refatora essa funcao de 200 linhas"
+> = IA **muda comportamento** sem voce
+> perceber. **Sem testes**, **bug
+> silencioso** em prod. **Testes
+> antes** = **rede de seguranca**.
+> **5 min de testes** = **evita 5h
+> de debug em prod**. **TDD-first**
+> em refactor: capture comportamento
+> atual, **depois** refatore. **Tests
+> verdes antes e depois = mesmo
+> comportamento** (com TypeScript
+> pra pegar tipos).
+
+No proximo no, vamos **quando NAO usar
+IA**: lockfile, secrets, codigo com
+implicacao legal/seguranca, e os
+limites de IA em codigo critico.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarRiscoRefactor(alvos)` que classifica o risco de uma operacao de refactor assistida por IA. Recebe: alvos = { testesAntes: boolean, temTypescript: boolean, tamanhoDiff: number (linhas adicionadas/removidas), tipoRefactor: 'rename'|'extract'|'move'|'changeType'|'arquitetura', temSeguranca: boolean (altera codigo de auth/payment) }. Calcule score (0-100) baseado em: testesAntes=true → -20 pontos. temTypescript=true → -20 pontos. temSeguranca=true → +30 pontos. tamanhoDiff>200 → +20 pontos. tipoRefactor bonus: 'rename' → -10, 'extract' → -5, 'move' → 0, 'changeType' → +10, 'arquitetura' → +30. Score inicial = 50, aplique ajustes, max(0, min(100, score)). Retorna { score, risco: 'baixo' | 'medio' | 'alto' | 'critico' }. risco: score < 30 'baixo', < 60 'medio', < 80 'alto', senao 'critico'."
+  starterCode={`// ImplementeavaliarRiscoRefactor(alvos) que classifica o risco
+// de uma operacao de refactor assistida por IA.
+//
+// Schema de entrada:
+//   alvos = {
+//     testesAntes: boolean,
+//     temTypescript: boolean,
+//     tamanhoDiff: number,
+//     tipoRefactor: 'rename'|'extract'|'move'|'changeType'|'arquitetura',
+//     temSeguranca: boolean
+//   }
+//
+// Schema de saida:
+//   { score: number, risco: 'baixo' | 'medio' | 'alto' | 'critico' }
+//
+// Calculo:
+// - Score inicial: 50
+// - testesAntes=true: -20
+// - temTypescript=true: -20
+// - temSeguranca=true: +30
+// - tamanhoDiff>200: +20
+// - tipoRefactor: 'rename' -10, 'extract' -5, 'move' 0, 'changeType' +10, 'arquitetura' +30
+// - max(0, min(100, score))
+//
+// Risco:
+// - score < 30: 'baixo'
+// - score < 60: 'medio'
+// - score < 80: 'alto'
+// - senao: 'critico'
+functionavaliarRiscoRefactor(alvos) {
+  return { score: 0, risco: 'critico' };
+}
+
+const _r1 =avaliarRiscoRefactor({
+  testesAntes: true, temTypescript: true, tamanhoDiff: 50, tipoRefactor: 'rename', temSeguranca: false
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 =avaliarRiscoRefactor({
+  testesAntes: true, temTypescript: true, tamanhoDiff: 500, tipoRefactor: 'arquitetura', temSeguranca: true
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 =avaliarRiscoRefactor({
+  testesAntes: false, temTypescript: false, tamanhoDiff: 100, tipoRefactor: 'move', temSeguranca: false
+});
+console.log(JSON.stringify(_r3));
+
+const _r4 =avaliarRiscoRefactor({
+  testesAntes: true, temTypescript: true, tamanhoDiff: 150, tipoRefactor: 'extract', temSeguranca: false
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":10,"risco":"baixo"}
+{"score":100,"risco":"critico"}
+{"score":50,"risco":"medio"}
+{"score":30,"risco":"baixo"}'
+  slug="engenharia-ia"
+  nodeId="ia-no-refactor"
+/>
+
+<Quiz
+  question="Qual o fluxo mais seguro pra fazer refactor assistido por IA em codigo existente?"
+  options={[
+    {
+      text: "Tests antes (captura comportamento atual) → refactor pequeno (1 funcao/rename por vez) → tests passam apos cada step → commit por step → type check 0 errors. Sem tests = IA muda comportamento sem voce perceber. Com tests = rede de seguranca garante behavior-preserving refactor.",
+      correct: true,
+      explanation:
+        "O fluxo seguro: **tests antes** capturam comportamento. **Refactor pequeno** (1 rename, 1 extract, 1 move - NUNCA 'refatora tudo') limita blast radius. **Tests passam** apos cada step = **comportamento preservado**. **Commit por step** = rollback granular. **Type check 0 errors** = tipos consistentes. **Por que sem tests e' perigoso?** IA pode mudar logica sutilmente (ex: `if (a || b)` vira `if (a.isStaff)` que e' semanticamente diferente) e voce nao percebe. **Testes que passam antes e depois** com mesmo input = **comportamento equivalente**. **TypeScript** pega **outro tipo de bug**: API inventada, tipo errado, null safety. **Combinacao tests + TS** = **rede de seguranca dupla**. **'Refatora tudo'** = **muito arriscado** - muitos comportamentos podem mudar, diff gigante impossivel de revisar. **Decomponha**: 10-50 commits pequenos, cada um commita comportamento preservado.",
+    },
+    {
+      text: "Pedir pra IA 'refatora tudo' e' mais eficiente - 1 PR grande em vez de 50 pequenos.",
+      correct: false,
+      explanation:
+        "Falso. **1 PR grande de refactor** = **alto risco** + **review impossivel**. **Code review** em 500+ linhas de diff = **reviewer cansa**, **perde bugs**, **demora dias**. **Muitos commits pequenos** = **review incremental** (cada commit revisado em 5 min), **rollback granular** (se step 3 falha, rollback so' step 3), **git history legivel** (`git log --oneline` mostra o que mudou). **'Eficiencia'** de PR grande = **ilusao**: 1 PR grande demora +50% mais que 10 PRs pequenos (reviewer mais lento, mais conflitos, mais rebase). **Pattern 'decomponha'** = o mesmo do node anterior (1 tarefa por prompt, decomposicao de Nivel 3).",
+    },
+    {
+      text: "TypeScript sozinho basta - nao precisa de tests pra refactor seguro.",
+      correct: false,
+      explanation:
+        "Falso. **TypeScript** pega **bugs de tipo** (API inexistente, tipo errado, null safety) - **excelente** pra isso. **TypeScript NAO pega** bugs **comportamentais** (logica que muda sutilmente sem erro de tipo). **Exemplo**: `if (a || b)` vira `if (a.isStaff)` - **TypeScript passa** (boolean → boolean), mas **comportamento mudou** (a.isStaff pode incluir outros roles nao previstos). **Tests** sao a **unica rede de seguranca** contra mudanca comportamental. **Combinacao** = types + tests = **rede completa** (types pra tipos, tests pra comportamento).",
+    },
+  ]}
+/>

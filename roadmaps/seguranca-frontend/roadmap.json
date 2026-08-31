@@ -1,0 +1,89 @@
+{
+  "slug": "seguranca-frontend",
+  "title": "Seguranca Frontend: XSS, CSRF, CSP, CORS, storage seguro e supply chain",
+  "description": "Trilha de seguranca especifica do frontend: XSS (stored, reflected, DOM-based) e sanitizacao com DOMPurify, CSRF com SameSite cookies e tokens sincronizador, CSP como defesa em profundidade, headers de hardening, storage seguro (localStorage vs sessionStorage vs cookies httpOnly vs IndexedDB vs memory), CORS e preflight, e supply chain (lockfile, npm audit, Snyk, signed commits). Complementa a ciberseguranca-para-devs com o foco no browser e no bundle.",
+  "difficulty": "intermediario",
+  "skills": [
+    "security",
+    "xss",
+    "csrf",
+    "csp",
+    "cors",
+    "cookies",
+    "samesite",
+    "httponly",
+    "secure",
+    "content-security-policy",
+    "trusted-types",
+    "localstorage",
+    "sessionstorage",
+    "indexeddb",
+    "dompurify",
+    "sanitizacao",
+    "supply-chain",
+    "npm-audit",
+    "snyk",
+    "dependabot",
+    "renovate",
+    "lockfile",
+    "sbom",
+    "signed-commits"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "modelo-de-ameacas-frontend",
+      "title": "Modelo de ameacas frontend: trust boundary, o que proteger no client",
+      "type": "topic",
+      "recommended": true,
+      "children": ["xss"]
+    },
+    {
+      "id": "xss",
+      "title": "XSS: stored, reflected, DOM-based, sanitizacao com DOMPurify",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["csrf-e-cors"]
+    },
+    {
+      "id": "csrf-e-cors",
+      "title": "CSRF e CORS: SameSite cookies, preflight, tokens sincronizadores",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["csp-e-headers"]
+    },
+    {
+      "id": "csp-e-headers",
+      "title": "CSP e headers de hardening: Content-Security-Policy, Trusted Types, helmet",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["storage-seguro"]
+    },
+    {
+      "id": "storage-seguro",
+      "title": "Storage seguro: localStorage, sessionStorage, cookies httpOnly, IndexedDB, memory",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["supply-chain"]
+    },
+    {
+      "id": "supply-chain",
+      "title": "Supply chain: lockfile, npm audit, Snyk, Dependabot/Renovate, signed commits",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: hardening de uma SPA (CSP, headers, sanitizacao, audit)",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

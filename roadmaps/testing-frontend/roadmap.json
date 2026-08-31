@@ -1,0 +1,85 @@
+{
+  "slug": "testing-frontend",
+  "title": "Testing Frontend: Vitest, Testing Library, Playwright",
+  "description": "Trilha sobre testes em camadas no client-side: pirâmide de testes, unit com Vitest, component com Testing Library, E2E com Playwright, visual regression, acessibilidade automatizada (axe) e pipeline de CI. Complementa a `backend` (que cobre Vitest pra Node) com o lado client: testar React, simular o usuário, validar fluxos de ponta a ponta e automatizar a verificação de qualidade em PR.",
+  "difficulty": "intermediario",
+  "skills": [
+    "vitest",
+    "testing-library",
+    "react-testing-library",
+    "playwright",
+    "e2e",
+    "unit-testing",
+    "component-testing",
+    "a11y",
+    "axe-core",
+    "visual-regression",
+    "ci",
+    "github-actions",
+    "msw"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "piramide-de-testes",
+      "title": "Por que testar: pirâmide, ROI e trade-offs por camada",
+      "type": "topic",
+      "recommended": true,
+      "children": ["vitest-unit"]
+    },
+    {
+      "id": "vitest-unit",
+      "title": "Vitest: setup, matchers, mocks, spies, coverage",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["testing-library-component"]
+    },
+    {
+      "id": "testing-library-component",
+      "title": "Testing Library: render, queries por papel, userEvent, async",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["playwright-e2e"]
+    },
+    {
+      "id": "playwright-e2e",
+      "title": "Playwright E2E: setup, locators, fixtures, traces, paralelização",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["visual-regression"]
+    },
+    {
+      "id": "visual-regression",
+      "title": "Visual regression: Chromatic, Percy, toHaveScreenshot do Playwright",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["testes-de-acessibilidade"]
+    },
+    {
+      "id": "testes-de-acessibilidade",
+      "title": "Testes de acessibilidade: axe-core, jest-axe, pa11y em CI",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["testes-em-ci"]
+    },
+    {
+      "id": "testes-em-ci",
+      "title": "Testes em CI: GitHub Actions, paralelização, cache, secrets, badge",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: componente de UI com unit + component + a11y + E2E em CI",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

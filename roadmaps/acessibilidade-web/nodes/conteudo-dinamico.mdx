@@ -1,0 +1,115 @@
+---
+id: conteudo-dinamico
+title: "Conteúdo Dinâmico: aria-live e Mensagens Importantes"
+resources:
+  - title: "Atributo aria-live"
+    url: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-live
+    type: doc
+    lang: en
+    free: true
+  - title: "ARIA live regions"
+    url: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma mensagem pode aparecer visualmente longe do foco. Sem uma pista programática,
+quem usa leitor de tela pode não perceber que algo mudou. Pense no botão
+"Adicionar ao carrinho": o foco continua nele, mas o total muda no cabeçalho.
+
+```html
+<button id="adicionar" type="button">Adicionar café ao carrinho</button>
+<p id="mensagem-carrinho" role="status" aria-atomic="true"></p>
+```
+
+```js
+let quantidade = 0;
+const mensagem = document.querySelector('#mensagem-carrinho');
+
+document.querySelector('#adicionar').addEventListener('click', () => {
+  quantidade += 1;
+  mensagem.textContent = `Café adicionado. Carrinho com ${quantidade} item(ns).`;
+});
+```
+
+A atualização é anunciada sem mover o foco. A região já existia vazia antes da
+mudança, o que torna o anúncio mais confiável do que inserir uma região pronta e
+preenchida no mesmo instante.
+
+<Mermaid
+  chart={`sequenceDiagram
+    participant P as Pessoa
+    participant B as Botão
+    participant T as Tela
+    participant L as Live region
+    P->>B: ativa Adicionar
+    B->>T: atualiza carrinho visual
+    B->>L: escreve mensagem
+    L-->>P: anuncia sem mover foco`}
+  caption="Uma ação atualiza a tela e a live region; o foco permanece no controle acionado."
+/>
+
+### `polite` para feedback comum
+
+Use para mensagens que podem esperar o momento adequado, como "item adicionado" ou "salvo com sucesso".
+
+### `assertive` só quando realmente precisa interromper
+
+`aria-live="assertive"` pode cortar o anúncio atual. Reserve para situações urgentes.
+
+### `role="status"` resolve muitos casos
+
+```html
+<p role="status">3 resultados encontrados.</p>
+```
+
+`role="status"` já possui comportamento de live region educada. Para um erro urgente
+que impede a continuidade, `role="alert"` pode ser adequado. Não combine vários
+papéis e `aria-live` sem necessidade.
+
+### Carregamento também precisa de estado
+
+```html
+<section id="resultados" aria-busy="true" aria-labelledby="titulo-resultados">
+  <h2 id="titulo-resultados">Resultados</h2>
+  <p role="status">Carregando resultados...</p>
+</section>
+```
+
+Quando a requisição terminar, atualize o conteúdo, troque `aria-busy` para `false`
+e anuncie a quantidade encontrada. Evite anunciar cada linha recebida.
+
+- **Live region** anuncia mudanças fora do foco.
+- **`polite`** é a escolha segura para feedback comum.
+- **`assertive`** fica para urgências reais.
+- **Menos é mais**: anunciar cada atualização transforma informação em ruído.
+
+### Teste sem depender só da visão
+
+Ative um leitor de tela, mantenha o foco no botão e execute a ação três vezes.
+Você deve ouvir uma mensagem curta por ação, com o total correto, sem ser levado
+para outra parte da página. Em seguida, teste ações rápidas para conferir se as
+mensagens continuam úteis em vez de se acumularem.
+
+No próximo nó, vamos tratar um componente que exige cuidado especial com foco: **diálogos modais**.
+
+<Quiz
+  question="Qual opção combina melhor com uma mensagem comum de sucesso?"
+  options={[
+    {
+      text: "role status ou aria-live polite, sem roubar o foco da pessoa",
+      correct: true,
+    },
+    {
+      text: "aria-live assertive para qualquer atualização",
+      correct: false,
+      explanation: "Assertive pode interromper anúncios importantes. Use só quando a urgência justificar.",
+    },
+    {
+      text: "Mover o foco para o topo da página sempre que algo for salvo",
+      correct: false,
+      explanation: "Feedback comum pode ser anunciado sem tirar a pessoa de onde ela está trabalhando.",
+    },
+  ]}
+/>

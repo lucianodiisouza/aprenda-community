@@ -1,0 +1,562 @@
+---
+id: testes-em-ci
+title: "Testes em CI: GitHub Actions, paralelização, cache, secrets, badge"
+resources:
+  - title: "GitHub Actions - Workflows (oficial, EN)"
+    url: https://docs.github.com/en/actions/using-workflows
+    lang: en
+    type: doc
+    free: true
+  - title: "Playwright - CI (oficial, EN)"
+    url: https://playwright.dev/docs/ci
+    lang: en
+    type: doc
+    free: true
+  - title: "GitHub Actions - Dependency caching (oficial, EN)"
+    url: https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+    lang: en
+    type: doc
+    free: true
+---
+
+Os 6 nós anteriores mostraram **o que testar**.
+Este nó mostra **como rodar tudo isso em CI**:
+a cada PR aberto, o GitHub Actions sobe o app,
+roda unit + component + a11y + E2E + visual
+regression, e bloqueia o merge se algo falhar.
+O "V" verde no PR é a prova de que a mudança
+não quebrou nada.
+
+A regra do CI: **rápido e confiável**. Um pipeline
+que demora 30 minutos e é flake ninguém confia. Um
+pipeline de 5 minutos e estável vira "a rede de
+segurança do time". Esse equilíbrio é o que
+define a forma do pipeline.
+
+## O essencial 🟢
+
+**Anatomia de um workflow do GitHub Actions.**
+Workflow é um arquivo YAML em `.github/workflows/`
+que define "o que rodar, em que branch, com que
+config":
+
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+
+      - run: pnpm lint
+
+      - run: pnpm test:run --coverage
+
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+```
+
+Os blocos principais:
+
+- **`on`** - gatilhos: `push` (na main), `pull_request`
+  (em PR pra main), `workflow_dispatch` (manual).
+- **`jobs`** - cada bloco é um job. Roda em máquina
+  separada (runner). Pode rodar em paralelo com
+  outros jobs.
+- **`steps`** - comandos do job. Cada step roda
+  sequencialmente; falha de step com `set -e` quebra
+  o job.
+- **`uses`** - ação do marketplace (ex:
+  `actions/checkout@v4`).
+- **`run`** - comando shell.
+
+**Cache de `node_modules`.** A regra "não reinstale
+o que já tá instalado" economiza minutos:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 20
+    cache: pnpm
+
+# ou cache manual (mais controle)
+- uses: actions/cache@v4
+  with:
+    path: ~/.local/share/pnpm/store
+    key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+    restore-keys: |
+      pnpm-${{ runner.os }}-
+```
+
+`cache: pnpm` é o atalho oficial - usa o lockfile
+como chave. Se o lockfile não mudou, usa o cache
+(0 download). Se mudou, baixa tudo de novo.
+
+**Cache de browsers do Playwright.** Playwright
+baixa Chromium, Firefox, WebKit (cada um ~100MB).
+Sem cache, é 5+ minutos só de download por CI run:
+
+```yaml
+- name: Cache Playwright Browsers
+  id: cache-playwright
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/ms-playwright
+    key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+- name: Install Playwright Browsers
+  if: steps.cache-playwright.outputs.cache-hit != 'true'
+  run: pnpm exec playwright install --with-deps
+```
+
+A primeira vez: baixa e cacheia (~3 min). Runs
+seguintes: 0 download. Em matriz de 5 jobs, isso
+economiza 15 min por PR.
+
+**Paralelização com matriz.** Cada combinação de
+`browser` x `shard` roda em runner separado:
+
+```yaml
+jobs:
+  test-e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false  # não cancela outros se um falhar
+      matrix:
+        browser: [chromium, firefox, webkit]
+        shard: [1, 2, 3, 4]
+
+    steps:
+      # ...
+      - run: pnpm exec playwright test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/4
+```
+
+Resultado: 12 jobs paralelos (3 browsers × 4
+shards), cada um roda 1/4 dos testes. Tempo total
+vira 1/12 do sequencial.
+
+**`fail-fast: false`** é importante: se o job
+"chromium-shard-1" falha, **não** cancela os outros.
+Você quer ver todos os erros de uma vez, não
+"consertei um e apareceu outro".
+
+**`shard` no Playwright.** Pra dividir testes
+em N partes:
+
+```bash
+pnpm exec playwright test --shard=1/4
+pnpm exec playwright test --shard=2/4
+pnpm exec playwright test --shard=3/4
+pnpm exec playwright test --shard=4/4
+```
+
+O Playwright distribui os testes **automaticamente**
+- não precisa configurar nada. Cada shard roda em
+paralelo e o resultado aparece consolidado no
+report.
+
+**Pipeline visualizado:**
+
+<Mermaid
+  chart={`flowchart LR
+    PR["PR aberto / push na main"] --> Lint["lint + typecheck"]
+    Lint --> Unit["unit + component + a11y<br/>(1 runner, ~2 min)"]
+    Unit --> Mat[matriz E2E]
+    Mat --> C1["chromium shard 1"]
+    Mat --> C2["chromium shard 2"]
+    Mat --> C3["chromium shard 3"]
+    Mat --> C4["chromium shard 4"]
+    Mat --> F1["firefox shard 1"]
+    Mat --> F2["firefox shard 2"]
+    Mat --> F3["firefox shard 3"]
+    Mat --> F4["firefox shard 4"]
+    Mat --> W1["webkit shard 1"]
+    Mat --> W2["webkit shard 2"]
+    Mat --> W3["webkit shard 3"]
+    Mat --> W4["webkit shard 4"]
+    C1 & C2 & C3 & C4 & F1 & F2 & F3 & F4 & W1 & W2 & W3 & W4 --> Report["consolida report + artifacts"]
+    Report --> Badge{bloqueia<br/>merge?}
+    Badge --> Sim["❌ CI vermelho - bloqueia"]
+    Badge --> Nao["✅ CI verde - permite merge"]`}
+  caption="Pipeline de testes: lint + typecheck + unit sao sincronos (1 job), E2E e paralelizado em matriz (3 browsers x 4 shards = 12 jobs paralelos). Report consolidado sobe se algo falhar."
+/>
+
+A **ordem importa**: lint + typecheck rápido
+roda primeiro (se falhar, E2E nem precisa rodar).
+Unit + component roda em paralelo com a matriz
+de E2E. Tudo consolidado num report único.
+
+**Secrets pra autenticação.** Tokens de API,
+DB urls, e outras credenciais vão em
+**`Settings > Secrets and variables > Actions`**,
+não no YAML:
+
+```yaml
+- name: Run E2E with auth
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: pnpm exec playwright test
+```
+
+No Playwright, dá pra passar secrets via
+`use` na config:
+
+```ts
+// playwright.config.ts
+use: {
+  baseURL: process.env.BASE_URL,
+  extraHTTPHeaders: {
+    Authorization: `Bearer ${process.env.API_TOKEN}`,
+  },
+},
+```
+
+**`concurrency` pra cancelar runs antigos.**
+Em PR com 10 commits, o GitHub roda 10 pipelines
+(em série, mas ainda 10x). Pra cancelar runs
+anteriores quando um novo push chega:
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+O `group` é o que identifica o "slot" (mesmo
+PR/branch). `cancel-in-progress: true` cancela
+o run anterior quando o novo começa. Poupa
+runner-time e dá feedback mais rápido.
+
+**`upload-artifact` pra debug.** Quando um
+teste falha em CI, você precisa ver o que
+aconteceu. O Playwright gera report, screenshots,
+e traces - tudo é "artifact":
+
+```yaml
+- uses: actions/upload-artifact@v4
+  if: failure()
+  with:
+    name: playwright-report-${{ github.run_id }}
+    path: |
+      playwright-report/
+      test-results/
+    retention-days: 7
+```
+
+Baixe o artifact no GitHub UI, descompacta, abre
+`playwright-report/index.html` no browser, e tem
+o trace viewer completo de cada teste.
+
+**Badge verde no README.** Pra mostrar "isso aqui
+é testado":
+
+```markdown
+<!-- README.md -->
+[![Tests](https://github.com/user/repo/actions/workflows/test.yml/badge.svg)](https://github.com/user/repo/actions/workflows/test.yml)
+```
+
+O badge vem do GitHub Actions automaticamente.
+URL do badge: `https://github.com/<owner>/<repo>/actions/workflows/<workflow>.yml/badge.svg`.
+
+## Aprofundamento 🟡
+
+**Separar unit/component de E2E em jobs diferentes.**
+Pipeline de 1 job sequencial = lento. Pipeline
+com jobs paralelos = rápido:
+
+```yaml
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:run --coverage
+      - uses: actions/upload-artifact@v4
+        with: { name: coverage, path: coverage/ }
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: unit   # espera unit passar (rápido)
+    steps:
+      # ... mesmo setup ...
+      - run: pnpm exec playwright test
+```
+
+O `needs: unit` faz E2E esperar unit. Falha em
+unit = E2E nem roda. Em sucesso, ambos rodam em
+paralelo se você remover o `needs`. Trade-off:
+mais paralelismo = mais runner-time = mais custo.
+
+**Cache de Playwright por browser.** Em vez de
+1 cache pra todos os browsers, cache por browser
+(chromium muda de versão separado de webkit):
+
+```yaml
+- name: Cache Playwright Chromium
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/ms-playwright/chromium-*
+    key: playwright-chromium-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+- name: Cache Playwright Firefox
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/ms-playwright/firefox-*
+    key: playwright-firefox-${{ hashFiles('**/pnpm-lock.yaml') }}
+```
+
+Útil em projetos onde chromium domina (CI rápido
+no PR) e webkit/firefox rodam só em nightly
+(cobertura).
+
+**Caching customizado: `vitest cache`.** O Vitest
+também tem cache de transformação:
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: node_modules/.vite
+    key: vite-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml', '**/vite.config.*') }}
+```
+
+Ganho menor que o cache de node_modules, mas ajuda
+em suite grande (>1000 testes).
+
+**`if: failure()` e `if: always()` pra actions
+condicionais.** O `upload-artifact` típico só
+roda se o job falhou (você não precisa do report
+em sucesso):
+
+```yaml
+- uses: actions/upload-artifact@v4
+  if: failure()  # ou always() / success() / cancelled()
+  with:
+    name: playwright-report
+    path: playwright-report/
+```
+
+Ações comuns:
+
+- **`if: always()`** - roda independente de
+  sucesso/falha (limpeza, log).
+- **`if: failure()`** - só em falha (upload de
+  debug).
+- **`if: cancelled()`** - só em cancelamento
+  (cleanup).
+- **`if: success()`** - só em sucesso (deploy,
+  notificação).
+
+**`continue-on-error` pra tasks de reporting.**
+Às vezes você quer que o job **continue** mesmo
+se um step falha - típico em upload de artifacts
+no final:
+
+```yaml
+- uses: actions/upload-artifact@v4
+  continue-on-error: true
+  with:
+    name: coverage
+    path: coverage/
+```
+
+Se o upload falha (problema de storage), o job
+não fica vermelho. Útil em jobs "depois do teste"
+onde o resultado principal já foi commitado.
+
+**`pull_request_target` vs `pull_request`.** Cuidado
+com qual evento usar:
+
+- **`pull_request`** - roda no código do PR. É o
+  padrão pra testes.
+- **`pull_request_target`** - roda no código da
+  base, com secrets do repo. Usado pra deploy
+  de preview (Vercel, Netlify), mas tem risco
+  de segurança: código do PR pode fazer checkout
+  da base e executar.
+
+Pra teste de PR, **use `pull_request`**. Pra
+preview deploy, use `pull_request_target` com
+cuidado (checkout do PR em vez da base).
+
+## Pra quem vai além 🔴
+
+**Self-hosted runners pra velocidade extrema.**
+GitHub-hosted runners (ubuntu-latest) levam 30-60s
+pra subir. Em time que roda 100+ PR/dia, self-hosted
+runner compensa:
+
+```yaml
+jobs:
+  test:
+    runs-on: [self-hosted, linux, x64, testing]
+    # ...
+```
+
+Self-hosted runner = máquina sua rodando agente
+do GitHub 24/7. Vantagem: 0 setup time, 0 download
+time (cache local). Desvantagem: manutenção,
+segurança (PR com código malicioso roda no seu
+runner), custo de infra.
+
+Em time pequeno (até 5 devs), hosted é mais
+simples. Em time médio (10+ devs, 50+ PR/dia),
+self-hosted compensa. Em big tech (Google, Meta),
+self-hosted é mandatório.
+
+**`act` pra rodar GH Actions local.** Pra testar
+workflow antes de fazer push:
+
+```bash
+brew install act
+act -j test  # roda o job 'test' local
+```
+
+`act` simula o runner do GitHub Actions na sua
+máquina. Útil pra debug rápido. Limitação: não
+replica 100% do ambiente (algumas actions têm
+comportamento diferente).
+
+**Matrix com `include` e `exclude` pra casos
+especiais.** Em vez de comb(n) exaustivo:
+
+```yaml
+strategy:
+  matrix:
+    node: [18, 20, 22]
+    os: [ubuntu-latest, macos-latest]
+    include:
+      # Adiciona Windows só em Node 20
+      - node: 20
+        os: windows-latest
+    exclude:
+      # Node 18 não roda no macOS
+      - node: 18
+        os: macos-latest
+```
+
+Permite combinações específicas sem inflar a
+matriz inteira.
+
+**Preview deploy + teste de aceitação.** Em
+Vercel/Netlify, cada PR sobe um **preview
+deploy** (URL única). Combine com Playwright:
+
+```yaml
+- name: Wait for Vercel Preview
+  run: |
+    URL=$(pnpm vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes)
+    echo "PREVIEW_URL=$URL" >> $GITHUB_ENV
+
+- name: Run E2E on Preview
+  run: pnpm exec playwright test --config=playwright.preview.config.ts
+
+- name: Comment PR with Preview URL
+  uses: marocchino/sticky-pull-request-comment@v2
+  with:
+    message: |
+      Preview: ${{ env.PREVIEW_URL }}
+      Test result: ${{ job.status }}
+```
+
+Resultado: cada PR tem URL de preview + teste
+E2E rodando contra o PR. O usuário revisa a UI
+antes de aprovar.
+
+**`dependabot` pra manter Playwright atualizado.**
+Playwright lança versão nova a cada 1-2 meses.
+Dependabot abre PR automático de upgrade:
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      testing:
+        patterns: ["@playwright/*", "vitest", "@testing-library/*"]
+```
+
+Manter Playwright atualizado evita ficar 6 meses
+em versão antiga (e ter que migrar de uma vez).
+
+**Leitura recomendada:**
+
+- [GitHub Actions - Workflows](https://docs.github.com/en/actions/using-workflows) - a doc oficial, com exemplos.
+- [Playwright - CI](https://playwright.dev/docs/ci) - o setup otimizado pra Playwright.
+- [GitHub Actions - Caching dependencies](https://docs.github.com/en/actions/using-workflows/caching-dependencies) - como cache funciona, chaves, restore-keys.
+
+> Dica: o erro mais comum é ter **1 job
+> sequencial** que roda lint + typecheck + unit +
+> E2E + a11y + visual = 30 min. O dev pula o
+> CI porque demora demais, abre PR com bug.
+> Solução: **paralelize** (lint+typecheck+unit
+> em 1 job rápido, E2E em matriz separada).
+> Objetivo: feedback em \<5 min pra erros
+> comuns, e feedback completo em \<15 min.
+
+No próximo nó (e último), vamos **unir tudo
+no projeto final**: um componente de UI real
+com unit + component + a11y + 1 E2E, tudo
+rodando em CI.
+
+<Quiz
+  question="Qual é a principal vantagem de paralelizar a matriz de E2E em CI?"
+  options={[
+    {
+      text: "Dividir 50 testes em 10 shards paralelos reduz tempo total de 25 min para ~3 min.",
+      correct: true,
+      explanation:
+        "Matriz de E2E com N shards roda cada shard em runner separado, em paralelo. 50 testes / 10 shards = 5 testes por runner. Se cada teste leva 30s, sequencial = 25 min, paralelo = ~3 min. O feedback rápido é o que torna o pipeline confiável - dev confia no verde, não pula CI.",
+    },
+    {
+      text: "Permite rodar os testes em mais browsers (Chromium, Firefox, WebKit) cobrindo bugs específicos.",
+      correct: false,
+      explanation:
+        "É um efeito colateral útil mas não é a principal vantagem. A principal é TEMPO - paralelismo reduz wall-clock time. Cobertura multi-browser é um bônus. Você pode paralelizar 1 browser em N shards (ganho de tempo) sem multi-browser (custo fixo de runner-time).",
+    },
+    {
+      text: "Aumenta a cobertura de testes automaticamente.",
+      correct: false,
+      explanation:
+        "Não - paralelização não muda cobertura. Os mesmos testes rodam, só em runners diferentes. Cobertura vem de escrever mais testes, não de paralelizar. O paralelismo muda só o tempo de execução.",
+    },
+  ]}
+/>

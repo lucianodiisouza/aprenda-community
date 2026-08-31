@@ -1,0 +1,423 @@
+---
+id: projeto-final
+title: "Projeto final: chat real-time com rooms, presence e sync de estado"
+resources:
+  - title: "Socket.IO - Get started (oficial, EN)"
+    url: https://socket.io/docs/v4/tutorial/step-1
+    lang: en
+    type: doc
+    free: true
+  - title: "Yjs Getting Started (EN)"
+    url: https://docs.yjs.dev/getting-started/working-with-shared-types
+    lang: en
+    type: doc
+    free: true
+  - title: "MDN - EventSource (EN)"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/EventSource
+    lang: en
+    type: doc
+    free: true
+---
+
+Hora de unir tudo. Voce vai construir um
+**chat real-time com rooms, presence e
+sync de estado**, integrando os 7 nos da
+trilha num app real que: conecta via
+**WebSocket** (ou Socket.IO), tem **rooms**
+(canais de chat), mostra **presence**
+(quem ta' online + typing indicator),
+**sincroniza estado** entre clients
+(quem mandou o que, ordem das mensagens),
+e **sobrevive a quedas de rede** com
+reconexao automatica.
+
+Esse projeto nao segue o esqueleto de
+"explicar conceito + dar exemplo" dos
+outros nos. E' um brief de projeto, no
+estilo de `projects/<slug>.mdx` do
+aprenda-community. Le ate o fim antes de
+comecar.
+
+## O que voce vai construir
+
+Um **chat real-time completo**, entregue
+como:
+
+- **App funcional** com **2 ou mais clients
+  conectados** (abra 2 abas, mesmo chat,
+  mensagens aparecem em tempo real).
+- **Rooms** (ex: `#geral`, `#random`,
+  `#dev`) - cada room tem seu canal.
+- **Presence** visivel: lista de quem ta'
+  online em cada room, com **typing
+  indicator** ("Ana esta' digitando...").
+- **Reconexao robusta**: mate o server, os
+  clients reconectam com **backoff + jitter**
+  automatico, mensagens enviadas durante a
+  queda **nao se perdem** (fila offline).
+- **Sync de estado** ao reconectar: o
+  client que reconectou recebe as mensagens
+  que perdeu (via Last-Event-ID no SSE ou
+  `since` no Socket.IO).
+
+Stack obrigatoria:
+
+- **Frontend:** Vanilla JS ou React/Vue
+  (sua escolha). Conexao via `socket.io-client`
+  ou `EventSource`.
+- **Backend:** Node + Express + Socket.IO
+  (ou `ws` puro + custom logic).
+- **Storage:** SQLite ou JSON file (simples)
+  pra persistir mensagens.
+- **Dev:** `pnpm` ou `npm`, 2 sessoes de
+  terminal abertas (server + 2 clients).
+
+## Objetivo
+
+- Praticar **ciclo completo de real-time**:
+  conexao, mensagens, presence, reconexao,
+  sync de estado.
+- Construir um app que **funciona com
+  conexao instavel** (mate o server, veja
+  reconectar).
+- Aplicar **rooms/namespaces** pra isolar
+  canais de chat.
+- Implementar **typing indicator** com
+  throttling.
+- **Testar com 2+ abas** abertas, simular
+  queda de rede via DevTools (Network >
+  Offline).
+
+## Requisitos (minimo)
+
+Conexao e Mensagens:
+
+- [ ] Server Socket.IO escutando em
+  `http://localhost:3001`.
+- [ ] Client conecta com `io("http://localhost:3001")`.
+- [ ] Evento `chat-message` (envio) e
+  `chat-message` (recebimento) com payload
+  `{ user, text, timestamp, id }`.
+- [ ] **2 abas abertas**: mensagem de uma
+  aparece na outra em < 100ms.
+
+Rooms:
+
+- [ ] Pelo menos **3 rooms** pre-definidas:
+  `geral`, `random`, `dev`.
+- [ ] Client entra na room via `socket.emit("join-room", "geral")`.
+- [ ] Mensagens **isoladas por room** (msg
+  em `geral` nao aparece em `dev`).
+- [ ] `socket.to(room).emit("chat-message", msg)` server-side.
+
+Presence:
+
+- [ ] Ao entrar na room, server manda
+  lista de quem ja' ta' la'
+  (`presence-list` event).
+- [ ] Quando user novo entra, demais recebem
+  `user-joined` (com nome + cor).
+- [ ] Quando user sai (disconnect), demais
+  recebem `user-left`.
+- [ ] **Typing indicator**: ao digitar no
+  input, manda `typing` (throttled);
+  demais mostram "X esta' digitando...".
+- [ ] **Cor por user** (hash do userId →
+  cor).
+
+Reconexao e Resiliencia:
+
+- [ ] Mate o server, o client mostra
+  "Reconectando..." no UI.
+- [ ] Client **reconecta automaticamente**
+  com backoff + jitter (config do
+  Socket.IO).
+- [ ] Mensagens enviadas **durante a queda**
+  ficam em **fila offline** e sao enviadas
+  ao reconectar.
+- [ ] Ao reconectar, server manda mensagens
+  que o client perdeu (sync - `since`
+  timestamp ou Last-Event-ID).
+- [ ] Indicador visual de estado: verde
+  (conectado), amarelo (reconectando),
+  vermelho (desconectado).
+
+UI minima:
+
+- [ ] Lista de rooms (sidebar) com botao
+  "Entrar".
+- [ ] Lista de mensagens (scroll auto).
+- [ ] Input de mensagem (Enter envia).
+- [ ] Lista de presence (avatar + nome).
+- [ ] Indicador "X esta' digitando..." no
+  rodape.
+
+Validacao:
+
+- [ ] 2 abas trocam mensagens em < 100ms.
+- [ ] 2 abas em rooms diferentes nao veem
+  mensagens cruzadas.
+- [ ] Typing indicator aparece ao digitar
+  na outra aba.
+- [ ] Mate o server, client mostra
+  "Reconectando", religue, mensagens
+  fluem de novo.
+- [ ] Mande mensagem **durante a queda**:
+  religue, mensagem aparece na ordem certa.
+- [ ] Desconecte uma aba, outra mostra
+  user saindo da presence.
+
+## Estrutura do relatorio (`real-time-chat.md`)
+
+```markdown
+# Real-time Chat - [nome-do-app]
+
+## TL;DR
+
+- App: chat real-time com Socket.IO
+- Latencia P50: X ms
+- Latencia P95: Y ms
+- Reconexao automatica: sim
+- Fila offline: sim
+- Presence: sim
+- Rooms: 3 (geral, random, dev)
+
+## Arquitetura
+
+### Server
+
+- Node + Express + Socket.IO
+- Rooms: `geral`, `random`, `dev`
+- Mensagens: SQLite (id, room, user, text, timestamp)
+- Presence: Map<roomId, Map<userId, Presenca>> em memoria
+- Backoff: padrao Socket.IO (1s → 30s, jitter 0.5)
+
+### Client
+
+- Vanilla JS (ou React)
+- socket.io-client
+- UI: rooms sidebar + chat panel + presence list
+- Fila offline: array de mensagens pendentes
+
+## Fluxo de mensagem
+
+1. User digita "Oi" no input.
+2. Enter → `socket.emit("chat-message", { text: "Oi" })`.
+3. Server: `socket.to(room).emit("chat-message", { user, text, timestamp, id })`.
+4. Outros clients: `socket.on("chat-message", ...)` → renderiza na lista.
+
+## Fluxo de reconexao
+
+1. Server cai.
+2. Client: `disconnect` event → status "Reconectando".
+3. Socket.IO: tenta reconectar com backoff
+   (1s, 2s, 4s, 8s, 16s, 30s + jitter).
+4. Server volta.
+5. Client: `connect` event → status "Conectado".
+6. Client: re-emite mensagens da fila offline.
+7. Client: requisita mensagens perdidas
+   (sync desde lastTimestamp).
+8. Server: SELECT * FROM messages WHERE timestamp > lastTimestamp.
+
+## Resultados
+
+- Latencia P50: X ms (medida com 100 mensagens)
+- Reconexao media: Y segundos
+- Mensagens perdidas: 0 (com fila offline)
+- Typing indicator latencia: Z ms
+
+## Aprendizados
+...
+```
+
+## Desafios extras (stretch goals)
+
+- [ ] **Mensagens com read receipts** -
+  "Visto por 3" estilo WhatsApp.
+- [ ] **Reply / thread** - responder
+  mensagem especifica.
+- [ ] **Edit + delete** - editar mensagem
+  enviada (com indicador "editado").
+- [ ] **Reactions** - emoji reactions em
+  mensagens.
+- [ ] **File upload** - enviar imagem via
+  base64 ou presigned URL.
+- [ ] **Voice messages** - gravar audio no
+  browser (MediaRecorder) e enviar.
+- [ ] **Yjs integrado** - adicionar Yjs pra
+  **documento colaborativo** dentro do chat
+  (whiteboard por sala).
+- [ ] **Push notification** - quando user
+  nao esta' com a aba aberta, manda push
+  via web-push.
+- [ ] **Auth com JWT** - middleware
+  Socket.IO valida token no `connection`.
+- [ ] **Redis adapter** - scaling horizontal
+  com `@socket.io/redis-adapter`.
+- [ ] **Persistencia avancada** - Postgres
+  com LISTEN/NOTIFY pra escalar.
+- [ ] **E2E encryption** - mensagens
+  criptografadas client-side com libsodium.
+- [ ] **Rate limiting** - max 10 mensagens
+  por segundo por user.
+- [ ] **Mute / ban** - admins podem
+  silenciar users.
+
+## Dicas
+
+**Por onde comecar:**
+
+1. **Setup minimo:** `pnpm init`, instala
+   `socket.io`, `express`, `socket.io-client`.
+   Server basico com 1 evento `chat-message`
+   broadcast. 2 abas trocam msg.
+2. **Rooms:** `socket.join("geral")` no
+   server, `socket.to("geral").emit(...)`.
+   Teste isolamento (msg em `geral` nao
+   aparece em `dev`).
+3. **Presence:** mantenha `Map<userId, Presenca>`
+   em memoria, sincronize via eventos
+   `user-joined`, `user-left`.
+4. **Typing indicator:** throttle
+   `typing` (manda a cada 1-2s, nao a
+   cada keystroke). Use `socket.volatile.emit`
+   pra performance.
+5. **Reconexao:** Socket.IO ja' faz
+   automatico. **Visualize** o estado no
+   UI (conectado / reconectando /
+   desconectado).
+6. **Fila offline:** array de mensagens
+   pendentes. Ao reconectar, drena a fila
+   (`while (fila.length) socket.send(...)`).
+7. **Sync de estado:** salve `timestamp` da
+   ultima mensagem recebida. Ao reconectar,
+   `socket.emit("sync", { since: timestamp })`.
+   Server retorna mensagens desde la'.
+
+**Armadilhas comuns:**
+
+- **CORS no Socket.IO.** Default bloqueia
+  outras origens. Configure `cors: { origin: "*" }`
+  em dev (ou lista branca em prod).
+- **Disconnect nao significa "user saiu da
+  room".** User pode trocar de aba e voltar
+  - Socket.IO disconecta/reconecta. Trate
+  `disconnect` como **transitorio** se quiser
+  presence precisa, ou implemente **heartbeat
+  custom** (Socket.IO ja' tem, da' pra
+  adicionar logica de "afk timeout").
+- **Eventos nao tipados.** Use TypeScript
+  ou JSDoc pra documentar payload de cada
+  evento. Em prod, **bom typing** evita 80%
+  dos bugs.
+- **Memory leak no Map de presence.** Limpe
+  `Map.delete(userId)` no `disconnect`. Sem
+  isso, Map cresce ate crashar.
+- **Broadcast em vez de `to(room)`.** Cuidado
+  com `io.emit()` (manda pra TODOS os clients
+  - todas as rooms). Use `io.to(room).emit()`
+  pra isolar.
+- **Backoff em loop infinito.** Configure
+  `reconnectionAttempts: 10` (ou Infinity com
+  UI de "desistir"). Sem limite, fica tentando
+  pra sempre.
+- **Mensagens duplicadas ao reconectar.**
+  Client mandou msg, server recebeu, mas
+  resposta nao chegou. Client re-manda
+  (fila), server recebe **2x**. Solucao:
+  **id de mensagem** (UUID) no client, server
+  dedup.
+- **Sync pesado.** `SELECT * FROM messages`
+  retorna milhares. Limite com
+  `LIMIT 50` e paginacao.
+- **Typing spam.** User digitando rapido
+  = 50 emits/seg. **Throttle** (1-2s entre
+  emits) e use `volatile`.
+- **Testar com 1 aba so'.** Real-time
+  **so' faz sentido** com 2+. Abra 2 abas
+  desde o inicio, ou use
+  `window.open` no DevTools.
+
+**Como validar que terminou:**
+
+- [ ] 2 abas trocam mensagens em < 100ms
+  (mede com `performance.now()`).
+- [ ] Mensagens **isoladas por room**
+  (msg em `geral` nao aparece em `dev`).
+- [ ] Typing indicator aparece ao digitar
+  na outra aba (com throttling visivel).
+- [ ] Mate o server, client mostra
+  "Reconectando", religue, mensagens fluem
+  de novo.
+- [ ] Mande mensagem **durante a queda**,
+  religue, mensagem aparece na ordem certa
+  (fila offline).
+- [ ] Desconecte uma aba (fechar), outra
+  mostra user saindo da presence em < 5s.
+- [ ] Latencia P95 < 200ms (mede com 100
+  mensagens e calcula percentil).
+- [ ] Zero mensagens perdidas com
+  reconexao + fila offline (teste 5 quedas
+  seguidas, todas as mensagens aparecem).
+
+**Leituras que ajudam durante o projeto:**
+
+- [Socket.IO Tutorial - Step 1](https://socket.io/docs/v4/tutorial/step-1) - setup basico, primeiro chat.
+- [Yjs Getting Started](https://docs.yjs.dev/getting-started/working-with-shared-types) - se for adicionar colaboracao (stretch).
+- [MDN - EventSource](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) - alternativa SSE caso queira comparar.
+
+> O projeto final e' onde a trilha vira
+> "sua". A escolha de **qual chat construir**
+> (1-1, grupo, com doc colaborativo) e' o
+> **caminho feliz**. Os principios -
+> conexao, rooms, presence, reconexao, sync
+> - aplicam a qualquer app real-time. O
+> esqueleto dado e' o caminho feliz, desvie
+> quando precisar e anote as decisoes no
+> `editorial-decisions.md` da trilha.
+
+<Checkpoint
+  challenge="Implemente a função `agregarPresenca(users)` que recebe uma lista de presenca (cada user: { userId, nome, online, digitando, cor }) e retorna { onlineCount, digitandoCount, cores, nomes } - onlineCount e' o numero de users com online=true, digitandoCount e' o numero de users com digitando=true, cores e' array de cores APENAS dos users online (na ordem de entrada), nomes e' array de nomes APENAS dos users digitando (na ordem de entrada). Use a ordem original da lista pra cores e nomes."
+  starterCode={`// Implemente agregarPresenca(users) que recebe lista de presenca
+// e retorna estatisticas agregadas.
+//
+// Cada user: { userId, nome, online, digitando, cor }
+//
+// Retorna { onlineCount, digitandoCount, cores, nomes }:
+// - onlineCount: numero de users com online=true
+// - digitandoCount: numero de users com digitando=true
+// - cores: array de cores dos users online (ordem original)
+// - nomes: array de nomes dos users digitando (ordem original)
+function agregarPresenca(users) {
+  return { onlineCount: 0, digitandoCount: 0, cores: [], nomes: [] };
+}
+
+const _r1 = agregarPresenca([
+  { userId: "u1", nome: "Ana", online: true, digitando: false, cor: "#ff6b6b" },
+  { userId: "u2", nome: "Bruno", online: true, digitando: true, cor: "#4ecdc4" },
+  { userId: "u3", nome: "Carla", online: true, digitando: false, cor: "#ffe66d" }
+]);
+console.log(JSON.stringify(_r1));
+
+const _r2 = agregarPresenca([
+  { userId: "u1", nome: "Ana", online: true, digitando: false, cor: "#ff6b6b" },
+  { userId: "u2", nome: "Bruno", online: false, digitando: false, cor: "#4ecdc4" },
+  { userId: "u3", nome: "Carla", online: true, digitando: true, cor: "#ffe66d" }
+]);
+console.log(JSON.stringify(_r2));
+
+const _r3 = agregarPresenca([]);
+console.log(JSON.stringify(_r3));
+
+const _r4 = agregarPresenca([
+  { userId: "u1", nome: "Ana", online: true, digitando: true, cor: "#ff6b6b" },
+  { userId: "u2", nome: "Bruno", online: true, digitando: true, cor: "#4ecdc4" }
+]);
+console.log(JSON.stringify(_r4));`}
+  expected='{"onlineCount":3,"digitandoCount":1,"cores":["#ff6b6b","#4ecdc4","#ffe66d"],"nomes":["Bruno"]}
+{"onlineCount":2,"digitandoCount":1,"cores":["#ff6b6b","#ffe66d"],"nomes":["Carla"]}
+{"onlineCount":0,"digitandoCount":0,"cores":[],"nomes":[]}
+{"onlineCount":2,"digitandoCount":2,"cores":["#ff6b6b","#4ecdc4"],"nomes":["Ana","Bruno"]}'
+  slug="real-time"
+  nodeId="projeto-final"
+/>

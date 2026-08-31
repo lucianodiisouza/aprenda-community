@@ -1,0 +1,117 @@
+---
+id: estrutura-headings-landmarks
+title: "Estrutura da Página: Headings, Landmarks e Skip Link"
+resources:
+  - title: "Headings e landmarks"
+    url: https://www.w3.org/WAI/tutorials/page-structure/headings/
+    type: doc
+    lang: en
+    free: true
+  - title: "Regiões de uma página"
+    url: https://www.w3.org/WAI/tutorials/page-structure/regions/
+    type: doc
+    lang: en
+    free: true
+---
+
+Uma página bem estruturada permite que a pessoa encontre uma seção sem percorrer
+tudo desde o começo. Pense nela como um documento com sumário e atalhos.
+
+```html
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+
+<header>
+  <a href="/">Loja Horizonte</a>
+</header>
+<nav aria-label="Principal">
+  <a href="/produtos">Produtos</a>
+  <a href="/pedidos">Meus pedidos</a>
+</nav>
+<main id="conteudo">
+  <h1>Minha conta</h1>
+  <section aria-labelledby="pedidos-titulo">
+    <h2 id="pedidos-titulo">Pedidos recentes</h2>
+    <article>
+      <h3>Pedido 1042</h3>
+      <a href="/pedidos/1042">Acompanhar entrega</a>
+    </article>
+  </section>
+</main>
+<footer>Central de ajuda</footer>
+```
+
+<Mermaid
+  chart={`flowchart TB
+    H1["h1 Minha conta"] --> H2["h2 Pedidos recentes"]
+    H2 --> H3["h3 Pedido 1042"]
+    H2 --> H32["h3 Pedido 1038"]`}
+  caption="A hierarquia de headings funciona como um sumário: cada nível pertence ao título anterior."
+/>
+
+### Headings formam o mapa do conteúdo
+
+Use títulos para representar a hierarquia real da página. Não escolha `h3` porque
+ele "parece menor"; aparência é trabalho do CSS. Ao listar apenas os headings, a
+estrutura ainda deve contar uma história coerente.
+
+### Landmarks formam o mapa da interface
+
+`header`, `nav`, `main`, `aside` e `footer` ajudam a identificar regiões importantes.
+Quando há mais de uma navegação, dê nomes diferentes:
+
+```html
+<nav aria-label="Principal">...</nav>
+<nav aria-label="Categorias de produtos">...</nav>
+```
+
+### Skip link economiza navegação
+
+Quem usa teclado pode pular menus repetidos e ir direto ao conteúdo principal. O
+link pode ficar visualmente escondido até receber foco:
+
+```css
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+```
+
+- **Headings** organizam a hierarquia do conteúdo.
+- **Landmarks** identificam regiões da interface.
+- **Skip link** evita percorrer blocos repetidos a cada página.
+
+### Teste o mapa da página
+
+1. Pressione `Tab` logo após carregar a página: o skip link deve aparecer.
+2. Ative-o e confirme que o foco chega ao conteúdo principal.
+3. Use o painel de acessibilidade ou uma extensão de headings para listar títulos.
+4. Verifique se existe um único `main` e se as navegações têm nomes claros.
+
+No próximo nó, vamos lidar com um dos casos mais conhecidos de acessibilidade:
+**imagens e texto alternativo**.
+
+<Quiz
+  question="Para que serve um skip link em uma página com menu repetido?"
+  options={[
+    {
+      text: "Para esconder visualmente o menu de navegação",
+      correct: false,
+      explanation: "O menu continua existindo; o skip link só oferece um atalho útil.",
+    },
+    {
+      text: "Para substituir a hierarquia de headings da página",
+      correct: false,
+      explanation: "Headings continuam sendo necessários para estruturar o conteúdo.",
+    },
+    {
+      text: "Para permitir que a pessoa pule direto para o conteúdo principal",
+      correct: true,
+    },
+  ]}
+/>

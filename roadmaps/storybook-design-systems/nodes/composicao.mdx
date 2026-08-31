@@ -1,0 +1,614 @@
+---
+id: composicao
+title: "Composicao: compound components, slot patterns, headless primitives"
+resources:
+  - title: "Kent C. Dodds - Advanced React Component Patterns (artigo, EN)"
+    url: https://kentcdodds.com/blog/advanced-react-component-patterns
+    lang: en
+    type: artigo
+    free: true
+  - title: "Radix UI - Primitives (oficial, EN)"
+    url: https://www.radix-ui.com/primitives
+    lang: en
+    type: doc
+    free: true
+  - title: "React Aria - Components (oficial, EN)"
+    url: https://react-spectrum.adobe.com/react-aria/
+    lang: en
+    type: doc
+    free: true
+---
+
+Você tem o `<Button>` como primitive. Mas e o
+`<Card>` que tem **Header, Body, Footer**? O
+`<Tabs>` que tem **List, Trigger, Content**? O
+`<FormField>` que é **Label + Input + HelpText +
+ErrorMessage**? Esses não cabem em um único
+componente - são **composições**.
+
+A decisão de design de uma boa DS é: **quando
+um componente é "uma coisa só" (primitive) e
+quando é "várias coisas que vivem juntas"
+(pattern)**. E pra cada pattern, **como
+implementar** de forma que o consumidor use sem
+saber dos detalhes internos.
+
+Este nó cobre os 3 padrões principais: **compound
+components** (a forma "clássica" em React),
+**slot patterns** (a forma flexível), e **headless
+primitives** (a forma "lógica sem estilo").
+
+## O essencial 🟢
+
+**O problema: API inchada.** A tentação inicial
+de "componente com tudo" é adicionar props:
+
+```tsx
+// RUIM: o Button virou um canivete suíço
+<Button
+  label="Salvar"
+  iconLeft={<SaveIcon />}
+  iconRight={<ArrowIcon />}
+  variant="primary"
+  size="md"
+  loading={isLoading}
+  badge={<Badge>3</Badge>}
+  tooltip="Salvar formulário"
+  // ... mais 20 props
+/>
+```
+
+Funciona? Sim. Mas a `Button` virou 200 linhas de
+código, o consumidor tem que memorizar 20 props,
+e cada combinação de prop é um **estado** a
+testar. O componente **faz coisa demais**.
+
+A solução é **compor**: ter **vários componentes
+pequenos** que o consumidor **combina** pra ter
+o resultado final:
+
+```tsx
+// BOM: cada componente faz uma coisa
+<Button variant="primary" loading={isLoading}>
+  <SaveIcon />
+  Salvar
+</Button>
+
+// Ou com compound components:
+<Button variant="primary">
+  <Button.Icon><SaveIcon /></Button.Icon>
+  <Button.Label>Salvar</Button.Label>
+</Button>
+```
+
+**Compound components - o padrão clássico.** O
+padrão é ter **um componente "pai"** que expõe
+**sub-componentes como propriedades estáticas**:
+
+```tsx
+import { Card } from "./Card";
+import { CardHeader } from "./CardHeader";
+import { CardBody } from "./CardBody";
+import { CardFooter } from "./CardFooter";
+
+// Atribui sub-componentes
+Card.Header = CardHeader;
+Card.Body = CardBody;
+Card.Footer = CardFooter;
+
+export { Card };
+```
+
+```tsx
+// Uso
+<Card>
+  <Card.Header>Título</Card.Header>
+  <Card.Body>Conteúdo do card aqui.</Card.Body>
+  <Card.Footer>
+    <Button>OK</Button>
+  </Card.Footer>
+</Card>
+```
+
+Vantagens:
+
+- **API legível** - `<Card.Header>` é auto-explicativo.
+- **Composable** - você usa o que precisa.
+  Sem Footer? Tudo bem.
+- **Compartilha state** via Context (visto abaixo).
+- **Type-safe** com TS.
+
+**Implementação com Context.** O compound
+component compartilha state entre pai e filhos
+via React Context:
+
+```tsx
+import { createContext, useContext, ReactNode } from "react";
+
+type CardContextValue = {
+  variant: "primary" | "secondary";
+};
+
+const CardContext = createContext<CardContextValue | null>(null);
+
+function useCardContext() {
+  const ctx = useContext(CardContext);
+  if (!ctx) {
+    throw new Error("Card.Header deve estar dentro de <Card>");
+  }
+  return ctx;
+}
+
+function Card({
+  variant = "primary",
+  children,
+}: {
+  variant?: "primary" | "secondary";
+  children: ReactNode;
+}) {
+  return (
+    <CardContext.Provider value={{ variant }}>
+      <div className={`card card-${variant}`}>{children}</div>
+    </CardContext.Provider>
+  );
+}
+
+function CardHeader({ children }: { children: ReactNode }) {
+  // Tem acesso a variant via context
+  const { variant } = useCardContext();
+  return <div className={`card-header card-header-${variant}`}>{children}</div>;
+}
+
+function CardBody({ children }: { children: ReactNode }) {
+  return <div className="card-body">{children}</div>;
+}
+
+function CardFooter({ children }: { children: ReactNode }) {
+  return <div className="card-footer">{children}</div>;
+}
+
+Card.Header = CardHeader;
+Card.Body = CardBody;
+Card.Footer = CardFooter;
+```
+
+O **`useCardContext`** joga erro se o sub-componente
+está fora do `<Card>` - pega bug em dev.
+
+**`useId` e acessibilidade.** Componentes
+compostos (Tabs, Accordion, RadioGroup) têm
+relação de **pai-filho semântica** que precisa
+ser refletida em ARIA. `useId` do React gera
+ID único consistente entre pai e filho:
+
+```tsx
+import { useId } from "react";
+
+function Tabs({ children }: { children: ReactNode }) {
+  const baseId = useId();
+  return (
+    <TabsContext.Provider value={{ baseId }}>
+      {children}
+    </TabsContext.Provider>
+  );
+}
+
+function TabsTrigger({ value, children }: { value: string; children: ReactNode }) {
+  const { baseId } = useTabsContext();
+  return (
+    <button
+      id={`${baseId}-trigger-${value}`}
+      aria-controls={`${baseId}-panel-${value}`}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+`useId` resolve o problema de "como ligar
+`aria-controls` e `id` entre pai e filho" sem
+conflito de nomes.
+
+**Slot pattern - a forma flexível.** Quando
+"compound" é restritivo demais, o **slot**
+(reservado, "lugar pra colocar X") é mais
+flexível:
+
+```tsx
+// AlertDialog com slots
+<AlertDialog>
+  <AlertDialog.Icon><WarningIcon /></AlertDialog.Icon>
+  <AlertDialog.Title>Tem certeza?</AlertDialog.Title>
+  <AlertDialog.Description>
+    Essa ação não pode ser desfeita.
+  </AlertDialog.Description>
+  <AlertDialog.Actions>
+    <Button>Cancelar</Button>
+    <Button variant="danger">Deletar</Button>
+  </AlertDialog.Actions>
+</AlertDialog>
+```
+
+A diferença pro compound: slots têm **nomes
+semânticos** (`Icon`, `Title`, `Description`)
+mas **não têm implementação fixa** - você
+coloca o que quiser dentro. Compound tem
+**componente pronto** (`Card.Header` é uma div
+com classe).
+
+Use **slot** quando o conteúdo é variável
+(qualquer elemento, não uma div específica).
+Use **compound** quando o sub-componente é um
+"pedaço" bem definido do pai (sempre uma div
+com classe `card-header`).
+
+**Headless primitives - lógica sem estilo.** O
+padrão moderno (Radix UI, Headless UI, React Aria)
+separa **lógica** (acessibilidade, teclado, foco,
+ARIA) de **estilo** (CSS). Você consome a lógica
+e estiliza à sua maneira:
+
+```tsx
+// Com Radix UI (lógica)
+import * as Dialog from "@radix-ui/react-dialog";
+
+<Dialog.Root>
+  <Dialog.Trigger asChild>
+    <Button>Abrir</Button>
+  </Dialog.Trigger>
+  <Dialog.Portal>
+    <Dialog.Overlay className="modal-overlay" />
+    <Dialog.Content className="modal-content">
+      <Dialog.Title>Editar perfil</Dialog.Title>
+      <Dialog.Description>Faça as mudanças e salve.</Dialog.Description>
+      {/* conteúdo customizado */}
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+```
+
+O que Radix te dá **de graça**:
+- Acessibilidade (foco preso no modal, ESC fecha,
+  ARIA correto).
+- Keyboard navigation (Tab, Shift+Tab, Enter,
+  Space).
+- Portal (renderiza fora da hierarquia DOM pra
+  não ter z-index issue).
+- Focus trap (Tab não sai do modal).
+- Animations (data-state pra CSS animations).
+
+Você estiliza com Tailwind, CSS modules, ou
+qualquer outra coisa. **Não há estilo default
+do Radix** - é 100% customizável.
+
+**Quando usar cada padrão.** Resumo:
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph P["Primitive"]
+      P1["Botao simples<br/>(uma coisa so)"]
+    end
+    subgraph C["Compound"]
+      C1["Card / Tabs / Menu<br/>(sub-partes bem definidas)"]
+    end
+    subgraph S["Slot"]
+      S1["Modal / AlertDialog<br/>(conteudo variavel nomeado)"]
+    end
+    subgraph H["Headless"]
+      H1["Dialog / Select / Popover<br/>(logica complexa, estilo livre)"]
+    end
+    P --> C --> S --> H
+    C -.use Context.-> C
+    S -.use Children.-> S
+    H -.use lib externa.-> H`}
+  caption="Quatro padroes de composicao em ordem crescente de complexidade: primitive (uma coisa), compound (sub-partes fixas via Context), slot (sub-partes variaveis via children nomeado), headless (lib externa com logica sem estilo)."
+/>
+
+- **Primitive** - uma coisa só. Use quando
+  não tem sub-partes (`<Button>`, `<Input>`,
+  `<Badge>`).
+- **Compound** - sub-partes fixas, implementadas
+  como sub-componentes com Context. Use quando
+  tem 2-5 sub-partes bem definidas e você quer
+  forçar o consumidor a usar as certas
+  (`<Card>`, `<Tabs>`, `<Accordion>`).
+- **Slot** - sub-partes com nome semântico mas
+  conteúdo variável. Use quando tem estrutura
+  esperada mas cada parte é custom (`<Modal>`,
+  `<AlertDialog>`, `<EmptyState>`).
+- **Headless** - lógica complexa, estilo
+  customizado. Use quando a lógica de
+  acessibilidade/teclado/foco é grande demais
+  pra você implementar (`<Dialog>`,
+  `<Combobox>`, `<Popover>`).
+
+A regra prática: comece primitive, vire
+compound quando precisa de sub-partes, vire
+slot quando precisa de variação, vá pra
+headless quando a lógica domina.
+
+## Aprofundamento 🟡
+
+**As 3 implementações de compound component.**
+Tem 3 formas de implementar o pattern:
+
+- **`React.Children` + clone** (legacy, 2015) -
+  itera sobre `children`, injeta props via
+  `cloneElement`. Funciona, mas type-safety fraca
+  e prop drilling implícito.
+- **Context** (recomendado) - o que vimos
+  acima. Type-safe com `useContext`, claro, e
+  escala bem.
+- **`as` prop + composition** (React 18+,
+  Radix-style) - passa props de pai pra filho
+  via "asChild" pattern. Mais flexível, mas mais
+  mágico.
+
+**Context vs `asChild`:** Context é a forma
+tradicional e didática. `asChild` é a forma
+moderna, mais flexível, mas tem curva de
+aprendizado:
+
+```tsx
+// Context (visto acima)
+<Dialog.Trigger asChild>
+  <Button>Abrir</Button>
+</Dialog.Trigger>
+
+// Equivalente sem asChild (mais verboso)
+<Dialog.Trigger>
+  <Button onClick={(e) => {
+    // delegar pro Dialog.Trigger
+    e.preventDefault();
+  }}>
+    Abrir
+  </Button>
+</Dialog.Trigger>
+```
+
+`asChild` faz a fusão automática - o `<Button>`
+recebe os handlers do `<Dialog.Trigger>` e a
+delegação é invisível. Em DS grande, vale o
+investimento. Em DS pequeno, Context é suficiente.
+
+**Compound components com TypeScript
+discriminated unions.** Pra ter type-safety forte
+em props que dependem de variant:
+
+```tsx
+type CardProps =
+  | { variant: "primary"; highlight?: boolean }
+  | { variant: "secondary"; dashed?: boolean };
+
+function Card(props: CardProps & { children: ReactNode }) {
+  // TS sabe que `highlight` existe se variant === "primary"
+  // TS sabe que `dashed` existe se variant === "secondary"
+  return <div className={`card-${props.variant}`}>{props.children}</div>;
+}
+```
+
+O pattern discrimina o tipo baseado no variant -
+mesma técnica vista na `nextjs` (RSC variants).
+
+**`forwardRef` em compound components.** Pra
+componentes compostos que precisam de `ref` no
+elemento raiz (comum em UI lib pra focar):
+
+```tsx
+import { forwardRef } from "react";
+
+const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ variant, children }, ref) => (
+    <CardContext.Provider value={{ variant }}>
+      <div ref={ref} className={`card card-${variant}`}>
+        {children}
+      </div>
+    </CardContext.Provider>
+  )
+);
+Card.displayName = "Card"; // útil pra devtools
+```
+
+Em React 19+, `ref` é **prop** normal (não precisa
+de `forwardRef`). Vale conhecer o pattern
+pro legacy code.
+
+**Server Components e compound components.** A
+trilha é focada em Client Components (`"use client"`
+em todos). Se o DS precisa funcionar em RSC
+(Next 15+ App Router), os componentes compostos
+precisam ter o `"use client"` no topo do arquivo.
+A **composição** (compound, slot) ainda funciona
+- Context é client-side, então tudo vira Client.
+Em 2026, DSs misturam: **componentes de display**
+(Card, Button) podem ser RSC se não usam
+interatividade, mas compostos (Tabs, Dialog) são
+Client.
+
+**Storybook + compound components.** Em story
+de compound, o `render` é a melhor abordagem:
+
+```tsx
+export const WithHeader: Story = {
+  render: () => (
+    <Card>
+      <Card.Header>Título</Card.Header>
+      <Card.Body>Conteúdo.</Card.Body>
+    </Card>
+  ),
+};
+
+export const WithFooter: Story = {
+  render: () => (
+    <Card>
+      <Card.Header>Título</Card.Header>
+      <Card.Body>Conteúdo.</Card.Body>
+      <Card.Footer>
+        <Button>OK</Button>
+      </Card.Footer>
+    </Card>
+  ),
+};
+```
+
+Cada combinação comum vira uma story. **Não**
+escreva uma story que testa "tudo junto" - o
+consumidor quer ver "como fica o Card sem
+footer" e "com header e footer" separados.
+
+## Pra quem quer ir além 🔴
+
+**A história do compound component.** O pattern
+apareceu em **React 0.x** (2013-2014), quando
+a comunidade descobriu que "componente com props
+demais" era um anti-pattern. **Ryan Florence**
+(popularizou com `react-router`) e **Kent C.
+Dodds** (materialized o pattern) foram os maiores
+disseminadores. Em 2015-2017, era o pattern padrão
+em libs como **Material UI**, **Ant Design**.
+Em 2018+, **Radix UI** popularizou o **`asChild`**
+como evolução. Em 2026, o padrão é claro: **Context
+pra lógica compartilhada, `asChild` pra delegação
+de props, slot pra conteúdo variável**.
+
+**`asChild` vs Context: trade-off.** Resumo:
+
+- **Context** - didático, fácil de debug, padrão
+  de "React idiomático". Limitação: precisa de
+  Context Provider, o que adiciona uma camada
+  de abstração.
+- **`asChild`** - sem Context, mais flexível,
+  mais mágico. Limitação: menos óbvio pra quem
+  lê o código pela primeira vez ("por que
+  `asChild` faz o Button virar o trigger?").
+
+Em DS novo em 2026, **use Context** (didático,
+type-safe). Migre pra `asChild` se o DS crescer
+e o Context virar boilerplate.
+
+**Por que headless primitives venceram em 2026.**
+O movimento **headless** (Radix, Headless UI,
+React Aria) tomou o espaço do "lib de UI pronta"
+(MUI, Ant) por uma razão simples: **estilo
+customizado**. Toda empresa quer ser diferente,
+e lib de UI pronta força estilo padrão. Com
+headless, você pega **a parte difícil**
+(acessibilidade, teclado, ARIA, focus trap) e
+estiliza à sua maneira. Em 2026, é o caminho
+padrão pra DS novo. MUI, Chakra, Mantine estão
+adicionando "headless mode" pra competir.
+
+**Custo de oportunidade de cada padrão.** Em
+geral:
+
+- **Primitive** - 0 overhead, sem complexidade.
+  Todo DS começa aqui.
+- **Compound** - 1-2 dias de setup. Vale pra
+  80% dos casos.
+- **Slot** - 2-3 dias. Vale pra 20% dos casos
+  (Modal, Dialog, EmptyState).
+- **Headless** - **depende de lib externa**
+  (Radix, React Aria). Adicionar Radix = +~50KB
+  no bundle. Vale pra 5% dos casos
+  (componentes com lógica complexa de
+  acessibilidade que você não quer reimplementar).
+
+A regra: **use o padrão mais simples que atenda**.
+Primitive → Compound → Slot → Headless, nessa
+ordem, conforme a necessidade aparece.
+
+**Leitura recomendada:**
+
+- [Kent C. Dodds - Advanced React Component Patterns](https://kentcdodds.com/blog/advanced-react-component-patterns) - compound, slot, render props, control props.
+- [Radix UI - Primitives](https://www.radix-ui.com/primitives) - a referência moderna de headless.
+- [React Aria - Components](https://react-spectrum.adobe.com/react-aria/) - a alternativa da Adobe, com foco em acessibilidade.
+
+> Dica: o erro mais comum no começo é
+> **tentar usar o mesmo padrão pra tudo**.
+> O time aprende compound e quer fazer
+> **todo** componente compound. A regra
+> é: primitive quando não tem sub-partes,
+> compound quando tem 2-5 sub-partes bem
+> definidas. `<Button>` é primitive.
+> `<Card>` é compound. `<Modal>` é slot.
+> `<Combobox>` é headless. Cada um na sua.
+
+No próximo nó, vamos falar de **documentação**:
+Storybook MDX, autodocs, e como escrever docs
+que devs realmente leem (em vez de só gerar).
+
+<Checkpoint
+  challenge="Implemente a função `criarCompound(parent, parts)` que recebe um componente 'pai' (ex: Card) e um objeto com 'parts' (ex: { Header, Body, Footer }), e retorna um novo componente Card com os parts atribuídos como propriedades estáticas (ex: Card.Header, Card.Body, Card.Footer). Cada part recebe o mesmo context do parent."
+  starterCode={`// Crie a função criarCompound(parent, parts).
+// - \`parent\` é um React component (function)
+// - \`parts\` é um objeto: { Key: ReactComponent, ... }
+// - O retorno é o \`parent\` com \`parent.Key = ReactComponent\` pra cada Key
+// - \`parent\` mantém sua assinatura original (props.children, etc)
+//
+// Dica: o parent pode ter um displayName (ex: "Card"). Preserve-o.
+function criarCompound(parent, parts) {
+  return parent;
+}
+
+function Card({ children, variant = "primary" }) {
+  return { type: "div", className: "card-" + variant, children };
+}
+function CardHeader({ children }) {
+  return { type: "h3", children };
+}
+function CardBody({ children }) {
+  return { type: "div", className: "card-body", children };
+}
+function CardFooter({ children }) {
+  return { type: "div", className: "card-footer", children };
+}
+
+// Não edite abaixo - é o teste manual esperado.
+const MeuCard = criarCompound(Card, {
+  Header: CardHeader,
+  Body: CardBody,
+  Footer: CardFooter,
+});
+
+const _r1 = JSON.stringify({
+  parent: typeof MeuCard,
+  header: typeof MeuCard.Header,
+  body: typeof MeuCard.Body,
+  footer: typeof MeuCard.Footer,
+});
+console.log(_r1);
+
+const _r2 = MeuCard({ children: "x" });
+const _r3 = MeuCard.Header({ children: "titulo" });
+const _r4 = MeuCard.Body({ children: "conteudo" });
+console.log(JSON.stringify({ card: _r2.className, header: _r3.type, body: _r4.className }));`}
+expected='{"parent":"function","header":"function","body":"function","footer":"function"}
+{"card":"card-primary","header":"h3","body":"card-body"}'
+slug="storybook-design-systems"
+nodeId="composicao"
+/>
+
+<Quiz
+  question="Quando usar headless primitives (Radix, React Aria) em vez de construir o componente do zero?"
+  options={[
+    {
+      text: "Quando a logica de acessibilidade (foco, teclado, ARIA, focus trap) e complexa demais pra reimplementar do zero - ex: Dialog, Combobox, Popover.",
+      correct: true,
+      explanation:
+        "Headless brilha onde a logica e densa. Dialog tem focus trap + ESC + portal + ARIA. Combobox tem listbox + keyboard navigation + async loading + filter. Reimplementar isso leva semanas e sai cheio de bug de a11y. Usar Radix/React Aria te da a logica testada por Adobe/Meta/Shopify. Voce estiliza. Em ~95% dos casos de DS, primitive ou compound resolve - headless e pros 5% onde a logica domina.",
+    },
+    {
+      text: "Sempre - e mais facil usar Radix do que escrever componente do zero.",
+      correct: false,
+      explanation:
+        "Não. Radix adiciona ~50KB no bundle por componente importado, e exige aprender a API dele. Para Button, Input, Badge, voce nao precisa - primitive resolve. Headless vence quando a logica (a11y, teclado) domina - ex: Dialog, Combobox. Para o resto, primitive ou compound e mais simples, menos bundle, mais controle.",
+    },
+    {
+      text: "Nunca - e sempre melhor ter 100% controle escrevendo do zero.",
+      correct: false,
+      explanation:
+        "Nao. Sem Radix, voce reimplementa focus trap, ESC handler, ARIA completo, keyboard navigation, portal - cada um com bug de a11y escondido. O custo de manter a11y manualmente e alto. Headless entrega 100% a11y testado por times grandes (Adobe no React Aria, Shopify no Radix). E voce estiliza - 100% controle visual. Trade-off de bundle por qualidade de a11y.",
+    },
+  ]}
+/>

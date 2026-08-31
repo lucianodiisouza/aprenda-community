@@ -1,0 +1,103 @@
+{
+  "slug": "observabilidade-frontend",
+  "title": "Observabilidade Frontend: Sentry, RUM, OpenTelemetry, feature flags e PII",
+  "description": "Trilha sobre observabilidade no client: 3 sinais classicos (logs, metrics, traces) + RUM, error tracking com Sentry (source maps, release health, sampling), Real User Monitoring (Web Vitals, custom metrics, session replay), OpenTelemetry Web (traces distribuidos, OTLP, contexto), feature flags (LaunchDarkly, Flagsmith, Cloudflare Flagship) pra rollout progressivo, e PII/LGPD/GDPR no client (scrubbing, consentimento, data minimization). Cobre o lado client; back-end de observabilidade coberto em backend.",
+  "difficulty": "intermediario",
+  "skills": [
+    "observabilidade",
+    "observability",
+    "logs",
+    "metrics",
+    "traces",
+    "rum",
+    "real-user-monitoring",
+    "error-tracking",
+    "sentry",
+    "rollbar",
+    "bugsnag",
+    "source-maps",
+    "release-health",
+    "sampling",
+    "web-vitals",
+    "lcp",
+    "inp",
+    "cls",
+    "core-web-vitals",
+    "session-replay",
+    "open-telemetry",
+    "opentelemetry",
+    "otlp",
+    "trace",
+    "span",
+    "distributed-tracing",
+    "feature-flags",
+    "launchdarkly",
+    "flagsmith",
+    "cloudflare-flagship",
+    "rollout",
+    "canary",
+    "lgpd",
+    "gdpr",
+    "pii",
+    "data-minimization",
+    "consent",
+    "scrubbing"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "o-que-e-observabilidade",
+      "title": "O que e observabilidade: logs, metrics, traces, RUM - pra que cada um",
+      "type": "topic",
+      "recommended": true,
+      "children": ["error-tracking"]
+    },
+    {
+      "id": "error-tracking",
+      "title": "Error tracking: Sentry, source maps, release health, sampling",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["real-user-monitoring"]
+    },
+    {
+      "id": "real-user-monitoring",
+      "title": "Real User Monitoring: Web Vitals no client, custom metrics, session replay",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["open-telemetry-web"]
+    },
+    {
+      "id": "open-telemetry-web",
+      "title": "OpenTelemetry Web: traces distribuidos no browser, OTLP, contexto",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["feature-flags"]
+    },
+    {
+      "id": "feature-flags",
+      "title": "Feature flags: LaunchDarkly, Flagsmith, Cloudflare Flagship, rollout progressivo",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pii-e-privacidade"]
+    },
+    {
+      "id": "pii-e-privacidade",
+      "title": "PII e privacidade: LGPD/GDPR no client, scrubbing, consentimento, data minimization",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: app com Sentry, RUM, feature flag e trace distribuido",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,145 @@
+---
+id: aria-fundamentos
+title: "ARIA: Roles, Estados e HTML Nativo Primeiro"
+resources:
+  - title: "ARIA"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/Accessibility/ARIA
+    type: doc
+    lang: pt
+    free: true
+  - title: "ARIA Authoring Practices Guide"
+    url: https://www.w3.org/WAI/ARIA/apg/
+    type: doc
+    lang: en
+    free: true
+---
+
+ARIA acrescenta informação à árvore de acessibilidade, mas não cria comportamento
+por conta própria. Ela funciona como uma camada de comunicação, não como um pacote
+de interações prontas.
+
+```html
+<div role="button">Salvar</div>
+```
+
+Esse elemento pode ser anunciado como botão, mas ainda não ganhou foco, teclado ou
+comportamento de formulário. Para reconstruí-lo, seria necessário implementar e
+testar tudo isso:
+
+```html
+<div role="button" tabindex="0">Salvar</div>
+<script>
+  const controle = document.querySelector('[role="button"]');
+
+  controle.addEventListener('click', salvar);
+  controle.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      salvar();
+    }
+  });
+</script>
+```
+
+Mesmo assim, você ainda precisaria tratar estados desabilitados e integração com
+formulários. O elemento nativo evita esse trabalho.
+
+### HTML nativo primeiro
+
+```html
+<button type="button">Salvar</button>
+```
+
+Se existe um elemento HTML que já resolve semântica e comportamento, prefira ele.
+
+### `role` descreve a função
+
+```html
+<div role="status">Arquivo enviado.</div>
+```
+
+Não troque uma semântica nativa por outra incompatível. Um heading com
+`role="button"`, por exemplo, deixa de ser heading na árvore de acessibilidade.
+
+### `aria-*` descreve estados e relações
+
+```html
+<button
+  id="botao-categorias"
+  type="button"
+  aria-expanded="false"
+  aria-controls="menu-categorias"
+>
+  Categorias
+</button>
+<ul id="menu-categorias" hidden>
+  <li><a href="/livros">Livros</a></li>
+  <li><a href="/cursos">Cursos</a></li>
+</ul>
+```
+
+Seu JavaScript precisa manter estado visual e estado programático sincronizados:
+
+```js
+const botao = document.querySelector('#botao-categorias');
+const menu = document.querySelector('#menu-categorias');
+
+botao.addEventListener('click', () => {
+  const aberto = botao.getAttribute('aria-expanded') === 'true';
+  botao.setAttribute('aria-expanded', String(!aberto));
+  menu.hidden = aberto;
+});
+```
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Fechado
+    Fechado --> Aberto: clique ou Enter
+    Aberto --> Fechado: clique ou Escape
+    Fechado: aria-expanded false
+    Aberto: aria-expanded true`}
+  caption="O estado visual do painel e o valor de aria-expanded precisam mudar juntos."
+/>
+
+- **HTML nativo primeiro** evita reconstruir comportamento existente.
+- **`role`** comunica a função de um elemento.
+- **`aria-*`** comunica estados, propriedades e relações.
+
+### Três erros comuns
+
+| Erro | Consequência | Correção |
+| --- | --- | --- |
+| `aria-expanded="false"` com menu visível | Código anuncia estado diferente da tela | Atualizar ambos no mesmo evento |
+| `aria-label="botão"` | Nome não explica a ação | Usar nome como "Fechar carrinho" |
+| ARIA em elemento nativo sem necessidade | Pode sobrescrever semântica correta | Remover e confiar no HTML |
+
+### Inspecione nome, função e estado
+
+Abra o painel de acessibilidade do DevTools e selecione o botão "Categorias".
+Antes e depois do clique, confira o nome, a função `button`, o estado expandido e a
+relação com o menu controlado.
+
+> Dica: ARIA errada pode comunicar uma interface diferente da real. Use só quando ela resolve uma necessidade concreta.
+
+No próximo nó, vamos usar ARIA em um caso onde ela ajuda bastante: **conteúdo que
+muda sem mover o foco**.
+
+<Quiz
+  question="Quando ARIA costuma ser uma boa escolha?"
+  options={[
+    {
+      text: "Quando HTML nativo não comunica uma relação, estado ou atualização necessária",
+      correct: true,
+    },
+    {
+      text: "Sempre que você quiser mudar a aparência visual de um componente",
+      correct: false,
+      explanation: "ARIA comunica semântica para tecnologia assistiva; aparência é responsabilidade do CSS.",
+    },
+    {
+      text: "Antes de tentar resolver com elementos HTML nativos",
+      correct: false,
+      explanation: "A regra prática é HTML nativo primeiro, ARIA depois.",
+    },
+  ]}
+/>

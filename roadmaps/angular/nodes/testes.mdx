@@ -1,0 +1,74 @@
+---
+id: testes
+title: "Testes em Angular"
+resources:
+  - title: "Angular: Testing"
+    url: https://angular.dev/guide/testing
+    type: doc
+    lang: en
+    free: true
+---
+
+Teste não existe para deixar CI bonito. Ele existe para você mudar o app sem
+ficar refazendo tudo na mão e torcendo.
+
+Em Angular, comece pelo que tem regra clara: service, pipe, validação de
+formulário e componente com fluxo importante.
+
+## Testando regra
+
+Service costuma ser o primeiro lugar bom para testar, porque tem menos ruído de
+DOM.
+
+```ts
+it("marca trilha como concluída", () => {
+  const service = new TrilhasService()
+
+  service.adicionar({ id: "angular", titulo: "Angular", feita: false })
+  service.concluir("angular")
+
+  expect(service.listar()[0].feita).toBe(true)
+})
+```
+
+## Testando componente
+
+Quando o componente tem dependências do Angular, use `TestBed`:
+
+```ts
+await TestBed.configureTestingModule({
+  imports: [TrilhaCardComponent],
+}).compileComponents()
+
+const fixture = TestBed.createComponent(TrilhaCardComponent)
+fixture.componentRef.setInput("titulo", "Angular")
+fixture.detectChanges()
+
+expect(fixture.nativeElement.textContent).toContain("Angular")
+```
+
+## O que vale testar
+
+Teste comportamento importante:
+
+- service com regra de domínio
+- formulário inválido e válido
+- estado vazio
+- loading e erro
+- navegação
+- output emitido por componente
+- interceptor ou guard crítico
+
+Mock ajuda a isolar API, router e dependências externas. O objetivo não é
+simular o mundo inteiro; é provar que aquela unidade faz o que promete.
+
+Três ideias pra levar deste nó:
+
+- **Service costuma ser mais fácil de testar que tela inteira.**
+- **Teste deve proteger comportamento importante.**
+- **Mock ajuda a isolar dependências externas.**
+
+> Dica: se você tem medo de alterar uma função, ela é candidata forte a teste.
+
+No próximo nó, vamos preparar a aplicação para produção: performance, SSR e
+deploy.

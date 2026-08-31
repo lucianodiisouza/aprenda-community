@@ -1,0 +1,601 @@
+---
+id: estrategias-de-cache
+title: "Estrategias de cache: cache first, network first, SWR, Workbox"
+resources:
+  - title: "web.dev - Offline UX patterns (oficial, EN)"
+    url: https://web.dev/articles/offline-cookbook
+    lang: en
+    type: doc
+    free: true
+  - title: "Workbox - Strategies (oficial, EN)"
+    url: https://developer.chrome.com/docs/workbox/modules/workbox-strategies
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce registrou o Service Worker. Agora
+vem a decisao que **define o UX offline**
+do seu PWA: **qual estrategia de cache**
+usar pra cada tipo de recurso?
+
+A escolha errada faz o usuario ver
+conteudo **desatualizado** quando devia
+ver o **atual** (ou o contrario). **Cache
+first** pra API data = usuario ve versao
+de ontem, mesmo online. **Network first**
+pra imagens = app lento offline. Sao
+tradeoffs reais, e cada tipo de recurso
+pede uma estrategia diferente.
+
+Se voce entende as 4 estrategias canonicas
+(cache first, network first, SWR, cache
+only), quando usar cada uma, e como o
+**Workbox** abstrai isso, voce sai de
+"cache tudo" pra "cache certo pro tipo
+certo de recurso".
+
+## O essencial 🟢
+
+**As 4 estrategias canonicas.** O
+Workbox define 4 estrategias basicas
+(alem de compor elas):
+
+| Estrategia         | Cache hit | Cache miss  | Quando usar                                |
+| ------------------ | --------- | ----------- | ------------------------------------------ |
+| **Cache First**    | serve cache | busca rede, cachea | Assets imutaveis (JS, CSS com hash)  |
+| **Network First**  | busca rede | serve cache (fallback) | API data, frescor importa     |
+| **Stale-While-Revalidate** | serve cache (stale) | busca rede em background, atualiza cache | Conteudo que muda devagar |
+| **Cache Only**     | serve cache | erro (404) | Assets estaticos pre-cacheados           |
+
+**Cache First - "cache vence, rede
+atualiza".** Padrão: serve do cache se
+tiver. Se nao, vai pra rede e cachea o
+resultado.
+
+```ts
+// Vanilla
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request).then((response) => {
+        return caches.open("v1").then((cache) => {
+          cache.put(event.request, response.clone());
+          return response;
+        });
+      });
+    })
+  );
+});
+```
+
+```ts
+// Workbox
+import { CacheFirst } from "workbox-strategies";
+
+registerRoute(
+  ({ request }) => request.destination === "image",
+  new CacheFirst({
+    cacheName: "images",
+    plugins: [{
+      expiration: { maxEntries: 50, maxAgeSeconds: 30 * 24 * 60 * 60 },
+    }],
+  })
+);
+```
+
+**Use pra**: assets com hash (JS, CSS
+gerado pelo build, fonts, imagens estaticas).
+Cache vence → instantaneo. Se nao tem,
+rede cacheia pra proxima vez.
+
+**Risco**: se o conteudo **muda** (CSS
+sem hash, API data), o usuario ve versao
+antiga **mesmo online**. Solução: **nome
+do cache versionado** + invalidação no
+`activate`.
+
+**Network First - "rede vence, cache
+fallback".** Padrão: vai pra rede. Se
+falha (offline, timeout), serve do cache.
+
+```ts
+import { NetworkFirst } from "workbox-strategies";
+
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/api/"),
+  new NetworkFirst({
+    cacheName: "api",
+    networkTimeoutSeconds: 3,  // timeout rapido
+    plugins: [{
+      expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 },
+    }],
+  })
+);
+```
+
+**Use pra**: API data, feed, perfil de
+usuario. Frescor importa mais que
+velocidade. O timeout rapido (3s) garante
+que em conexao ruim cai pro cache rapido
+(nao espera 30s pelo timeout do browser).
+
+**Tradeoff**: em conexao lenta, o usuario
+espera a rede. **Use com parcimonia** -
+so pra dados que realmente precisam ser
+fresh.
+
+**Stale-While-Revalidate (SWR) - "cache
+imediato, rede atualiza em background".**
+O **melhor dos dois mundos**: serve do
+cache **instantaneamente**, mas em paralelo
+busca na rede pra atualizar o cache
+pra proxima vez.
+
+```ts
+import { StaleWhileRevalidate } from "workbox-strategies";
+
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/static/"),
+  new StaleWhileRevalidate({
+    cacheName: "static-content",
+    plugins: [{
+      expiration: { maxEntries: 100, maxAgeSeconds: 24 * 60 * 60 },
+    }],
+  })
+);
+```
+
+Fluxo:
+
+1. Request chega no SW.
+2. SW checa cache → **hit**: serve do cache.
+3. **Em paralelo**, SW faz fetch na rede.
+4. Response da rede chega → cache atualiza.
+5. Proxima request: cache ja tem versao
+   nova.
+
+**Use pra**: conteudo que **muda devagar**
+mas voce quer fresh na proxima visita.
+Lista de posts, configuracoes, profile
+publico, documentacao.
+
+**Risco**: o usuario **sempre** ve a
+versao antiga (ate a rede atualizar).
+Nao use pra dados **criticos** (preco,
+saldo bancario).
+
+**Cache Only - "cache ou nada".** Serve
+**so do cache**. Se nao tem, retorna erro
+(404). Util pra **assets pre-cacheados**
+que voce sabe que vai ter (app shell):
+
+```ts
+import { CacheOnly } from "workbox-strategies";
+
+registerRoute(
+  ({ url }) => url.pathname === "/offline.html",
+  new CacheOnly({ cacheName: "app-shell" })
+);
+```
+
+Combinado com pre-cache no `install`,
+garante que `/offline.html` sempre
+existe (e o usuario ve uma pagina
+"voce esta offline" em vez de um 404
+cru).
+
+**Network Only - "rede sempre".** NUNCA
+cacheia. Util pra **POSTs/PUTs/DELETEs**
+(nao faz sentido cachear mutações):
+
+```ts
+import { NetworkOnly } from "workbox-strategies";
+
+registerRoute(
+  ({ request }) => request.method === "POST",
+  new NetworkOnly()
+);
+```
+
+Ou pra endpoints que **precisam** ser fresh
+(analytics, tracking, dashboards de metricas).
+
+**A decision tree: qual estrategia usar.**
+Dada a natureza do recurso, a escolha e'
+quase mecanica:
+
+<Mermaid
+  chart={`flowchart TD
+    Start[Que tipo de recurso?]
+    Start --> Type{Method = GET?}
+    Type -->|Nao POST/PUT/DELETE| NetworkOnly[Network Only<br/>sempre fresh, nunca cache]
+    Type -->|Sim| Content{Tipo de conteudo?}
+    Content -->|Imutavel com hash<br/>JS/CSS build, font, image estatica| CacheFirst[Cache First<br/>rapido, cache vence]
+    Content -->|API data frescor importa<br/>feed, perfil, preco| NetworkFirst[Network First<br/>rede vence, cache fallback]
+    Content -->|Conteudo semi-estatico<br/>posts, docs, lista produtos| SWR[Stale-While-Revalidate<br/>cache rapido, atualiza em background]
+    Content -->|App shell pre-cacheado<br/>offline.html, icons| CacheOnly[Cache Only<br/>sempre do cache]
+    Content -->|Analytics, tracking, real-time| NetworkOnly2[Network Only]
+    Start --> Fresh{Dados sensiveis?}
+    Fresh -->|Sim token/balance| NetworkFirst2[Network First<br/>sempre fresh, cache curto]
+    Fresh -->|Nao| Start`}
+  caption="Decision tree: dado o tipo de recurso, escolha a estrategia. Regra pratica: 80% dos casos = SWR ou Network First. Cache First so pra assets com hash (build output). Cache Only so pra pre-cache do install."
+/>
+
+**`ExpirationPlugin` - o "limpa o cache
+periodicamente".** Sem limite, o cache
+cresce ate estourar a cota do browser.
+**Sempre** configure:
+
+```ts
+import { ExpirationPlugin } from "workbox-expiration";
+
+new CacheFirst({
+  cacheName: "images",
+  plugins: [
+    new ExpirationPlugin({
+      maxEntries: 50,  // max 50 items
+      maxAgeSeconds: 30 * 24 * 60 * 60,  // 30 dias
+      purgeOnQuotaError: true,  // limpa se cota estourar
+    }),
+  ],
+});
+```
+
+`maxEntries: 50` = no maximo 50 imagens.
+`maxAgeSeconds: 30 dias` = remove items
+mais velhos. `purgeOnQuotaError: true` =
+se o browser avisar "cota estourando", o
+Workbox limpa o cache pro app nao quebrar.
+
+**`CacheableResponsePlugin` - so cachea
+responses 2xx.** Por default, SW cacheia
+**qualquer response** (incluindo 404, 500).
+`CacheableResponsePlugin` filtra:
+
+```ts
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
+
+new NetworkFirst({
+  cacheName: "api",
+  plugins: [
+    new CacheableResponsePlugin({ statuses: [0, 200] }),
+    // 0 = opaque (cross-origin sem CORS)
+    // 200 = OK
+    // NAO cachear 404, 500, etc
+  ],
+});
+```
+
+`statuses: [0, 200]` so cacheia OK. Sem
+isso, respostas 404 ficam em cache e
+causam "404 fantasmas" mesmo quando o
+servidor voltou.
+
+**Plugins do Workbox - a toolbox.** Alem de
+Expiration e CacheableResponse, Workbox
+oferece:
+
+- **BackgroundSyncPlugin** - retry de POSTs
+  falhados.
+- **BroadcastUpdatePlugin** - notifica pagina
+  quando cache atualiza.
+- **CacheKeyWillBeUsedCallback** - custom
+  cache keys.
+- **RequestWillBeFetchedCallback** - custom
+  fetch options.
+
+Pra maioria dos apps, **Expiration +
+CacheableResponse** cobrem 90%.
+
+**Precache vs runtime cache.** Sao 2
+conceitos diferentes:
+
+- **Precache:** assets pre-cacheados no
+  `install` event. **Sempre no cache** desde
+  o primeiro load. Usado pra app shell.
+- **Runtime cache:** responses cacheados
+  **sob demanda** no `fetch` event. Voce so
+  tem o asset se ja visitou a pagina.
+
+```ts
+// Precache (no install)
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open("app-shell-v1").then((cache) =>
+      cache.addAll(["/", "/app.js", "/styles.css", "/offline.html"])
+    )
+  );
+});
+
+// Runtime cache (no fetch)
+registerRoute(
+  ({ request }) => request.destination === "image",
+  new CacheFirst({ cacheName: "images" })
+);
+```
+
+**Workbox `InjectManifest` plugin faz
+automaticamente** o precache do build output
+(`self.__WB_MANIFEST`).
+
+## Aprofundamento 🟡
+
+**`BroadcastChannel` - SW ↔ pagina
+comunicacao em tempo real.** Alem de
+`postMessage` (one-way), use
+`BroadcastChannel` pra eventos:
+
+```ts
+// SW
+const channel = new BroadcastChannel("cache-updates");
+self.addEventListener("fetch", (event) => {
+  // ... estrategia
+  channel.postMessage({
+    type: "CACHE_UPDATED",
+    url: event.request.url,
+  });
+});
+
+// Pagina
+const channel = new BroadcastChannel("cache-updates");
+channel.addEventListener("message", (event) => {
+  if (event.data.type === "CACHE_UPDATED") {
+    // Mostra "Nova versao disponivel" ou recarrega
+  }
+});
+```
+
+Util pra avisar a pagina que dados
+atualizaram (e.g., SW buscou versao nova
+de uma API e a UI pode re-renderizar).
+
+**`staleWhileRevalidate` com `plugins:
+[ExpirationPlugin]` - o combo classico
+para assets de build.** Workbox
+recomenda SWR + Expiration pra assets
+de build (JS, CSS, fonts):
+
+```ts
+import { registerRoute } from "workbox-routing";
+import { StaleWhileRevalidate } from "workbox-strategies";
+import { ExpirationPlugin } from "workbox-expiration";
+
+registerRoute(
+  ({ request }) =>
+    ["script", "style", "font"].includes(request.destination),
+  new StaleWhileRevalidate({
+    cacheName: "build-assets",
+    plugins: [{
+      expiration: {
+        maxEntries: 60,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+      },
+    }],
+  })
+);
+```
+
+Assets de build raramente mudam, mas
+quando mudam (deploy), voce quer a versao
+nova. SWR garante: usuario nunca espera
+(cache hit), cache atualiza em background.
+
+**`NetworkFirst` vs `CacheFirst` com
+precache do build.** Diferenca sutil:
+comprecache do build (vite-plugin-pwa
+faz automaticamente), os assets estao
+**sempre** no cache. `CacheFirst` e
+`NetworkFirst` dao o mesmo resultado
+pratico. Use `StaleWhileRevalidate` por
+default, **exceto** pra assets que nao
+mudam nunca (imagens, fonts) - use
+`CacheFirst`.
+
+**`Range requests` e streaming.** SW nao
+suporta **streaming response** nativamente.
+Pra video, audio, ou downloads grandes, o
+SW quebra o streaming. **Workaround**:
+deixe esses requests passarem (sem
+interceptar):
+
+```ts
+self.addEventListener("fetch", (event) => {
+  // Range requests: deixa passar
+  if (event.request.headers.has("range")) return;
+
+  // Ou: streaming (video, audio)
+  if (event.request.destination === "video" ||
+      event.request.destination === "audio") {
+    return;  // nao intercepta
+  }
+
+  // ... estrategia
+});
+```
+
+**`request.mode = "no-cors"` e opaque
+responses.** Requests cross-origin sem CORS
+retornam **opaque responses** (status 0,
+body inacessivel). `CacheableResponsePlugin`
+com `statuses: [0, 200]` cacheia opacas.
+Use pra **CDN de imagens sem CORS** (ex:
+unsplash, placeholder services).
+
+**`Range requests` em video.** Video HTML5
+usa range requests pra streaming. SW
+**deve** deixar passar. Sem isso, video
+nao carrega (ou carrega inteiro, sem
+streaming).
+
+## Pra quem quer ir mais alem 🔴
+
+**`StaleWhileRevalidate` e a opcao de
+atualizacao.** O SWR **sempre** busca na
+rede, mesmo se cache existe. Se voce
+quer **economizar banda** (mobile 3G),
+use `cacheFirst` com verificacao
+periodica de update. Pattern:
+
+```ts
+// Manual SWR
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(event.request);
+      const networkPromise = fetch(event.request).then((response) => {
+        if (response.ok) {
+          caches.open("v1").then((cache) =>
+            cache.put(event.request, response.clone())
+          );
+        }
+        return response;
+      });
+
+      // Retorna cache imediatamente, network atualiza
+      return cached || networkPromise;
+    })()
+  );
+});
+```
+
+Equivalente ao SWR, mas voce controla
+quando chamar network (so se nao tem cache).
+**Mais complexo**, raramente vale.
+
+**`MaxAgeSeconds` e a politica de TTL.** O
+`maxAgeSeconds` e' **relativo a data de
+cache** (nao a data de `Last-Modified` do
+recurso). Se voce cachear um response com
+`maxAgeSeconds: 3600`, apos 1h **da data
+de cache**, expira. **Independente** se
+o recurso no servidor mudou. Pra TTL
+baseado no servidor, use `Cache-Control:
+max-age=3600` no response + plugin
+customizado.
+
+**`precache` em Vite via `vite-plugin-pwa`.**
+O plugin automaticamente faz precache de
+**todos os assets do build** (JS, CSS,
+HTML, imagens em `/public`). Lista
+injetada como `self.__WB_MANIFEST`:
+
+```ts
+// sw.js gerado pelo vite-plugin-pwa
+import { precacheAndRoute } from "workbox-precaching";
+
+precacheAndRoute(self.__WB_MANIFEST);
+```
+
+Cada build tem hash unico (`app-abc123.js`).
+Workbox detecta novos arquivos e atualiza
+o precache automaticamente.
+
+**`workbox-broadcast-update` - notifica
+clientes quando cache atualiza.** Plugin
+que envia `BroadcastChannel` quando uma
+URL em cache e' atualizada:
+
+```ts
+import { BroadcastUpdatePlugin } from "workbox-broadcast-update";
+
+new StaleWhileRevalidate({
+  cacheName: "content",
+  plugins: [new BroadcastUpdatePlugin()],
+});
+```
+
+Pagina escuta o evento, mostra "Nova
+versao disponivel". UX avancado.
+
+**Leitura recomendada:**
+
+- [web.dev - Offline UX patterns](https://web.dev/articles/offline-cookbook) - patterns de UX offline, com diagramas.
+- [Workbox strategies](https://developer.chrome.com/docs/workbox/modules/workbox-strategies) - doc oficial das estrategias.
+
+> Dica: o erro mais comum em cache strategies
+> e' **usar a mesma estrategia pra tudo**.
+> "Cache first pra tudo" = dados stale online.
+> "Network first pra tudo" = app lento offline.
+> Cada tipo de recurso pede uma estrategia
+> diferente. **A regra pratica**: SWR pra
+> assets de build e conteudo semi-estatico,
+> Network First pra API data, Cache First
+> pra assets com hash, Cache Only pra
+> pre-cache do app shell. **Nao invente** -
+> existe 4 estrategias canonicas, combine
+> conforme o tipo.
+
+No proximo no, vamos **IndexedDB**: a
+"base de dados" do browser. API nativa
+versus Dexie (wrapper moderno), queries
+com indices, e migrations. Cobre como
+armazenar dados offline-first que
+persistem entre sessoes.
+
+<Checkpoint
+  challenge="Implemente a função `escolherEstrategia(tipoRecurso, hasHash, temFrescor)` que retorna a estrategia de cache ideal. Regras: tipoRecurso ∈ {script, style, image, api, video, audio}. Se tipoRecurso = video ou audio, retorna 'network-only' (streaming). Se hasHash E (script, style, ou image), retorna 'cache-first' (assets imutaveis). Se temFrescor E tipoRecurso = api, retorna 'network-first'. Se tipoRecurso = api (sem hasHash, sem frescor especial), retorna 'stale-while-revalidate'. Se script ou style sem hasHash, retorna 'stale-while-revalidate'."
+  starterCode={`// Implemente escolherEstrategia(tipoRecurso, hasHash, temFrescor)
+//
+// tipoRecurso: 'script' | 'style' | 'image' | 'api' | 'video' | 'audio'
+// hasHash: boolean (true se o arquivo tem hash no nome, ex: app-abc123.js)
+// temFrescor: boolean (true se precisa ser sempre fresh, ex: preco, saldo)
+//
+// Retorna 'cache-first' | 'network-first' | 'stale-while-revalidate' | 'network-only'.
+//
+// Regras:
+// - video/audio → 'network-only' (streaming, nao cacheia).
+// - script/style/image COM hash → 'cache-first' (assets imutaveis).
+// - api COM temFrescor → 'network-first' (sempre fresh, cache fallback).
+// - api SEM temFrescor → 'stale-while-revalidate'.
+// - script/style SEM hash → 'stale-while-revalidate' (podem mudar entre deploys).
+function escolherEstrategia(tipoRecurso, hasHash, temFrescor) {
+  return "stale-while-revalidate";
+}
+
+const _r1 = escolherEstrategia("image", true, false);
+console.log(JSON.stringify(_r1));
+
+const _r2 = escolherEstrategia("api", false, true);
+console.log(JSON.stringify(_r2));
+
+const _r3 = escolherEstrategia("video", false, false);
+console.log(JSON.stringify(_r3));
+
+const _r4 = escolherEstrategia("script", false, false);
+console.log(JSON.stringify(_r4));
+
+const _r5 = escolherEstrategia("api", false, false);
+console.log(JSON.stringify(_r5));`}
+  expected='"cache-first"
+"network-first"
+"network-only"
+"stale-while-revalidate"
+"stale-while-revalidate"'
+  slug="pwa"
+  nodeId="estrategias-de-cache"
+/>
+
+<Quiz
+  question="Quando usar Stale-While-Revalidate (SWR) ao inves de Network First ou Cache First?"
+  options={[
+    {
+      text: "SWR e' ideal pra conteudo que muda devagar mas voce quer fresh na proxima visita: serve do cache instantaneamente E busca na rede em background pra atualizar cache. Bom pra feed de posts, lista de produtos, documentacao.",
+      correct: true,
+      explanation:
+        "SWR (Stale-While-Revalidate) entrega 2 promessas: 1) latencia ZERO (cache hit sempre), 2) cache eventualmente consistente (atualiza em background). O tradeoff: usuario ve versao antiga (stale) na primeira request, mas versao nova na segunda. Ideal pra: feed de posts, lista de produtos, documentacao, perfil publico - conteudo que muda devagar mas voce quer fresh na proxima visita. NAO use pra dados criticos (preco, saldo) - use Network First. NAO use pra assets imutaveis (JS, CSS com hash) - use Cache First.",
+    },
+    {
+      text: "SWR sempre - e' a melhor estrategia pra qualquer recurso.",
+      correct: false,
+      explanation:
+        "Nao. SWR sacrifica frescor pela latencia (usuario sempre ve cache). Pra dados criticos (preco, saldo, cotacao), isso e' INACEITAVEL - use Network First. Pra assets imutaveis (JS/CSS com hash), SWR faz request desnecessario na rede - use Cache First. Cada caso pede uma estrategia diferente. SWR e' o 'default razoavel' pra 60% dos casos, nao 100%.",
+    },
+    {
+      text: "SWR serve do cache E da rede simultaneamente, comparando resultados.",
+      correct: false,
+      explanation:
+        "Nao. SWR serve o cache IMEDIATAMENTE (latencia zero), e faz request na rede em BACKGROUND (so pra atualizar cache pro proximo request). O usuario SEMPRE ve o cache. A rede so atualiza o cache, nao influencia a response atual. E' o oposto de 'comparar resultados' - e' 'servir stale agora, atualizar pra proxima'.",
+    },
+  ]}
+/>
