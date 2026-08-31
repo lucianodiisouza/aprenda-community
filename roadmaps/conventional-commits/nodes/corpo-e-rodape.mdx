@@ -1,0 +1,80 @@
+---
+id: corpo-e-rodape
+title: "Corpo e rodapé: o porquê e o breaking change"
+resources:
+  - title: "BREAKING CHANGE e corpo na especificação (EN)"
+    url: https://www.conventionalcommits.org/en/v1.0.0/#commit-message-with-both-breaking-change-footer-and-body
+    type: doc
+    lang: en
+    free: true
+---
+
+Até agora você escreveu commits de **uma linha**. Mas alguns commits merecem
+mais que isso — quando o *porquê* não cabe numa frase. É aí que entram o
+**corpo** (body) e o **rodapé** (footer).
+
+## O corpo: o porquê, não o como
+
+O corpo fica logo abaixo do assunto, separado por uma **linha em branco**. Ele
+responde: *por que essa mudança existe?* Não é pra repetir o que o código já
+diz (isso é ruído) — é pra passar o contexto que o código não tem.
+
+```text
+fix(cart): corrige frete para múltiplos itens
+
+Antes, o frete era calculado por item e somado, o que
+dobrava quando o carrinho tinha itens iguais. Agora calcula
+por linha do carrinho.
+
+Issue: #456
+```
+
+No repositório, essa mensagem fica no seu histórico. No terminal, você pode
+gravá-la com o editor (`git commit` abre o editor) ou, mais simples, usando
+múltiplos `-m`:
+
+```bash
+git commit -m "fix(cart): corrige frete para múltiplos itens" \
+           -m "Antes, o frete era calculado por item e somado. Agora calcula por linha."
+```
+
+## O rodapé: o espaço opcional de metadados
+
+O rodapé fica **depois do corpo**, também após uma linha em branco. Ele guarda
+**metadados padronizados** — referência de issue, ou o `BREAKING CHANGE`:
+
+```text
+feat(api): muda autenticação para tokens JWT
+
+BREAKING CHANGE: tokens de acesso agora expiram em 15 min
+e o campo `token_refresh` foi removido da resposta.
+```
+
+Aqui está o ponto que mais impacta ferramentas: **`BREAKING CHANGE:`** (em
+maiúsculas, com dois-pontos) é o marcador que informa ao leitor de release que
+essa mudança **quebra compatibilidade** — e ela dispara o bump de **major** na
+SemVer (v1.x → v2.0).
+
+> **Dica:** colocar `BREAKING CHANGE:` no rodapé é o jeito canônico de marcar
+> uma quebra. Como alternativa compatível, algumas ferramentas também olham
+> para `!` após o type — `feat(api)!: ...`. Mas o rodapé `BREAKING CHANGE:` é
+> o mais explícito e portável (funciona em qualquer leitor).
+
+## corpo + rodapé no mesmo commit
+
+```text
+feat(auth)!: migra sessões para JWT expirável
+
+BREAKING CHANGE: sessões em cookie foram removidas; clientes
+devem renovar token a cada 15 min.
+```
+
+- **corpo** = o **porquê** (contexto que o código não tem), separado por linha em branco.
+- **rodapé** = **metadados** (`Issue:`, `Reviewed-by:`), também após linha em branco.
+- **`BREAKING CHANGE:`** no rodapé = aviso de **quebra**, ativa bump **major**.
+- A sintaxe alternativa `!` após o type também marca quebra, mas é menos explícita.
+
+> Dica: nem todo commit precisa de corpo. Use corpo quando o *porquê* for
+> não-óbvio — aquele comentário "por que isso existe" que não cabia no código.
+
+No próximo nó, vamos ver as **regras de ouro** e quando é aceitável quebrá-las.

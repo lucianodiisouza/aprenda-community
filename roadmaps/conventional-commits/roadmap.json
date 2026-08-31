@@ -1,0 +1,86 @@
+{
+  "slug": "conventional-commits",
+  "title": "Conventional Commits",
+  "description": "Trilha pra quem já usa Git em time e quer parar de brigar com o histórico. Você começa pelo problema que os commits convencionais resolvem, monta o modelo mental do formato type(scope): descrição, cobre tipos, corpo, rodapé e quebras (BREAKING CHANGE), e termina ligando letra de commit com versão semântica e changelog automático. Pré-requisito: noções de Git (commit, branch, push) e trabalho em equipe.",
+  "difficulty": "intermediario",
+  "published": "2026-08-31",
+  "skills": ["conventional-commits", "git", "semver", "changelog", "mensagem-de-commit", "colaboracao"],
+  "creators": [
+    {
+      "name": "Lucas Gabriel Witchemichen",
+      "github": "lucasgab2230"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "por-que-conventional-commits",
+      "title": "Por que mensagens de commit importam",
+      "type": "topic",
+      "recommended": true,
+      "children": ["estrutura-basica"]
+    },
+    {
+      "id": "estrutura-basica",
+      "title": "A estrutura: type(scope): descrição",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tipos-principais"]
+    },
+    {
+      "id": "tipos-principais",
+      "title": "Os tipos principais: feat e fix",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["tipos-auxiliares"]
+    },
+    {
+      "id": "tipos-auxiliares",
+      "title": "Tipos de apoio: chore, docs, refactor e os outros",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["escopo-e-assunto"]
+    },
+    {
+      "id": "escopo-e-assunto",
+      "title": "Escopo e assunto: onde e o quê",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["corpo-e-rodape"]
+    },
+    {
+      "id": "corpo-e-rodape",
+      "title": "Corpo e rodapé: o porquê e o breaking change",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["regras-e-excecoes"]
+    },
+    {
+      "id": "regras-e-excecoes",
+      "title": "Regras de ouro e quando quebrá-las",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["semver-e-changelog"]
+    },
+    {
+      "id": "semver-e-changelog",
+      "title": "Conventional Commits + SemVer + changelog automático",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ferramentas-e-ecossistema"]
+    },
+    {
+      "id": "ferramentas-e-ecossistema",
+      "title": "Tooling: commitlint, commitizen, husky e gitmoji",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: histórico de commits em Conventional Commits",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+---
+id: estrutura-basica
+title: "A estrutura: type(scope): descrição"
+resources:
+  - title: "Anatomy of a commit message (Conventional Commits, EN)"
+    url: https://www.conventionalcommits.org/en/v1.0.0/#specification
+    type: doc
+    lang: en
+    free: true
+  - title: "Especificação oficial em PT-BR (Conventional Commits)"
+    url: https://www.conventionalcommits.org/pt-br/v1.0.0/
+    type: doc
+    lang: pt
+    free: true
+---
+
+Fechou o problema: agora você quer que cada commit conte uma história.
+O Conventional Commits organiza **toda** a mensagem na cabeça do commit
+(subject) — a primeira linha. É ela que as ferramentas leem.
+
+## O esqueleto em uma linha
+
+O formato base é simples:
+
+```text
+<type>(<scope>): <description>
+       │        │
+       │        └─ o quê (resumo em minúsculas)
+       └─ categoria (onde) e impacto
+```
+
+Na prática:
+
+```text
+feat(auth): adiciona login com token JWT
+fix(cart): corrige cálculo de frete para múltiplos itens
+```
+
+Repara nos detalhes:
+
+- `type` e `description` são **obrigatórios**.
+- `(scope)` é **opcional** — se vier, não pode ter espaço nem estar vazio.
+- Depois de `type:` tem **exatamente uma expressão**: `type(scope): descrição`,
+  sem espaços antes dos dois-pontos.
+- A descrição começa com **verbo no imperativo, minúscula, sem ponto final**.
+
+```js
+// ✅ correto
+// feat: adiciona endpoint de reset de senha
+
+// ❌ errado
+// feat :adiciona endpoint de reset de senha   (espaço antes dos dois-pontos)
+// Feat: Adiciona endpoint...                  (maiúscula + verbo impessoal)
+```
+
+> **Dica:** o verbo no imperativo ("adiciona", "corrige", "remove") é o
+> mesmo jeito como o próprio Git escreve quando você faz `git merge`.
+> Soa como uma ordem: *este commit* adiciona, *este commit* corrige.
+
+## O que a primeira linha precisa responder
+
+Depois de escrever, pergunte-se: **se eu ler só essa linha, eu sei o que
+mudou?** Treine com exemplos:
+
+| Mensagem | Veredito |
+| --- | --- |
+| `feat: adiciona cancelamento de assinatura` | ✅ claro |
+| `feat: corrige coisas` | ❌ o quê? |
+| `fix: resolve bug do usuário` | ❌ qual bug? |
+| `docs: explica autenticação no README` | ✅ claro |
+| `update: melhorias` | ❌ `update` não é tipo e "melhorias" não diz nada |
+
+- **`type`** = a categoria da mudança (vamos ver as principais já no próximo nó).
+- **`description`** = o resumo do **o quê** (e às vezes o **onde** vai no escopo).
+- **Primeira linha** = o único lugar que as ferramentas de release leem por padrão.
+
+> Dica: comece a ver o seu `git log` como um **título de release a ser
+> escrito**. Se a primeira linha é confusa, a release toda fica confusa.
+
+No próximo nó, vamos ver os **tipos** que o Conventional Commits define — e
+por que `feat` e `fix` são os únicos que mexem na versão.

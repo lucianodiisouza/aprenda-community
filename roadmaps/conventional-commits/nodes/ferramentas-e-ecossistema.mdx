@@ -1,0 +1,105 @@
+---
+id: ferramentas-e-ecossistema
+title: "Tooling: commitlint, commitizen, husky e gitmoji"
+resources:
+  - title: "Commitlint (site oficial, EN)"
+    url: https://commitlint.js.org/
+    type: doc
+    lang: en
+    free: true
+  - title: "Commitizen (site oficial, EN)"
+    url: https://commitizen-tools.github.io/commitizen/
+    type: doc
+    lang: en
+    free: true
+---
+
+Convenção manual é ótima até o dia do vencimento — e aí alguém esquece o
+formato, e a SemVer automática quebra. Por isso o ecossistema de Conventional
+Commits inclui ferramentas que **automatizam** e **reforçam** a convenção.
+Vamos ver o essencial (a fundo em cada uma é assunto pra trilha própria).
+
+## Commitlint: valida o formato
+
+O [commitlint](https://commitlint.js.org/) roda **antes de o commit ser criado**
+ou no CI e falha se a mensagem não seguir a regra. Você define regras (tipos
+permitidos, escopo obrigatório, tamanho máximo) num arquivo de config:
+
+```jsonc
+// commitlint.config.js (exemplo)
+export default {
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "type-enum": [2, "always", ["feat", "fix", "refactor", "docs", "test", "chore"]],
+    "subject-max-length": [2, "always", 72],
+  },
+}
+```
+
+A partir daí, um commit fora do padrão é **rejeitado na hora** — o time não
+perde tempo revisando formato depois.
+
+## Husky: ganchos do Git
+
+O [husky](https://typicode.github.io/husky/) roda **hooks do Git** (como
+`pre-commit`, `commit-msg`) na sua máquina. É o jeito de ligar o commitlint ao
+ato de commitar:
+
+```bash
+# .husky/commit-msg — roda commitlint na mensagem
+npx --no -- commitlint --edit "$1"
+```
+
+E, com um `prepare` script no `package.json`, o hook é instalado pra todo
+mundo que clonar o repo. Resultado: **a convenção se aplica sozinha**.
+
+## Commitizen: mensagens sem decorar o formato
+
+O [commitizen](https://commitizen-tools.github.io/commitizen/) transforma o
+`git commit` num **formulário interativo**: ele pergunta o tipo, o escopo, a
+descrição e monta a mensagem pra você. Ótimo pra quem não quer decorar cada
+regra, e o mesmo CLI alimenta a `cz` (commitizen):
+
+```bash
+npm install --save-dev commitizen
+npx cz                # abre o assistente interativo
+# ? Selecione o tipo de mudança...   -> feat
+# ? Qual o escopo? ...                 -> auth
+# ? Descreva...                        -> adiciona login
+```
+
+O commitizen normaliza a mensagem no formato certo e elimina o erro humano.
+
+## Gitmoji: emojis como extensão
+
+O [gitmoji](https://gitmoji.dev/) **adiciona um emoji** ao início da mensagem,
+como convenção *paralela* (não substitui o Conventional Commits):
+
+```text
+✨ feat(auth): adiciona login com GitHub
+🐛 fix(cart): corrige frete
+📝 docs(readme): explica instalação
+```
+
+Cada emoji tem um significado fixo (`✨` = feature nova, `🐛` = bug fix,
+`📝` = docs). Muitos times adotam gitmoji **em cima** de Conventional Commits —
+o truque é que o formato clássico continua presente (e parseável), e o emoji
+adiciona semântica visual no `git log`.
+
+> **Dica:** qual escolher? Comece sem tooling (só a convenção na mão), depois
+> adicione **commitlint + husky** pra *forçar*, e só então **commitizen** se
+> quiser reduzir fricção. Gitmoji é gosto do time — mantenha o emoji **após**
+> o tipo, pra não quebrar o parser.
+
+- **commitlint** = valida a mensagem (no commit ou no CI).
+- **husky** = roda hooks do Git (ex.: dispara o commitlint).
+- **commitizen** = assistente interativo que monta a mensagem correta.
+- **gitmoji** = adiciona emoji como extensão visual, mantendo o formato.
+
+> Dica: configure tudo isso num `package.json` (via `prepare` + `husky`) e
+> versionando o `commitlint.config.js` — assim a convenção **anda junto com o
+> código** no repositório.
+
+No próximo (último) nó, vamos fechar com um **projeto prático**: reescrever um
+histórico de commits bagunçado em Conventional Commits, do zero ao `git log`
+limpo.

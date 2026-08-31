@@ -1,0 +1,108 @@
+---
+id: projeto-final
+title: "Projeto final: histórico de commits em Conventional Commits"
+resources:
+  - title: "Rebase e alteração de histórico (Git docs, EN)"
+    url: https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History
+    type: doc
+    lang: en
+    free: true
+---
+
+Chegou a hora de juntar tudo num **desafio prático**. Você vai pegar um
+histórico de commits bagunçado — desses com `wip`, `fix stuff` e `asd` — e
+reescrevê-lo em Conventional Commits, do jeito que alimentaria a versão e o
+changelog automaticamente.
+
+> Este é um **milestone**: quando completar, você terá demonstrado na prática
+> que sabe ler, avaliar e reescrever mensagens de commit com a convenção.
+
+## Objetivo
+
+Criar (ou resgatar) um repositório Git e transformar um histórico caótico num
+histórico limpo, semântico e preparado pra release.
+
+## Passo a passo sugerido
+
+**1. Montere o contexto sujo**
+
+Num repo de teste, faça alguns commits bagunçados de propósito:
+
+```bash
+git init cc-pratica
+cd cc-pratica
+echo "base" > app.js && git add . && git commit -m "wip"
+echo "const x = 1" > app.js && git add . && git commit -m "asd"
+echo "function hello(){}" > app.js && git add . && git commit -m "fix stuff"
+git log --oneline
+# pare com um histórico que você não entenderia daqui a 1 mês
+```
+
+**2. Avalie cada commit**
+
+Para cada linha, responda usando o que aprendeu:
+
+- que **tipo** é (feat/fix/refactor/docs/chore)?
+- há **escopo** útil (`app`)?
+- o **assunto** está em verbo imperativo e minúscula?
+- precisa de **corpo** (porquê)? precisa de **`BREAKING CHANGE`**?
+
+**3. Reescreva com `git rebase -i`**
+
+Dentro do editor, escolha `reword` pra renomear mensagens sem duplicar a
+mudança:
+
+```bash
+git rebase -i --root
+# no editor: marque os commits como "reword" e troque a mensagem
+# para o formato convencional
+```
+
+**4. Valide com `git log`**
+
+Confira o resultado — ele deve agora **contar uma história**:
+
+```bash
+git log --oneline
+# feat(app): adiciona função hello
+# fix(app): corrige variável x
+# chore: inicializa repositório
+```
+
+**5. (Extra) experimente o filtro que a automação usaria**
+
+```bash
+# o que entrou de novo numa "release"
+git log --oneline --grep="^feat"
+# ou rode um changelog convencional se tiver a ferramenta instalada
+```
+
+## Desafios extras (opcional)
+
+- **`feat!`**: force um commit com `BREAKING CHANGE:` e veja como ele se
+  destacaria num changelog (bump major em semver).
+- **Adote o tooling**: inicialize `commitlint` + `husky` nesse repo e veja um
+  commit fora do padrão ser **rejeitado na hora** — aí tente gravar um
+  convencional passando de primeira.
+- **Commitizen**: rode `npx cz` e monte uma mensagem pelo assistente.
+- **Gitmoji**: decida um emoji e reescreva o histórico com ele (mantendo o
+  `type` presente).
+- **Squash**: acerte um `feat` grande que foi feito em 5 passos, usando
+  `git rebase -i` com *squash* pra colapsar numa mensagem só.
+
+## Critérios de sucesso
+
+- [ ] O `git log --oneline` do repo final **conta uma história** sem `wip`/`asd`.
+- [ ] Cada mensagem segue `type(escopo): descrição` com verbo imperativo.
+- [ ] Um `fix` e um `feat` estão presentes e são distinguíveis.
+- [ ] Você conseguiu usar `git rebase -i` (reword e/ou squash) em segurança.
+- [ ] (Se fez o extra) Um `BREAKING CHANGE:` aparece com bump **major** lógico.
+
+> **Dica final:** a meta não é decorar mensagens — é que o histórico **conte
+> uma história que você (e botes de release) consigam ler**. Sempre que tiver
+> dúvida, volte aos nós desta trilha: `type → escopo → assunto → corpo →
+> rodapé`, e tudo se encaixa.
+
+Parabéns — você completou a trilha Conventional Commits! 🎉 Agora cada `git
+commit` que você escrever (e cada histórico que você ler) fala a mesma língua:
+a língua do release, do changelog e do time.

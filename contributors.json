@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/build-contributors.mjs",
-  "count": 7,
+  "count": 8,
   "contributors": [
     {
       "github": "lucianodiisouza",
@@ -328,6 +328,32 @@
           "slug": "desenvolvedor-backend",
           "title": "Desenvolvedor Backend",
           "via": "trilha:ciberseguranca-para-desenvolvedores"
+        }
+      ]
+    },
+    {
+      "github": "lucasgab2230",
+      "name": "Lucas Gabriel Witchemichen",
+      "avatar": "https://github.com/lucasgab2230.png",
+      "profile": "https://github.com/lucasgab2230",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 0,
+        "bootcamps": 1,
+        "total": 2
+      },
+      "trilhas": [
+        {
+          "slug": "conventional-commits",
+          "title": "Conventional Commits"
+        }
+      ],
+      "projetos": [],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:conventional-commits"
         }
       ]
     },
