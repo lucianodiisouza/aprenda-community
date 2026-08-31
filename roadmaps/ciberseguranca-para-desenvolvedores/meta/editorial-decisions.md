@@ -121,8 +121,8 @@ A premissa editorial é simples: **fundamentos antes de ferramentas e compreens�
 - Gestão de Secrets.
 - Criptografia para desenvolvedores.
 - DevSecOps.
-- Cloud Security
+- Segurança em Nuvem
 - Monitoramento e resposta a incidentes.
-- Security by Design
+- Segurança desde a concepção
 
 Mudanças que adicionem novos nós devem gerar bump **minor**, correções simples **patch** e alterações significativas de escopo ou ordem **major**.
