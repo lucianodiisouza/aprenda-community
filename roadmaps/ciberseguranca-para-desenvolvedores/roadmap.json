@@ -10,6 +10,12 @@
     "owasp",
     "seguranca-defensiva"
   ],
+  "creators": [
+  {
+    "name": "Alex Jesus (ojesus_cyber)",
+    "github": "AJesus1308"
+  }
+],
   "nodes": [
     {
       "id": "introducao-seguranca-informacao",
