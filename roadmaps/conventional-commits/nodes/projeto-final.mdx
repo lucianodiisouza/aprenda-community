@@ -10,7 +10,7 @@ resources:
 ---
 
 Chegou a hora de juntar tudo num **desafio prático**. Você vai pegar um
-histórico de commits bagunçado — desses com `wip`, `fix stuff` e `asd` — e
+histórico de commits bagunçado - desses com `wip`, `fix stuff` e `asd` - e
 reescrevê-lo em Conventional Commits, do jeito que alimentaria a versão e o
 changelog automaticamente.
 
@@ -24,7 +24,7 @@ histórico limpo, semântico e preparado pra release.
 
 ## Passo a passo sugerido
 
-**1. Montere o contexto sujo**
+**1. Monte o contexto sujo**
 
 Num repo de teste, faça alguns commits bagunçados de propósito:
 
@@ -60,7 +60,7 @@ git rebase -i --root
 
 **4. Valide com `git log`**
 
-Confira o resultado — ele deve agora **contar uma história**:
+Confira o resultado - ele deve agora **contar uma história**:
 
 ```bash
 git log --oneline
@@ -82,7 +82,7 @@ git log --oneline --grep="^feat"
 - **`feat!`**: force um commit com `BREAKING CHANGE:` e veja como ele se
   destacaria num changelog (bump major em semver).
 - **Adote o tooling**: inicialize `commitlint` + `husky` nesse repo e veja um
-  commit fora do padrão ser **rejeitado na hora** — aí tente gravar um
+  commit fora do padrão ser **rejeitado na hora** - aí tente gravar um
   convencional passando de primeira.
 - **Commitizen**: rode `npx cz` e monte uma mensagem pelo assistente.
 - **Gitmoji**: decida um emoji e reescreva o histórico com ele (mantendo o
@@ -98,11 +98,37 @@ git log --oneline --grep="^feat"
 - [ ] Você conseguiu usar `git rebase -i` (reword e/ou squash) em segurança.
 - [ ] (Se fez o extra) Um `BREAKING CHANGE:` aparece com bump **major** lógico.
 
-> **Dica final:** a meta não é decorar mensagens — é que o histórico **conte
-> uma história que você (e botes de release) consigam ler**. Sempre que tiver
+> **Dica final:** a meta não é decorar mensagens - é que o histórico **conte
+> uma história que você (e bots de release) consigam ler**. Sempre que tiver
 > dúvida, volte aos nós desta trilha: `type → escopo → assunto → corpo →
 > rodapé`, e tudo se encaixa.
 
-Parabéns — você completou a trilha Conventional Commits! 🎉 Agora cada `git
+<Quiz
+  question="Qual é o critério de sucesso principal do projeto final?"
+  options={[
+    {
+      text: "O `git log --oneline` final conta uma história, sem `wip` / `asd` / mensagens vagas",
+      correct: true,
+    },
+    {
+      text: "Cada commit virou exatamente um `feat` ou `fix`",
+      correct: false,
+      explanation: "Tipos de apoio (`chore`, `refactor`, `docs`) também têm lugar. O ponto é a mensagem fazer sentido, não virar tudo `feat`/`fix`.",
+    },
+    {
+      text: "O changelog foi gerado manualmente",
+      correct: false,
+      explanation: "O ponto do Conventional Commits é justamente o changelog se gerar sozinho, lendo os commits.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Crie um repositório de teste, faça 5 commits bagunçados (`wip`, `asd`, etc.) e reescreva todos com `git rebase -i --root` no formato `type(escopo): descrição`. O `git log` final deve contar uma história."
+  slug="conventional-commits"
+  nodeId="projeto-final"
+/>
+
+Parabéns - você completou a trilha Conventional Commits! 🎉 Agora cada `git
 commit` que você escrever (e cada histórico que você ler) fala a mesma língua:
 a língua do release, do changelog e do time.

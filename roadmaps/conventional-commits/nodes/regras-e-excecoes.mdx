@@ -11,7 +11,7 @@ resources:
 
 Você já conhece o formato e os tipos. Agora vem a parte mais importante na
 prática: **quais regras são rígidas** e **quando o time flexibiliza**.
-Porque Conventional Commits não é lei — é ferramenta de comunicação. E toda
+Porque Conventional Commits não é lei - é ferramenta de comunicação. E toda
 comunicação tem nuances.
 
 ## As regras que ninguém deve quebrar
@@ -29,7 +29,7 @@ parser, o changelog, o `git log`). São estas:
 
 Se você viola qualquer uma, as ferramentas automáticas (que leem `feat`, `fix`,
 `BREAKING CHANGE` de forma estruturada) simplesmente **não enxergam** a mudança
-como ela é — e o changelog/versão saem errados.
+como ela é - e o changelog/versão saem errados.
 
 ```js
 // ❌ quebra o parser (não lê como feat)
@@ -44,40 +44,60 @@ como ela é — e o changelog/versão saem errados.
 Fora do núcleo, há liberdade real. É aqui que nascem os "conventional commits
 do jeito do nosso time":
 
-- **quais tipos usar** — muitos times reduzem a `feat`, `fix`, `refactor`,
+- **quais tipos usar** - muitos times reduzem a `feat`, `fix`, `refactor`,
   `docs`, `test`, `chore`; outros adicionam `perf`, `revert`, `dev` etc.
-- **idioma da descrição** — PT-BR ou EN; o importante é ser consistente no time.
-- **capitalização de acrônimos** — `fix(api): corrige ...` vs `fix(API): ...`;
+- **idioma da descrição** - PT-BR ou EN; o importante é ser consistente no time.
+- **capitalização de acrônimos** - `fix(api): corrige ...` vs `fix(API): ...`;
   desde que seja consistente, o parser não se importa.
-- **escopo obrigatório ou não** — alguns repos obrigam um escopo por pasta;
+- **escopo obrigatório ou não** - alguns repos obrigam um escopo por pasta;
   outros deixam livre.
-- **gitmoji** — alguns times adicionam emojis (vamos ver no próximo nó); isso
+- **gitmoji** - alguns times adicionam emojis (vamos ver no próximo nó); isso
   é uma extensão, não substitui o formato.
 
 > **Dica:** registre as escolhas do time num **`CONTRIBUTING.md`** (ou num
 > `commitlint` config, que veremos adiante). A convenção mais valiosa é a que
-> está **documentada e aplicada automaticamente** — não a que vive na cabeça.
+> está **documentada e aplicada automaticamente** - não a que vive na cabeça.
 
 ## Commit único vs squashing
 
 Uma das maiores fontes de divergência nos times: **você commita a cada passo
-ou usa squash no merge?** Ambas funcionam com Conventional Commits — a
+ou usa squash no merge?** Ambas funcionam com Conventional Commits - a
 diferença é quando a mensagem se torna "pública".
 
-- **Muitos commits pequenos durante o dev** (passo a passo) — mensagens
+- **Muitos commits pequenos durante o dev** (passo a passo) - mensagens
   internas, ajuda na iteração.
-- **Squash no merge em `main`** — uma mensagem final bem escrita por PR vira a
+- **Squash no merge em `main`** - uma mensagem final bem escrita por PR vira a
   mensagem "definitiva" (`feat(auth): adiciona login`).
 
 A boa prática que quase todo mundo adota: **deixa a mensagem final (na merge)
 ser limpa e semântica**, já que é ela que alimenta releases e changelog.
 
 - **núcleo rígido**: `type: descrição`, `BREAKING CHANGE` no rodapé, `feat`/`fix` p/ bump.
-- **flexível**: tipos, idioma, escopo obrigatório, capitalização — decide em time e documente.
+- **flexível**: tipos, idioma, escopo obrigatório, capitalização - decide em time e documente.
 - **squash vs passo a passo**: a mensagem **final** é a que vira release; cuide dela.
 
 > Dica: a pergunta mágica pra decidir uma exceção é: "*isso quebra alguma
-> ferramenta que lê o histórico?*". Se não quebra, é escolha — documente e siga.
+> ferramenta que lê o histórico?*". Se não quebra, é escolha - documente e siga.
 
-No próximo nó, vamos ligar tudo com **SemVer e changelog automático** — onde o
+No próximo nó, vamos ligar tudo com **SemVer e changelog automático** - onde o
 esforço dos commits começa a pagar sozinho.
+
+<Quiz
+  question="Qual destas é uma regra RÍGIDA (não dá pra flexibilizar sem quebrar a convenção)?"
+  options={[
+    {
+      text: "Escolher entre PT-BR e inglês para a descrição",
+      correct: false,
+      explanation: "Idioma da descrição é escolha do time - flexível.",
+    },
+    {
+      text: "Obrigatoriedade do escopo",
+      correct: false,
+      explanation: "Escopo é opcional por especificação - flexível.",
+    },
+    {
+      text: "Manter `type: descrição` no formato canônico (sem espaço antes dos dois-pontos)",
+      correct: true,
+    },
+  ]}
+/>

@@ -12,7 +12,7 @@ resources:
 Todo mundo já fez aquilo: um dia de trabalho, um "commit" e a mensagem
 `fix stuff` (ou `wip`, ou simplesmente `asd`). Funciona na hora, o
 trabalho está salvo, e o problema fica pra depois. Só que *depois*
-chega — três meses, dez commits e um `git log` que não conta nada.
+chega - três meses, dez commits e um `git log` que não conta nada.
 
 Antes de decorar o formato, vamos entender o **problema** que o
 Conventional Commits resolve. Porque ele não existe por estética.
@@ -35,7 +35,7 @@ git log v1.2.0..v1.3.0 --oneline
 ```
 
 Com commits `feat: x` e `fix: y`, essa lista é clara. Com `wip`,
-`fix stuff` e `asd`, é um monte de texto que não diz nada — você vai
+`fix stuff` e `asd`, é um monte de texto que não diz nada - você vai
 acabar abrindo commit por commit pra entender.
 
 > **Dica:** a mensagem de commit é a única coisa sobre o seu trabalho
@@ -47,14 +47,14 @@ acabar abrindo commit por commit pra entender.
 A [especificação](https://www.conventionalcommits.org/pt-br/v1.0.0/) é
 curta, mas ela apoia três coisas ao mesmo tempo:
 
-- **Comunicar** ao time o que cada mudança faz — num formato que
+- **Comunicar** ao time o que cada mudança faz - num formato que
   humanos e ferramentas leem igual.
 - **Automatizar** versão e changelog: ferramentas inferem o bump de
   Semantic Versioning a partir de `feat` e `fix`.
 - **Filtrar** o histórico com facilidade (`git log --grep="^feat"`).
 
 Não é sobre escrever inglês bonito nem sobre engessar a criatividade.
-É um **contrato mínimo** — o suficiente pra uma pessoa (ou um bot) extrair
+É um **contrato mínimo** - o suficiente pra uma pessoa (ou um bot) extrair
 significado sem adivinhar.
 
 - **Mensagem de commit** => **comunicação** entre pessoas (e o seu "eu" do futuro).
@@ -65,3 +65,29 @@ significado sem adivinhar.
 > Por ora, o importante é o *porquê*: commit convencional vira dado, não ruído.
 
 No próximo nó, vamos montar a estrutura de uma mensagem convencional.
+
+> **Quando NÃO vale a pena:** num projeto solo de fim de semana, num protótipo
+> descartável ou num time de 2 devs que faz um deploy por mês, a convenção
+> inteira é overhead. Ela paga quando vira contrato compartilhado entre
+> humanos, ferramentas e consumidores - é o caso típico de time com release
+> frequente ou biblioteca pública.
+
+<Quiz
+  question="Qual é o principal valor que o Conventional Commits traz para um time?"
+  options={[
+    {
+      text: "Padronizar a estética das mensagens pra ficar bonito no `git log`",
+      correct: false,
+      explanation: "Estética é consequência. O valor real é dado estruturado que ferramenta e humanos conseguem ler igual.",
+    },
+    {
+      text: "Transformar o histórico em dado legível por ferramenta - habilitando SemVer automática, changelog e filtros",
+      correct: true,
+    },
+    {
+      text: "Substituir a necessidade de revisão de código",
+      correct: false,
+      explanation: "Conventional Commits trata de mensagem, não de lógica. Review de código continua indispensável.",
+    },
+  ]}
+/>

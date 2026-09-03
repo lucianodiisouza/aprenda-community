@@ -1,14 +1,14 @@
-# Decisões editoriais — Conventional Commits
+# Decisões editoriais - Conventional Commits
 
 Registro de decisões de escopo, ordem e curadoria da trilha. Convenções:
 **minor** = adição de nó, **patch** = correção, **major** = mudança de ordem/base.
 
-## v1.0.0 — criação (2026-08-31)
+## v1.0.0 - criação (2026-08-31)
 
 ### Origem
 Trilha proposta para quem já usa Git em time e quer trocar "histórico ilegível"
 por histórico que conta uma história. Nasce complementar à trilha `git` (que foca
-no mecanismo) — aqui o foco é o **contrato da mensagem de commit** e o que ele
+no mecanismo) - aqui o foco é o **contrato da mensagem de commit** e o que ele
 desbloqueia (SemVer automática, changelog, filtros de `git log`).
 
 ### Escopo
@@ -27,7 +27,7 @@ de um fluxo de entrega maduro (ex: `docker-fundamentos` + CI/CD no futuro).
 
 ### Estrutura do grafo
 Linear, padrão do projeto: 1 `topic` + 8 `subtopic` + 1 `milestone`
-(projeto-final). Cada nó prepara o próximo — conceito → formato → tipos →
+(projeto-final). Cada nó prepara o próximo - conceito → formato → tipos →
 detalhes → regras → impacto (SemVer/changelog) → ferramentas → prática real.
 
 ### Decisões de curadoria

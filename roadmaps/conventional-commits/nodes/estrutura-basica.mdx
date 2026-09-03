@@ -16,7 +16,7 @@ resources:
 
 Fechou o problema: agora você quer que cada commit conte uma história.
 O Conventional Commits organiza **toda** a mensagem na cabeça do commit
-(subject) — a primeira linha. É ela que as ferramentas leem.
+(subject) - a primeira linha. É ela que as ferramentas leem.
 
 ## O esqueleto em uma linha
 
@@ -39,7 +39,7 @@ fix(cart): corrige cálculo de frete para múltiplos itens
 Repara nos detalhes:
 
 - `type` e `description` são **obrigatórios**.
-- `(scope)` é **opcional** — se vier, não pode ter espaço nem estar vazio.
+- `(scope)` é **opcional** - se vier, não pode ter espaço nem estar vazio.
 - Depois de `type:` tem **exatamente uma expressão**: `type(scope): descrição`,
   sem espaços antes dos dois-pontos.
 - A descrição começa com **verbo no imperativo, minúscula, sem ponto final**.
@@ -77,5 +77,25 @@ mudou?** Treine com exemplos:
 > Dica: comece a ver o seu `git log` como um **título de release a ser
 > escrito**. Se a primeira linha é confusa, a release toda fica confusa.
 
-No próximo nó, vamos ver os **tipos** que o Conventional Commits define — e
+No próximo nó, vamos ver os **tipos** que o Conventional Commits define - e
 por que `feat` e `fix` são os únicos que mexem na versão.
+
+<Quiz
+  question="Qual destes formatos segue a especificação do Conventional Commits?"
+  options={[
+    {
+      text: "feat : adiciona endpoint de reset de senha",
+      correct: false,
+      explanation: "Espaço antes dos dois-pontos quebra o parser.",
+    },
+    {
+      text: "feat(auth): adiciona endpoint de reset de senha",
+      correct: true,
+    },
+    {
+      text: "Added: endpoint de reset de senha",
+      correct: false,
+      explanation: "`Added` não é um type conhecido. O type tem que estar na lista aceita pela convenção.",
+    },
+  ]}
+/>

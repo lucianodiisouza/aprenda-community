@@ -10,14 +10,14 @@ resources:
 ---
 
 Até agora você escreveu commits de **uma linha**. Mas alguns commits merecem
-mais que isso — quando o *porquê* não cabe numa frase. É aí que entram o
+mais que isso - quando o *porquê* não cabe numa frase. É aí que entram o
 **corpo** (body) e o **rodapé** (footer).
 
 ## O corpo: o porquê, não o como
 
 O corpo fica logo abaixo do assunto, separado por uma **linha em branco**. Ele
 responde: *por que essa mudança existe?* Não é pra repetir o que o código já
-diz (isso é ruído) — é pra passar o contexto que o código não tem.
+diz (isso é ruído) - é pra passar o contexto que o código não tem.
 
 ```text
 fix(cart): corrige frete para múltiplos itens
@@ -41,7 +41,7 @@ git commit -m "fix(cart): corrige frete para múltiplos itens" \
 ## O rodapé: o espaço opcional de metadados
 
 O rodapé fica **depois do corpo**, também após uma linha em branco. Ele guarda
-**metadados padronizados** — referência de issue, ou o `BREAKING CHANGE`:
+**metadados padronizados** - referência de issue, ou o `BREAKING CHANGE`:
 
 ```text
 feat(api): muda autenticação para tokens JWT
@@ -52,12 +52,12 @@ e o campo `token_refresh` foi removido da resposta.
 
 Aqui está o ponto que mais impacta ferramentas: **`BREAKING CHANGE:`** (em
 maiúsculas, com dois-pontos) é o marcador que informa ao leitor de release que
-essa mudança **quebra compatibilidade** — e ela dispara o bump de **major** na
+essa mudança **quebra compatibilidade** - e ela dispara o bump de **major** na
 SemVer (v1.x → v2.0).
 
 > **Dica:** colocar `BREAKING CHANGE:` no rodapé é o jeito canônico de marcar
 > uma quebra. Como alternativa compatível, algumas ferramentas também olham
-> para `!` após o type — `feat(api)!: ...`. Mas o rodapé `BREAKING CHANGE:` é
+> para `!` após o type - `feat(api)!: ...`. Mas o rodapé `BREAKING CHANGE:` é
 > o mais explícito e portável (funciona em qualquer leitor).
 
 ## corpo + rodapé no mesmo commit
@@ -75,6 +75,32 @@ devem renovar token a cada 15 min.
 - A sintaxe alternativa `!` após o type também marca quebra, mas é menos explícita.
 
 > Dica: nem todo commit precisa de corpo. Use corpo quando o *porquê* for
-> não-óbvio — aquele comentário "por que isso existe" que não cabia no código.
+> não-óbvio - aquele comentário "por que isso existe" que não cabia no código.
 
 No próximo nó, vamos ver as **regras de ouro** e quando é aceitável quebrá-las.
+
+<Quiz
+  question="Qual marcador dispara bump MAJOR (v1.x -> v2.0.0) na SemVer automática?"
+  options={[
+    {
+      text: "feat:",
+      correct: false,
+      explanation: "`feat` sozinho dispara MINOR. Major exige marcação explícita de quebra.",
+    },
+    {
+      text: "fix:",
+      correct: false,
+      explanation: "`fix` dispara PATCH.",
+    },
+    {
+      text: "BREAKING CHANGE: no rodapé (ou `!` após o type)",
+      correct: true,
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Pegue um commit seu recente que mudasse comportamento e reescreva a mensagem no formato conventional com corpo e rodapé. Use `git commit --amend` para aplicar."
+  slug="conventional-commits"
+  nodeId="corpo-e-rodape"
+/>

@@ -15,64 +15,88 @@ organizar código, escrever doc, ajustar build. Esses são os **tipos de apoio**
 
 ## os mais comuns
 
-- **`chore`** — tarefa de manutenção que não mexe em código de produto:
+- **`chore`** - tarefa de manutenção que não mexe em código de produto:
   atualizar dependência, ajustar CI, renomear arquivo de config.
 
   ```text
   chore(deps): atualiza typescript de 5.4 para 5.6
   ```
 
-- **`docs`** — muda só em documentação.
+- **`docs`** - muda só em documentação.
 
   ```text
   docs(readme): explica como rodar o projeto localmente
   ```
 
-- **`refactor`** — reescreve código **sem mudar comportamento**. É a grande
+- **`refactor`** - reescreve código **sem mudar comportamento**. É a grande
   diferença: se quebrou ou acrescentou comportamento, não é refactor.
 
   ```text
   refactor(auth): extrai validação de senha para função própria
   ```
 
-- **`test`** — mexe em testes (novos, corrigidos, reestruturados), sem tocar
+- **`test`** - mexe em testes (novos, corrigidos, reestruturados), sem tocar
   no código de produção.
 
   ```text
   test(cart): cobre cálculo de frete com frete grátis e pago
   ```
 
-- **`style`** — formatação/aparência do código: espaçamento, ponto e vírgula,
-  lint que não muda lógica. Cuidado: no mundo frontend, "style" às vezes também
-  significa CSS. Se a mudança é visual de produto, engloba como `feat`/`fix`.
+- **`style`** - formatação/aparência do código: espaçamento, ponto e vírgula,
+  lint que não muda lógica. Não confundir com CSS de produto: mudança visual
+  na interface do usuário é `feat` (componente novo) ou `fix` (visual quebrado).
 
   ```text
   style: aplica prettier no diretório src
   ```
 
-- **`build`** – mudanças no sistema de build ou dependências externas
+- **`build`** - mudanças no sistema de build ou dependências externas
   (npm, webpack, dockerfile): diferente de `chore` por focar em **build/empacotar**.
 
   ```text
   build(docker): ajusta multi-stage build para reduzir imagem
   ```
 
-- **`ci`** — apenas configuração de integração contínua (GitHub Actions,
+- **`ci`** - apenas configuração de integração contínua (GitHub Actions,
   scripts de pipeline), sem tocar em código de produção.
 
-- **`perf`** — melhora **performance** sem mudar o comportamento visível.
-  Vale observar que, embora muitas ferramentas só leiam `feat`/`fix` para
-  versão, `perf` (e `BREAKING CHANGE`) são reconhecidas para dependências de
-  major/minor em certos convenções — mas aqui, mantenha simples.
+- **`perf`** - melhora **performance** sem mudar o comportamento visível.
+  Em geral **não dispara bump** por padrão (só `feat`/`fix`/`BREAKING CHANGE`
+  mexem na versão na maioria das ferramentas). Se a otimização muda contrato
+  público, é `feat!` ou `BREAKING CHANGE`; se é interna, `perf` puro.
 
 ```text
 perf(lista): memoiza renderização de itens
 ```
 
+- **`revert`** - desfaz um commit anterior. Tem uma sintaxe específica: o body
+  descreve qual SHA está sendo revertido, pra manter rastreabilidade.
+
+```text
+revert: feat(auth): adiciona login com Google
+
+Reverts abc1234
+```
+
 > **Dica:** a comunidade usa mais tipos do que a especificação cita
 > (ex.: `feat`, `fix`, `refactor`, `test`) e cada time costuma fechar a própria
-> lista ali. O **importante** é ter **poucos tipos, bem definidos** — não 15 —
+> lista ali. O **importante** é ter **poucos tipos, bem definidos** - não 15  -
 > pra que ler o histórico continue sendo rápido.
+
+## Tirando a ambiguidade: `chore` vs `build` vs `ci`
+
+A linha entre esses três é fina e confunde. Regra prática:
+
+| Mudança | Type |
+| --- | --- |
+| Atualizar/atualizar dependência (`package.json`, `Cargo.toml`, etc.) | `build` (foco no build) ou `chore(deps)` (se o time usa) |
+| Mexer em `Dockerfile`, `webpack.config`, `vite.config`, bundler | `build` |
+| Adicionar/ajustar step no GitHub Actions, pipeline de CI | `ci` |
+| Tarefa interna sem impacto em build/dependência/CI (renomear config, ajustar script) | `chore` |
+
+Quando o time é pequeno e o vocabulário único não importa muito, alguns colapsam
+tudo em `chore` e pronto. O importante é o time fechar a escolha e o
+`commitlint` refletir.
 
 ## Como escolher entre os parecidos
 
@@ -91,5 +115,25 @@ O atalho do estilo `type: muda o que pra quem`:
 > pequeno e cresça sob demanda. `feat`, `fix`, `refactor`, `docs`, `test`,
 > `chore` já cobrem ~90% dos commits.
 
-No próximo nó, vamos ver **escopo e assunto** — o que colocar (ou não) na
+No próximo nó, vamos ver **escopo e assunto** - o que colocar (ou não) na
 primeira linha.
+
+<Quiz
+  question="Qual destes é um commit de apoio (não dispara bump de versão)?"
+  options={[
+    {
+      text: "feat(auth): adiciona login com Google",
+      correct: false,
+      explanation: "`feat` é dos tipos que disparam bump (MINOR).",
+    },
+    {
+      text: "fix(cart): corrige cálculo de frete",
+      correct: false,
+      explanation: "`fix` também dispara bump (PATCH).",
+    },
+    {
+      text: "refactor(auth): extrai validação de senha para função própria",
+      correct: true,
+    },
+  ]}
+/>

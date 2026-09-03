@@ -14,7 +14,7 @@ resources:
     free: true
 ---
 
-Convenção manual é ótima até o dia do vencimento — e aí alguém esquece o
+Convenção manual é ótima até o dia do vencimento - e aí alguém esquece o
 formato, e a SemVer automática quebra. Por isso o ecossistema de Conventional
 Commits inclui ferramentas que **automatizam** e **reforçam** a convenção.
 Vamos ver o essencial (a fundo em cada uma é assunto pra trilha própria).
@@ -36,7 +36,7 @@ export default {
 }
 ```
 
-A partir daí, um commit fora do padrão é **rejeitado na hora** — o time não
+A partir daí, um commit fora do padrão é **rejeitado na hora** - o time não
 perde tempo revisando formato depois.
 
 ## Husky: ganchos do Git
@@ -46,7 +46,7 @@ O [husky](https://typicode.github.io/husky/) roda **hooks do Git** (como
 ato de commitar:
 
 ```bash
-# .husky/commit-msg — roda commitlint na mensagem
+# .husky/commit-msg - roda commitlint na mensagem
 npx --no -- commitlint --edit "$1"
 ```
 
@@ -82,14 +82,15 @@ como convenção *paralela* (não substitui o Conventional Commits):
 ```
 
 Cada emoji tem um significado fixo (`✨` = feature nova, `🐛` = bug fix,
-`📝` = docs). Muitos times adotam gitmoji **em cima** de Conventional Commits —
+`📝` = docs). Muitos times adotam gitmoji **em cima** de Conventional Commits  - 
 o truque é que o formato clássico continua presente (e parseável), e o emoji
 adiciona semântica visual no `git log`.
 
 > **Dica:** qual escolher? Comece sem tooling (só a convenção na mão), depois
 > adicione **commitlint + husky** pra *forçar*, e só então **commitizen** se
-> quiser reduzir fricção. Gitmoji é gosto do time — mantenha o emoji **após**
-> o tipo, pra não quebrar o parser.
+> quiser reduzir fricção. Se o time adota gitmoji, o emoji vai **antes** do
+> type (convenção da própria ferramenta: `✨ feat(auth): ...`) - o parser do
+> CC lê o type logo depois do emoji, sem quebrar.
 
 - **commitlint** = valida a mensagem (no commit ou no CI).
 - **husky** = roda hooks do Git (ex.: dispara o commitlint).
@@ -97,9 +98,35 @@ adiciona semântica visual no `git log`.
 - **gitmoji** = adiciona emoji como extensão visual, mantendo o formato.
 
 > Dica: configure tudo isso num `package.json` (via `prepare` + `husky`) e
-> versionando o `commitlint.config.js` — assim a convenção **anda junto com o
+> versionando o `commitlint.config.js` - assim a convenção **anda junto com o
 > código** no repositório.
 
 No próximo (último) nó, vamos fechar com um **projeto prático**: reescrever um
 histórico de commits bagunçado em Conventional Commits, do zero ao `git log`
 limpo.
+
+<Quiz
+  question="Qual a função do commitlint no ecossistema de Conventional Commits?"
+  options={[
+    {
+      text: "Gerar o changelog automaticamente",
+      correct: false,
+      explanation: "Changelog é papel de `conventional-changelog` ou `release-please`.",
+    },
+      {
+      text: "Validar o formato da mensagem de commit antes/depois do commit ser criado",
+      correct: true,
+    },
+    {
+      text: "Substituir o time na hora de revisar PR",
+      correct: false,
+      explanation: "Commitlint cuida de formato. Review de código continua humana.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Crie um `commitlint.config.js` mínimo no seu projeto (com `@commitlint/config-conventional`) e teste: tente commitar `bad commit` - veja o hook rejeitar; depois commite `feat: add login` e veja passar."
+  slug="conventional-commits"
+  nodeId="ferramentas-e-ecossistema"
+/>

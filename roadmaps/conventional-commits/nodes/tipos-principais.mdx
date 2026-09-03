@@ -14,7 +14,7 @@ Dos tipos que o Conventional Commits define, **dois são especiais**: `feat` e
 uma ferramenta de release lê o histórico. Por isso vale entendê-los bem antes
 dos outros.
 
-## feat — nova funcionalidade
+## feat - nova funcionalidade
 
 `feat` é para **adicional capacidade** ao software. Se o usuário passou a
 poder fazer algo que antes não podia, é `feat`.
@@ -25,7 +25,7 @@ feat: adiciona campo de cupom de desconto no checkout
 ```
 
 Regra pragmática: **se a versão minor deve subir, é `feat`**. Você não precisa
-decorar a tabela de SemVer — é só lembrar que `feat` e `fix` são os gatilhos
+decorar a tabela de SemVer - é só lembrar que `feat` e `fix` são os gatilhos
 de bump.
 
 ```js
@@ -36,7 +36,7 @@ function gerarCupom(desconto) {
 // -> feat: adiciona geração de cupom único
 ```
 
-## fix — correção de defeito
+## fix - correção de defeito
 
 `fix` é para **corrigir um comportamento errado**. Se o software se comportava
 mal (bug, quebra, resultado errado) e passou a se comportar bem, é `fix`.
@@ -54,7 +54,7 @@ A mesma regra: **se a versão patch deve subir, é `fix`**. É a diferença entr
 - **`BREAKING CHANGE`** (a gente vê mais adiante) => bump **major** (v1.x → v2.0)
 
 > **Dica:** se não é capacidade nova nem correção, **não** é `feat` nem `fix`.
-> Forçar esses dois pra "tudo que mudou" quebra a SemVer automática — o
+> Forçar esses dois pra "tudo que mudou" quebra a SemVer automática - o
 > changelog passaria a dizer que cada commit é uma feature nova.
 
 ### Quiz rápido
@@ -78,5 +78,5 @@ A mesma regra: **se a versão patch deve subir, é `fix`**. É a diferença entr
 > Dica: quando tiver dúvida entre `feat` e `fix`, pergunte: "isso é algo
 > *novo que o usuário faz*, ou um *erro que eu consertei*?".
 
-No próximo nó, vamos ver os **tipos de apoio** — `chore`, `docs`, `refactor` e
+No próximo nó, vamos ver os **tipos de apoio** - `chore`, `docs`, `refactor` e
 os demais que não mexem na versão.

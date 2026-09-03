@@ -9,7 +9,7 @@ resources:
     free: true
 ---
 
-Você já tem `type` e `descrição`. Mas e o **escopo** — aquele parênteses entre
+Você já tem `type` e `descrição`. Mas e o **escopo** - aquele parênteses entre
 o type e os dois-pontos? Ele é opcional, então parece fácil deixar de fora.
 A verdade é que ele é a ferramenta mais poderosa pra organizar um repositório
 grande em pouco espaço.
@@ -17,7 +17,7 @@ grande em pouco espaço.
 ## O escopo identifica o onde
 
 O escopo responde **em que parte** do sistema a mudança aconteceu. Não é uma
-regra de fábrica — é uma escolha que o time faz, geralmente alinhada a módulos,
+regra de fábrica - é uma escolha que o time faz, geralmente alinhada a módulos,
 domínios ou pastas.
 
 ```text
@@ -36,10 +36,10 @@ git log --oneline --grep="^feat(auth)"
 git log --oneline --grep="feat("
 ```
 
-Tem o ponto crucial: o escopo é **livre** — o `conventional commits` não
+Tem o ponto crucial: o escopo é **livre** - o `conventional commits` não
 determina quais valores usar. Então os times normalmente alinham: nomes de
 pasta, de módulo, ou de area funcional (`auth`, `checkout`, `docs`, `infra`).
-O importante é **ser curto, estável e ba-ter com o que as pessoas conhecem** no
+O importante é **ser curto, estável e bater com o que as pessoas conhecem** no
 repo.
 
 ```text
@@ -50,14 +50,14 @@ feat(auth-api): x ✅ hífen ok (é um único token)
 ```
 
 > **Dica:** quando a mudança for grande demais pra um único escopo (ou o repo
-> for pequeno), deixe o escopo de fora — `feat: ...` é perfeitamente válido.
+> for pequeno), deixe o escopo de fora - `feat: ...` é perfeitamente válido.
 > Escopo existe pra **organizar**, não pra burocratizar.
 
 ## O assunto: uma frase imperativa e objetiva
 
 O assunto (a parte depois de `:`) deve dizer **o quê** o commit faz. Em vez de
 descrever o passado ("adicionei...") ou o desejo ("deveria..."), descreva a
-ação que o commit **executa** — verbo no imperativo.
+ação que o commit **executa** - verbo no imperativo.
 
 ```js
 // ✅ imperativo, curto
@@ -72,7 +72,7 @@ Regras rápidas do assunto:
 - comece com **verbo no imperativo** (adiciona, corrige, remove, atualiza);
 - **minúscula** (não "Adiciona", a menos que seja um acrônimo como `JWT`);
 - **sem ponto final** no fim;
-- **resume um conceito** — o assunto é um resumo, não o changelog inteiro.
+- **resume um conceito** - o assunto é um resumo, não o changelog inteiro.
 
 ```js
 // bom: uma mudança, uma ideia
@@ -88,5 +88,26 @@ Regras rápidas do assunto:
 > Dica: um bom teste é tentar resumir o commit numa frase falada: "este commit
 > **adiciona** X". Se a frase soa estranha, ajuste o verbo.
 
-No próximo nó, vamos ver **corpo e rodapé** — onde mora o *porquê* e a marca
+No próximo nó, vamos ver **corpo e rodapé** - onde mora o *porquê* e a marca
 de quebra (`BREAKING CHANGE`).
+
+<Quiz
+  question="Qual destes escopos é INVÁLIDO pela especificação?"
+  options={[
+    {
+      text: "feat(auth): adiciona login",
+      correct: false,
+      explanation: "Escopo curto, sem espaço, é o formato canônico.",
+    },
+    {
+      text: "feat(auth api): adiciona login",
+      correct: true,
+      explanation: "Escopo com espaço no meio quebra a especificação - vira ambíguo pro parser.",
+    },
+    {
+      text: "feat(auth-api): adiciona login",
+      correct: false,
+      explanation: "Hífen é um único token - o escopo `auth-api` é um valor válido.",
+    },
+  ]}
+/>
