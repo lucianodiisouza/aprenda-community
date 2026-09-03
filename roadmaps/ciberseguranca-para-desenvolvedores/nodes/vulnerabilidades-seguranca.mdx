@@ -83,3 +83,29 @@ Segurança é um processo contínuo.
 E, para ajudar desenvolvedores e empresas a reconhecer alguns dos riscos mais importantes em aplicações Web, existe uma referência que você vai encontrar muitas vezes daqui para frente.
 
 No próximo nó, vamos conhecer o **OWASP Top 10**.
+
+<Quiz
+  question="Um bug qualquer em uma aplicação é necessariamente uma vulnerabilidade de segurança?"
+  options={[
+    {
+      text: "Sim, qualquer bug é uma vulnerabilidade",
+      correct: false,
+      explanation: "Nem todo bug afeta segurança. Bug é um comportamento incorreto em geral; vulnerabilidade é quando o bug pode ser explorado para afetar confidencialidade, integridade ou disponibilidade.",
+    },
+    {
+      text: "Não necessariamente - um bug vira vulnerabilidade quando pode afetar a segurança (acesso indevido, alteração, indisponibilidade)",
+      correct: true,
+    },
+    {
+      text: "Apenas bugs em produção são vulnerabilidades",
+      correct: false,
+      explanation: "O ambiente onde o bug aparece não define se é vulnerabilidade, e sim o impacto que a falha pode causar.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Escolha um bug que você já tenha visto em código. Ele afetava confidencialidade, integridade, disponibilidade, nenhum desses, ou mais de um?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="vulnerabilidades-seguranca"
+/>

@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-38-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-39-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-17-blue.svg)](./projects)
 [![Bootcamps](https://img.shields.io/badge/bootcamps-2-orange.svg)](./bootcamps)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
@@ -20,13 +20,14 @@ O **Aprenda** é um projeto de roadmaps de aprendizado de programação. Este
 repositório é a **face pública e colaborativa** dele: aqui a comunidade abre PRs
 sugerindo trilhas, corrigindo erros, melhorando recursos e adicionando conteúdo.
 
-São **38 trilhas** hoje, cada uma um grafo de nós (do básico ao
-avançado) com Quiz, Mermaid e projeto final, organizadas em 5 áreas:
+São **39 trilhas** hoje, cada uma um grafo de nós (do básico ao
+avançado) com Quiz, Mermaid e projeto final, organizadas em 6 áreas:
 
 - 🧱 **Fundamentos** - Programação do Zero, Terminal, Git, Estruturas de Dados…
 - 🎨 **Frontend & Web** - HTML, CSS, React, TypeScript, Angular, Next.js, a11y…
 - 🗄️ **Backend & Dados** - Backend (Node/Express), SQL, NoSQL, RabbitMQ.
 - 🐳 **DevOps & Infra** - Docker, Docker Compose, Kubernetes.
+- 🛡️ **Segurança** - Cibersegurança para Desenvolvedores, Segurança Frontend.
 - 🤖 **IA & Conteúdo** - Prompt Engineering, Engenharia assistida por IA.
 
 👉 **Veja a lista completa, com contagem de nós e nível, no

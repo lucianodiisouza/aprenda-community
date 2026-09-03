@@ -93,3 +93,29 @@ Você pode ter HTTPS funcionando perfeitamente e ainda possuir falhas de autoriz
 HTTPS protege a comunicação. A aplicação ainda precisa proteger o que acontece antes e depois dela.
 
 No próximo nó, vamos entender dois conceitos que vivem sendo confundidos: **autenticação e autorização**.
+
+<Quiz
+  question="O que o HTTPS protege, de fato?"
+  options={[
+    {
+      text: "A comunicação em trânsito contra leitura e alteração indevida, usando TLS",
+      correct: true,
+    },
+    {
+      text: "A aplicação inteira contra qualquer vulnerabilidade",
+      correct: false,
+      explanation: "HTTPS só protege o transporte. Falhas de autorização, validação de entrada e lógica da aplicação continuam existindo.",
+    },
+    {
+      text: "Apenas a senha do usuário, nada mais",
+      correct: false,
+      explanation: "HTTPS protege toda a comunicação criptografada pela sessão, não só credenciais.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Verifique a URL de uma API que você usa no dia a dia. Ela começa com http:// ou https://? Se for http://, o que está sendo exposto durante a comunicação?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="http-https-apis"
+/>

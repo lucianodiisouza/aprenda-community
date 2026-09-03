@@ -1,6 +1,17 @@
 ---
 id: principios-seguranca-informacao
 title: "Princípios da Segurança da Informação"
+resources:
+  - title: "Confidentiality, Integrity, Availability - NIST"
+    url: https://csrc.nist.gov/glossary/term/confidentiality
+    type: doc
+    lang: en
+    free: true
+  - title: "Cartilha de Segurança para Internet - CERT.br"
+    url: https://cartilha.cert.br/
+    type: doc
+    lang: pt
+    free: true
 ---
 
 # Princípios da Segurança da Informação
@@ -58,3 +69,29 @@ Desenvolvedores, profissionais de infraestrutura, DevOps, arquitetura e Seguran�
 Como desenvolvedor, muitas das decisões que você toma no código podem impactar diretamente a **confidencialidade, a integridade e a disponibilidade** das informações.
 
 Ou seja: também é sua responsabilidade.
+
+<Quiz
+  question="Qual princípio da Segurança da Informação está sendo aplicado quando uma tela de login valida usuário e senha antes de mostrar os dados?"
+  options={[
+    {
+      text: "Integridade",
+      correct: false,
+      explanation: "Integridade cuida de alterações indevidas, não de quem vê o quê.",
+    },
+    {
+      text: "Disponibilidade",
+      correct: false,
+      explanation: "Disponibilidade trata de a informação estar acessível quando precisa, não de quem pode ver.",
+    },
+    {
+      text: "Confidencialidade",
+      correct: true,
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Para cada princípio (confidencialidade, integridade e disponibilidade), escreva um exemplo concreto de uma decisão sua no código que afeta esse princípio."
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="principios-seguranca-informacao"
+/>

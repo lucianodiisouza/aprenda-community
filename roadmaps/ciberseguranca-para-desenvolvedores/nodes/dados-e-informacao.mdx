@@ -1,6 +1,12 @@
 ---
 id: dados-e-informacao
 title: "Dados e Informação"
+resources:
+  - title: "Dado, informação, conhecimento e sabedoria - Wikipedia (PT-BR)"
+    url: https://pt.wikipedia.org/wiki/Dado
+    type: doc
+    lang: pt
+    free: true
 ---
 
 # Dados e Informação
@@ -30,3 +36,29 @@ Um elemento possui diversos componentes. Esses componentes são os dados. Esses 
 Ao final dessa cadeia, a informação pode ser usada para diversos fins.
 
 Geralmente, em um contexto técnico do mundo real, vai ser a sua aplicação que vai transformar esses dados isolados em informação valiosa. E é por isso, meu pequeno Padawan, que você precisa entender os conceitos para saber onde e como agir.
+
+<Quiz
+  question="Qual a diferença entre dado e informação?"
+  options={[
+    {
+      text: "Dado e informação são a mesma coisa",
+      correct: false,
+      explanation: "Não. Dado é um componente isolado (um número, um nome); informação é o resultado depois que os dados ganham contexto.",
+    },
+    {
+      text: "Dado é um componente isolado, informação é o que obtemos quando esses dados são combinados e ganham contexto",
+      correct: true,
+    },
+    {
+      text: "Informação é qualquer valor em um banco de dados",
+      correct: false,
+      explanation: "Um valor isolado em uma coluna de banco ainda é dado. A informação surge quando os dados se relacionam e geram sentido.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Olhe para uma tela da sua aplicação e identifique um exemplo de dado isolado e outro de informação já processada que o usuário enxerga."
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="dados-e-informacao"
+/>

@@ -86,3 +86,29 @@ Resumindo:
 Esses controles ajudam diretamente a preservar a confidencialidade e a integridade das informações.
 
 No próximo nó, vamos entender melhor o que chamamos de **vulnerabilidade de segurança** e como essas falhas podem aparecer durante o desenvolvimento.
+
+<Quiz
+  question="Qual a diferença entre autenticação e autorização?"
+  options={[
+    {
+      text: "São a mesma coisa, com nomes diferentes",
+      correct: false,
+      explanation: "Não. Autenticação responde 'quem é você' e autorização responde 'o que você pode fazer'.",
+    },
+    {
+      text: "Autenticação confirma uma identidade, autorização verifica o que essa identidade tem permissão de fazer",
+      correct: true,
+    },
+    {
+      text: "Autorização vem antes da autenticação",
+      correct: false,
+      explanation: "A ordem natural é autenticar primeiro (saber quem é) e depois autorizar (saber o que pode).",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Escolha uma rota da sua aplicação que só deveria ser acessível para administradores. Se um usuário comum fizer a chamada direta na API (ignorando a interface), a sua aplicação nega o acesso? Como?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="autenticacao-autorizacao"
+/>

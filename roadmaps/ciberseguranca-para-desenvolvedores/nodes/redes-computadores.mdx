@@ -72,3 +72,29 @@ Se sua aplicação está acessível pela rede, alguém precisa definir:
 Você não precisa virar um engenheiro de redes para desenvolver aplicações seguras. Mas precisa entender o caminho básico que uma informação percorre.
 
 No próximo nó, vamos entender as regras que permitem que dispositivos diferentes consigam conversar: os **protocolos de rede**.
+
+<Quiz
+  question="Qual é o papel do endereço IP em uma rede?"
+  options={[
+    {
+      text: "Criptografar a comunicação entre dois dispositivos",
+      correct: false,
+      explanation: "Criptografia é responsabilidade de outros protocolos (como TLS). O IP só endereça.",
+    },
+    {
+      text: "Identificar um dispositivo ou interface dentro da rede para que os dados saibam pra onde ir",
+      correct: true,
+    },
+    {
+      text: "Definir a porta lógica de um serviço",
+      correct: false,
+      explanation: "A porta lógica é responsabilidade dos protocolos de transporte (TCP/UDP), não do IP.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Desenhe (pode ser no papel) o caminho que uma requisição da sua aplicação faz do navegador do usuário até o banco de dados, listando cada salto de rede que você consegue identificar."
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="redes-computadores"
+/>

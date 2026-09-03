@@ -66,3 +66,29 @@ Uma API Web, por exemplo, pode utilizar HTTP para definir a troca de mensagens, 
 Você não precisa decorar todas as siglas existentes. Neste momento, o mais importante é entender que uma comunicação de rede não acontece de qualquer jeito: **ela segue regras conhecidas pelos dois lados**.
 
 No próximo nó, vamos adicionar mais uma peça nessa comunicação e entender para que servem as **portas e os serviços**.
+
+<Quiz
+  question="Por que protocolos como TCP, UDP e HTTP são relevantes para quem desenvolve aplicações?"
+  options={[
+    {
+      text: "Porque todo dev precisa configurar roteadores",
+      correct: false,
+      explanation: "Configurar roteadores é papel de infra/rede. Dev usa protocolos indiretamente ao construir e expor serviços.",
+    },
+    {
+      text: "Porque entender o protocolo usado ajuda a entender o tipo de comunicação, o transporte e onde controles podem (ou não) existir",
+      correct: true,
+    },
+    {
+      text: "Porque o TCP é o único protocolo seguro",
+      correct: false,
+      explanation: "TCP sozinho não é seguro. Segurança depende de TLS, validações na aplicação e controles de autenticação/autorização.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Identifique na sua aplicação atual: qual protocolo de transporte ela usa, e qual protocolo de aplicação está por cima (HTTP, gRPC, outro)? Esse protocolo de aplicação está protegido por TLS?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="protocolos-rede"
+/>

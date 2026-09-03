@@ -91,3 +91,29 @@ Como desenvolvedor, você não precisa executar sozinho todo o processo de defes
 Um sistema que não valida acesso, não registra eventos importantes e não permite entender seus próprios erros torna o trabalho defensivo muito mais difícil.
 
 Com essa base, você já consegue começar a enxergar Segurança da Informação não apenas como um conjunto de ferramentas, mas como um processo contínuo de **entender riscos, aplicar controles, observar o ambiente e melhorar o sistema**.
+
+<Quiz
+  question="Qual a sequência de etapas da segurança defensiva?"
+  options={[
+    {
+      text: "Detectar -> Prevenir -> Responder",
+      correct: false,
+      explanation: "Detectar vem depois de prevenir. Sem prevenção, o custo de detecção e resposta explode.",
+    },
+    {
+      text: "Prevenir -> Detectar -> Responder",
+      correct: true,
+    },
+    {
+      text: "Responder -> Detectar -> Prevenir",
+      correct: false,
+      explanation: "A resposta sempre vem depois de detectar um problema; prevenção antecede tudo.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Pense em um sistema que você mantém. Ele registra logs úteis (falhas de autenticação, acessos negados, erros)? Esses logs são monitorados ou ficam parados até alguém olhar?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="seguranca-defensiva"
+/>
