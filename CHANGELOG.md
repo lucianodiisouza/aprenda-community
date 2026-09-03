@@ -6,6 +6,72 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.28.0] - 2026-09-03
+
+### Adicionado
+
+- 🛡️ **Trilha Cibersegurança para Desenvolvedores**
+  (`roadmaps/ciberseguranca-para-desenvolvedores`, 13 nós): base de
+  Segurança da Informação pra quem desenvolve - dos fundamentos de dados,
+  princípios de confidencialidade/integridade/disponibilidade, riscos,
+  redes e protocolos, até autenticação, autorização, OWASP Top 10 e
+  segurança defensiva. Posicionada como iniciante. Os 13 nós:
+  `introducao-seguranca-informacao`, `dados-e-informacao`,
+  `principios-seguranca-informacao`, `riscos-ameacas-vulnerabilidades`,
+  `redes-computadores`, `protocolos-rede`, `portas-servicos`,
+  `http-https-apis`, `autenticacao-autorizacao`, `vulnerabilidades-seguranca`,
+  `owasp-top-10`, `seguranca-defensiva` e `encerramento`.
+  **Interatividade: 12 quizzes formativos, 12 checkpoints reflexivos**.
+  Decisões editoriais em `roadmaps/ciberseguranca-para-desenvolvedores/meta/editorial-decisions.md`.
+  Trilha escrita por **Alex Jesus**
+  ([@AJesus1308](https://github.com/AJesus1308)).
+- 🪪 **Trilha Conventional Commits** (`roadmaps/conventional-commits`,
+  10 nós): convenção de mensagem de commit como contrato compartilhado -
+  o formato `type(escopo): descrição`, tipos principais (`feat`/`fix`)
+  e de apoio (`chore`/`docs`/`refactor`/`test`/`style`/`build`/`ci`/`perf`/`revert`),
+  escopo, assunto, corpo, rodapé com `BREAKING CHANGE`, regras rígidas
+  vs flexíveis, mapeamento pra SemVer e changelog automático, e o
+  ecossistema de tooling (commitlint, husky, commitizen, gitmoji).
+  Posicionada como intermediária (pré-requisito: noções de Git e trabalho
+  em time). **Interatividade: 10 quizzes formativos, 3 checkpoints práticos,
+  1 diagrama Mermaid** (mapeamento feat/fix/BREAKING → MINOR/PATCH/MAJOR).
+  Decisões editoriais em `roadmaps/conventional-commits/meta/editorial-decisions.md`.
+  Trilha escrita por **Lucas Gabriel Witchemichen**
+  ([@lucasgab2230](https://github.com/lucasgab2230)).
+- 🛡️ **Seção "🛡️ Segurança" no `CATALOGO.md`**: nova área temática
+  com a trilha de Cibersegurança e a trilha de Segurança Frontend
+  (movida de "Frontend & Web" pra cá, onde faz mais sentido).
+- 🟠 **Cibersegurança no bootcamp Desenvolvedor Backend**: a trilha
+  entra como módulo entre `complexidade-de-algoritmos` e o projeto
+  `encurtador-de-url` (o bootcamp agora tem 17 módulos).
+
+### Alterado
+
+- 📚 **`CATALOGO.md`**: contagem de trilhas `38 → 39`, com a nova trilha
+  listada na seção "🛡️ Segurança". Trilha de Segurança Frontend
+  (`seguranca-frontend`) movida pra nova seção.
+- 📝 **`README.md`**: badge de trilhas `38 → 39`, lista de áreas
+  atualizada de 5 pra 6 (entra "🛡️ Segurança"). Seção "O que é" agora
+  menciona Cibersegurança e Segurança Frontend explicitamente.
+
+### Corrigido
+
+- 🔠 **Trilha Engenharia de IA** (#85): acentuação corrigida em
+  vários nós (`ai-aware-code-review`, `ai-coding-tools-overview`,
+  `dividir-tarefas-para-ia`, `ia-no-refactor`, `ia-no-test`,
+  `ler-codigo-gerado`, `projeto-final`, `quando-nao-usar-ia`).
+- 📊 **Trilha Prompt Engineering** (#82): diagramas Mermaid corrigidos
+  em `custo-e-performance` e `rag-conceito`.
+
+### Créditos
+
+- Trilha Cibersegurança escrita por **Alex Jesus**
+  ([@AJesus1308](https://github.com/AJesus1308)).
+- Trilha Conventional Commits escrita por **Lucas Gabriel Witchemichen**
+  ([@lucasgab2230](https://github.com/lucasgab2230)).
+- Fixes editoriais por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)) e contribuidores.
+
 ## [1.27.1] - 2026-08-30
 
 ### Adicionado
