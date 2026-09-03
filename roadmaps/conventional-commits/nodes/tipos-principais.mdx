@@ -1,0 +1,82 @@
+---
+id: tipos-principais
+title: "Os tipos principais: feat e fix"
+resources:
+  - title: "Tipos na especificação (Conventional Commits, EN)"
+    url: https://www.conventionalcommits.org/en/v1.0.0/#summary
+    type: doc
+    lang: en
+    free: true
+---
+
+Dos tipos que o Conventional Commits define, **dois são especiais**: `feat` e
+`fix`. Eles são os únicos que, por padrão, afetam a **versão semântica** quando
+uma ferramenta de release lê o histórico. Por isso vale entendê-los bem antes
+dos outros.
+
+## feat - nova funcionalidade
+
+`feat` é para **adicional capacidade** ao software. Se o usuário passou a
+poder fazer algo que antes não podia, é `feat`.
+
+```text
+feat(auth): adiciona login com e-mail e senha
+feat: adiciona campo de cupom de desconto no checkout
+```
+
+Regra pragmática: **se a versão minor deve subir, é `feat`**. Você não precisa
+decorar a tabela de SemVer - é só lembrar que `feat` e `fix` são os gatilhos
+de bump.
+
+```js
+// mudança que o usuário vê como capacidade nova
+function gerarCupom(desconto) {
+  return { codigo: crypto.randomUUID(), desconto }
+}
+// -> feat: adiciona geração de cupom único
+```
+
+## fix - correção de defeito
+
+`fix` é para **corrigir um comportamento errado**. Se o software se comportava
+mal (bug, quebra, resultado errado) e passou a se comportar bem, é `fix`.
+
+```text
+fix(cart): corrige cálculo de frete para múltiplos itens
+fix: evita crash ao abrir a página sem sessão
+```
+
+A mesma regra: **se a versão patch deve subir, é `fix`**. É a diferença entre
+"novo" (feat) e "consertado" (fix).
+
+- **`feat`** => bump **minor** (v1.2.0 → v1.3.0)
+- **`fix`** => bump **patch** (v1.2.3 → v1.2.4)
+- **`BREAKING CHANGE`** (a gente vê mais adiante) => bump **major** (v1.x → v2.0)
+
+> **Dica:** se não é capacidade nova nem correção, **não** é `feat` nem `fix`.
+> Forçar esses dois pra "tudo que mudou" quebra a SemVer automática - o
+> changelog passaria a dizer que cada commit é uma feature nova.
+
+### Quiz rápido
+
+<Quiz
+  question="Qual destes é um commit `feat` legítimo?"
+  options={[
+    { text: "feat(cart): corrige troco errado no caixa", correct: false,
+      explanation: "Corrigir comportamento errado é fix, não feat." },
+    { text: "feat(auth): adiciona login com Google", correct: true,
+      explanation: "Adicionar capacidade nova (login) é o caso claro de feat." },
+    { text: "feat: remove botão de logout", correct: false,
+      explanation: "Remover capacidade não é 'adicionar'. Pode ser refactor ou chore, depende do contexto." },
+  ]}
+/>
+
+- **`feat`** = nova capacidade → bump **minor**.
+- **`fix`** = defeito corrigido → bump **patch**.
+- Esses dois são os **gatilhos** de versão por padrão.
+
+> Dica: quando tiver dúvida entre `feat` e `fix`, pergunte: "isso é algo
+> *novo que o usuário faz*, ou um *erro que eu consertei*?".
+
+No próximo nó, vamos ver os **tipos de apoio** - `chore`, `docs`, `refactor` e
+os demais que não mexem na versão.

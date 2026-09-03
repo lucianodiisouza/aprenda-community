@@ -11,6 +11,7 @@
     { "projeto": "calculadora-de-gorjeta", "title": "Primeiro projeto: coloque a lógica em prática", "description": "Um build pequeno pra fixar variáveis, condicionais e funções logo depois do primeiro contato com código." },
     { "trilha": "terminal-para-devs", "description": "O terminal é onde o backend vive: comandos essenciais em qualquer ambiente unix (local, VPS, container)." },
     { "trilha": "git", "description": "Controle de versão do zero ao avançado — obrigatório em qualquer time e pré-requisito pra deploy e colaboração." },
+    { "trilha": "conventional-commits", "description": "Mensagens de commit que contam uma história: o formato type(escopo): descrição, SemVer automática e changelog — o elo entre o histórico e a release." },
     { "trilha": "typescript", "description": "TypeScript logo depois de JavaScript: a mente ainda está fresca sobre a linguagem, e o TS vira a forma padrão de escrever código backend no mercado." },
     { "trilha": "sql-banco-de-dados", "description": "Modelagem e SQL puro — a fundação de dados antes de qualquer ORM." },
     { "projeto": "modelagem-de-banco", "description": "Modele o banco de um mini e-commerce e escreva as consultas do negócio em SQL puro." },

@@ -1,0 +1,131 @@
+---
+id: semver-e-changelog
+title: "Conventional Commits + SemVer + changelog automático"
+resources:
+  - title: "SemVer (semver.org, EN)"
+    url: https://semver.org/
+    type: doc
+    lang: en
+    free: true
+  - title: "Conventional Commits e SemVer (site oficial, EN)"
+    url: https://www.conventionalcommits.org/en/v1.0.0/#why-use-conventional-commits
+    type: doc
+    lang: en
+    free: true
+---
+
+Aqui a trilha começa a *render frutos*: quando seus commits seguem a convenção,
+ferramentas conseguem ligar o histórico a **versões semânticas** e a um
+**changelog** que se escreve sozinho. É o momento em que "escrever commit certo"
+deixa de ser burocracia e vira **automação**.
+
+## Relembrando o SemVer
+
+Semantic Versioning (semver) num formato `MAJOR.MINOR.PATCH`:
+
+- **MAJOR** (v2.0.0) - mudança que **quebra** compatibilidade;
+- **MINOR** (v1.3.0) - **nova funcionalidade** compatível;
+- **PATCH** (v1.3.1) - **correção** compatível (bug fix).
+
+Agora liga com o que você aprendeu nos tipos:
+
+| Commit | Bump semver |
+| --- | --- |
+| `feat:` | MINOR (v1.2.0 → v1.3.0) |
+| `fix:` | PATCH (v1.2.3 → v1.2.4) |
+| `BREAKING CHANGE:` (footer) | MAJOR (v1.x → v2.0.0) |
+| `chore:`, `docs:`, `refactor:`... | nenhum |
+
+```js
+// histórico que uma ferramenta consegue ler pra versar
+// feat(auth): adiciona login
+// fix(cart): corrige frete
+// -> a ferramenta "vê" feat + fix e sugere v1.3.0 (MINOR + PATCH acumulados)
+```
+
+<Mermaid
+  chart={`graph LR
+    A["feat:"] -->|"minor"| V["v1.3.0"]
+    B["fix:"] -->|"patch"| V2["v1.2.4"]
+    C["BREAKING CHANGE:"] -->|"major"| V3["v2.0.0"]
+    D["chore / docs / refactor"] -->|"none"| X["sem bump"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style B fill:#2da44e,stroke:#fff,color:#fff
+    style C fill:#cf222e,stroke:#fff,color:#fff
+    style D fill:#6e7681,stroke:#fff,color:#fff
+    style V fill:#2da44e,stroke:#fff,color:#fff
+    style V2 fill:#2da44e,stroke:#fff,color:#fff
+    style V3 fill:#cf222e,stroke:#fff,color:#fff
+    style X fill:#6e7681,stroke:#fff,color:#fff`}
+  caption="Conventional Commits -> SemVer: feat dispara MINOR, fix dispara PATCH, BREAKING CHANGE dispara MAJOR, e os tipos de apoio não mexem na versão."
+/>
+
+Não é coincidência: **o Conventional Commits foi desenhado para mapear
+diretamente no SemVer**. É por isso que `feat` e `fix` são "especiais".
+
+## Changelog automático
+
+Com o mapeamento pronto, uma ferramenta de release (release-please,
+semantic-release, changesets, conventional-changelog) consegue:
+
+1. **ler os commits** entre duas tags (`git log v1.2.0..v1.3.0`);
+2. **agrupar** por tipo (`feat`, `fix`, `docs`...);
+3. **calcular o bump** semver correto;
+4. **gerar/atualizar o `CHANGELOG.md`** automaticamente.
+
+```markdown
+## [1.3.0] - 2026-08-31
+
+### Adicionado
+- feat(auth): adiciona login com GitHub
+
+### Corrigido
+- fix(cart): corrige frete para múltiplos itens
+```
+
+Você deixa de escrever changelog na mão - e, melhor, o changelog **não
+mente**: ele reflete exatamente a mensagem dos commits.
+
+> **Dica:** assim como este repositório, um changelog bem-feito costuma separar
+> "Adicionado / Alterado / Corrigido" seguindo a *[Keep a Changelog]*. A
+> ferramenta convencional-changelog já gera nesse padrão quando os commits são
+> decentes.
+
+## Por que isso importa pro seu time
+
+- **comunicação** - consumidores e o time sabem quando uma breaking change vai
+  quebrar (bump major).
+- **release repetível** - o nó humano chato ("o que entrou nessa versão?") vira
+  automático e auditável.
+- **caça ao erro** - `git bisect` + mensagens boas + SemVer = achar a origem de
+  um bug de release sem adivinhar.
+
+- **SemVer** = `MAJOR.MINOR.PATCH`; `feat`→MINOR, `fix`→PATCH, `BREAKING`→MAJOR.
+- **changelog automático** = ferramenta lê os commits e gera o doc de release.
+- **convenção** = o elo que transforma histórico em **versão e comunicado**.
+
+> Dica: experimente rodar `conventional-changelog` num repo com histórico bom  - 
+> o changelog gerado em 5 segundos vale mais que horas de escrita manual.
+
+No próximo nó, vamos ver as **ferramentas** que forçam e agilizam isso no
+dia a dia: `commitlint`, `commitizen`, `husky` e `gitmoji`.
+
+<Quiz
+  question="Se a última versão era v1.4.2 e entra um commit `feat(auth): adiciona login com Google` sem breaking change, qual a próxima versão sugerida pela SemVer automática?"
+  options={[
+    {
+      text: "v1.4.3",
+      correct: false,
+      explanation: "Esse seria o bump se fosse um fix (PATCH).",
+    },
+    {
+      text: "v1.5.0",
+      correct: true,
+    },
+    {
+      text: "v2.0.0",
+      correct: false,
+      explanation: "Major só com `BREAKING CHANGE` (ou `!` após o type).",
+    },
+  ]}
+/>

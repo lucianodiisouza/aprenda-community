@@ -23,6 +23,7 @@ e projeto final. Organizadas por área.
 | [Programação do Zero](./roadmaps/programacao-do-zero) | 13 | iniciante |
 | [Terminal para Devs](./roadmaps/terminal-para-devs) | 15 | iniciante |
 | [Git](./roadmaps/git) | 23 | iniciante |
+| [Conventional Commits](./roadmaps/conventional-commits) | 10 | intermediário |
 | [Fundamentos de CS](./roadmaps/fundamentos-de-cs) | 10 | intermediário |
 | [Complexidade de Algoritmos](./roadmaps/complexidade-de-algoritmos) | 13 | intermediário |
 | [Estruturas de Dados](./roadmaps/estruturas-de-dados) | 14 | intermediário |
