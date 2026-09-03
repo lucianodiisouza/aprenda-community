@@ -60,7 +60,7 @@ modelo pequeno, dá **$3-5k**. Diferença brutal.
 <Mermaid
   chart={`flowchart TB
     A["Custo alto?"] --> B{"Onde está\\no gasto?"}
-    B -- Input tokens" --> C["1. Reduzir prompt\\n2. Prompt caching\\n3. Modelo menor"]
+    B -- "Input tokens" --> C["1. Reduzir prompt\\n2. Prompt caching\\n3. Modelo menor"]
     B -- "Output tokens" --> D["1. Limitar max_tokens\\n2. Instrução 'seja conciso'\\n3. Modelo menor"]
     B -- "Volume" --> E["1. Batch requests\\n2. Cache de respostas\\n3. Modelo menor para\\ntarefas simples"]
     B -- "Embeddings/RAG" --> F["1. Menos chunks\\n2. Cache de embeddings\\n3. Vetor store certo"]`}
