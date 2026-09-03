@@ -1,6 +1,6 @@
 ---
 id: projeto-final
-title: "Projeto final: feature completa com IA no loop, diffs auditaveis, PR limpo"
+title: "Projeto final: feature completa com IA no loop, diffs auditáveis, PR limpo"
 resources:
   - title: "Claude Code - Workflows (EN)"
     url: https://docs.claude.com/en/docs/claude-code/common-workflows
@@ -19,52 +19,52 @@ resources:
     free: true
 ---
 
-Hora de unir tudo. Voce vai construir
+Hora de unir tudo. Você vai construir
 uma **feature completa** com **IA no
-loop**: decomposicao, geracao, audit,
+loop**: decomposição, geração, audit,
 test, commit, review, PR. **O ciclo
 real** de "AI-assisted development" em
-producao: **patterns corretos**, **diffs
-auditaveis**, **prompts reproduziveis**,
+produção: **patterns corretos**, **diffs
+auditáveis**, **prompts reproduzíveis**,
 **tests que pegam bugs**, **PR com
 checklist AI-aware** aceito por reviewer
 em 30 min.
 
-Esse projeto nao segue o esqueleto de
+Esse projeto não segue o esqueleto de
 "explicar conceito + dar exemplo" dos
-outros nos. E' um brief de projeto, no
+outros nós. É um brief de projeto, no
 estilo de `projects/<slug>.mdx` do
-aprenda-community. Le ate o fim antes de
+aprenda-community. Lê até o fim antes de
 comecar.
 
-## O que voce vai construir
+## O que você vai construir
 
 Uma **feature completa de UI** com **IA
 no loop**, entregue como:
 
-- **Spec** (1-2 paginas) antes de
-  pedir codigo.
-- **Decomposicao** em **3-5 sub-tarefas**
+- **Spec** (1-2 páginas) antes de
+  pedir código.
+- **Decomposição** em **3-5 sub-tarefas**
   (cada uma com teste).
 - **IA gera** cada sub-tarefa
-  (com prompt explicito).
-- **Voce audita** com checklist
-  (seguranca, performance, edge cases).
+  (com prompt explícito).
+- **Você audita** com checklist
+  (segurança, performance, edge cases).
 - **Tests** que **pegam bugs** (Stryker
   mutation score 80%+).
-- **5-10 commits atomicos** com prompt
+- **5-10 commits atômicos** com prompt
   no commit message.
 - **PR descritivo** com **AI_NOTES.md**
-  e **prompts reproduziveis**.
+  e **prompts reproduzíveis**.
 - **Reviewer** aprova em **30 min**
-  (nao 2h).
+  (não 2h).
 
-Stack obrigatoria:
+Stack obrigatória:
 
 - **AI tool:** Claude Code, Cursor, ou
   Copilot.
 - **Linguagem:** TypeScript (rede de
-  seguranca).
+  segurança).
 - **Tests:** Vitest + Stryker (mutation
   testing).
 - **Lint:** ESLint + Prettier.
@@ -75,48 +75,48 @@ Stack obrigatoria:
 
 - Praticar **ciclo completo de AI-
   assisted development**: spec, decom-
-  posicao, geracao, audit, test, commit.
+  posição, geração, audit, test, commit.
 - Construir feature com **diffs
-  auditaveis** (cada PR explica o que
-  IA gerou, o que voce escreveu,
-  o que voce revisou).
+  auditáveis** (cada PR explica o que
+  IA gerou, o que você escreveu,
+  o que você revisou).
 - Aplicar **patterns corretos**:
-  decomposicao, prompts reproduziveis,
+  decomposição, prompts reproduzíveis,
   mutation testing, AI_NOTES.md.
 - **Medir tempo** economizado por IA
   e **bugs pegos** pelo review.
 
-## Requisitos (minimo)
+## Requisitos (mínimo)
 
-Spec e decomposicao:
+Spec e decomposição:
 
-- [ ] **Spec de 1-2 paginas** antes de
-  pedir codigo (objetivo, casos de
+- [ ] **Spec de 1-2 páginas** antes de
+  pedir código (objetivo, casos de
   uso, constraints, edge cases).
-- [ ] **Decomposicao** em 3-5 sub-tarefas
-  com dependencia clara.
+- [ ] **Decomposição** em 3-5 sub-tarefas
+  com dependência clara.
 - [ ] Cada sub-tarefa tem **acceptance
-  criteria** testavel.
+  criteria** testável.
 - [ ] Cada sub-tarefa tem **teste
   escrito primeiro** (TDD).
 
-Prompts e geracao:
+Prompts e geração:
 
 - [ ] Cada sub-tarefa tem **prompt
-  explicito** salvo em arquivo
+  explícito** salvo em arquivo
   (`prompts/<sub-tarefa>.md`) ou no
   commit message.
 - [ ] **Tool de IA** (Claude Code,
   Cursor, ou Copilot) usado pra cada
   sub-tarefa.
 - [ ] **Output da IA** commitado com
-  **prompt visivel** (`🤖 Generated
+  **prompt visível** (`🤖 Generated
   with [tool]` no commit).
-- [ ] **Nenhum codigo de auth/payment/
-  crypto** gerado por IA (so
+- [ ] **Nenhum código de auth/payment/
+  crypto** gerado por IA (só
   boilerplate).
 
-Audit e revisao:
+Audit e revisão:
 
 - [ ] **Checklist AI-aware** aplicado a
   cada sub-tarefa (16 itens do node
@@ -128,14 +128,14 @@ Audit e revisao:
   sem warnings.
 - [ ] **Test coverage >= 80%**.
 - [ ] **Performance** verificada
-  (Big O aceitavel, sem memory
+  (Big O aceitável, sem memory
   leak).
 - [ ] **Edge cases** cobertos (null,
   vazio, Unicode, boundary).
 
 Tests e CI:
 
-- [ ] Tests **unitarios** + **integration**
+- [ ] Tests **unitários** + **integration**
   + (opcional) **e2e**.
 - [ ] **Mutation testing** (Stryker)
   roda em CI.
@@ -150,17 +150,17 @@ PR e review:
   - O que foi feito.
   - Por que foi feito.
   - **AI_NOTES.md** com:
-    - Codigo gerado por IA (lista).
-    - Codigo escrito manualmente (lista).
+    - Código gerado por IA (lista).
+    - Código escrito manualmente (lista).
     - Checklist de review aplicada.
-  - **Prompts** usados (reproduziveis).
-- [ ] **Commits atomicos** (1 sub-tarefa
+  - **Prompts** usados (reproduzíveis).
+- [ ] **Commits atômicos** (1 sub-tarefa
   = 1-2 commits).
 - [ ] **Conventional Commits** format.
 - [ ] **Reviewer** aprova em **30 min**
-  (nao 2h).
+  (não 2h).
 
-Validacao:
+Validação:
 
 - [ ] **Tempo economizado por IA**:
   medir (sem IA vs com IA, feature
@@ -173,7 +173,7 @@ Validacao:
 - [ ] **Zero bugs** em prod na
   primeira semana.
 
-## Estrutura do relatorio (`ai-loop-report.md`)
+## Estrutura do relatório (`ai-loop-report.md`)
 
 ```markdown
 # AI Loop Report - [nome-da-feature]
@@ -185,7 +185,7 @@ Validacao:
 - Tempo economizado: X horas (vs sem IA)
 - Sub-tarefas: 5
 - Prompts: 5 (em prompts/)
-- AI_NOTES.md: incluido no PR
+- AI_NOTES.md: incluído no PR
 - Mutation score: 85%
 - Bugs pegos em review: 3
 
@@ -196,7 +196,7 @@ Validacao:
 - **Constraints:** [lista]
 - **Edge cases:** 5 cobertos
 
-## Decomposicao
+## Decomposição
 
 1. Sub-tarefa 1 (3h)
    - Acceptance: [criteria]
@@ -268,7 +268,7 @@ Validacao:
 - [ ] **Self-hosted LLM** pra feature
   privacity-sensitive.
 - [ ] **Test plan generation** - IA
-  gera test plan antes de codigo.
+  gera test plan antes de código.
 
 ## Dicas
 
@@ -279,22 +279,22 @@ Validacao:
    feature grande** (refactor de
    auth, novo sistema de pagamento)
    pra primeiro projeto.
-2. **Escrever spec.** 1-2 paginas
+2. **Escrever spec.** 1-2 páginas
    com objetivo, casos de uso,
    constraints, edge cases. **Sem
-   spec, IA gera generico**.
+   spec, IA gera genérico**.
 3. **Decompor em 3-5 sub-tarefas.**
    Cada uma com acceptance criteria
-   testavel.
+   testável.
 4. **Escrever testes primeiro** (TDD).
    Pra cada sub-tarefa, escreva
    teste vermelho, depois peca IA
    pra implementar.
 5. **Salvar prompt em arquivo.**
-   `prompts/sub-1.md` etc. **Auditavel**.
+   `prompts/sub-1.md` etc. **Auditável**.
 6. **Auditar cada sub-tarefa** com
    checklist.
-7. **Commits atomicos.** 1 sub-tarefa
+7. **Commits atômicos.** 1 sub-tarefa
    = 1-2 commits. Prompt no commit
    message.
 8. **PR com AI_NOTES.md** e
@@ -302,36 +302,36 @@ Validacao:
 
 **Armadilhas comuns:**
 
-- **Spec vaga** = IA gera generico.
-  **Solucao**: spec detalhada com
+- **Spec vaga** = IA gera genérico.
+  **Solução**: spec detalhada com
   exemplos.
-- **Decomposicao em 1 feature
-  monolitica** = IA falha em algum
-  lugar. **Solucao**: 3-5 sub-tarefas.
+- **Decomposição em 1 feature
+  monolítica** = IA falha em algum
+  lugar. **Solução**: 3-5 sub-tarefas.
 - **Teste escrito por IA sem
-  validacao** = "teatro". **Solucao**:
+  validação** = "teatro". **Solução**:
   mutation testing.
-- **Prompt nao salvo** = impossivel
-  reproduzir/audit. **Solucao**:
+- **Prompt não salvo** = impossível
+  reproduzir/audit. **Solução**:
   sempre `prompts/<sub-tarefa>.md` ou
   no commit.
 - **AI_NOTES.md ausente** = reviewer
-  nao sabe o que revisar. **Solucao**:
+  não sabe o que revisar. **Solução**:
   sempre incluir.
 - **Commit "feat: add feature"** =
-  impossivel auditar o que IA
-  fez. **Solucao**: prompt no
+  impossível auditar o que IA
+  fez. **Solução**: prompt no
   commit message.
 - **Review "LGTM"** = perde bugs.
-  **Solucao**: checklist AI-aware,
+  **Solução**: checklist AI-aware,
   30-60 min.
 - **Vibe coding** (aceitar tudo) =
-  AI slop. **Solucao**: TDD +
-  decomposicao + audit.
+  AI slop. **Solução**: TDD +
+  decomposição + audit.
 
 **Como validar que terminou:**
 
-- [ ] Spec existe e' detalhada.
+- [ ] Spec existe é detalhada.
 - [ ] 3-5 sub-tarefas cada uma com
   teste, prompt, AI_NOTES.
 - [ ] Mutation score >= 70%.
@@ -342,7 +342,7 @@ Validacao:
 - [ ] Zero bugs em prod (1 semana).
 - [ ] Tempo economizado: feature
   equivalente em 50% do tempo sem
-  IA (medicao informal).
+  IA (medição informal).
 
 **Leituras que ajudam durante o projeto:**
 
@@ -350,20 +350,20 @@ Validacao:
 - [Cursor - Best practices](https://docs.cursor.com/guides/best-practices) - composer, agent, codebase context.
 - [Conventional Commits](https://www.conventionalcommits.org/) - format de commit message.
 
-> O projeto final e' onde a trilha
+> O projeto final é onde a trilha
 > vira "sua". A escolha de **qual
-> feature** e' o caminho feliz. Os
-> principios - spec, decomposicao,
-> prompts reproduziveis, audit,
+> feature** é o caminho feliz. Os
+> principios - spec, decomposição,
+> prompts reproduzíveis, audit,
 > tests, AI_NOTES - aplicam a
 > qualquer feature AI-assisted. O
-> esqueleto dado e' o caminho feliz,
+> esqueleto dado é o caminho feliz,
 > desvie quando precisar e anote as
-> decisoes no `editorial-decisions.md`
+> decisões no `editorial-decisions.md`
 > da trilha.
 
 <Checkpoint
-  challenge="Implemente a função `avaliarFluxoIA(checklist)` que avalia se um workflow de AI-assisted development segue os patterns corretos. Recebe: checklist = { temSpec: boolean, decomposicaoEmSubTarefas: boolean, testesPorSubTarefa: boolean, promptsSalvos: boolean, aiNotes: boolean, mutationScore: number (0-100, ou 0 se nao mediu), commitsAtomicos: boolean, reviewComChecklist: boolean }. Calcule score baseado em: cada boolean true = 10 pontos, mutationScore (0-100) = 1 ponto por % (cap 25). max(0, min(100, score)). Retorna: { score, qualidade: 'excelente' | 'boa' | 'media' | 'fraca' }. qualidade: score >= 90 'excelente', >= 70 'boa', >= 50 'media', senao 'fraca'. Apenas inclua chaves para criterios presentes no input."
+  challenge="Implemente a função `avaliarFluxoIA(checklist)` que avalia se um workflow de AI-assisted development segue os patterns corretos. Recebe: checklist = { temSpec: boolean, decomposicaoEmSubTarefas: boolean, testesPorSubTarefa: boolean, promptsSalvos: boolean, aiNotes: boolean, mutationScore: number (0-100, ou 0 se não mediu), commitsAtomicos: boolean, reviewComChecklist: boolean }. Calcule score baseado em: cada boolean true = 10 pontos, mutationScore (0-100) = 1 ponto por % (cap 25). max(0, min(100, score)). Retorna: { score, qualidade: 'excelente' | 'boa' | 'media' | 'fraca' }. qualidade: score >= 90 'excelente', >= 70 'boa', >= 50 'media', senão 'fraca'. Apenas inclua chaves para critérios presentes no input."
   starterCode={`// ImplementeavaliarFluxoIA(checklist) que avalia se um workflow
 // de AI-assisted development segue os patterns corretos.
 //
@@ -379,7 +379,7 @@ Validacao:
 //     reviewComChecklist?: boolean
 //   }
 //
-// Schema de saida:
+// Schema de saída:
 //   { score: number, qualidade: 'excelente' | 'boa' | 'media' | 'fraca' }
 //
 // Calculo:
@@ -391,7 +391,7 @@ Validacao:
 // - score >= 90: 'excelente'
 // - score >= 70: 'boa'
 // - score >= 50: 'media'
-// - senao: 'fraca'
+// - senão: 'fraca'
 functionavaliarFluxoIA(checklist) {
   return { score: 0, qualidade: 'fraca' };
 }

@@ -1,6 +1,6 @@
 ---
 id: ai-aware-code-review
-title: "AI-aware code review: revisar PRs com muito codigo gerado, prompts reproduziveis"
+title: "AI-aware code review: revisar PRs com muito código gerado, prompts reproduzíveis"
 resources:
   - title: "Conventional Comments (EN)"
     url: https://conventionalcomments.org/
@@ -14,86 +14,86 @@ resources:
     free: true
 ---
 
-Voce recebe um PR de 1500 linhas, 80%
+Você recebe um PR de 1500 linhas, 80%
 gerado por IA. **Reviewer** cansado
 em 30 min, **commenta "LGTM"**, e
-**3 bugs vao pra prod**. **Esse no
+**3 bugs vão pra prod**. **Esse nó
 cobre AI-aware code review**: como
-revisar **PRs com muito codigo gerado
-por IA**, **prompts reproduziveis**
+revisar **PRs com muito código gerado
+por IA**, **prompts reproduzíveis**
 (manter o **prompt** que gerou o
-codigo no **commit/PR**), e **red
-flags especificos de codigo IA**.
+código no **commit/PR**), e **red
+flags específicos de código IA**.
 
-**PRs com codigo IA** tem **patterns
-especificos**: **muitos comentarios
+**PRs com código IA** têm **patterns
+específicos**: **muitos comentários
 explicativos** (IA gosta de explicar),
 **patterns uniformes** (mesmo estilo
 em arquivos diferentes), **mocks
 excessivos** (IA mock pra tudo), e
-**edge cases perdidos** (IA nao
+**edge cases perdidos** (IA não
 pensa em todos). **Reviewer
 informado** pega **3-5x mais bugs** que
-reviewer generico.
+reviewer genérico.
 
-Voce sai de "LGTM" pra "review
+Você sai de "LGTM" pra "review
 informado que pega bug".
 
 ## O essencial 🟢
 
-**O problema: PRs com codigo IA
-sao dificeis de revisar.**
+**O problema: PRs com código IA
+são difíceis de revisar.**
 
 - **Volume grande.** IA gera **+30%**
-  linhas que humano (comentarios,
+  linhas que humano (comentários,
   boilerplate, edge cases). 200
   linhas "humanas" = 300 linhas
   "IA".
 - **Patterns uniformes.** IA gera
-  codigo com **mesmo estilo** em
-  arquivos diferentes - **dificil de
-  "sentir" inconsistencias**.
+  código com **mesmo estilo** em
+  arquivos diferentes - **difícil de
+  "sentir" inconsistências**.
 - **Edge cases ignorados.** IA
   resolve **happy path**, esquece
   **edge cases** (null, vazio,
   Unicode).
 - **Mocks excessivos.** IA **mocka
   tudo** pra "passar teste" - teste
-  vira inutil.
+  vira inútil.
 
-**Os 6 red flags em PR com codigo
+**Os 6 red flags em PR com código
 IA.**
 
 1. **Volume desproporcional.** "Por
    que esse PR tem 1500 linhas pra
-   adicionar um botao?" - **sinal
-   claro** de codigo IA sem foco.
-2. **Comentarios explicativos
+   adicionar um botão?" - **sinal
+   claro** de código IA sem foco.
+2. **Comentários explicativos
    excessivos.** `// This function
    validates the email by checking
    if it contains @ and .` - IA
-   explica demais, humano nao.
+   explica demais, humano não.
 3. **Patterns uniformes.** 5 arquivos
    com **mesmo estilo de error
-   handling** (ate espacamento) -
+   handling** (até espacamento) -
    sinal de IA.
 4. **Mocks everywhere.** Teste
    mocka **DB, API, file system,
    logger, auth** - testa que o
-   codigo chama as coisas, nao que
+   código chama as coisas, não que
    funciona.
-5. **Nomes de variavel genericos.**
+5. **Nomes de variável genéricos.**
    `data`, `result`, `item`, `value`
    - IA escolhe nomes **sem
-   semantica**. Humano escolheria
+   semântica**. Humano escolheria
    `userEmail`, `parsedCpf`,
    `cartItem`.
-6. **Comentarios tipo "this might
+6. **Comentários tipo "this might
    not work" ou "TODO: improve".**
    IA sabe que tem problema,
    comenta em vez de corrigir.
 
-**Como revisar PR com codigo IA em
+**Como revisar PR com código IA em
 30 min.**
 
 ```text
@@ -111,25 +111,25 @@ git log -p --follow  # commits anteriores
 # 10 min - Hot paths
 - Auth, payment, session, JWT, password
 - SQL, fetch, file upload, eval
-- Foca em seguranca + dados
+- Foca em segurança + dados
 
 # 10 min - Logic
-- Foca em funcoes adicionadas (diff +)
+- Foca em funções adicionadas (diff +)
 - Roda tests local
 - Type check
-- Mutation test se possivel
+- Mutation test se possível
 
 # Total: 30 min por PR grande
 ```
 
-**Como exigir prompts reproduziveis
+**Como exigir prompts reproduzíveis
 no PR.** **Pattern 1**: **IA gera
-codigo**, **voce commita o prompt
+código**, **você commita o prompt
 junto**. **Justificativa**:
-auditoria, **reproducao** (re-rodar
+auditoria, **reprodução** (re-rodar
 IA com mesmo prompt gera output
-similar), **review** (reviewer ve
-**o que voce pediu**).
+similar), **review** (reviewer vê
+**o que você pediu**).
 
 ```markdown
 <!-- PR description -->
@@ -207,12 +207,12 @@ estruturado em code review.** Use
 **prefixos** pra tornar feedback
 claro:
 
-- `nit:` - cosmético, nao bloqueia.
-- `suggestion:` - melhoria, nao
+- `nit:` - cosmético, não bloqueia.
+- `suggestion:` - melhoria, não
   bloqueia.
 - `issue:` - bug ou problema,
   bloqueia.
-- `question:` - precisa explicacao.
+- `question:` - precisa explicação.
 - `praise:` - elogio (importante
   pra moral do time).
 - `security:` - vulnerabilidade,
@@ -222,24 +222,24 @@ claro:
 
 ```markdown
 src/auth/google/callback.ts:42
-security: Oauth state token nao esta sendo
+security: Oauth state token não está sendo
   validado contra CSRF. Adicione
   `oauth2Client.verifyIdToken()` ou check
   manual do state.
 
 src/auth/google/login.ts:15
-issue: `state` gerado mas nao persistido em
+issue: `state` gerado mas não persistido em
   cookie/sessionStorage. Ataque CSRF possible.
   Fix: salvar state antes do redirect.
 
 src/auth/google/types.ts:8
-question: Por que `GoogleUser.email` e'
+question: Por que `GoogleUser.email` é
   `string | null`? Em OAuth Google, email
   sempre vem. Null check pode esconder bug.
 
 src/auth/google/callback.ts:100
-nit: comentario `// This validates the token`
-  e' redundante - nome da funcao ja diz.
+nit: comentário `// This validates the token`
+  é redundante - nome da função já diz.
   Remova.
 
 src/auth/google/callback.ts:80
@@ -249,57 +249,57 @@ praise: bom uso de try/catch com error
 
 **3-5x mais eficiente** que "LGTM".
 
-**Red flags especificos de codigo
+**Red flags específicos de código
 gerado por IA - checklist.**
 
 ```text
 [ ] Volume desproporcional (PR grande pra task simples)
-[ ] Comentarios explicativos excessivos
+[ ] Comentários explicativos excessivos
 [ ] Patterns uniformes (todos arquivos mesmo estilo)
-[ ] Mocks excessivos (testa mocks, nao logica)
-[ ] Nomes genericos (data, result, item)
+[ ] Mocks excessivos (testa mocks, não lógica)
+[ ] Nomes genéricos (data, result, item)
 [ ] Sem tratamento de edge cases
 [ ] Sem teste pra error handling
 [ ] Sem teste pra boundary
-[ ] Sem teste pra input invalido
-[ ] Sem revisao de tipos (any em vez de tipos especificos)
-[ ] Sem revisao de error handling (catch vazio)
-[ ] Dependencia nova sem justificativa
+[ ] Sem teste pra input inválido
+[ ] Sem revisão de tipos (any em vez de tipos específicos)
+[ ] Sem revisão de error handling (catch vazio)
+[ ] Dependência nova sem justificativa
 [ ] Refactor grande sem plano
-[ ] Codigo de auth/payment sem review de especialista
-[ ] Secret/key em codigo (deveria ser env var)
-[ ] Sem prompt reproduzivel no PR
+[ ] Código de auth/payment sem review de especialista
+[ ] Secret/key em código (deveria ser env var)
+[ ] Sem prompt reproduzível no PR
 [ ] Sem AI_NOTES.md explicando o que foi gerado
 ```
 
-**Como auditar se codigo IA foi
+**Como auditar se código IA foi
 "vibe coding" vs "AI-assisted".**
 **Vibe coding** = aceito sem
 entender. **AI-assisted** = IA gera,
-**voce revisa e entende**.
+**você revisa e entende**.
 
 ```text
 Vibe coding:
-- PR sem descricao de AI
+- PR sem descrição de AI
 - Sem AI_NOTES.md
 - Sem testes
 - Diff gigante
-- Commit message generico
+- Commit message genérico
 
 AI-assisted:
 - PR descreve o que IA gerou
 - AI_NOTES.md separa "IA gerou" vs "humano escreveu"
 - Tests inclusos
 - Diff proporcional
-- Commit messages especificos
-- Prompts reproduziveis
+- Commit messages específicos
+- Prompts reproduzíveis
 ```
 
 **Tempo de review por tipo de PR.**
 
 - **PR pequeno (50 linhas):** 5-10
   min.
-- **PR medio (200 linhas):** 15-30
+- **PR médio (200 linhas):** 15-30
   min.
 - **PR grande (500+ linhas):** 30-60
   min.
@@ -312,33 +312,33 @@ AI-assisted:
 Review**, **Coderabbit** (AI reviewer
 no GitHub), **Claude Code review**
 - **IA revisa PR antes de humano**.
-**Pega** bugs basicos (style, typo,
+**Pega** bugs básicos (style, typo,
 unused import), **falha** em design
 decisions. **Use como primeira
-linha**, nao substituto de humano.
+linha**, não substituto de humano.
 
 ## Aprofundamento 🟡
 
-**"AI slop" - o pattern de codigo
-ruim de IA.** **AI slop** = codigo
+**"AI slop" - o pattern de código
+ruim de IA.** **AI slop** = código
 gerado por IA **sem review**, com
-patterns ruins: **comentarios
-desnecessarios, "this function" +
+patterns ruins: **comentários
+desnecessários, "this function" +
 "this method"** (muitos comments
 explicando o obvio), **error
-handling generico** (catch (e) {}),
-**"helper functions"** que **so
-chamam 1 funcao** (over-abstraction),
+handling genérico** (catch (e) {}),
+**"helper functions"** que **só
+chamam 1 função** (over-abstraction),
 **nomes sem sentido** (helper1,
 helper2, util3). **Sinal claro**:
-"muito codigo, pouco valor".
+"muito código, pouco valor".
 
 **Como detectar AI slop em PR.**
 
 ```text
-- Mais de 30% de comentarios? AI slop
-- Nomes `helper`, `util`, `manager`? AI slop
-- Error handling generico? AI slop
+- Mais de 30% de comentários? AI slop
+- Nomes `helper`, `útil`, `manager`? AI slop
+- Error handling genérico? AI slop
 - Refactor com "this improves X"? AI slop
 - Testes com mocks excessivos? AI slop
 - Sem edge case handling? AI slop
@@ -348,16 +348,16 @@ helper2, util3). **Sinal claro**:
 emergente**. **Refactor** ou
 **delete**.
 
-**Prompt reproduzivel: log vs
-codigo.** **Opcao 1**: prompt no
-**commit message** (sempre visivel,
-sem arquivo extra). **Opcao 2**:
+**Prompt reproduzível: log vs
+código.** **Opção 1**: prompt no
+**commit message** (sempre visível,
+sem arquivo extra). **Opção 2**:
 prompt em **AI_NOTES.md** (separado,
-mais espaco pra explicacao). **Opcao
+mais espaco pra explicação). **Opção
 3**: prompt em **`PROMPTS.log`** (log
 de todos os prompts, busca via
-grep). **Recomendado**: **Opcao 1**
-pra PRs pequenos, **Opcao 2** pra
+grep). **Recomendado**: **Opção 1**
+pra PRs pequenos, **Opção 2** pra
 PRs grandes.
 
 **O pattern "vibe coding" em
@@ -365,13 +365,13 @@ empresas.** **Vibe coding** =
 "gerar tudo, aceitar, mandar PR".
 **Anti-pattern** em empresa:
 revisor gasta **1h** revisando
-codigo **ruim**, **rejeita**, dev
+código **ruim**, **rejeita**, dev
 **re-gera** com IA, **mesma
 qualidade**, **outro 1h de
-review**. **Ciclo infinito**. **Solucao**:
+review**. **Ciclo infinito**. **Solução**:
 **AI-assisted workflow** documentado
 (IA gera, **humano revisa com
-checklist**, IA ajuda em iteracao).
+checklist**, IA ajuda em iteração).
 
 **Code review com AI: 2-pass
 pattern.** **Pass 1**: AI revisa
@@ -380,8 +380,8 @@ pattern.** **Pass 1**: AI revisa
 design, security, business logic).
 **Sem** AI no pass 1 = **+50%
 tempo**. **Sem** humano no pass 2 =
-**bugs passam**. **Combinacao** =
-**+30% eficiencia**, **mesma
+**bugs passam**. **Combinação** =
+**+30% eficiência**, **mesma
 qualidade**.
 
 **Leitura recomendada:**
@@ -390,11 +390,11 @@ qualidade**.
 - [GitHub - PR Review](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request) - como revisar PR.
 
 > Dica: o erro mais comum em AI
-> code review e' **"LGTM" porque
-> parece bom**. Codigo IA **parece
+> code review é **"LGTM" porque
+> parece bom**. Código IA **parece
 > bom** por design (IA gera
-> patterns uniformes, explicacoes
-> claras, comentarios educados).
+> patterns uniformes, explicações
+> claras, comentários educados).
 > **Por isso** parece "LGTM" mas
 > tem **bugs** (edge case perdido,
 > security vuln, mock excessivo).
@@ -402,19 +402,19 @@ qualidade**.
 > **3-5x mais bugs pegos**. **30-60
 > min por PR com IA** = **economiza
 > horas de bug em prod**. **LGTM
-> e' codigo legado futuro**.
+> é código legado futuro**.
 
-No proximo no (ultimo), vamos **projeto
+No próximo nó (último), vamos **projeto
 final**: feature completa com **IA no
-loop** (decomposicao, geracao, review,
-test, commit), **diffs auditaveis**, e
+loop** (decomposição, geração, review,
+test, commit), **diffs auditáveis**, e
 **PR limpo** com **prompts
-reproduziveis**.
+reproduzíveis**.
 
 <Checkpoint
-  challenge="Implemente a função `avaliarPRComIA(metricas)` que classifica um PR gerado com aux\u00edlio de IA em alto risco, medio risco ou baixo risco. Recebe: metricas = { linhasAdicionadas: number, comentarios: number, mocksEmTestes: number (numero de mocks no PR), temAuthOuPayment: boolean, temPromptNoPR: boolean (prompt reproduzivel no PR), temAINotes: boolean (AI_NOTES.md) }. Calcule score de risco: base 50. -10 se temPromptNoPR. -10 se temAINotes. +15 se temAuthOuPayment. +15 se comentarios / max(1, linhasAdicionadas) > 0.2 (mais de 20% comentarios = AI slop). +10 se mocksEmTestes > 5. +10 se linhasAdicionadas > 500. max(0, min(100, score)). Retorna { score, risco: 'baixo' | 'medio' | 'alto' }. risco: score < 30 'baixo', < 60 'medio', senao 'alto'."
+  challenge="Implemente a função `avaliarPRComIA(metricas)` que classifica um PR gerado com aux\u00edlio de IA em alto risco, médio risco ou baixo risco. Recebe: metricas = { linhasAdicionadas: number, comentarios: number, mocksEmTestes: number (número de mocks no PR), temAuthOuPayment: boolean, temPromptNoPR: boolean (prompt reproduzível no PR), temAINotes: boolean (AI_NOTES.md) }. Calcule score de risco: base 50. -10 se temPromptNoPR. -10 se temAINotes. +15 se temAuthOuPayment. +15 se comentarios / max(1, linhasAdicionadas) > 0.2 (mais de 20% comentários = AI slop). +10 se mocksEmTestes > 5. +10 se linhasAdicionadas > 500. max(0, min(100, score)). Retorna { score, risco: 'baixo' | 'medio' | 'alto' }. risco: score < 30 'baixo', < 60 'medio', senão 'alto'."
   starterCode={`// ImplementeavaliarPRComIA(metricas) que classifica um PR
-// gerado com IA em alto, medio ou baixo risco.
+// gerado com IA em alto, médio ou baixo risco.
 //
 // Schema de entrada:
 //   metricas = {
@@ -426,7 +426,7 @@ reproduziveis**.
 //     temAINotes: boolean
 //   }
 //
-// Schema de saida:
+// Schema de saída:
 //   { score: number, risco: 'baixo' | 'medio' | 'alto' }
 //
 // Calculo:
@@ -442,7 +442,7 @@ reproduziveis**.
 // Risco:
 // - score < 30: 'baixo'
 // - score < 60: 'medio'
-// - senao: 'alto'
+// - senão: 'alto'
 functionavaliarPRComIA(metricas) {
   return { score: 0, risco: 'alto' };
 }
@@ -472,25 +472,25 @@ console.log(JSON.stringify(_r3));`}
 />
 
 <Quiz
-  question="Por que PRs com codigo gerado por IA precisam de 'AI-aware code review' (review com checklist especifico) em vez de review generico?"
+  question="Por que PRs com código gerado por IA precisam de 'AI-aware code review' (review com checklist específico) em vez de review genérico?"
   options={[
     {
-      text: "Codigo IA tem patterns especificos (volume desproporcional, comentarios excessivos, mocks everywhere, nomes genericos, sem edge cases) que passam despercebidos em review generico. Reviewer sem checklist aprova 'LGTM'. Com checklist AI-aware, reviewer pega 3-5x mais bugs - 30-60 min por PR grande vs 5 min 'LGTM'.",
+      text: "Código IA tem patterns específicos (volume desproporcional, comentários excessivos, mocks everywhere, nomes genéricos, sem edge cases) que passam despercebidos em review genérico. Reviewer sem checklist aprova 'LGTM'. Com checklist AI-aware, reviewer pega 3-5x mais bugs - 30-60 min por PR grande vs 5 min 'LGTM'.",
       correct: true,
       explanation:
-        "O problema: **codigo IA parece bom por design** (uniforme, comentarios educados, patterns consistentes). **Reviewer generico aprova 'LGTM'** sem perceber bugs. **Red flags especificos de codigo IA**: (1) **volume desproporcional** (PR de 1500 linhas pra 'adicionar botao'), (2) **comentarios explicativos excessivos** (IA explica demais, humano nao), (3) **patterns uniformes** (mesmo estilo em arquivos - humano varia), (4) **mocks excessivos** (IA mocka tudo, teste vira inutil), (5) **nomes genericos** (data, result, item - IA nao tem contexto), (6) **sem edge cases** (IA resolve happy path). **Checklist AI-aware** (16 itens do node) = **3-5x mais bugs pegos**. **Tempo**: 30-60 min por PR grande (vs 5 min 'LGTM'). **Custo do review** = **economia de horas de bug em prod**. **Bonus**: pedir **prompts reproduziveis** no PR (audit), **AI_NOTES.md** (transparencia), **conventional comments** (feedback estruturado com prefixos issue/suggestion/praise/security).",
+        "O problema: **código IA parece bom por design** (uniforme, comentários educados, patterns consistentes). **Reviewer genérico aprova 'LGTM'** sem perceber bugs. **Red flags específicos de código IA**: (1) **volume desproporcional** (PR de 1500 linhas pra 'adicionar botão'), (2) **comentários explicativos excessivos** (IA explica demais, humano não), (3) **patterns uniformes** (mesmo estilo em arquivos - humano varia), (4) **mocks excessivos** (IA mocka tudo, teste vira inútil), (5) **nomes genéricos** (data, result, item - IA não tem contexto), (6) **sem edge cases** (IA resolve happy path). **Checklist AI-aware** (16 itens do node) = **3-5x mais bugs pegos**. **Tempo**: 30-60 min por PR grande (vs 5 min 'LGTM'). **Custo do review** = **economia de horas de bug em prod**. **Bônus**: pedir **prompts reproduzíveis** no PR (audit), **AI_NOTES.md** (transparência), **conventional comments** (feedback estruturado com prefixos issue/suggestion/praise/security).",
     },
     {
-      text: "Nao precisa de AI-aware review - review normal ja basta.",
+      text: "Não precisa de AI-aware review - review normal já basta.",
       correct: false,
       explanation:
-        "Falso. **Review normal** em codigo IA **perde 50%+ dos bugs**. **Por que?** Codigo IA **parece bom** (uniforme, explicado, patterns consistentes) - **reviewer** fica **confiante** que 'ta' ok' e aprova. **Bugs especificos de IA** (edge case ignorado, mock excessivo, sem error handling) **passam despercebidos** em review generico. **Checklist AI-aware** (16 itens) **forca** reviewer a **procurar** red flags. **Estudos** mostram: 30-60 min de review com checklist = 3-5x mais bugs que 5 min 'LGTM'. **Custo** do review detalhado < **custo** de bug em prod.",
+        "Falso. **Review normal** em código IA **perde 50%+ dos bugs**. **Por que?** Código IA **parece bom** (uniforme, explicado, patterns consistentes) - **reviewer** fica **confiante** que 'tá ok' e aprova. **Bugs específicos de IA** (edge case ignorado, mock excessivo, sem error handling) **passam despercebidos** em review genérico. **Checklist AI-aware** (16 itens) **força** reviewer a **procurar** red flags. **Estudos** mostram: 30-60 min de review com checklist = 3-5x mais bugs que 5 min 'LGTM'. **Custo** do review detalhado < **custo** de bug em prod.",
     },
     {
-      text: "AI-aware review significa usar IA pra revisar - o que e' redundante.",
+      text: "AI-aware review significa usar IA pra revisar - o que é redundante.",
       correct: false,
       explanation:
-        "Falso. **AI-assisted review** (IA revisa) e' **complementar** a **AI-aware review** (humano revisa com checklist especifico de codigo IA). **AI-assisted** (Coderabbit, Copilot Review) **catches**: typo, style, unused imports, redundancias. **AI-aware** (humano com checklist) **catches**: design decisions, business logic, security, edge cases, **red flags de vibe coding** (volume desproporcional, sem testes, sem edge cases). **2-pass**: AI revisa (1º), humano revisa com checklist (2º). **Ambos juntos** = **cobertura completa** + **+30% eficiencia** vs so' humano. **'AI revisa IA'** nao e' redundante - sao **camadas diferentes**.",
+        "Falso. **AI-assisted review** (IA revisa) é **complementar** a **AI-aware review** (humano revisa com checklist específico de código IA). **AI-assisted** (Coderabbit, Copilot Review) **catches**: typo, style, unused imports, redundâncias. **AI-aware** (humano com checklist) **catches**: design decisions, business logic, security, edge cases, **red flags de vibe coding** (volume desproporcional, sem testes, sem edge cases). **2-pass**: AI revisa (1º), humano revisa com checklist (2º). **Ambos juntos** = **cobertura completa** + **+30% eficiência** vs só humano. **'AI revisa IA'** não é redundante - são **camadas diferentes**.",
     },
   ]}
 />
