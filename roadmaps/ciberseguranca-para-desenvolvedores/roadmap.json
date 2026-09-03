@@ -1,0 +1,112 @@
+{
+  "slug": "ciberseguranca-para-desenvolvedores",
+  "title": "Cibersegurança para Desenvolvedores",
+  "description": "Trilha introdutória de Segurança da Informação para desenvolvedores: dos fundamentos de dados, redes e protocolos até vulnerabilidades, OWASP Top 10 e segurança defensiva.",
+  "difficulty": "iniciante",
+  "skills": [
+    "seguranca-da-informacao",
+    "ciberseguranca",
+    "redes",
+    "owasp",
+    "seguranca-defensiva"
+  ],
+  "creators": [
+  {
+    "name": "Alex Jesus (ojesus_cyber)",
+    "github": "AJesus1308"
+  }
+],
+  "nodes": [
+    {
+      "id": "introducao-seguranca-informacao",
+      "title": "Introdução à Segurança da Informação",
+      "type": "topic",
+      "recommended": true,
+      "children": ["dados-e-informacao"]
+    },
+    {
+      "id": "dados-e-informacao",
+      "title": "Dados e Informação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["principios-seguranca-informacao"]
+    },
+    {
+      "id": "principios-seguranca-informacao",
+      "title": "Princípios da Segurança da Informação",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["riscos-ameacas-vulnerabilidades"]
+    },
+    {
+      "id": "riscos-ameacas-vulnerabilidades",
+      "title": "Riscos, Ameaças e Vulnerabilidades",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["redes-computadores"]
+    },
+    {
+      "id": "redes-computadores",
+      "title": "Redes de Computadores",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["protocolos-rede"]
+    },
+    {
+      "id": "protocolos-rede",
+      "title": "Protocolos de Rede",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["portas-servicos"]
+    },
+    {
+      "id": "portas-servicos",
+      "title": "Portas e Serviços",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["http-https-apis"]
+    },
+    {
+      "id": "http-https-apis",
+      "title": "HTTP, HTTPS e APIs",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["autenticacao-autorizacao"]
+    },
+    {
+      "id": "autenticacao-autorizacao",
+      "title": "Autenticação e Autorização",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["vulnerabilidades-seguranca"]
+    },
+    {
+      "id": "vulnerabilidades-seguranca",
+      "title": "Vulnerabilidades de Segurança",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["owasp-top-10"]
+    },
+    {
+      "id": "owasp-top-10",
+      "title": "OWASP Top 10",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["seguranca-defensiva"]
+    },
+    {
+      "id": "seguranca-defensiva",
+      "title": "Introdução à Segurança Defensiva",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["encerramento"]
+    },
+    {
+      "id": "encerramento",
+      "title": "Encerramento",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

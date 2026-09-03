@@ -1,0 +1,111 @@
+---
+id: vulnerabilidades-seguranca
+title: "Vulnerabilidades de Segurança"
+resources:
+  - title: "NIST — Vulnerabilities"
+    url: https://csrc.nist.gov/glossary/term/vulnerability
+    type: doc
+    lang: en
+    free: true
+  - title: "OWASP Cheat Sheet Series"
+    url: https://cheatsheetseries.owasp.org/
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já viu que uma vulnerabilidade é uma fraqueza que pode ser explorada ou acionada por uma ameaça.
+
+Agora vamos trazer esse conceito para mais perto do seu código.
+
+Uma vulnerabilidade não precisa ser algo extremamente sofisticado.
+
+Ela pode nascer de uma decisão simples durante o desenvolvimento.
+
+Imagina uma API com esta regra:
+
+```text
+GET /clientes/123
+
+Usuário autenticado:
+cliente 456
+```
+
+Se a API recebe o número `123` e devolve os dados desse cliente sem verificar se o usuário autenticado realmente pode acessá-los, existe uma falha no controle de acesso.
+
+O sistema funciona.
+
+A requisição retorna `200`.
+
+O código não necessariamente apresenta erro.
+
+E, ainda assim, existe uma vulnerabilidade.
+
+Esse é um ponto importante: **bug e vulnerabilidade não são exatamente a mesma coisa**.
+
+Um bug é um comportamento incorreto ou inesperado do seu software. Quando uma falha pode afetar a segurança do sistema, por exemplo, permitindo acesso indevido, alteração de informações ou indisponibilidade, ela pode se tornar uma vulnerabilidade de segurança.
+
+Vulnerabilidades podem surgir em diferentes lugares.
+
+Alguns exemplos comuns são:
+
+- **Código:** uma validação importante não foi implementada corretamente;
+- **Configuração:** um serviço foi exposto ou recebeu permissões além do necessário;
+- **Dependências:** a aplicação utiliza um componente que possui uma vulnerabilidade conhecida;
+- **Design:** a própria arquitetura permite um comportamento inseguro.
+
+E lembra do conceito de risco?
+
+Encontrar uma vulnerabilidade não significa automaticamente que todas possuem a mesma prioridade.
+
+Uma falha em um sistema isolado pode ter um contexto completamente diferente da mesma falha em uma aplicação pública que manipula informações sensíveis.
+
+Por isso, precisamos observar:
+
+```text
+Vulnerabilidade
+      +
+Contexto
+      +
+Ameaça
+      +
+Impacto
+      =
+Risco a ser avaliado
+```
+
+Como desenvolvedor, seu trabalho não é simplesmente "não criar vulnerabilidades". Isso seria uma expectativa pouco realista.
+
+Seu papel é aprender a reconhecer padrões inseguros, implementar controles, revisar decisões e corrigir falhas quando elas forem identificadas.
+
+Segurança é um processo contínuo.
+
+E, para ajudar desenvolvedores e empresas a reconhecer alguns dos riscos mais importantes em aplicações Web, existe uma referência que você vai encontrar muitas vezes daqui para frente.
+
+No próximo nó, vamos conhecer o **OWASP Top 10**.
+
+<Quiz
+  question="Um bug qualquer em uma aplicação é necessariamente uma vulnerabilidade de segurança?"
+  options={[
+    {
+      text: "Sim, qualquer bug é uma vulnerabilidade",
+      correct: false,
+      explanation: "Nem todo bug afeta segurança. Bug é um comportamento incorreto em geral; vulnerabilidade é quando o bug pode ser explorado para afetar confidencialidade, integridade ou disponibilidade.",
+    },
+    {
+      text: "Não necessariamente - um bug vira vulnerabilidade quando pode afetar a segurança (acesso indevido, alteração, indisponibilidade)",
+      correct: true,
+    },
+    {
+      text: "Apenas bugs em produção são vulnerabilidades",
+      correct: false,
+      explanation: "O ambiente onde o bug aparece não define se é vulnerabilidade, e sim o impacto que a falha pode causar.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Escolha um bug que você já tenha visto em código. Ele afetava confidencialidade, integridade, disponibilidade, nenhum desses, ou mais de um?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="vulnerabilidades-seguranca"
+/>

@@ -1,6 +1,6 @@
 {
   "generated_by": "scripts/build-contributors.mjs",
-  "count": 6,
+  "count": 7,
   "contributors": [
     {
       "github": "lucianodiisouza",
@@ -302,6 +302,32 @@
           "slug": "desenvolvedor-frontend",
           "title": "Desenvolvedor Frontend",
           "via": "trilha:acessibilidade-web"
+        }
+      ]
+    },
+    {
+      "github": "ajesus1308",
+      "name": "Alex Jesus (ojesus_cyber)",
+      "avatar": "https://github.com/ajesus1308.png",
+      "profile": "https://github.com/ajesus1308",
+      "counts": {
+        "trilhas": 1,
+        "projetos": 0,
+        "bootcamps": 1,
+        "total": 2
+      },
+      "trilhas": [
+        {
+          "slug": "ciberseguranca-para-desenvolvedores",
+          "title": "Cibersegurança para Desenvolvedores"
+        }
+      ],
+      "projetos": [],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-backend",
+          "title": "Desenvolvedor Backend",
+          "via": "trilha:ciberseguranca-para-desenvolvedores"
         }
       ]
     },

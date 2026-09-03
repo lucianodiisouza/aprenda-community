@@ -4,7 +4,7 @@ Lista completa de **trilhas**, **projetos** e **bootcamps** do Aprenda
 Community. É a fonte navegável do que existe hoje — o [README](./README.md)
 traz só o resumo e aponta pra cá.
 
-> Contagem atual: **38 trilhas**, **17 projetos**, **2 bootcamps**.
+> Contagem atual: **39 trilhas**, **17 projetos**, **2 bootcamps**.
 > A verdade sempre está nas pastas [`roadmaps/`](./roadmaps),
 > [`projects/`](./projects) e [`bootcamps/`](./bootcamps) — se algo aqui
 > divergir, a pasta ganha.
@@ -45,7 +45,6 @@ e projeto final. Organizadas por área.
 | [Testing Frontend](./roadmaps/testing-frontend) | 8 | intermediário |
 | [Performance Web](./roadmaps/performance-web) | 7 | intermediário |
 | [Acessibilidade Web](./roadmaps/acessibilidade-web) | 20 | iniciante |
-| [Segurança Frontend](./roadmaps/seguranca-frontend) | 7 | intermediário |
 | [Edge Deploy Frontend](./roadmaps/edge-deploy-frontend) | 7 | intermediário |
 | [Observabilidade Frontend](./roadmaps/observabilidade-frontend) | 7 | intermediário |
 | [PWA](./roadmaps/pwa) | 7 | intermediário |
@@ -71,6 +70,13 @@ e projeto final. Organizadas por área.
 | [Docker Fundamentos](./roadmaps/docker-fundamentos) | 10 | intermediário |
 | [Docker Compose e Workflows](./roadmaps/docker-compose-e-workflows) | 8 | intermediário |
 | [Kubernetes](./roadmaps/kubernetes) | 12 | avançado |
+
+### 🛡️ Segurança
+
+| Trilha | Nós | Nível |
+| --- | --- | --- |
+| [Cibersegurança para Desenvolvedores](./roadmaps/ciberseguranca-para-desenvolvedores) | 13 | iniciante |
+| [Segurança Frontend](./roadmaps/seguranca-frontend) | 7 | intermediário |
 
 ### 🤖 IA & Conteúdo
 
