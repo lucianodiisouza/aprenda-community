@@ -9,9 +9,9 @@ resources:
     free: true
 ---
 
-Quando dois componentes repetem a mesma **lógica de estado e Effects**, você pode
-extrair essa lógica para uma função cujo nome começa com `use`. Isso cria um
-Custom Hook — ele compartilha lógica, não uma instância de estado.
+Quando dois componentes repetem a mesma **lógica de estado e Effects**, extraia
+essa lógica para uma função cujo nome começa com `use`. Isso cria um
+Custom Hook que compartilha lógica, não uma instância de estado.
 
 ```jsx
 import { useEffect, useState } from 'react';
@@ -47,9 +47,9 @@ export default function ThemePreference() {
 O componente não precisa saber como `localStorage` é lido ou escrito. Ainda
 assim, cada componente que chama `useLocalStorage` recebe seu próprio estado.
 
-- **Custom Hook** extrai lógica baseada em Hooks.
-- **Nome começa com `use`** para que regras e ferramentas do React reconheçam o Hook.
-- **Estado não é compartilhado automaticamente** só porque a lógica foi reaproveitada.
+- **Custom Hook:** extrai lógica baseada em Hooks.
+- **Nome começa com `use`:** para que regras e ferramentas do React reconheçam o Hook.
+- **Estado não é compartilhado automaticamente:** só porque a lógica foi reaproveitada.
 
 > Dica: não extraia um Hook apenas para esconder três linhas. Faça isso quando o
 > nome do Hook cria uma abstração útil para o domínio ou elimina repetição real.

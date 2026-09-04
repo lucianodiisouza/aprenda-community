@@ -31,7 +31,7 @@ function CelsiusInput({ value, onChange }) {
 
 function TemperaturePreview({ celsius }) {
   const fahrenheit = celsius === '' ? '' : Number(celsius) * 1.8 + 32;
-  return <p>Fahrenheit: {fahrenheit === '' ? '—' : fahrenheit.toFixed(1)}</p>;
+  return <p>Fahrenheit: {fahrenheit === '' ? '-' : fahrenheit.toFixed(1)}</p>;
 }
 
 export default function App() {
@@ -57,9 +57,9 @@ o preview recebe o mesmo valor e calcula sua apresentação.
   caption="O estado fica no ancestral comum e flui para os filhos por props; eventos retornam mudanças ao pai."
 />
 
-- **Fonte de verdade** evita múltiplas cópias do mesmo dado.
-- **Lifting state up** move o estado para o ancestral que coordena os filhos.
-- **Componente controlado** recebe valor e callback em vez de possuir aquele estado sozinho.
+- **Fonte de verdade:** evita múltiplas cópias do mesmo dado.
+- **Lifting state up:** move o estado para o ancestral que coordena os filhos.
+- **Componente controlado:** recebe valor e callback em vez de possuir aquele estado sozinho.
 
 No próximo nó, vamos reduzir ainda mais o estado guardado calculando valores que
 podem ser **derivados** durante a renderização.

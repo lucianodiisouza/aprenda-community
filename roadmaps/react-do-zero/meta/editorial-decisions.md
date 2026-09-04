@@ -18,8 +18,9 @@ nesse ponto, a pessoa já conhece JSX, eventos e estado suficiente para entender
 ### O que mudou
 
 - A estrutura passou de **23 nós** para **24 nós**.
-- Foram adicionados diagramas Mermaid em `props`, `use-state`, `use-reducer` e
-  `arquitetura-de-componentes`.
+- Foram adicionados diagramas Mermaid em `introducao-react`, `props`,
+  `use-state`, `use-effect`, `elevando-estado`, `acessibilidade-em-componentes`,
+  `use-reducer` e `arquitetura-de-componentes`.
 - Alguns nós ganharam **mini missões** com exemplos mais lúdicos: carta
   colecionável, placar de combo, painel de missões e raio-x de componente grande.
 - Os três projetos existentes foram revisados para ter requisitos mais claros,

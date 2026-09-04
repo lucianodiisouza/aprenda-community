@@ -65,9 +65,9 @@ A forma `setItems((currentItems) => ...)` é útil quando o próximo estado depe
 do estado anterior. Para objetos, spread cria uma nova cópia; para arrays, métodos
 como `map`, `filter` e spread evitam mutação.
 
-- **Updater function** recebe o estado mais recente quando a atualização depende dele.
-- **Spread** ajuda a criar novos objetos e arrays preservando dados anteriores.
-- **`map`/`filter`** produzem novos arrays sem alterar o original.
+- **Updater function:** recebe o estado mais recente quando a atualização depende dele.
+- **Spread:** ajuda a criar novos objetos e arrays preservando dados anteriores.
+- **`map`/`filter`:** produzem novos arrays sem alterar o original.
 
 > Dica: `items.push(...)` seguido de `setItems(items)` reutiliza a mesma referência
 > e ainda muta o estado. Prefira `setItems([...items, novoItem])`.

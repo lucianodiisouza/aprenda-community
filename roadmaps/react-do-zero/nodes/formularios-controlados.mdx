@@ -56,9 +56,9 @@ Controlar o campo é útil quando validação, formatação ou outras partes da
 interface dependem do valor atual. Nem todo formulário precisa de um `useState`
 para cada detalhe, mas esse modelo é excelente para entender o fluxo de dados.
 
-- **`value`** vem do estado.
-- **`onChange`** leva o valor digitado de volta ao estado.
-- **`onSubmit`** concentra a regra de envio no formulário, inclusive quando Enter é usado.
+- **`value`:** vem do estado.
+- **`onChange`:** leva o valor digitado de volta ao estado.
+- **`onSubmit`:** concentra a regra de envio no formulário, inclusive quando Enter é usado.
 
 > Dica: prefira tratar `onSubmit` no `<form>` em vez de colocar toda a lógica no
 > `onClick` do botão. Isso preserva o comportamento natural do formulário.

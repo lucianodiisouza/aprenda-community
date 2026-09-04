@@ -10,7 +10,7 @@ resources:
 ---
 
 Props deixam o fluxo de dados explícito, mas algumas informações realmente
-atravessam muitas camadas: tema, idioma ou sessão atual. Context permite que um
+atravessam muitas camadas: tema, idioma ou sessão atual. Context faz com que um
 ancestral forneça um valor para descendentes sem repassar a prop em cada nível.
 
 ```jsx
@@ -53,9 +53,9 @@ export default function App() {
 Context não substitui props. Se o dado precisa atravessar só um ou dois níveis,
 props ou composição costumam ser mais simples e deixam dependências mais claras.
 
-- **`createContext`** cria o canal de contexto.
-- **Provider** define o valor disponível na subárvore.
-- **`useContext`** lê e assina mudanças desse valor.
+- **`createContext`:** cria o canal de contexto.
+- **Provider:** define o valor disponível na subárvore.
+- **`useContext`:** lê e assina mudanças desse valor.
 
 > Dica: antes de criar um Context, pergunte se o estado está no lugar certo e se
 > composição com `children` resolveria o problema com menos acoplamento.

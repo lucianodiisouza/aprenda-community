@@ -66,9 +66,9 @@ O `AbortController` evita continuar uma requisição que já não interessa quan
 componente sai da tela. Em aplicações maiores, bibliotecas de dados podem cuidar
 de cache, deduplicação e revalidação; aqui o objetivo é entender o ciclo básico.
 
-- **Loading/erro/sucesso** são estados diferentes da experiência.
-- **`response.ok`** precisa ser verificado; `fetch` não rejeita Promise só por um 404/500.
-- **Abort** é uma forma de limpar trabalho assíncrono que perdeu relevância.
+- **Loading/erro/sucesso:** são estados diferentes da experiência.
+- **`response.ok`:** precisa ser verificado; `fetch` não rejeita Promise só por um 404/500.
+- **Abort:** é uma forma de limpar trabalho assíncrono que perdeu relevância.
 
 No próximo nó, vamos guardar referências que **não precisam causar uma nova
 renderização**.

@@ -43,7 +43,7 @@ export default function App() {
 Repare em `onClick={handleAdd}`: passamos a função sem executá-la. Escrever
 `onClick={handleAdd()}` chamaria a função durante a renderização.
 
-Em formulários, o evento também permite impedir o comportamento padrão do
+Em formulários, o evento também bloqueia o comportamento padrão do
 navegador quando você quer tratar o envio com JavaScript:
 
 ```jsx
@@ -53,9 +53,9 @@ function handleSubmit(event) {
 }
 ```
 
-- **Handler** é a função executada quando o evento acontece.
-- **Função como prop** permite que filhos comuniquem ações a componentes acima.
-- **`preventDefault()`** cancela um comportamento padrão, como recarregar a página no submit.
+- **Handler:** é a função executada quando o evento acontece.
+- **Função como prop:** faz com que filhos comuniquem ações a componentes acima.
+- **`preventDefault()`:** cancela um comportamento padrão, como recarregar a página no submit.
 
 No próximo nó, vamos guardar informação entre eventos usando **estado**.
 
