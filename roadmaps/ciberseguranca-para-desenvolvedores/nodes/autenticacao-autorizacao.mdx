@@ -1,0 +1,114 @@
+---
+id: autenticacao-autorizacao
+title: "Autenticação e Autorização"
+resources:
+  - title: "Authentication Cheat Sheet — OWASP"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Authorization Cheat Sheet — OWASP"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+    type: doc
+    lang: en
+    free: true
+---
+
+Autenticação e autorização aparecem juntas em praticamente qualquer aplicação que possui usuários.
+
+E, apesar de parecerem a mesma coisa no início, elas respondem a perguntas completamente diferentes.
+
+**Autenticação** responde:
+
+> Quem é você?
+
+**Autorização** responde:
+
+> O que você pode fazer?
+
+Imagine que você acessa um sistema administrativo utilizando seu e-mail e sua senha.
+
+Quando o sistema verifica suas credenciais e confirma sua identidade, ele está realizando um processo de **autenticação**.
+
+```text
+E-mail + senha
+      |
+      v
+"Essa pessoa é realmente quem diz ser?"
+```
+
+Depois de autenticado, o sistema ainda precisa decidir quais recursos você pode utilizar.
+
+É aí que entra a **autorização**.
+
+Imagine que existam dois perfis:
+
+```text
+Administrador
+- visualizar usuários
+- editar usuários
+- excluir usuários
+
+Atendente
+- visualizar usuários
+```
+
+Os dois podem estar perfeitamente autenticados.
+
+Mas isso não significa que os dois deveriam possuir as mesmas permissões.
+
+Se um atendente conseguir excluir usuários simplesmente alterando uma URL ou fazendo uma chamada diretamente para a API, temos um problema de autorização.
+
+Perceba uma coisa importante: esconder um botão na interface não é suficiente.
+
+```text
+Front-end:
+botão "Excluir" escondido
+
+API:
+DELETE /usuarios/10
+```
+
+Se a API não validar se aquela pessoa possui permissão para executar a ação, alguém pode tentar realizar a requisição sem utilizar o botão da interface. E acredite, alguém vai tentar.
+
+Por isso, controles de autorização precisam existir no ponto onde a ação realmente é executada.
+
+Outro princípio importante é o **menor privilégio**: uma pessoa, serviço ou aplicação deve receber apenas as permissões necessárias para realizar sua função.
+
+Um usuário que só precisa consultar informações não deveria receber permissão para alterá-las "só por garantia".
+
+Resumindo:
+
+- **Autenticação:** confirma uma identidade.
+- **Autorização:** verifica permissões.
+- **Menor privilégio:** concede somente os acessos necessários.
+
+Esses controles ajudam diretamente a preservar a confidencialidade e a integridade das informações.
+
+No próximo nó, vamos entender melhor o que chamamos de **vulnerabilidade de segurança** e como essas falhas podem aparecer durante o desenvolvimento.
+
+<Quiz
+  question="Qual a diferença entre autenticação e autorização?"
+  options={[
+    {
+      text: "São a mesma coisa, com nomes diferentes",
+      correct: false,
+      explanation: "Não. Autenticação responde 'quem é você' e autorização responde 'o que você pode fazer'.",
+    },
+    {
+      text: "Autenticação confirma uma identidade, autorização verifica o que essa identidade tem permissão de fazer",
+      correct: true,
+    },
+    {
+      text: "Autorização vem antes da autenticação",
+      correct: false,
+      explanation: "A ordem natural é autenticar primeiro (saber quem é) e depois autorizar (saber o que pode).",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Escolha uma rota da sua aplicação que só deveria ser acessível para administradores. Se um usuário comum fizer a chamada direta na API (ignorando a interface), a sua aplicação nega o acesso? Como?"
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="autenticacao-autorizacao"
+/>

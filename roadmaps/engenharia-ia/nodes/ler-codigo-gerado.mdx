@@ -1,0 +1,428 @@
+---
+id: ler-codigo-gerado
+title: "Ler código gerado: como auditar diff, red flags, segurança, performance"
+resources:
+  - title: "OWASP - Top 10 LLM (EN)"
+    url: https://owasp.org/www-project-top-10-for-large-language-model-applications/
+    lang: en
+    type: doc
+    free: true
+  - title: "GitHub - Code Review (EN)"
+    url: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews
+    lang: en
+    type: doc
+    free: true
+---
+
+Você aceitou um diff de 200+ linhas que
+IA gerou. **Funciona** (testes passam).
+Manda pro PR. Aí vem o **reviewer**:
+"isso aqui tem 3 problemas de segurança".
+**Esse nó cobre como auditar código
+gerado por IA** - **checklist** de
+red flags, **patterns de segurança**,
+**performance**, e **como não cair em
+armadilhas**.
+
+IA gera código **que parece certo** mas
+**tem falhas sutis**: SQL injection,
+XSS, **algoritmo O(n²) em vez de
+O(n log n)**, dependencies desatualizadas
+com CVE. **Sem revisar**, você **herda
+a vulnerabilidade**. **Review** não é
+opcional.
+
+Você sai de "aceito código gerado"
+pra "aceito **depois de auditar** com
+checklist".
+
+## O essencial 🟢
+
+**O checklist dos 7 red flags.** Antes
+de aceitar diff gerado por IA, **rode
+este checklist**:
+
+1. **Segurança:** SQL injection? XSS?
+   CSRF? Secret hardcoded?
+2. **Input validation:** Inputs são
+   validados (zod, yup, io-ts)?
+3. **Auth/authz:** Permissoes
+   verificadas? Token validado?
+4. **Error handling:** Try/catch
+   adequado? Errors não silenciosos?
+5. **Performance:** O(n²) em vez de
+   O(n)? Loop aninhado desnecessário?
+   Memory leak (setInterval não
+   cleared)?
+6. **Dependencies:** Pkg novo? CVE
+   conhecido? Licença OK?
+7. **Edge cases:** null/undefined?
+   array vazio? string vazia? número
+   negativo? Unicode?
+
+**Cada item** = **1-2 min de review**.
+Total: **10-15 min por PR de 200
+linhas**. Vale a pena.
+
+**Os 3 bugs de segurança mais comuns
+em código gerado por IA.**
+
+1. **SQL injection.** IA gera query
+   com template literal.
+
+   ```ts
+   // ❌ Vulnerável
+   const user = await db.query(
+     `SELECT * FROM users WHERE id = ${userId}`
+   );
+
+   // ✅ Seguro
+   const user = await db.query(
+     "SELECT * FROM users WHERE id = $1",
+     [userId]
+   );
+   ```
+
+2. **XSS (Cross-Site Scripting).** IA
+   gera render sem escape.
+
+   ```tsx
+   // ❌ Vulnerável
+   <div dangerouslySetInnerHTML={{ __html: userInput }} />
+
+   // ✅ Seguro
+   <div>{userInput}</div>  // React escapa automático
+   ```
+
+3. **Secret hardcoded.** IA gera
+   código com credenciais.
+
+   ```ts
+   // ❌ Vulnerável
+   const apiKey = "sk-abc123hardcoded";
+
+   // ✅ Seguro
+   const apiKey = process.env.OPENAI_API_KEY;
+   ```
+
+**Checklist de performance.**
+
+- **Big O:** loop dentro de loop = O(n²).
+  Hash map / Set para lookup O(1).
+- **Memory:** `setInterval` não cleaned,
+  `addEventListener` não removed,
+  referência circular.
+- **Network:** N+1 queries, falta
+  cache, falta de paginação.
+- **Render:** re-render desnecessário
+  (React), loop gigante no template.
+
+**Checklist de edge cases.**
+
+```text
+- null / undefined
+- array vazio []
+- string vazia ""
+- número 0
+- número negativo
+- NaN, Infinity
+- Unicode (emoji, RTL)
+- timezone (UTC vs local)
+- locale (pt-BR vs en-US)
+- input muito grande (>1MB)
+- concurrent updates
+```
+
+**O pattern: "trust but verify".** IA
+gera código que **parece** correto.
+**Você verifica** com:
+1. **Ler o diff** (não aceitar sem ler).
+2. **Rodar testes** (IA gera teste?
+   Confia? Escreve o seu).
+3. **Type check** (TypeScript salva).
+4. **Lint** (ESLint/Biome pega patterns
+   ruins).
+5. **Code review** (1 outro humano
+   revisa).
+6. **Test em prod** (canary, feature
+   flag, monitor).
+
+**Como ler um diff grande (200+
+linhas) eficientemente.** Não leia
+linha por linha. **Estratégia**:
+
+1. **Visão geral:** olhe a **estrutura**
+   (quais arquivos? quais funções
+   novas? quais deletadas?).
+2. **Pontos de entrada:** `main`,
+   `index`, exports públicos.
+3. **Lógica nova:** funções/classes
+   **adicionadas** (diff +).
+4. **Mudanças críticas:** arquivos
+   de segurança (auth, payment, API
+   routes).
+5. **Testes:** novos testes = bom
+   sinal. Testes mudados sem
+   justificativa = red flag.
+
+**Ferramentas de audit.**
+
+- **`git diff --stat`:** visão geral
+  do tamanho.
+- **`git diff --check`:** warnings de
+  whitespace.
+- **CodeQL (GitHub):** scan
+  automático de segurança no PR.
+- **Snyk / Dependabot:** scan de
+  vulnerabilities em dependencies.
+- **ESLint + plugins:** patterns ruins
+  (security, performance).
+- **Semgrep:** static analysis
+  customizável.
+
+**Checklist de dependencies.**
+
+```bash
+# Pkg novo adicionado
+git diff package.json
+# Pergunte:
+# 1. Esse pkg é necessário? (N+1 deps)
+# 2. Tem CVE conhecido? (npm audit)
+# 3. Licença compatível? (MIT, Apache, etc)
+# 4. Maintainer ativo? (último commit)
+# 5. Bundle size? (bundlephobia)
+# 6. Alternatives? (mature, popular)
+```
+
+**O erro mais comum: aceitar código
+de IA "porque funciona".** "Funciona"
+não significa "correto". **Funciona**
+no caminho feliz. **Falha** em:
+segurança, performance, edge cases,
+acessibilidade. **Audit** antes de
+aceitar.
+
+**Checklist visual de código
+aceitável.**
+
+```text
+[ ] Lido TODO o diff (não skim)
+[ ] Sem SQL injection (queries parametrizadas)
+[ ] Sem XSS (escape user input)
+[ ] Sem secret hardcoded (env vars)
+[ ] Inputs validados (zod, yup)
+[ ] Error handling adequado (try/catch + log)
+[ ] Performance O(n) ou O(n log n), não O(n^2)
+[ ] Memory: intervals/listeners cleaned
+[ ] Edge cases: null, vazio, Unicode
+[ ] Tests: novos testes OU testes existentes passam
+[ ] Type check: 0 erros
+[ ] Lint: 0 errors
+[ ] Dependencies: 0 CVEs (npm audit)
+[ ] Accessibility: ARIA, contraste, keyboard
+[ ] License: MIT/Apache, não GPL em projeto proprietário
+```
+
+## Aprofundamento 🟡
+
+**Diff de 200+ linhas: como revisar
+sem perder detalhe.** Estrategia
+**3-pass**:
+
+1. **Pass 1 - Contexto (5 min):**
+   `git diff --stat`, leia commit
+   message, leia descrição do PR.
+   **Entenda a intenção** antes de
+   auditar código.
+
+2. **Pass 2 - Hot paths (10 min):**
+   Foque em **security-critical**:
+   auth, payment, API routes, file
+   upload, query strings, eval/Function.
+   **CodeQL** ou **Semgrep** scan
+   automático aqui.
+
+3. **Pass 3 - Logic (15 min):**
+   Foque em **lógica nova** (funções
+   adicionadas) e **mudanças em funções
+   existentes** (refactor). **Rode
+   testes** local. **Type check**.
+
+**Total: 30 min por PR grande**. Vs
+**10 min** pra PR pequeno. **Trade-off**
+aceitável.
+
+**Como auditar código de auth
+especificamente.** **Red flags
+específicos**:
+
+```ts
+// 1. Token em localStorage (XSS rouba)
+localStorage.setItem("token", jwt);  // ❌
+
+// 2. Auth check no client (bypass)
+if (user.role === "admin") showAdminPanel();  // ❌
+
+// 3. JWT sem verificar signature
+const user = jwt.decode(token);  // ❌
+const user = jwt.verify(token, SECRET);  // ✅
+
+// 4. Permissoes baseadas em user.id
+if (req.params.id === user.id) updateUser();  // ❌ race condition
+// ✅ Server-side: verificar role + ownership
+```
+
+**Como auditar código de payment.**
+
+```ts
+// 1. Trust no client-side price
+const amount = req.body.amount;  // ❌ user manipula
+const amount = product.price;    // ✅ server-side lookup
+
+// 2. Idempotency ausente
+if (!paymentExists(orderId)) {
+  await charge(orderId);
+}  // ❌ double charge em retry
+// ✅ Use idempotency key
+
+// 3. Amount sem validar
+if (amount > 0) charge(amount);  // ❌
+if (amount > 0 && amount < MAX_AMOUNT) charge(amount);  // ✅
+```
+
+**CodeQL e Semgrep.** **Ferramentas
+static analysis** que rodam **no PR**
+(GitHub Actions) e acham **bugs
+conhecidos**:
+
+```yaml
+# GitHub Actions
+- uses: github/codeql-action/analyze@v2
+  with:
+    languages: javascript
+```
+
+**CodeQL** acha SQL injection, XSS,
+**path traversal**, **unsafe
+deserialization**. **Semgrep** é
+**customizável** (rules escritas em
+YAML).
+
+**AI auditor: 2-pass com 2 LLMs.**
+Pattern: **LLM A gera código**, **LLM
+B revisa** (Claude gera, GPT revisa,
+ou vice-versa). **Bugs que LLM A
+perdeu** (por ser o autor) são pegos
+por LLM B (sem viés de autor). **Em
+2026**, **+30% bugs** pegos com 2-pass
+vs 1.
+
+**Leitura recomendada:**
+
+- [OWASP - Top 10 LLM](https://owasp.org/www-project-top-10-for-large-language-model-applications/) - top vulnerabilidades de LLM apps (LLM01-LLM10).
+- [GitHub - Code Review Guide](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews) - como revisar PR.
+
+> Dica: o erro mais comum em AI coding
+> é **aceitar código sem auditar**.
+> "Funciona" != "correto". **10-15 min
+> de checklist** por PR grande =
+> **evita** SQL injection, XSS, O(n²),
+> secret hardcoded. **IA gera 80% do
+> código, você audita 20%** - a parte
+> **crítica** é a auditoria. **Sem
+> audit, IA é vetor de ataque**: o
+> atacante **manipula o prompt** ou
+> **explora alucinação** conhecida
+> (lib inexistente, CVE). **Audit** é
+> **obrigatório**.
+
+No próximo nó, vamos **IA no test**:
+como gerar testes com IA, validar
+que não são **teatro** (testa
+"implementação" mas não **lógica**),
+e garantir que testes pegam bugs
+reais.
+
+<Checkpoint
+  challenge="Implemente a função `auditarDiff(checklist)` que valida um diff gerado por IA contra o checklist de 8 red flags. Recebe: checklist = { seguranca (SQL injection, XSS, secrets), inputValidation, auth, errorHandling, performance, dependencies, edgeCases, tests } (cada um boolean). Cada item ativo vale 12.5 pontos (100/8). Retorna: { score: number (0-100), aprovado: boolean (true se score === 100), problemas: string[] (nomes dos critérios com valor false) }. Nomes (em ordem): 'segurança (SQL injection, XSS, secrets)', 'input validation', 'auth/authz', 'error handling', 'performance (Big O, memory)', 'dependencies (CVEs, license)', 'edge cases (null, vazio, Unicode)', 'tests (cobre lógica real)'. Apenas inclua chaves para critérios presentes no input."
+  starterCode={`// Implemente auditarDiff(checklist) que valida um diff gerado por IA
+// contra o checklist de 8 red flags.
+//
+// Schema de entrada:
+//   checklist = {
+//     seguranca?: boolean,        // SQL injection, XSS, secrets
+//     inputValidation?: boolean,
+//     auth?: boolean,             // auth/authz
+//     errorHandling?: boolean,
+//     performance?: boolean,      // Big O, memory
+//     dependencies?: boolean,     // CVEs, license
+//     edgeCases?: boolean,        // null, vazio, Unicode
+//     tests?: boolean             // cobre lógica real
+//   }
+//
+// Schema de saída:
+//   {
+//     score: number (0-100, soma dos pontos),
+//     aprovado: boolean (true se score === 100),
+//     problemas: string[] (nomes dos critérios com valor false)
+//   }
+//
+// Nomes (em ordem): 'segurança (SQL injection, XSS, secrets)',
+// 'input validation', 'auth/authz', 'error handling',
+// 'performance (Big O, memory)', 'dependencies (CVEs, license)',
+// 'edge cases (null, vazio, Unicode)', 'tests (cobre lógica real)'.
+function auditarDiff(checklist) {
+  return { score: 0, aprovado: false, problemas: [] };
+}
+
+const _r1 = auditarDiff({
+  seguranca: true, inputValidation: true, auth: true, errorHandling: true,
+  performance: true, dependencies: true, edgeCases: true, tests: true
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 = auditarDiff({
+  seguranca: true, inputValidation: true, auth: true, errorHandling: false,
+  performance: false, dependencies: false, edgeCases: false, tests: false
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 = auditarDiff({});
+console.log(JSON.stringify(_r3));
+
+const _r4 = auditarDiff({
+  seguranca: true, inputValidation: true, auth: true, errorHandling: true,
+  performance: true, dependencies: true, edgeCases: true, tests: false
+});
+console.log(JSON.stringify(_r4));`}
+  expected='{"score":100,"aprovado":true,"problemas":[]}
+{"score":50,"aprovado":false,"problemas":["error handling","performance (Big O, memory)","dependencies (CVEs, license)","edge cases (null, vazio, Unicode)","tests (cobre lógica real)"]}
+{"score":0,"aprovado":false,"problemas":["segurança (SQL injection, XSS, secrets)","input validation","auth/authz","error handling","performance (Big O, memory)","dependencies (CVEs, license)","edge cases (null, vazio, Unicode)","tests (cobre lógica real)"]}
+{"score":87.5,"aprovado":false,"problemas":["tests (cobre lógica real)"]}'
+  slug="engenharia-ia"
+  nodeId="ler-codigo-gerado"
+/>
+
+<Quiz
+  question="Qual o erro mais comum ao aceitar código gerado por IA e como evitar?"
+  options={[
+    {
+      text: "Aceitar código porque 'funciona' (testes passam, demo funciona). 'Funciona' != 'correto' - pode ter SQL injection, XSS, O(n^2), secret hardcoded. Solução: 10-15 min de checklist por PR (segurança, performance, edge cases, dependencies) ANTES de aceitar. Audit é obrigatório.",
+      correct: true,
+      explanation:
+        "O erro #1 em AI coding é **aceitar código 'porque funciona'**. **'Funciona' != 'correto'**. **Funciona** = passa no caminho feliz (input esperado, sem edge cases). **Correto** = segurança (sem SQL injection, XSS, secrets), performance (O(n) não O(n^2)), edge cases (null, vazio, Unicode), accessibility, dependencies sem CVE. **Checklist 10-15 min** por PR = 8 itens (segurança, input validation, auth, error handling, performance, dependencies, edge cases, tests). **Sem audit**: você herda vulnerabilidades (SQL injection, XSS, secret hardcoded) e bugs sutis (O(n^2) que vira O(n^2) em prod com 1M items, memory leak que crasha após 3 dias). **Audit** = **obrigatório** em 2026. **IA é vetor de ataque** se não auditada: atacante manipula prompt, IA alucina lib inexistente, etc. **Checklist manual + CodeQL/Semgrep automático** = **90% dos bugs** pegos.",
+    },
+    {
+      text: "IA não gera bugs de segurança - foi treinada em código seguro.",
+      correct: false,
+      explanation:
+        "Falso. IA foi treinada em **todo o código do GitHub**, incluindo código **inseguro**. **Alucinação** de IA gera patterns que **parecem seguros** mas têm falhas: (1) **SQL injection** via template literal (IA não sabe que 'parece certo' = vulnerável), (2) **XSS** via dangerouslySetInnerHTML, (3) **secret hardcoded** ('sk-abc123'), (4) **JWT sem verify**, (5) **lib inventada** que não existe (ataque de supply chain). **OWASP Top 10 LLM** (LLM01-LLM10) lista as principais vulnerabilidades. **Audit é obrigatório** - IA **não substitui** security review.",
+    },
+    {
+      text: "Aceitar código de IA sem audit é OK se o dev tem experiência.",
+      correct: false,
+      explanation:
+        "Falso. **Dev experiente** pega **mais** bugs, mas **100% dos devs** perdem algo. **Bug** mais comum: **SQL injection via template literal** - parece 'correto' até você perceber que não usa prepared statement. **Outro** comum: **XSS via dangerouslySetInnerHTML** - parece 'OK' em React até você lembrar que user input não é confiável. **Outro**: **O(n^2) em prod** com N grande - parece 'bom' até travar. **Audit** é **layer de defesa**, não substituível por experiência. **10-15 min de checklist** + **ferramentas automáticas** (CodeQL, ESLint) = **90% dos bugs**.",
+    },
+  ]}
+/>

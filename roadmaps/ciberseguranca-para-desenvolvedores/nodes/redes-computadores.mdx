@@ -1,0 +1,100 @@
+---
+id: redes-computadores
+title: "Redes de Computadores"
+resources:
+  - title: "Como a Internet funciona? — MDN"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Howto/Web_mechanics/How_does_the_Internet_work
+    type: doc
+    lang: pt
+    free: true
+  - title: "Como a Web funciona — MDN"
+    url: https://developer.mozilla.org/pt-BR/docs/Learn_web_development/Getting_started/Web_standards/How_the_web_works
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando você abre uma aplicação no navegador, consulta uma API ou conecta sua aplicação a um banco de dados, existe uma coisa acontecendo por trás de tudo isso: **dispositivos estão se comunicando através de uma rede**.
+
+Uma rede de computadores é, de forma simples, um conjunto de dispositivos capazes de trocar dados entre si.
+
+Seu notebook conectado ao Wi-Fi de casa já faz parte de uma rede. Quando ele acessa um servidor que está em outro lugar do mundo, essa comunicação passa por várias outras redes até chegar ao destino.
+
+Imagine uma aplicação Web:
+
+```text
+Seu computador
+      |
+      v
+    Rede
+      |
+      v
+Servidor da aplicação
+      |
+      v
+Banco de dados
+```
+
+Cada componente precisa conseguir encontrar o próximo e trocar dados com ele.
+
+Para isso, um conceito importante é o **endereço IP**.
+
+O IP funciona como um endereço utilizado para identificar um dispositivo ou uma interface dentro de uma rede. Quando sua aplicação precisa se comunicar com outro servidor, ela precisa saber para onde enviar os dados.
+
+Outro conceito importante é o de **cliente e servidor**.
+
+O cliente normalmente inicia uma comunicação pedindo alguma coisa, enquanto o servidor recebe essa solicitação, processa e devolve uma resposta.
+
+Quando você abre uma página, por exemplo:
+
+```text
+Navegador -> "Me entregue essa página"
+Servidor  -> "Aqui está"
+```
+
+Claro que, tecnicamente, muita coisa acontece entre essas duas frases. Mas essa ideia de cliente fazendo uma solicitação e servidor respondendo vai acompanhar você durante praticamente toda a trilha.
+
+Os dados também não costumam atravessar a rede como um bloco gigante. Eles são divididos e transportados em unidades menores durante a comunicação.
+
+E por que você, como desenvolvedor, precisa saber disso?
+
+Porque uma aplicação não existe isolada.
+
+Ela conversa com bancos, APIs, serviços externos, filas, sistemas internos e usuários. Cada comunicação cria um caminho pelo qual informações precisam passar e, consequentemente, um ponto que precisa ser entendido e protegido.
+
+Se sua aplicação está acessível pela rede, alguém precisa definir:
+
+- **quem pode se conectar;**
+- **com qual destino a aplicação pode conversar;**
+- **quais serviços precisam estar expostos;**
+- **como os dados serão transportados.**
+
+Você não precisa virar um engenheiro de redes para desenvolver aplicações seguras. Mas precisa entender o caminho básico que uma informação percorre.
+
+No próximo nó, vamos entender as regras que permitem que dispositivos diferentes consigam conversar: os **protocolos de rede**.
+
+<Quiz
+  question="Qual é o papel do endereço IP em uma rede?"
+  options={[
+    {
+      text: "Criptografar a comunicação entre dois dispositivos",
+      correct: false,
+      explanation: "Criptografia é responsabilidade de outros protocolos (como TLS). O IP só endereça.",
+    },
+    {
+      text: "Identificar um dispositivo ou interface dentro da rede para que os dados saibam pra onde ir",
+      correct: true,
+    },
+    {
+      text: "Definir a porta lógica de um serviço",
+      correct: false,
+      explanation: "A porta lógica é responsabilidade dos protocolos de transporte (TCP/UDP), não do IP.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Desenhe (pode ser no papel) o caminho que uma requisição da sua aplicação faz do navegador do usuário até o banco de dados, listando cada salto de rede que você consegue identificar."
+  slug="ciberseguranca-para-desenvolvedores"
+  nodeId="redes-computadores"
+/>

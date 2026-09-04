@@ -1,0 +1,500 @@
+---
+id: ia-no-test
+title: "IA no test: gerar testes, validar que não são teatro"
+resources:
+  - title: "Kent C. Dodds - Testing Trophy (EN)"
+    url: https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications
+    lang: en
+    type: artigo
+    free: true
+  - title: "Martin Fowler - Test Pyramid (EN)"
+    url: https://martinfowler.com/articles/practical-test-pyramid.html
+    lang: en
+    type: artigo
+    free: true
+---
+
+Você pede pra IA "escreve testes pra
+essa função". Ela entrega 30 testes
+verdes. **Manda pro CI**, merge.
+Após 1 semana, **bug em prod**. Pior:
+os 30 testes que IA gerou **não
+pegam o bug**. **Esse nó cobre IA no
+test**: como gerar testes úteis, validar
+que não são **"teatro"** (testa
+"implementação" mas não **lógica**),
+e garantir que testes pegam **bugs
+reais**.
+
+Testes gerados por IA **muitas vezes
+são "happy path only"**: chamam a
+função com input válido, esperam
+output válido, **e nada mais**.
+**Não testam** edge cases, error
+handling, performance, **lógica de
+negócio**. **Passar 100%** mas **não
+pegar bug real** = **teatro**.
+
+Você sai de "IA gera testes teatro"
+pra "IA gera testes que pegam bugs
+reais".
+
+## O essencial 🟢
+
+**Os 3 tipos de "teste teatro" que IA
+gera.**
+
+1. **Happy path only.** Testa
+   cenário "input válido → output
+   válido". Não testa input inválido,
+   null, vazio, edge cases.
+
+2. **Testa a implementação, não a
+   lógica.** `expect(add(1, 2)).toBe(3)`
+   - testa que `add(1, 2) === 3`, mas
+   não testa que add é **comutativa**
+   (`add(2, 1) === 3`).
+
+3. **Mocka tudo.** Mocka database,
+   mocka API, mocka logger - teste
+   vira "testa que o código chama as
+   coisas certas" mas **não testa
+   que as coisas funcionam**.
+
+**Como pedir testes bons pra IA.** O
+prompt certo:
+
+```text
+Tarefa: Escreve testes pra função
+  `validarCpf(cpf: string): boolean`
+Contexto:
+  - Implementação: src/utils/cpf.ts
+  - Framework: Vitest
+Constraints:
+  - Cobrir edge cases (null, undefined,
+    string vazia, CPF inválido, CPF com
+    pontuação, CPF sem pontuação, CPF com
+    letras no meio)
+  - Cobrir CPFs válidos conhecidos
+    (gerar 5+ casos válidos)
+  - Testar padrões de CPF inválido
+    conhecidos (todos digitos iguais,
+    digitos verificadores errados)
+  - Não mockar nada (função pura)
+Verificação:
+  - 100% de branch coverage
+  - 0 testes "expect(true).toBe(true)"
+  - Cada teste testa 1 comportamento
+```
+
+**Estrutura de teste bom (AAA).**
+
+```ts
+describe("validarCpf", () => {
+  // Arrange
+  // Act
+  // Assert
+
+  it("aceita CPF com pontuação", () => {
+    expect(validarCpf("123.456.789-09")).toBe(true);
+  });
+
+  it("aceita CPF sem pontuação", () => {
+    expect(validarCpf("12345678909")).toBe(true);
+  });
+
+  it("rejeita CPF com letras no meio", () => {
+    expect(validarCpf("123.456.789-0a")).toBe(false);
+  });
+
+  it("rejeita CPF com todos digitos iguais", () => {
+    expect(validarCpf("111.111.111-11")).toBe(false);
+  });
+
+  it("rejeita CPF com digitos verificadores errados", () => {
+    expect(validarCpf("123.456.789-00")).toBe(false);
+  });
+
+  it("rejeita string vazia", () => {
+    expect(validarCpf("")).toBe(false);
+  });
+
+  it("rejeita null/undefined", () => {
+    expect(validarCpf(null as any)).toBe(false);
+    expect(validarCpf(undefined as any)).toBe(false);
+  });
+
+  it("rejeita CPF com tamanho errado", () => {
+    expect(validarCpf("123")).toBe(false);
+    expect(validarCpf("1234567890123")).toBe(false);
+  });
+});
+```
+
+**8 testes** = **8 comportamentos**.
+Cada teste tem **1 cenário**, **1
+expect**, **resultado claro**. **Não**
+30 testes que testam a mesma coisa.
+
+**O checklist dos 7 testes "bons".**
+
+1. **Edge cases:** null, undefined,
+   "", 0, [], negative, max.
+2. **Caminho feliz:** input válido
+   gera output esperado.
+3. **Error handling:** input inválido
+   gera error apropriado.
+4. **Boundary:** exatamente o limite
+   (ex: 100 chars, não 99 ou 101).
+5. **Estado mutavel:** testar antes e
+   depois de mutação.
+6. **Async:** testar pending, resolved,
+   rejected.
+7. **Integration:** testar interação
+   entre módulos (com mock controlado).
+
+**Como detectar "teste teatro".**
+
+```ts
+// ❌ Teatro 1: testa implementação
+expect(add(1, 2)).toBe(3);  // testa o código
+expect(add(2, 1)).toBe(3);  // duplicado, mesma lógica
+
+// ❌ Teatro 2: testa truthy
+expect(result).toBeTruthy();  // não diz o que é esperado
+
+// ❌ Teatro 3: testa "no throw"
+expect(() => fn()).not.toThrow();  // não diz o que deveria fazer
+
+// ❌ Teatro 4: testa "tipo"
+expect(typeof result).toBe("string");  // não testa valor
+
+// ❌ Teatro 5: cobre só happy path
+expect(validateEmail("user@example.com")).toBe(true);
+// ❌ é só 1 teste
+```
+
+**Como pedir pra IA gerar testes
+"bons".**
+
+```text
+PROMPT MELHORADO:
+
+"Para a função validarCpf em src/utils/cpf.ts,
+escreva testes Vitest que cubram:
+1. Pelo menos 5 CPFs válidos diferentes
+2. Pelo menos 5 CPFs inválidos diferentes
+   (todos digitos iguais, verificadores errados,
+   tamanho errado, com letras, vazio)
+3. Casos de borda: null, undefined, string
+   vazia, espacos em branco
+4. Para cada cenário, escreva um teste com
+   expect() claro e descritivo
+5. Não use mocks - a função é pura
+6. Não escreva testes que apenas verificam
+   'no throw' ou 'typeof' - cada teste deve
+   validar um comportamento específico
+7. Estruture em blocos describe/it claros"
+```
+
+**Teste de mutação: a melhor forma de
+validar testes.** **Mutation testing**:
+ferramenta **Stryker** (JS/TS) modifica
+o código (troca `+` por `-`, `>` por
+`<`, etc) e roda testes. **Se teste
+passa com código mutado** = teste **não
+pega o bug**. **Mutation score 80%+** =
+testes **bons**.
+
+```bash
+pnpm add -D @stryker-mutator/core @stryker-mutator/vitest-runner
+pnpm stryker init
+pnpm stryker run
+# Stryker reporta: "85% mutation score"
+# 15% dos mutantes sobreviveram = teste não pegou
+```
+
+**Exemplo de Stryker achando teste
+fraco.**
+
+```ts
+// Código
+if (age >= 18) return "adult";
+
+// Stryker muta pra
+if (age > 18) return "adult";
+if (age >= 19) return "adult";
+if (age > 17) return "adult";
+
+// Se teste passa com QUALQUER desses mutantes
+// = teste não testa boundary (age=18)
+// Solução: adicionar teste com age=18 explicitamente
+```
+
+**Test data builders pra IA.** Em vez
+de "gera 5 inputs válidos", de a IA
+**builder**:
+
+```ts
+// Builder pattern
+const cpfValido = (overrides = {}) => ({
+  cpf: "123.456.789-09",
+  ...overrides,
+});
+
+// IA gera 10 CPFs
+const cpfs = [
+  cpfValido({ cpf: "123.456.789-09" }),
+  cpfValido({ cpf: "987.654.321-00" }),
+  // ...
+];
+```
+
+**Builder pattern** = IA gera
+**variações** sem repetir código.
+
+## Aprofundamento 🟡
+
+**Quando IA gera testes ruins.** Sinais
+de alerta:
+
+1. **N coverage report.** "Funciona" sem
+   saber **quanto** foi coberto.
+2. **Testes similares** (3+ testes com
+   mesma estrutura, variando só 1 valor).
+3. **Mocks excessivos** (>50% do teste
+   é mock).
+4. **`expect.anything()` ou
+   `toBeDefined()`** sem contexto.
+5. **Teste sem `it()` description claro.**
+
+**Como o IA gera testes bons.**
+
+1. **Especifique o framework** (Vitest,
+   Jest, Playwright).
+2. **Especifique o nível** (unit,
+   integration, e2e).
+3. **Dê a interface da função** (não
+   a implementação).
+4. **Liste edge cases explicitamente**.
+5. **Peca branch coverage 100%** como
+   constraint.
+6. **Peca mutation score 80%+** como
+   follow-up.
+
+**Test pyramid (Martin Fowler).**
+
+- **70% unit tests** (funções
+  individuais, rápidos, isolados).
+- **20% integration tests** (módulos
+  juntos, com mock controlado).
+- **10% e2e tests** (app inteiro,
+  browser, lento).
+
+**IA é ótima pra unit tests** (escopo
+claro, input/output definido). **Média
+pra integration** (precisa entender
+módulos). **Ruim pra e2e** (precisa de
+browser, timing, async).
+
+**TDD com IA - o melhor pattern.**
+
+```text
+1. Escreve teste (Você):
+   it("validarCpf aceita CPF válido", () => {
+     expect(validarCpf("123.456.789-09")).toBe(true);
+   });
+2. Roda teste: FAIL (red) - função não existe
+3. Pede implementação (IA):
+   "Implementa validarCpf em src/utils/cpf.ts
+    pra fazer o teste passar"
+4. IA gera código
+5. Roda teste: PASS (green)
+6. Refactor (IA ajuda)
+7. Adiciona mais testes
+8. Repete
+```
+
+**TDD** = **comportamento definido
+antes**, IA gera código que **passa
+teste exato**. **Menos alucinação**
+porque teste = spec.
+
+**Coverage vs Mutation score.**
+
+- **Coverage:** "quantas linhas foram
+  executadas". **90% coverage** com
+  testes fracos = "passou em 90% das
+  linhas mas não pegou bugs".
+- **Mutation score:** "quantas
+  variações do código os testes
+  pegam". **80% mutation** = **bons
+  testes**.
+
+**Use ambos.** Coverage = linha de base
+(não < 80%). Mutation = qualidade
+(>= 70%).
+
+**Playwright + IA.** Em e2e tests,
+**IA ajuda** a:
+- Gerar `page.goto`, `page.click`,
+  `page.fill` boilerplate.
+- **MAS** não sabe **o que testar** -
+  você define user journey.
+- **Review** cada step - IA pode
+  gerar `await page.click('button')`
+  sem seletor específico (vai falhar
+  em prod).
+
+## Pra quem quer ir mais além 🔴
+
+**Property-based testing com
+fast-check.** Em vez de testar inputs
+específicos, **gera** inputs **aleatórios
+dentro de propriedades**:
+
+```ts
+import { fc, test } from "fast-check";
+
+test("add é comutativa", () => {
+  fc.assert(
+    fc.property(fc.integer(), fc.integer(), (a, b) => {
+      return add(a, b) === add(b, a);
+    })
+  );
+});
+```
+
+**IA gera** 100+ casos aleatórios
+automaticamente. **Mais bugs** que
+testes manuais. **Complementa**, não
+substitui, unit tests.
+
+**Visual regression testing com
+Playwright.** Screenshot de pagina
+inteira, compara com baseline. **IA
+ajuda** a gerar os `expect(page).toHaveScreenshot()`
+mas **review** dos baselines é
+manual.
+
+**Testes de carga (k6, Artillery).** IA
+ajuda a gerar scripts, mas **definir
+carga esperada** (1000 RPS? 100?) é
+**business decision**.
+
+**Mutation testing em CI.** Stryker
+roda em **PR** (config no GitHub
+Actions). **Falha PR** se mutation
+score < 70%. **Força** testes bons.
+
+**Leitura recomendada:**
+
+- [Kent C. Dodds - Testing Trophy](https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications) - balance entre unit/integration/e2e.
+- [Martin Fowler - Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html) - test pyramid clássico, em 2026 ainda relevante.
+
+> Dica: o erro mais comum em "IA no
+> test" é **aceitar testes sem
+> validar**. IA gera 30 testes verdes
+> = **teatro**, não qualidade. **Valide**:
+> (1) **Mutation testing** (Stryker) -
+> pega testes que não detectam bugs,
+> (2) **Coverage 80%+**, (3) **Edge
+> cases** (null, vazio, Unicode), (4)
+> **Testa comportamento, não
+> implementação**. **Sem validação,
+> "100% testes passando" pode ser
+> 100% teatro**. **5 min de review**
+> por suite = economia de horas em
+> prod.
+
+No próximo nó, vamos **IA no refactor**:
+como refatorar com IA **sem quebrar
+comportamento**, validar tipos, e
+identificar quando IA **alucina APIs**.
+
+<Checkpoint
+  challenge="Implemente a função `avaliarQualidadeTestes(stats)` que classifica a qualidade de uma suite de testes com base em métricas. Recebe: stats = { total: number (total de testes), cobrindoLimite: number (boundary tests, ex: age=18), cobrindoEdgeCases: number (null/vazio/Unicode), cobrindoErro: number (error handling), happyPath: number (só caso feliz), teatro: number (testes que não testam comportamento, ex: 'expect(true).toBe(true)') }. Calcule: coberturaReal = (cobrindoLimite + cobrindoEdgeCases + cobrindoErro) / total (se total > 0, senão 0). Retorna: { qualidade: 'boa' | 'media' | 'ruim', problemas: string[] }. Regras: coberturaReal >= 0.7 E teatro < 0.2 → 'boa'. coberturaReal >= 0.4 E teatro < 0.5 → 'media'. Senão 'ruim'. Problemas (sempre liste se verdade): se happyPath/total > 0.6 → 'so happy path'. se cobrindoEdgeCases === 0 → 'sem edge cases'. se teatro/total > 0.3 → 'muito teatro'."
+  starterCode={`// ImplementeavaliarQualidadeTestes(stats) que classifica a
+// qualidade de uma suite de testes baseado em métricas.
+//
+// Schema de entrada:
+//   stats = {
+//     total: number,
+//     cobrindoLimite: number,
+//     cobrindoEdgeCases: number,
+//     cobrindoErro: number,
+//     happyPath: number,
+//     teatro: number
+//   }
+//
+// Schema de saída:
+//   {
+//     qualidade: 'boa' | 'media' | 'ruim',
+//     problemas: string[]
+//   }
+//
+// Regras:
+// - coberturaReal = (cobrindoLimite + cobrindoEdgeCases + cobrindoErro) / total
+//   (se total > 0, senão 0)
+// - 'boa' se coberturaReal >= 0.7 E teatro/total < 0.2
+// - 'media' se coberturaReal >= 0.4 E teatro/total < 0.5
+// - senão 'ruim'
+// - Problemas (sempre inclua se aplicável):
+//   * 'so happy path' se happyPath/total > 0.6
+//   * 'sem edge cases' se cobrindoEdgeCases === 0
+//   * 'muito teatro' se teatro/total > 0.3
+functionavaliarQualidadeTestes(stats) {
+  return { qualidade: 'ruim', problemas: [] };
+}
+
+const _r1 =avaliarQualidadeTestes({
+  total: 20, cobrindoLimite: 5, cobrindoEdgeCases: 4, cobrindoErro: 6,
+  happyPath: 4, teatro: 1
+});
+console.log(JSON.stringify(_r1));
+
+const _r2 =avaliarQualidadeTestes({
+  total: 10, cobrindoLimite: 1, cobrindoEdgeCases: 0, cobrindoErro: 1,
+  happyPath: 7, teatro: 1
+});
+console.log(JSON.stringify(_r2));
+
+const _r3 =avaliarQualidadeTestes({
+  total: 15, cobrindoLimite: 2, cobrindoEdgeCases: 1, cobrindoErro: 1,
+  happyPath: 5, teatro: 6
+});
+console.log(JSON.stringify(_r3));
+
+const _r4 =avaliarQualidadeTestes({ total: 0, cobrindoLimite: 0, cobrindoEdgeCases: 0, cobrindoErro: 0, happyPath: 0, teatro: 0 });
+console.log(JSON.stringify(_r4));`}
+  expected='{"qualidade":"boa","problemas":[]}
+{"qualidade":"ruim","problemas":["so happy path","sem edge cases"]}
+{"qualidade":"ruim","problemas":["muito teatro"]}
+{"qualidade":"ruim","problemas":["so happy path","sem edge cases","muito teatro"]}'
+  slug="engenharia-ia"
+  nodeId="ia-no-test"
+/>
+
+<Quiz
+  question="O que diferencia um 'teste de IA' útil de 'teste teatro'?"
+  options={[
+    {
+      text: "Teste útil testa comportamento (edge cases, error handling, boundary, mutation). Teste teatro testa 'happy path only', implementação em vez de lógica, ou mocks excessivos que tornam o teste inútil. Mutation testing (Stryker) detecta testes que não pegam bugs reais.",
+      correct: true,
+      explanation:
+        "A diferença central: **teste útil** = testa **comportamento** (input X gera output Y por causa da lógica Z). **Teste teatro** = testa **'que o código faz o que faz'** (input X gera output Y, mas teste não diz **o que** testa). **Stryker mutation testing** é a **melhor forma** de detectar teatro: modifica o código (troca + por -, > por <) e roda testes. Se teste **passa com código mutado** = teste **não pegaria o bug real**. **80%+ mutation score** = testes bons. **Sinais de teatro**: (1) só happy path, (2) `expect(true).toBe(true)`, (3) `toBeTruthy` sem contexto, (4) testes duplicados, (5) mocks excessivos. **Como IA gera testes bons**: especifique framework, **edge cases** (null, vazio, Unicode), **error handling**, **boundary** (ex: age=18 exato), **comportamento não implementação**, e **mutation score 80%+** como meta.",
+    },
+    {
+      text: "Teste teatro é um mito - qualquer teste que passa é útil.",
+      correct: false,
+      explanation:
+        "Falso. **Teste teatro** é um problema **real** em suites geradas por IA ou devs juniors. **Exemplo clássico**: 30 testes que chamam a função com input válido e esperam output válido. Todos verdes. **Bug em prod** que os 30 testes não pegam (input inválido, edge case). **Stryker** quantifica isso: **mutation score 30%** = 70% dos bugs **não seriam pegos**. **Teste 'verde' != teste 'útil'**. **Mutation testing** é a solução. **Code coverage alto != bons testes** - 100% coverage com testes teatro = 0% utilidade.",
+    },
+    {
+      text: "IA gera testes perfeitos - não precisa validar.",
+      correct: false,
+      explanation:
+        "Falso. **IA gera testes 'happy path only'** por default - o caminho mais fácil. Sem **instrução explícita** de cobrir edge cases, error handling, boundary, IA entrega 30 testes de teatro. **Por que?** IA foi treinada para 'resolver o problema' - input válido, output esperado. **Não foi treinada** em 'cobrir 8 tipos de edge cases por função'. **É trabalho do dev** especificar **o que testar**. **5 min de prompt engineering** (especificar edge cases, error handling, mutation) = testes 3x mais úteis.",
+    },
+  ]}
+/>

@@ -1,0 +1,93 @@
+{
+  "slug": "engenharia-ia",
+  "title": "Engenharia assistida por IA: Claude Code, Cursor, Copilot, audit, testes e refactor",
+  "description": "Trilha sobre engenharia de software assistida por IA: comparativo de ferramentas (Claude Code, Cursor, Copilot, Cody, Continue), como dividir tarefas para IA (prompt direto vs plano multi-step), como auditar codigo gerado (red flags, seguranca, performance), IA em testes (gerar e validar que nao sao teatro), IA em refactor (validar tipos, edge cases), quando NAO usar IA (lockfile, secrets, legal), code review de PR com muito codigo gerado (prompts reproduziveis, diffs auditaveis). Foco em patterns, nao em ferramentas especificas - cobre Claude Code e Cursor como exemplo mas patterns se aplicam a qualquer AI coding tool.",
+  "difficulty": "intermediario",
+  "skills": [
+    "ia",
+    "ai",
+    "ai-coding",
+    "ai-assisted-development",
+    "claude-code",
+    "cursor",
+    "github-copilot",
+    "copilot",
+    "cody",
+    "continue",
+    "code-review",
+    "audit",
+    "refactor",
+    "tests",
+    "prompts",
+    "prompt-engineering",
+    "code-quality",
+    "ai-ethics",
+    "supply-chain",
+    "secret-scanning",
+    "vibe-coding"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "ai-coding-tools-overview",
+      "title": "AI coding tools overview: Claude Code, Cursor, Copilot, Cody, Continue",
+      "type": "topic",
+      "recommended": true,
+      "children": ["dividir-tarefas-para-ia"]
+    },
+    {
+      "id": "dividir-tarefas-para-ia",
+      "title": "Dividir tarefas pra IA: quando cabe num prompt, quando precisa de plano",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ler-codigo-gerado"]
+    },
+    {
+      "id": "ler-codigo-gerado",
+      "title": "Ler codigo gerado: como auditar diff, red flags, seguranca, performance",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ia-no-test"]
+    },
+    {
+      "id": "ia-no-test",
+      "title": "IA no test: gerar testes, validar que nao sao teatro",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ia-no-refactor"]
+    },
+    {
+      "id": "ia-no-refactor",
+      "title": "IA no refactor: refactor assistido, validar tipos, evitar alucinacao",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["quando-nao-usar-ia"]
+    },
+    {
+      "id": "quando-nao-usar-ia",
+      "title": "Quando NAO usar IA: lockfile, secrets, codigo com implicacao legal/seguranca",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["ai-aware-code-review"]
+    },
+    {
+      "id": "ai-aware-code-review",
+      "title": "AI-aware code review: revisar PRs com muito codigo gerado, prompts reproduziveis",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto final: feature completa com IA no loop, diffs auditaveis, PR limpo",
+      "type": "milestone",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

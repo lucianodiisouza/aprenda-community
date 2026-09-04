@@ -1,0 +1,537 @@
+---
+id: vercel-edge
+title: "Vercel Edge: Edge runtime, ISR, on-demand revalidation"
+resources:
+  - title: "Vercel - Edge Functions (EN)"
+    url: https://vercel.com/docs/functions/edge-functions
+    lang: en
+    type: doc
+    free: true
+  - title: "Next.js - ISR (EN)"
+    url: https://nextjs.org/docs/app/building-your-application/data-fetching/incremental-static-regeneration
+    lang: en
+    type: doc
+    free: true
+  - title: "Vercel - Functions API (EN)"
+    url: https://vercel.com/docs/functions
+    lang: en
+    type: doc
+    free: true
+---
+
+Voce fez deploy no Cloudflare Workers.
+**Vercel** tem a **outra abordagem**
+pra edge: integracao nativa com
+**Next.js**, **ISR** (revalidacao
+incremental), e **on-demand
+revalidation**. **Esse no cobre
+Vercel Edge**: o runtime, como
+configurar **ISR**, **on-demand
+revalidation**, e quando Vercel e'
+melhor escolha que Cloudflare.
+
+Vercel e' **mais usado pra Next.js**:
+**Git push → build automatico →
+deploy**. **ISR** e' o **diferencial**:
+**SSG + revalidacao on-demand** =
+**conteudo estatico rapido + updates
+sem rebuild**.
+
+Voce sai de "Workers e' edge" pra
+"Vercel tem edge + ISR + Next.js
+integrado".
+
+## O essencial 🟢
+
+**Vercel: o que e' e quando usar.**
+
+Vercel e' **plataforma de deploy** com
+**integracao nativa em Next.js**:
+git push → build → URL em segundos.
+**Edge runtime** = **V8 isolate** (mesmo
+modelo do Cloudflare Workers), mas
+integrado com **Next.js**,
+**Vercel Functions** (Node runtime),
+**Vercel KV/Postgres/Blob** (storage).
+
+**Use Vercel** quando: Next.js,
+integracao Git, preview por PR, ISR
+nativo. **Use Cloudflare** quando:
+mais controle, V8 isolate puro, custo
+baixo, R2/KV/D1.
+
+**Next.js com ISR - o "SSG com
+update".**
+
+```tsx
+// app/products/[id]/page.tsx
+export const revalidate = 3600;  // 1h
+// ou revalidate = false (static, sem update)
+// ou revalidate = 0 (dynamic, sempre renderiza)
+
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await fetch(`https://api.example.com/products/${params.id}`)
+    .then((r) => r.json());
+  return <div>{product.name}</div>;
+}
+```
+
+**`revalidate`** = tempo (segundos)
+ate a pagina ser **revalidada** no
+**proximo request**. **SSG-like**
+performance + **ISR-like** updates.
+**Default** em Next.js 14+ e' 0
+(dynamic), **use revalidate** pra
+ISR.
+
+**On-demand revalidation - "atualiza
+agora, sem esperar 1h".**
+
+```ts
+// app/api/revalidate/route.ts
+import { revalidatePath, revalidateTag } from "next/cache";
+import { NextResponse } from "next/server";
+
+export async function POST(request: Request) {
+  const { path, tag, secret } = await request.json();
+
+  if (secret !== process.env.REVALIDATE_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (path) revalidatePath(path);
+  if (tag) revalidateTag(tag);
+
+  return NextResponse.json({ revalidated: true });
+}
+```
+
+**Use**: CMS publica novo conteudo →
+POST `/api/revalidate?path=/blog/novo-post`
+→ pagina atualiza **imediatamente**.
+
+**`revalidateTag` - revalidacao
+granular.**
+
+```ts
+// app/products/[id]/page.tsx
+export default async function ProductPage({ params }: { params: { id: string } }) {
+  const product = await fetch(`https://api.example.com/products/${params.id}`, {
+    next: { tags: [`product-${params.id}`] },
+  }).then((r) => r.json());
+  return <div>{product.name}</div>;
+}
+
+// app/api/revalidate/route.ts
+revalidateTag(`product-${params.id}`);  // revalida so essa pagina
+```
+
+**Use `tags`** pra revalidar **grupo
+de paginas** (ex: todas paginas de
+produto de uma categoria).
+
+**Vercel Edge Functions - codigo em
+edge.**
+
+```ts
+// middleware.ts (roda em edge)
+import { NextResponse } from "next/server";
+
+export const config = {
+  matcher: ["/api/:path*", "/((?!_next|.*\\..*).*)"],
+};
+
+export default async function middleware(request: Request) {
+  const country = request.headers.get("x-vercel-ip-country") || "US";
+  const url = new URL(request.url);
+
+  // Geo-redirect
+  if (country === "BR" && !url.pathname.startsWith("/br")) {
+    return NextResponse.redirect(new URL(`/br${url.pathname}`, request.url));
+  }
+
+  // Auth check
+  const token = request.cookies.get("session");
+  if (!token && url.pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
+}
+```
+
+**`middleware.ts`** roda em **toda
+request** antes de chegar na rota.
+**Edge runtime** = < 5ms cold start.
+**Use pra**: auth, geo-redirect, A/B
+test, rate limit.
+
+**Vercel Functions (Node runtime).**
+
+```ts
+// app/api/checkout/route.ts
+import { NextResponse } from "next/server";
+
+export async function POST(request: Request) {
+  // Roda em Node.js (NAO edge)
+  // CPU/memoria completos, sem limitacao
+  const { cartId, payment } = await request.json();
+
+  // ... logica pesada (payment, DB queries) ...
+
+  return NextResponse.json({ success: true });
+}
+```
+
+**Use Node runtime** pra: payment,
+heavy computation, **Node APIs** (fs,
+crypto). **Edge runtime** pra: auth
+check, A/B test, geo, light logic.
+
+**Config de runtime.**
+
+```ts
+// Edge (default em middleware)
+export const runtime = "edge";  // V8 isolate
+
+// Node
+export const runtime = "nodejs";  // Node.js (Vercel serverless)
+```
+
+**Vercel KV (Redis-like).**
+
+```ts
+import { kv } from "@vercel/kv";
+
+// SET
+await kv.set("user:123", { name: "Ana" });
+await kv.set("user:123", value, { ex: 3600 });  // 1h TTL
+
+// GET
+const user = await kv.get("user:123");
+
+// INCR (atomic counter)
+await kv.incr("counter:page-views");
+```
+
+**Use Vercel KV** pra: session, rate
+limit, feature flag, cache.
+
+**Vercel Postgres.**
+
+```ts
+import { sql } from "@vercel/postgres";
+
+const { rows } = await sql`SELECT * FROM users WHERE id = ${userId}`;
+```
+
+**Postgres** serverless, **1 connection
+por request**, **scale automatica**.
+
+**Vercel Blob (object storage).**
+
+```ts
+import { put } from "@vercel/blob";
+
+const { url } = await put("uploads/image.png", imageBuffer, {
+  access: "public",
+});
+```
+
+**Use** pra uploads, imagens, files.
+
+**Edge runtime vs Node runtime - quando
+usar cada.**
+
+| Caso                            | Runtime  |
+| ------------------------------- | -------- |
+| Auth check                       | Edge     |
+| Geo-redirect                    | Edge     |
+| A/B test                         | Edge     |
+| Rate limit                       | Edge     |
+| Light API (read, transform)     | Edge     |
+| Payment                          | Node     |
+| ML inference                     | Node     |
+| WebSocket longo                 | Node     |
+| File upload grande              | Node     |
+| Node APIs (fs, child_process)   | Node     |
+
+**Edge** = **latencia** + **scale
+global**. **Node** = **CPU/memoria
+completo**.
+
+**Preview deploys por PR.**
+
+```bash
+# Vercel detecta PR, faz build, gera URL
+# https://feat-novo-checkout-meuapp.vercel.app
+# Cada PR tem URL unica
+```
+
+**PM/tester/QA** revisa visual sem
+checkout local. **Vercel** faz isso
+por default. **Integra com GitHub
+PR comments**: bot posta URL no PR.
+
+**Configurando ISR com Next.js 14+.**
+
+```ts
+// app/blog/page.tsx
+export const revalidate = 60;  // revalidar a cada 60s
+
+// ou on-demand via API
+// app/api/revalidate/route.ts
+import { revalidatePath } from "next/cache";
+
+export async function POST(req: Request) {
+  const { secret, path } = await req.json();
+  if (secret !== process.env.REVALIDATE_SECRET) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  revalidatePath(path);
+  return Response.json({ revalidated: true });
+}
+```
+
+**On-demand revalidation** = **CMS
+publica → POST revalida → conteudo
+novo no edge**.
+
+**Custo de Vercel.**
+
+- **Hobby:** free, 100GB bandwidth.
+- **Pro:** $20/seat, 1TB bandwidth.
+- **Enterprise:** custom.
+- **Edge Functions:** 500K invocations
+  free, $2/M depois.
+- **ISR:** incluido.
+- **KV:** 30K req/dia free.
+- **Postgres:** 256MB free, 60h
+  compute.
+
+**Em 2026**, Vercel e' **caro** pra
+alto volume. **Use Cloudflare** pra
+$ e Vercel pra DX (Next.js).
+
+## Aprofundamento 🟡
+
+**Vercel Analytics - RUM built-in.**
+
+```tsx
+// app/layout.tsx
+import { Analytics } from "@vercel/analytics/react";
+
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics />
+      </body>
+    </html>
+  );
+}
+```
+
+**Vercel Analytics** mede **Web
+Vitals reais** de users em prod.
+**Free** ate 100K page views/dia.
+
+**Vercel Speed Insights - similar,
+mais focado em performance.**
+
+**Edge Config - feature flags em edge
+com < 1ms latency.**
+
+```ts
+import { get } from "@vercel/edge-config";
+
+const flag = await get("newCheckout");
+// 0-1ms (cached at edge)
+```
+
+**Use** pra: feature flags, A/B
+tests, geo-targeting. **< 1ms** vs
+**50ms** (KV).
+
+**ISR e `revalidatePath` vs
+`revalidateTag`.** **`revalidatePath`**
+= revalida **1 path especifico**.
+**`revalidateTag`** = revalida
+**todas paginas com aquela tag**.
+**Use `tags`** pra granularidade
+(categoria, autor, etc).
+
+**Streaming SSR com Suspense.**
+
+```tsx
+// app/product/[id]/page.tsx
+import { Suspense } from "react";
+
+export default function ProductPage({ params }: { params: { id: string } }) {
+  return (
+    <div>
+      <h1>Product</h1>
+      <Suspense fallback={<Skeleton />}>
+        <ProductDetails id={params.id} />  {/* server component async */}
+      </Suspense>
+    </div>
+  );
+}
+
+async function ProductDetails({ id }: { id: string }) {
+  const product = await fetch(`https://api.example.com/products/${id}`).then((r) => r.json());
+  return <div>{product.name}</div>;
+}
+```
+
+**Streaming SSR** = **HTML streamed em
+chunks** (TTFB rapido) + **Suspense**
+pula partes lentas. **App e'
+interativo enquanto dados chegam**.
+
+**Server Actions (Next.js 14+).**
+
+```ts
+// app/products/actions.ts
+"use server";
+
+export async function addToCart(productId: string) {
+  // Server-side mutation
+  await db.cart.add(userId, productId);
+  revalidatePath("/cart");
+}
+```
+
+**Server Actions** = **mutations sem
+API route**. **Rodam em server**, NAO
+em edge.
+
+**`next/image` automatic optimization.**
+
+```tsx
+import Image from "next/image";
+
+<Image src="/hero.jpg" alt="Hero" width={1200} height={600} priority />
+```
+
+**Next.js** automaticamente: **gera
+WebP/AVIF**, **lazy loads**, **gera
+srcset responsivo**. **Cobre**
+`image-optimization` no proximo no.
+
+**Differential serving.**
+
+```ts
+// next.config.js
+module.exports = {
+  experimental: {
+    workerThreads: false,
+    cpus: 1,
+  },
+};
+```
+
+**Build** gera **diferentes bundles**
+para **Edge** (minimo) e **Node**
+(full). **Edge bundle** = < 1MB
+(rapido), **Node bundle** = full.
+
+**Leitura recomendada:**
+
+- [Vercel - Edge Functions](https://vercel.com/docs/functions/edge-functions) - edge runtime, middleware, limits.
+- [Next.js - ISR](https://nextjs.org/docs/app/building-your-application/data-fetching/incremental-static-regeneration) - revalidate, on-demand, tags.
+- [Vercel - Functions API](https://vercel.com/docs/functions) - edge + node runtime, deploy.
+
+> Dica: o erro mais comum em Vercel e'
+> **misturar edge e Node runtime
+> sem pensar**. Edge = **rapido mas
+> limitado**, Node = **completo mas
+> lento**. **Use edge** pra auth,
+> geo, A/B test (latencia < 50ms).
+> **Use Node** pra payment, ML, file
+> upload (CPU/memoria). **`middleware.ts`**
+> e' edge by default; **route
+> handlers** sao Node by default.
+> **Configure** `export const runtime =
+> "edge"` explicitamente. **Mix
+> inteligente** = **melhor DX + melhor
+> performance**.
+
+No proximo no, vamos **image
+optimization**: Next/Image, Cloudflare
+Images, formato moderno (WebP, AVIF),
+e lazy loading pra **LCP rapido**.
+
+<Checkpoint
+  challenge="Implemente a função `configurarRevalidate(opcoes)` que monta o objeto de configuracao do ISR do Next.js a partir das opcoes. Recebe: opcoes = { revalidate: number|null (segundos, null = 'never'), tags: string[] (ex: ['product', 'user-123']), path: string|null (path especifico pra revalidacao, null se tags), secret: string (env var pra auth do webhook) }. Retorna: { tipo: 'time-based'|'tag-based'|'on-demand', revalidate: number|null, tags: string[], path: string|null, auth: { type: 'bearer', secret: string } }. Regras: tipo = 'time-based' se revalidate !== null, senao 'tag-based' se tags.length > 0 e path === null, senao 'on-demand'. Sempre inclua o objeto auth com type 'bearer' e secret do input."
+  starterCode={`// Implemente configurarRevalidate(opcoes) que monta o objeto
+// de configuracao do ISR do Next.js a partir das opcoes.
+//
+// Schema de entrada:
+//   opcoes = {
+//     revalidate: number | null,
+//     tags: string[],
+//     path: string | null,
+//     secret: string
+//   }
+//
+// Schema de saida:
+//   {
+//     tipo: 'time-based' | 'tag-based' | 'on-demand',
+//     revalidate: number | null,
+//     tags: string[],
+//     path: string | null,
+//     auth: { type: 'bearer', secret: string }
+//   }
+//
+// Regras:
+// - tipo = 'time-based' se revalidate !== null
+// - tipo = 'tag-based' se tags.length > 0 e path === null
+// - senao tipo = 'on-demand'
+// - sempre inclua o objeto auth
+function configurarRevalidate(opcoes) {
+  return { tipo: 'on-demand', revalidate: null, tags: [], path: null, auth: { type: 'bearer', secret: '' } };
+}
+
+const _r1 = configurarRevalidate({ revalidate: 60, tags: [], path: null, secret: 'abc' });
+console.log(JSON.stringify(_r1));
+
+const _r2 = configurarRevalidate({ revalidate: null, tags: ['product-123'], path: null, secret: 'xyz' });
+console.log(JSON.stringify(_r2));
+
+const _r3 = configurarRevalidate({ revalidate: null, tags: [], path: '/blog/novo-post', secret: 'secret123' });
+console.log(JSON.stringify(_r3));
+
+const _r4 = configurarRevalidate({ revalidate: 3600, tags: ['product'], path: null, secret: 'key' });
+console.log(JSON.stringify(_r4));`}
+  expected='{"tipo":"time-based","revalidate":60,"tags":[],"path":null,"auth":{"type":"bearer","secret":"abc"}}
+{"tipo":"tag-based","revalidate":null,"tags":["product-123"],"path":null,"auth":{"type":"bearer","secret":"xyz"}}
+{"tipo":"on-demand","revalidated":true,"path":"/blog/novo-post","auth":{"type":"bearer","secret":"secret123"}}'
+  slug="edge-deploy-frontend"
+  nodeId="vercel-edge"
+/>
+
+<Quiz
+  question="O que e' ISR (Incremental Static Regeneration) e como ele combina o melhor de SSG e SSR?"
+  options={[
+    {
+      text: "ISR = SSG (HTML pre-renderizado em build, rapido) + revalidacao on-demand ou time-based. Build inicial gera HTML estatico, requests sao servidas do CDN (rapido), e a pagina e' regenerada quando stale (time-based, ex: 1h) ou on-demand (ex: CMS publica novo conteudo). Combina performance de SSG (TTFB 10-50ms) com flexibilidade de SSR (conteudo atualiza sem rebuild).",
+      correct: true,
+      explanation:
+        "ISR e' o **melhor dos dois mundos**: (1) **Performance de SSG** - HTML pre-renderizado em build time, servido do CDN, **TTFB 10-50ms**. (2) **Flexibilidade de SSR** - conteudo atualiza sem rebuild completo. **Como funciona**: (1) Build inicial gera HTML estatico (SSG), (2) Cada request serve HTML cacheado (rapido), (3) Quando stale (apos `revalidate: 3600` = 1h), **proximo request** regenera em background, (4) **On-demand revalidation** via API (`revalidatePath` ou `revalidateTag`) atualiza **imediatamente** quando CMS publica. **Casos de uso**: e-commerce (produto atualiza), blog com comentarios (conteudo dinamico), docs (atualizacoes periodicas). **Implementacao Next.js 14+**: `export const revalidate = 3600` (1h) + `revalidatePath('/blog/novo-post')` (on-demand). **Vantagem vs SSR puro**: SSG cachea, ISR atualiza so quando precisa. **Vantagem vs SSG puro**: SSG exige rebuild pra cada update, ISR atualiza sem rebuild.",
+    },
+    {
+      text: "ISR e' igual a SSR - HTML gerado em request time.",
+      correct: false,
+      explanation:
+        "Falso. **SSR** = HTML gerado em **cada request** (no server). **ISR** = HTML gerado em **build time** (SSG-like) + **revalidado on-demand ou time-based**. **ISR herda de SSG**, NAO de SSR. **Diferenca critica**: SSR = compute em todo request (TTFB 100-500ms). ISR = compute **so quando stale** (1x a cada 1h ou on-demand). **ISR vence** em **performance** (TTFB 10-50ms = SSG-like) e **dinamismo** (atualiza sem rebuild). **SSR vence** em **freshness** maxima (toda request = render).",
+    },
+    {
+      text: "ISR e' inutil - SSG ja' resolve tudo.",
+      correct: false,
+      explanation:
+        "Falso. **SSG** exige **rebuild completo** pra cada update. Em apps com **milhares de paginas** (e-commerce, marketplace), rebuild pode levar **minutos** e gerar **custo de build**. **ISR** resolve: **SSG inicial** (rapido) + **revalidacao granular** (1 pagina por vez, sem rebuild). **Exemplo**: 10K produtos, 1 atualiza preco → SSG = rebuild 10K paginas. ISR = revalidar so essa pagina. **Em 2026**, Next.js, Nuxt, e Astro suportam ISR. **Use ISR** quando: (1) muitas paginas, (2) updates parciais, (3) cache friendly. **Use SSG** quando: poucos updates, conteudo estatico.",
+    },
+  ]}
+/>

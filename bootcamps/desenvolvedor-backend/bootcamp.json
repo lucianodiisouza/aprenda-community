@@ -11,6 +11,7 @@
     { "projeto": "calculadora-de-gorjeta", "title": "Primeiro projeto: coloque a lógica em prática", "description": "Um build pequeno pra fixar variáveis, condicionais e funções logo depois do primeiro contato com código." },
     { "trilha": "terminal-para-devs", "description": "O terminal é onde o backend vive: comandos essenciais em qualquer ambiente unix (local, VPS, container)." },
     { "trilha": "git", "description": "Controle de versão do zero ao avançado — obrigatório em qualquer time e pré-requisito pra deploy e colaboração." },
+    { "trilha": "conventional-commits", "description": "Mensagens de commit que contam uma história: o formato type(escopo): descrição, SemVer automática e changelog — o elo entre o histórico e a release." },
     { "trilha": "typescript", "description": "TypeScript logo depois de JavaScript: a mente ainda está fresca sobre a linguagem, e o TS vira a forma padrão de escrever código backend no mercado." },
     { "trilha": "sql-banco-de-dados", "description": "Modelagem e SQL puro — a fundação de dados antes de qualquer ORM." },
     { "projeto": "modelagem-de-banco", "description": "Modele o banco de um mini e-commerce e escreva as consultas do negócio em SQL puro." },
@@ -21,7 +22,8 @@
     { "trilha": "docker-compose-e-workflows", "description": "Suba app + banco + cache com um comando e monte o ambiente de dev e produção da sua API." },
     { "projeto": "servico-com-docker", "description": "Coloque a sua API num container e suba app + banco com um comando só." },
     { "trilha": "complexidade-de-algoritmos", "description": "Pra escrever backend que aguenta escala." },
-    { "projeto": "busca-com-filtros", "description": "Sinta o custo das operações crescerem com os dados — a teoria de complexidade na prática." },
+    { "projeto": "busca-com-filtros", "description": "Sinta o custo das operações crescerem com os dados - a teoria de complexidade na prática." },
+    { "trilha": "ciberseguranca-para-desenvolvedores", "description": "A base de segurança que todo dev backend precisa: dados, redes, autenticação, autorização, vulnerabilidades, OWASP Top 10 e segurança defensiva." },
     { "projeto": "encurtador-de-url", "title": "Projeto final: um encurtador de URLs" }
   ]
 }

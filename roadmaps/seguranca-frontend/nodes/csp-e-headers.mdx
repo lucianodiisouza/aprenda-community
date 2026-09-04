@@ -550,7 +550,7 @@ quando usar `localStorage` vs
 "qual storage pra qual dado".
 
 <Checkpoint
-  challenge="Implemente a função `gerarCSP(config)` que recebe um objeto de config com chaves: scripts (array de origens permitidas, ex: ['self', 'https://cdn.com']), styles (array, ex: ['self', "'unsafe-inline'"]), images (array), connect (array), frameAncestors (string ou 'none'). Retorna a string CSP completa no formato 'default-src \"none\"; script-src ...; style-src ...; ...' (as directives sao separadas por '; ', valores por espaco)."
+  challenge="Implemente a função `gerarCSP(config)` que recebe um objeto de config com chaves: scripts (array de origens permitidas, ex: ['self', 'https://cdn.com']), styles (array, ex: ['self', &quot;'unsafe-inline'&quot;]), images (array), connect (array), frameAncestors (string ou 'none'). Retorna a string CSP completa no formato 'default-src &quot;none&quot;; script-src ...; style-src ...; ...' (as directives sao separadas por '; ', valores por espaco)."
   starterCode={`// Implemente gerarCSP(config) que recebe:
 //
 // config = {
@@ -590,8 +590,8 @@ const _r2 = gerarCSP({
   frameAncestors: "'self'",
 });
 console.log(JSON.stringify(_r2));`}
-  expected='"default-src \'none\'; script-src self https://cdn.example.com; style-src self \'unsafe-inline\'; img-src self data: https:; connect-src self https://api.example.com; frame-ancestors \'none\'"
-"default-src \'none\'; script-src self; style-src self; img-src self; connect-src self; frame-ancestors \'self\'"'
+  expected={`"default-src 'none'; script-src self https://cdn.example.com; style-src self 'unsafe-inline'; img-src self data: https:; connect-src self https://api.example.com; frame-ancestors 'none'"
+"default-src 'none'; script-src self; style-src self; img-src self; connect-src self; frame-ancestors 'self'"`}
   slug="seguranca-frontend"
   nodeId="csp-e-headers"
 />

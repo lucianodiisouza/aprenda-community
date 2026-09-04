@@ -589,12 +589,12 @@ e publicação no npm.
       explanation:
         "Test runner roda cada story em browser real, executa play function, e roda axe-core via addon-a11y. Pega bug de logica (callback nao chamado) e a11y (aria faltando). Chromatic tira screenshot de cada story e compara com baseline - pega mudanca visual (cor, posicao, tamanho). Os dois sao complementares: test runner não pega pixel-level, Chromatic não pega logica. A rede de seguranca completa de DS tem os dois + unit test (Vitest).",
     },
-      text: "São a mesma coisa - test runner e Chromatic fazem a mesma coisa de jeitos diferentes.",
+      { text: "São a mesma coisa - test runner e Chromatic fazem a mesma coisa de jeitos diferentes.",
       correct: false,
       explanation:
         "Não. Test runner (Storybook test runner) roda cada story em browser real, executa play function, e roda axe-core - testa COMPORTAMENTO e A11Y. Chromatic tira screenshot e compara com baseline - testa VISUAL. São camadas diferentes: comportamento, a11y, visual. As 3 juntas (test runner + Chromatic + unit test) sao a cobertura completa de DS.",
     },
-      text: "Chromatic substitui test runner - visual review pega tudo.",
+      { text: "Chromatic substitui test runner - visual review pega tudo.",
       correct: false,
       explanation:
         "Não. Chromatic pega mudanca visual (cor, layout, tamanho) mas NAO pega: callback nao chamado, aria-label faltando, focus trap quebrado, keyboard navigation errada. Esses sao comportamento/a11y, não visual. So visual review e' insuficiente - precisa do test runner tambem.",
