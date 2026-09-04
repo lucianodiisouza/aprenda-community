@@ -1,0 +1,74 @@
+---
+id: listas-e-keys
+title: "Listas e keys"
+resources:
+  - title: "Renderizando listas"
+    url: https://pt-br.react.dev/learn/rendering-lists
+    type: doc
+    lang: pt
+    free: true
+---
+
+Dados reais quase sempre chegam em listas: produtos, mensagens, comentários,
+pedidos. Em React, `map` transforma cada item do array em JSX.
+
+```jsx
+const products = [
+  { id: 101, name: 'Catuaí', price: 34.9, available: true },
+  { id: 102, name: 'Bourbon', price: 39.5, available: false },
+  { id: 103, name: 'Geisha', price: 58.0, available: true },
+];
+
+function ProductList({ products }) {
+  const availableProducts = products.filter((product) => product.available);
+
+  return (
+    <ul>
+      {availableProducts.map((product) => (
+        <li key={product.id}>
+          <strong>{product.name}</strong>
+          <span> · R$ {product.price.toFixed(2)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function App() {
+  return <ProductList products={products} />;
+}
+```
+
+A `key` ajuda o React a acompanhar a identidade de cada item entre renderizações.
+Use um identificador estável do próprio dado. Índice do array é um último recurso
+para listas que nunca reordenam, inserem ou removem itens.
+
+- **`map`:** transforma dados em elementos React.
+- **`filter`:** pode preparar a coleção antes da renderização.
+- **`key`:** identifica cada irmão de forma estável.
+
+> Dica: `key` não chega ao componente como prop. Se o filho também precisa do
+> identificador, passe `id={product.id}` separadamente.
+
+No próximo nó, a interface vai deixar de ser estática: vamos responder a
+**eventos**.
+
+<Quiz
+  question="Qual é a melhor key para uma lista de produtos que pode ser reordenada?"
+  options={[
+    {
+      text: "Um id estável que pertence ao produto",
+      correct: true,
+    },
+    {
+      text: "O índice atual do array em qualquer situação",
+      correct: false,
+      explanation: "Índices podem mudar quando a lista reordena, insere ou remove itens.",
+    },
+    {
+      text: "Math.random() gerado durante cada renderização",
+      correct: false,
+      explanation: "Uma key que muda a cada render impede o React de acompanhar a identidade do item.",
+    },
+  ]}
+/>

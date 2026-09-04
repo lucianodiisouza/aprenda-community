@@ -1,0 +1,84 @@
+---
+id: context
+title: "Context: dados compartilhados sem prop drilling"
+resources:
+  - title: "Passando dados profundamente com Context"
+    url: https://pt-br.react.dev/learn/passing-data-deeply-with-context
+    type: doc
+    lang: pt
+    free: true
+---
+
+Props deixam o fluxo de dados explícito, mas algumas informações realmente
+atravessam muitas camadas: tema, idioma ou sessão atual. Context faz com que um
+ancestral forneça um valor para descendentes sem repassar a prop em cada nível.
+
+```jsx
+import { createContext, useContext, useState } from 'react';
+
+const ThemeContext = createContext(null);
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function Toolbar() {
+  const { theme, setTheme } = useContext(ThemeContext);
+
+  return (
+    <header data-theme={theme}>
+      <span>Tema atual: {theme}</span>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+        Alternar tema
+      </button>
+    </header>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <Toolbar />
+    </ThemeProvider>
+  );
+}
+```
+
+Context não substitui props. Se o dado precisa atravessar só um ou dois níveis,
+props ou composição costumam ser mais simples e deixam dependências mais claras.
+
+- **`createContext`:** cria o canal de contexto.
+- **Provider:** define o valor disponível na subárvore.
+- **`useContext`:** lê e assina mudanças desse valor.
+
+> Dica: antes de criar um Context, pergunte se o estado está no lugar certo e se
+> composição com `children` resolveria o problema com menos acoplamento.
+
+No próximo nó, vamos organizar atualizações de estado mais complexas usando
+**ações e um reducer**.
+
+<Quiz
+  question="Quando Context é mais apropriado?"
+  options={[
+    {
+      text: "Quando um dado como tema ou sessão é necessário em componentes distantes da mesma subárvore",
+      correct: true,
+    },
+    {
+      text: "Sempre que um componente recebe duas props",
+      correct: false,
+      explanation: "Props continuam sendo a forma mais simples e explícita para relações próximas.",
+    },
+    {
+      text: "Para substituir qualquer useState",
+      correct: false,
+      explanation: "Context transporta valores; ele não elimina a necessidade de modelar estado.",
+    },
+  ]}
+/>

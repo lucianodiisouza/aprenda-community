@@ -1,0 +1,69 @@
+---
+slug: pokedex-react
+title: "Pokédex em React"
+description: "Construa uma Pokédex que consome API, trata estados assíncronos, organiza favoritos e mostra detalhes em uma arquitetura limpa."
+difficulty: intermediario
+published: "2026-08-30"
+skills:
+  - react
+  - fetch
+  - use-effect
+  - estado-assincrono
+  - custom-hooks
+  - context
+  - use-reducer
+  - arquitetura
+  - acessibilidade
+trilhas:
+  - react-do-zero
+estimate: "1 fim de semana"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Construa uma Pokédex consumindo a PokéAPI ou outra API pública equivalente. A
+interface precisa continuar útil enquanto os dados carregam, quando a rede falha
+e quando a pessoa filtra, abre detalhes ou favorita itens.
+
+## Objetivo
+
+Fechar a trilha integrando dados remotos com estado local. Você vai praticar
+`useEffect`, `fetch`, cleanup, `useRef` quando fizer sentido, Custom Hooks,
+Context/reducer quando houver motivo e uma arquitetura que evita colocar toda a
+aplicação dentro de `App.jsx`.
+
+## Requisitos
+
+- [ ] Buscar uma lista inicial de Pokémon em uma API pública
+- [ ] Exibir estados separados de loading, erro, vazio e sucesso
+- [ ] Verificar erros HTTP antes de converter a resposta
+- [ ] Cancelar ou ignorar requisições que perderam relevância quando necessário
+- [ ] Renderizar cards com `key` estável
+- [ ] Mostrar nome, imagem, tipos e pelo menos uma informação numérica relevante
+- [ ] Implementar busca por nome sem guardar a lista filtrada em estado duplicado
+- [ ] Criar filtro por tipo ou por favoritos
+- [ ] Abrir uma visão de detalhes com informações adicionais do item selecionado
+- [ ] Permitir favoritar/desfavoritar Pokémon
+- [ ] Persistir favoritos localmente ou explicar por que escolheu não persistir
+- [ ] Extrair pelo menos um Custom Hook útil, como `useFavorites`, `usePokemonList` ou `usePokemonDetails`
+- [ ] Separar responsabilidades entre componentes de busca, filtros, lista, card, detalhes e feedback de erro/loading
+- [ ] Documentar no README onde estão os principais estados e por que ficaram nesses componentes
+
+## Desafios extras
+
+- [ ] Paginação ou botão "carregar mais"
+- [ ] Skeleton acessível durante carregamento
+- [ ] Context para favoritos quando houver consumidores distantes
+- [ ] `useReducer` para organizar transições de favoritos/filtros quando o estado ficar mais complexo
+- [ ] Comparar dois Pokémon lado a lado usando estado derivado
+- [ ] Teste automatizado de pelo menos um fluxo importante depois de estudar a trilha de testes
+
+## Dicas
+
+- Faça a primeira versão com poucos itens. Corrija o fluxo de estados antes de adicionar paginação.
+- Não coloque `fetch` dentro do corpo do componente; isso dispararia trabalho em renderizações.
+- Um Custom Hook deve ter um nome que explique a abstração, não apenas esconder código.
+- Se Context só serve para evitar duas props, provavelmente ainda não é necessário.
+- Use `alt` que identifique a imagem do Pokémon; não deixe sprites importantes como imagens anônimas.
+- O projeto é sobre React e arquitetura. O visual pode evoluir, mas os estados da experiência vêm primeiro.

@@ -1,0 +1,85 @@
+---
+id: elevando-estado
+title: "Elevando estado e criando uma fonte de verdade"
+resources:
+  - title: "Compartilhando estado entre componentes"
+    url: https://pt-br.react.dev/learn/sharing-state-between-components
+    type: doc
+    lang: pt
+    free: true
+---
+
+Se dois componentes precisam enxergar e alterar o mesmo dado, guardar uma cópia
+em cada um cria risco de divergência. A solução comum é mover o estado para o
+ancestral compartilhado mais próximo.
+
+```jsx
+import { useState } from 'react';
+
+function CelsiusInput({ value, onChange }) {
+  return (
+    <label>
+      Celsius
+      <input
+        type="number"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function TemperaturePreview({ celsius }) {
+  const fahrenheit = celsius === '' ? '' : Number(celsius) * 1.8 + 32;
+  return <p>Fahrenheit: {fahrenheit === '' ? '-' : fahrenheit.toFixed(1)}</p>;
+}
+
+export default function App() {
+  const [celsius, setCelsius] = useState('');
+
+  return (
+    <main>
+      <CelsiusInput value={celsius} onChange={setCelsius} />
+      <TemperaturePreview celsius={celsius} />
+    </main>
+  );
+}
+```
+
+Agora `App` é a **fonte de verdade**. O input recebe valor e callback por props;
+o preview recebe o mesmo valor e calcula sua apresentação.
+
+<Mermaid
+  chart={`flowchart TB
+    A[App: celsius] -->|value| B[CelsiusInput]
+    B -->|onChange| A
+    A -->|celsius| C[TemperaturePreview]`}
+  caption="O estado fica no ancestral comum e flui para os filhos por props; eventos retornam mudanças ao pai."
+/>
+
+- **Fonte de verdade:** evita múltiplas cópias do mesmo dado.
+- **Lifting state up:** move o estado para o ancestral que coordena os filhos.
+- **Componente controlado:** recebe valor e callback em vez de possuir aquele estado sozinho.
+
+No próximo nó, vamos reduzir ainda mais o estado guardado calculando valores que
+podem ser **derivados** durante a renderização.
+
+<Quiz
+  question="Quando dois componentes precisam compartilhar o mesmo valor editável, onde esse estado costuma ficar?"
+  options={[
+    {
+      text: "No ancestral compartilhado mais próximo que consegue coordenar os dois",
+      correct: true,
+    },
+    {
+      text: "Duplicado nos dois componentes para cada um ser independente",
+      correct: false,
+      explanation: "Duas fontes de verdade podem sair de sincronia.",
+    },
+    {
+      text: "Sempre em Context, mesmo que pai e filhos estejam lado a lado",
+      correct: false,
+      explanation: "Props e estado elevado são mais simples quando a distância é pequena.",
+    },
+  ]}
+/>

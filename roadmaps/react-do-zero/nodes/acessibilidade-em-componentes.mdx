@@ -1,0 +1,129 @@
+---
+id: acessibilidade-em-componentes
+title: "Acessibilidade em Componentes React"
+resources:
+  - title: "React: Accessibility"
+    url: https://legacy.reactjs.org/docs/accessibility.html
+    type: doc
+    lang: en
+    free: true
+  - title: "ARIA live regions - MDN"
+    url: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions
+    type: doc
+    lang: en
+    free: true
+  - title: "Visão geral de WAI-ARIA"
+    url: https://www.w3.org/WAI/standards-guidelines/aria/
+    type: doc
+    lang: en
+    free: true
+---
+
+React não deixa uma interface acessível sozinho. Ele renderiza HTML. Se o HTML,
+os atributos e o foco não comunicarem a mudança certa, a tela pode parecer
+funcionar visualmente e ainda ficar confusa para teclado e leitor de tela.
+
+```jsx
+import { useState } from 'react';
+
+function FavoriteButton({ pressed, onToggle }) {
+  return (
+    <button type="button" aria-pressed={pressed} onClick={onToggle}>
+      {pressed ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+    </button>
+  );
+}
+
+export default function ProductFavorite() {
+  const [favorite, setFavorite] = useState(false);
+
+  return (
+    <section>
+      <h2>Café Catuaí</h2>
+      <FavoriteButton
+        pressed={favorite}
+        onToggle={() => setFavorite((current) => !current)}
+      />
+      <p role="status">
+        {favorite ? 'Produto salvo nos favoritos.' : 'Produto fora dos favoritos.'}
+      </p>
+    </section>
+  );
+}
+```
+
+O botão é nativo, então já funciona com mouse, teclado e leitor de tela. O
+atributo `aria-pressed` comunica o estado "ligado/desligado", e `role="status"`
+anuncia a mudança sem interromper a pessoa.
+
+### Prefira HTML nativo
+
+Use `<button>`, `<a>`, `<label>`, `<input>`, `<form>` e headings reais antes de
+criar controles com `div`. Quando você usa o elemento certo, o navegador entrega
+comportamento, foco e semântica como ponto de partida.
+
+```jsx
+// Evite
+<div onClick={save}>Salvar</div>
+
+// Prefira
+<button type="button" onClick={save}>Salvar</button>
+```
+
+### Estado visual precisa ter estado semântico
+
+Se a tela mostra "selecionado", "aberto", "atual" ou "pressionado", esse estado
+também deve aparecer no HTML quando for relevante.
+
+```jsx
+<button aria-expanded={isOpen} onClick={() => setIsOpen(!isOpen)}>
+  Filtros
+</button>
+
+{isOpen && <aside id="filters">Opções de filtro</aside>}
+```
+
+### Teste como a pessoa usa
+
+Não teste só clicando. Navegue com `Tab`, ative com `Enter` e `Espaço`, leia os
+nomes dos controles e veja se mensagens importantes aparecem no momento certo.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Pessoa ativa controle"] --> B["Estado React muda"]
+    B --> C["JSX renderiza visual"]
+    B --> D["Atributos acessíveis mudam"]
+    D --> E["Tecnologia assistiva entende o estado"]`}
+  caption="Uma mudança de estado em React deve atualizar a aparência e a semântica exposta pelo HTML."
+/>
+
+- **Elemento nativo:** dá comportamento acessível como base.
+- **Atributo semântico:** comunica estados que não aparecem só no texto.
+- **Região de status:** anuncia mudanças importantes sem depender de olhar para a tela.
+- **Teste por teclado:** revela problemas que o clique não mostra.
+
+> Dica: ARIA complementa HTML; não use ARIA para fingir que uma `div` é botão
+> quando um `<button>` resolveria com menos trabalho.
+
+No próximo nó, vamos compartilhar um mesmo estado entre dois componentes sem
+criar cópias divergentes.
+
+<Quiz
+  question="Qual combinação deixa um botão de favoritar mais acessível?"
+  options={[
+    {
+      text: "Usar button nativo, aria-pressed para o estado e texto/status compreensível",
+      correct: true,
+    },
+    {
+      text: "Usar uma div clicável porque ela parece igual ao botão no CSS",
+      correct: false,
+      explanation: "A div não traz comportamento de botão por padrão, como foco e ativação por teclado.",
+    },
+    {
+      text: "Esconder o texto e confiar apenas na mudança de cor",
+      correct: false,
+      explanation: "Cor sozinha não comunica bem estado para todas as pessoas e tecnologias.",
+    },
+  ]}
+/>

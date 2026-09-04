@@ -1,0 +1,65 @@
+---
+slug: catalogo-de-produtos-react
+title: "Catálogo de Produtos em React"
+description: "Construa uma vitrine interativa com cards reutilizáveis, filtros, busca, estados vazios e uma experiência visual gostosa de explorar."
+difficulty: iniciante
+published: "2026-08-30"
+skills:
+  - react
+  - jsx
+  - componentes
+  - props
+  - listas
+  - renderizacao-condicional
+  - eventos
+  - use-state
+  - acessibilidade
+trilhas:
+  - react-do-zero
+estimate: "4-6 horas"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Monte uma vitrine de uma loja fictícia: cafés, camisetas, livros, ferramentas ou
+qualquer coleção que você ache divertida. A graça do projeto está em transformar
+um array de dados em uma interface viva, filtrável e fácil de entender.
+
+## Objetivo
+
+Praticar a primeira fase da trilha: JSX, componentes, props, composição,
+renderização condicional, `map`, `filter`, `key`, eventos e `useState`. No fim,
+você deve olhar para a tela e conseguir apontar a árvore de componentes sem se
+perder em JSX duplicado.
+
+## Requisitos
+
+- [ ] Criar pelo menos 8 produtos com `id`, nome, categoria, preço, imagem, descrição curta e disponibilidade
+- [ ] Renderizar a lista a partir de dados com `map`, sem duplicar cards manualmente
+- [ ] Usar `key` estável baseada no `id` do produto
+- [ ] Criar componentes como `ProductCard`, `ProductGrid`, `CategoryFilter`, `SearchBox` e `EmptyState`
+- [ ] Implementar filtro por categoria usando estado e `filter`
+- [ ] Implementar busca por nome ou descrição sem instalar biblioteca
+- [ ] Exibir estado vazio quando nenhum produto combinar com os filtros
+- [ ] Mostrar visualmente produtos indisponíveis sem remover informação essencial
+- [ ] Criar pelo menos um componente de composição, como `Card`, `Section` ou `PageShell`
+- [ ] Garantir imagens com `alt` adequado e botões nativos para ações
+- [ ] Separar componentes em arquivos quando a divisão melhorar responsabilidade e leitura
+
+## Desafios extras
+
+- [ ] Adicionar ordenação por menor/maior preço
+- [ ] Criar selo de promoção calculado a partir do preço original e atual
+- [ ] Criar uma área "selecionados" ou "favoritos" usando estado
+- [ ] Adicionar modo compacto/lista para visualizar os mesmos produtos de outro jeito
+- [ ] Desenhar uma paleta visual própria para a loja, sem depender de template pronto
+- [ ] Publicar o projeto em um serviço de hospedagem estática
+
+## Dicas
+
+- Comece pelo array e por **um** card. Só depois transforme em lista.
+- Faça um rabisco da árvore antes de codar: `App > filtros > grade > card`.
+- Não guarde o resultado do filtro em outro estado se ele pode ser calculado.
+- Se `ProductCard` recebe props demais sem relação, considere passar `product` inteiro ou rever a fronteira.
+- Teste também com teclado. Filtro, busca e botões precisam funcionar sem depender do mouse.

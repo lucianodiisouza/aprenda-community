@@ -1,0 +1,87 @@
+---
+id: formularios-controlados
+title: "Formulários controlados"
+resources:
+  - title: "Estado: a memória de um componente"
+    url: https://pt-br.react.dev/learn/state-a-components-memory
+    type: doc
+    lang: pt
+    free: true
+  - title: "Respondendo a eventos"
+    url: https://pt-br.react.dev/learn/responding-to-events
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um input controlado recebe seu `value` do estado e atualiza esse estado em
+`onChange`. Isso deixa o React com uma fonte explícita para o valor exibido.
+
+```jsx
+import { useState } from 'react';
+
+export default function NewsletterForm() {
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!email.includes('@')) {
+      setMessage('Digite um e-mail válido.');
+      return;
+    }
+
+    setMessage(`Cadastro realizado para ${email}.`);
+    setEmail('');
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      <label htmlFor="email">E-mail</label>
+      <input
+        id="email"
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+      />
+      <button type="submit">Cadastrar</button>
+      {message && <p role="status">{message}</p>}
+    </form>
+  );
+}
+```
+
+Controlar o campo é útil quando validação, formatação ou outras partes da
+interface dependem do valor atual. Nem todo formulário precisa de um `useState`
+para cada detalhe, mas esse modelo é excelente para entender o fluxo de dados.
+
+- **`value`:** vem do estado.
+- **`onChange`:** leva o valor digitado de volta ao estado.
+- **`onSubmit`:** concentra a regra de envio no formulário, inclusive quando Enter é usado.
+
+> Dica: prefira tratar `onSubmit` no `<form>` em vez de colocar toda a lógica no
+> `onClick` do botão. Isso preserva o comportamento natural do formulário.
+
+No próximo nó, vamos ver como componentes React também precisam comunicar estado
+para teclado e tecnologias assistivas.
+
+<Quiz
+  question="O que caracteriza um input controlado em React?"
+  options={[
+    {
+      text: "O value vem do estado e um evento atualiza esse estado",
+      correct: true,
+    },
+    {
+      text: "O input nunca pode receber foco",
+      correct: false,
+      explanation: "Controle aqui significa fonte de dados, não bloquear interação.",
+    },
+    {
+      text: "Ele precisa usar useRef em vez de useState",
+      correct: false,
+      explanation: "Refs podem acessar inputs, mas não definem o padrão de input controlado.",
+    },
+  ]}
+/>

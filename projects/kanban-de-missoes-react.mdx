@@ -1,0 +1,61 @@
+---
+slug: kanban-de-missoes-react
+title: "Kanban de Missões em React"
+description: "Crie um quadro de missões com colunas, filtros, formulário, reducer e ações explícitas para mover tarefas."
+difficulty: intermediario
+published: "2026-09-03"
+skills:
+  - react
+  - formularios
+  - estado
+  - estado-derivado
+  - use-reducer
+  - context
+  - custom-hooks
+  - arquitetura
+  - acessibilidade
+trilhas:
+  - react-do-zero
+estimate: "1 fim de semana"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Monte um quadro de missões para organizar estudos, tarefas ou objetivos pessoais.
+Cada missão passa por colunas como `A fazer`, `Em andamento` e `Concluída`, com
+ações explícitas em vez de arrastar como única forma de interação.
+
+## Objetivo
+
+Praticar arquitetura de componentes, formulários controlados, estado derivado e
+`useReducer`. O projeto é ótimo para sentir quando vários setters começam a ficar
+barulhentos e quando ações nomeadas deixam a regra mais clara.
+
+## Requisitos
+
+- [ ] Criar missões com título, descrição curta, prioridade e coluna inicial
+- [ ] Validar título obrigatório com mensagem clara
+- [ ] Renderizar três colunas a partir de uma lista única de missões
+- [ ] Mover missão entre colunas usando botões ou selects acessíveis
+- [ ] Editar e remover uma missão sem mutar o array original
+- [ ] Calcular contagem por coluna e porcentagem concluída como estado derivado
+- [ ] Filtrar por prioridade ou texto de busca
+- [ ] Usar `useReducer` com ações como `created`, `moved`, `edited`, `removed` e `filterChanged`
+- [ ] Separar componentes como `MissionForm`, `MissionBoard`, `MissionColumn`, `MissionCard` e `BoardSummary`
+- [ ] Documentar no README a árvore de componentes e onde mora a fonte de verdade
+
+## Desafios extras
+
+- [ ] Persistir o quadro em `localStorage` com um Custom Hook
+- [ ] Usar Context para preferências ou filtros quando houver consumidores distantes
+- [ ] Adicionar atalhos de teclado para mover missão selecionada
+- [ ] Criar histórico simples de ações recentes
+- [ ] Implementar drag and drop apenas como extra, mantendo alternativa por teclado
+
+## Dicas
+
+- Comece sem drag and drop. Botões claros deixam a regra de estado mais fácil de testar.
+- Guarde a missão uma vez só e derive as colunas com `filter`.
+- Se uma ação muda mais de um pedaço do estado, ela provavelmente merece passar pelo reducer.
+- Faça o visual parecer um quadro de verdade, mas não esconda botões importantes em hover.

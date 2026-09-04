@@ -1,0 +1,81 @@
+---
+id: jsx
+title: "JSX: JavaScript encontrando a interface"
+resources:
+  - title: "Escrevendo marcação com JSX"
+    url: https://pt-br.react.dev/learn/writing-markup-with-jsx
+    type: doc
+    lang: pt
+    free: true
+  - title: "JavaScript em JSX com chaves"
+    url: https://pt-br.react.dev/learn/javascript-in-jsx-with-curly-braces
+    type: doc
+    lang: pt
+    free: true
+---
+
+JSX deixa escrever marcação perto da lógica que produz aquela marcação. Ele
+lembra HTML, mas continua dentro do JavaScript e segue algumas regras próprias.
+
+```jsx
+const user = {
+  name: 'Ada',
+  avatar: 'https://i.pravatar.cc/160?img=47',
+};
+
+export default function Profile() {
+  const isOnline = true;
+
+  return (
+    <section className="profile">
+      <img src={user.avatar} alt={`Foto de ${user.name}`} />
+      <h1>{user.name}</h1>
+      <p>{isOnline ? 'Online agora' : 'Offline'}</p>
+    </section>
+  );
+}
+```
+
+As chaves `{}` abrem uma "janela" para expressões JavaScript. `className` ocupa
+o lugar de `class`, e tags sem conteúdo precisam ser fechadas, como `<img />`.
+Quando um componente precisa devolver elementos irmãos, use um elemento pai ou um
+Fragment.
+
+```jsx
+return (
+  <>
+    <Header />
+    <Main />
+    <Footer />
+  </>
+);
+```
+
+- **JSX:** é uma sintaxe para descrever a interface dentro do JavaScript.
+- **Chaves `{}`:** recebem expressões: variáveis, chamadas e operações que retornam valor.
+- **Fragment `<>...</>`:** agrupa elementos sem criar uma `div` extra no DOM.
+
+> Dica: `if`, `for` e outras instruções não entram diretamente dentro das chaves.
+> Calcule antes do `return` ou use expressões como ternário e `map`.
+
+No próximo nó, vamos separar a interface em **componentes reutilizáveis**.
+
+<Quiz
+  question="O que pode entrar diretamente entre chaves em JSX?"
+  options={[
+    {
+      text: "Uma expressão JavaScript que produz um valor, como user.name ou price * 2",
+      correct: true,
+    },
+    {
+      text: "Qualquer bloco if completo com chaves e else",
+      correct: false,
+      explanation: "JSX aceita expressões entre chaves; instruções como if normalmente ficam antes do return.",
+    },
+    {
+      text: "A palavra class para aplicar uma classe CSS",
+      correct: false,
+      explanation: "Em JSX, o atributo equivalente é className.",
+    },
+  ]}
+/>

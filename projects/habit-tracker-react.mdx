@@ -1,0 +1,62 @@
+---
+slug: habit-tracker-react
+title: "Habit Tracker em React"
+description: "Crie um rastreador de hábitos com formulário controlado, grade semanal, filtros e estatísticas derivadas."
+difficulty: iniciante
+published: "2026-08-30"
+skills:
+  - react
+  - use-state
+  - formularios
+  - formularios-controlados
+  - estado
+  - imutabilidade
+  - estado-derivado
+  - acessibilidade
+trilhas:
+  - react-do-zero
+estimate: "6-10 horas"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Construa um painel de hábitos da semana. A pessoa cria hábitos, marca dias
+concluídos e acompanha o progresso sem duplicar informações em vários estados.
+
+## Objetivo
+
+Praticar eventos, `useState`, atualização imutável de arrays/objetos,
+formulários controlados, levantamento de estado e valores derivados. O projeto
+força você a decidir **qual dado merece estado e qual pode ser calculado**.
+
+## Requisitos
+
+- [ ] Criar hábito com nome, categoria e frequência desejada por formulário controlado
+- [ ] Bloquear envio de nome vazio com mensagem de validação clara
+- [ ] Armazenar hábitos em um array de estado com `id` estável
+- [ ] Mostrar uma grade semanal para marcar/desmarcar dias concluídos
+- [ ] Atualizar hábitos e dias sem mutar objetos ou arrays existentes
+- [ ] Remover um hábito usando atualização imutável
+- [ ] Filtrar por `todos`, `pendentes`, `concluídos hoje` e categoria
+- [ ] Calcular total, concluídos hoje, porcentagem da semana e melhor sequência como valores derivados
+- [ ] Separar pelo menos `HabitForm`, `HabitBoard`, `HabitRow`, `ProgressSummary` e `FilterTabs`
+- [ ] Manter uma única fonte de verdade para a coleção de hábitos
+- [ ] Usar labels, botões nativos e texto visível para estados importantes
+
+## Desafios extras
+
+- [ ] Editar nome, categoria e frequência de um hábito
+- [ ] Persistir a lista em `localStorage`
+- [ ] Criar uma pequena celebração visual quando todos os hábitos do dia forem concluídos
+- [ ] Permitir ordenar por nome, categoria, progresso ou sequência
+- [ ] Adicionar confirmação acessível antes de apagar todos os dados
+- [ ] Criar tema claro/escuro com CSS, mantendo contraste legível
+
+## Dicas
+
+- Modele primeiro o formato do hábito, por exemplo `{ id, name, category, daysDone }`.
+- Evite estados como `completedCount` se ele pode ser calculado com `filter` ou `reduce`.
+- Para alterar um item dentro do array, combine `map` com spread no objeto alvo.
+- Comece com três dias na grade se sete parecerem muito. Depois expanda.
+- Implemente o fluxo completo antes de gastar tempo com animações.

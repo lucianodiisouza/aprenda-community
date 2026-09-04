@@ -1,0 +1,78 @@
+---
+id: custom-hooks
+title: "Custom Hooks: reaproveitando lógica"
+resources:
+  - title: "Reutilizando lógica com Custom Hooks"
+    url: https://pt-br.react.dev/learn/reusing-logic-with-custom-hooks
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando dois componentes repetem a mesma **lógica de estado e Effects**, extraia
+essa lógica para uma função cujo nome começa com `use`. Isso cria um
+Custom Hook que compartilha lógica, não uma instância de estado.
+
+```jsx
+import { useEffect, useState } from 'react';
+
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : initialValue;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+export default function ThemePreference() {
+  const [theme, setTheme] = useLocalStorage('theme', 'light');
+
+  return (
+    <label>
+      Tema
+      <select value={theme} onChange={(event) => setTheme(event.target.value)}>
+        <option value="light">Claro</option>
+        <option value="dark">Escuro</option>
+      </select>
+    </label>
+  );
+}
+```
+
+O componente não precisa saber como `localStorage` é lido ou escrito. Ainda
+assim, cada componente que chama `useLocalStorage` recebe seu próprio estado.
+
+- **Custom Hook:** extrai lógica baseada em Hooks.
+- **Nome começa com `use`:** para que regras e ferramentas do React reconheçam o Hook.
+- **Estado não é compartilhado automaticamente:** só porque a lógica foi reaproveitada.
+
+> Dica: não extraia um Hook apenas para esconder três linhas. Faça isso quando o
+> nome do Hook cria uma abstração útil para o domínio ou elimina repetição real.
+
+No próximo nó, vamos compartilhar dados entre partes distantes da árvore usando
+**Context**.
+
+<Quiz
+  question="O que um Custom Hook compartilha entre componentes?"
+  options={[
+    {
+      text: "A lógica de uso dos Hooks, enquanto cada chamada mantém seu próprio estado",
+      correct: true,
+    },
+    {
+      text: "A mesma variável de estado global automaticamente",
+      correct: false,
+      explanation: "Custom Hooks reutilizam lógica; compartilhar estado exige levantar o estado, Context ou outra estratégia.",
+    },
+    {
+      text: "Somente funções que não usam Hooks",
+      correct: false,
+      explanation: "Funções comuns podem existir, mas um Custom Hook é justamente uma função que pode combinar Hooks.",
+    },
+  ]}
+/>

@@ -207,6 +207,61 @@
       ]
     },
     {
+      "github": "brunofhorn",
+      "name": "Bruno Fernandes Horn",
+      "avatar": "https://github.com/brunofhorn.png",
+      "profile": "https://github.com/brunofhorn",
+      "counts": {
+        "trilhas": 2,
+        "projetos": 6,
+        "bootcamps": 1,
+        "total": 9
+      },
+      "trilhas": [
+        {
+          "slug": "acessibilidade-web",
+          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
+        },
+        {
+          "slug": "react-do-zero",
+          "title": "React do Zero: Componentes, Estado e Hooks"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-de-acessibilidade-web",
+          "title": "Auditoria de Acessibilidade Web"
+        },
+        {
+          "slug": "catalogo-de-produtos-react",
+          "title": "Catálogo de Produtos em React"
+        },
+        {
+          "slug": "habit-tracker-react",
+          "title": "Habit Tracker em React"
+        },
+        {
+          "slug": "jogo-da-memoria-react",
+          "title": "Jogo da Memória em React"
+        },
+        {
+          "slug": "kanban-de-missoes-react",
+          "title": "Kanban de Missões em React"
+        },
+        {
+          "slug": "pokedex-react",
+          "title": "Pokédex em React"
+        }
+      ],
+      "bootcamps": [
+        {
+          "slug": "desenvolvedor-frontend",
+          "title": "Desenvolvedor Frontend",
+          "via": "trilha:acessibilidade-web"
+        }
+      ]
+    },
+    {
       "github": "obrenoalvim",
       "name": "Breno Alvim",
       "avatar": "https://github.com/obrenoalvim.png",
@@ -273,37 +328,6 @@
         }
       ],
       "bootcamps": []
-    },
-    {
-      "github": "brunofhorn",
-      "name": "Bruno Fernandes Horn",
-      "avatar": "https://github.com/brunofhorn.png",
-      "profile": "https://github.com/brunofhorn",
-      "counts": {
-        "trilhas": 1,
-        "projetos": 1,
-        "bootcamps": 1,
-        "total": 3
-      },
-      "trilhas": [
-        {
-          "slug": "acessibilidade-web",
-          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
-        }
-      ],
-      "projetos": [
-        {
-          "slug": "auditoria-de-acessibilidade-web",
-          "title": "Auditoria de Acessibilidade Web"
-        }
-      ],
-      "bootcamps": [
-        {
-          "slug": "desenvolvedor-frontend",
-          "title": "Desenvolvedor Frontend",
-          "via": "trilha:acessibilidade-web"
-        }
-      ]
     },
     {
       "github": "ajesus1308",

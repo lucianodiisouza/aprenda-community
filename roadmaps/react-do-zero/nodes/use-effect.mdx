@@ -1,0 +1,85 @@
+---
+id: use-effect
+title: "useEffect: sincronizando com sistemas externos"
+resources:
+  - title: "Sincronizando com efeitos"
+    url: https://pt-br.react.dev/learn/synchronizing-with-effects
+    type: doc
+    lang: pt
+    free: true
+  - title: "Talvez você não precise de um Effect"
+    url: https://pt-br.react.dev/learn/you-might-not-need-an-effect
+    type: doc
+    lang: pt
+    free: true
+---
+
+`useEffect` não é "código que roda depois de renderizar" para qualquer tarefa.
+Ele existe para **sincronizar um componente com algo fora do React**: APIs do
+navegador, conexão, timer, biblioteca externa ou rede.
+
+```jsx
+import { useEffect, useState } from 'react';
+
+export default function OnlineTitle() {
+  const [name, setName] = useState('Ada');
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = `Perfil de ${name}`;
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [name]);
+
+  return (
+    <label>
+      Nome
+      <input value={name} onChange={(event) => setName(event.target.value)} />
+    </label>
+  );
+}
+```
+
+O Effect lê `name`, então `name` aparece na lista de dependências. Se o valor
+mudar, React executa a limpeza do Effect anterior e sincroniza novamente.
+
+<Mermaid
+  chart={`flowchart LR
+    R[Render com name] --> E[Effect sincroniza document.title]
+    E --> M[name muda]
+    M --> C[Cleanup]
+    C --> R2[Novo render + novo Effect]`}
+  caption="Effects sincronizam a renderização atual com um sistema externo e podem devolver uma função de limpeza."
+/>
+
+- **Effect:** conecta React a um sistema externo.
+- **Dependências:** dizem quais valores reativam aquela sincronização.
+- **Cleanup:** desfaz a sincronização anterior quando necessário.
+
+> Dica: calcular `fullName`, filtrar uma lista ou responder a um clique normalmente
+> não precisa de Effect. Faça isso na renderização ou no handler do evento.
+
+No próximo nó, vamos usar Effect em um caso didático comum: **buscar dados de uma
+API no cliente**, tratando loading e erro.
+
+<Quiz
+  question="Qual cenário é um bom candidato a useEffect?"
+  options={[
+    {
+      text: "Sincronizar document.title com um valor atual do componente",
+      correct: true,
+    },
+    {
+      text: "Somar subtotal e frete para mostrar o total",
+      correct: false,
+      explanation: "Esse total pode ser calculado durante a renderização.",
+    },
+    {
+      text: "Executar a lógica diretamente causada pelo clique de um botão",
+      correct: false,
+      explanation: "A lógica de um clique normalmente pertence ao handler do próprio evento.",
+    },
+  ]}
+/>

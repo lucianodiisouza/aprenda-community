@@ -1,0 +1,240 @@
+{
+  "slug": "react-do-zero",
+  "title": "React do Zero: Componentes, Estado e Hooks",
+  "description": "Trilha prática para quem já conhece HTML, CSS e JavaScript básico e quer aprender React desde o primeiro componente. Cobre Vite, JSX, componentes, props, composição, eventos, estado, formulários, acessibilidade em componentes, efeitos, consumo de API, refs, Context, reducer, Custom Hooks, arquitetura, debugging, diagramas e quizzes formativos em todos os nós. Inclui cinco projetos relacionados para praticar em etapas.",
+  "difficulty": "iniciante",
+  "skills": [
+    "react",
+    "javascript",
+    "jsx",
+    "componentes",
+    "hooks",
+    "estado",
+    "formularios",
+    "apis",
+    "acessibilidade",
+    "arquitetura"
+  ],
+  "creators": [
+    {
+      "name": "Bruno Fernandes Horn",
+      "github": "brunofhorn"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao-react",
+      "title": "Interface como componentes",
+      "type": "topic",
+      "recommended": true,
+      "children": [
+        "ambiente-vite"
+      ]
+    },
+    {
+      "id": "ambiente-vite",
+      "title": "Preparando o ambiente com Vite",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "jsx"
+      ]
+    },
+    {
+      "id": "jsx",
+      "title": "JSX: JavaScript encontrando a interface",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "componentes"
+      ]
+    },
+    {
+      "id": "componentes",
+      "title": "Componentes: funções que constroem a UI",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "props"
+      ]
+    },
+    {
+      "id": "props",
+      "title": "Props: dados entrando no componente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "composicao-children"
+      ]
+    },
+    {
+      "id": "composicao-children",
+      "title": "Composição e children",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "renderizacao-condicional"
+      ]
+    },
+    {
+      "id": "renderizacao-condicional",
+      "title": "Renderização condicional",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "listas-e-keys"
+      ]
+    },
+    {
+      "id": "listas-e-keys",
+      "title": "Listas e keys",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "eventos"
+      ]
+    },
+    {
+      "id": "eventos",
+      "title": "Eventos: reagindo às ações da pessoa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "use-state"
+      ]
+    },
+    {
+      "id": "use-state",
+      "title": "useState: memória para o componente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "atualizando-estado"
+      ]
+    },
+    {
+      "id": "atualizando-estado",
+      "title": "Atualizando objetos e arrays no estado",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "formularios-controlados"
+      ]
+    },
+    {
+      "id": "formularios-controlados",
+      "title": "Formulários controlados",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "acessibilidade-em-componentes"
+      ]
+    },
+    {
+      "id": "acessibilidade-em-componentes",
+      "title": "Acessibilidade em componentes React",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "elevando-estado"
+      ]
+    },
+    {
+      "id": "elevando-estado",
+      "title": "Elevando estado e criando uma fonte de verdade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "estado-derivado"
+      ]
+    },
+    {
+      "id": "estado-derivado",
+      "title": "Estado derivado: calcule em vez de duplicar",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "use-effect"
+      ]
+    },
+    {
+      "id": "use-effect",
+      "title": "useEffect: sincronizando com sistemas externos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "fetch-e-estados-assincronos"
+      ]
+    },
+    {
+      "id": "fetch-e-estados-assincronos",
+      "title": "Fetch: loading, erro e sucesso",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "use-ref"
+      ]
+    },
+    {
+      "id": "use-ref",
+      "title": "useRef: referências sem nova renderização",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "custom-hooks"
+      ]
+    },
+    {
+      "id": "custom-hooks",
+      "title": "Custom Hooks: reaproveitando lógica",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "context"
+      ]
+    },
+    {
+      "id": "context",
+      "title": "Context: dados compartilhados sem prop drilling",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "use-reducer"
+      ]
+    },
+    {
+      "id": "use-reducer",
+      "title": "useReducer: estado complexo com ações explícitas",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "arquitetura-de-componentes"
+      ]
+    },
+    {
+      "id": "arquitetura-de-componentes",
+      "title": "Arquitetura de componentes sem componente Deus",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "debugging-react"
+      ]
+    },
+    {
+      "id": "debugging-react",
+      "title": "Debugging em React",
+      "type": "subtopic",
+      "recommended": true,
+      "children": [
+        "proximos-passos"
+      ]
+    },
+    {
+      "id": "proximos-passos",
+      "title": "Próximos passos depois do React do Zero",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

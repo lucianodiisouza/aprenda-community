@@ -1,0 +1,106 @@
+---
+id: use-state
+title: "useState: memória para o componente"
+resources:
+  - title: "Estado: a memória de um componente"
+    url: https://pt-br.react.dev/learn/state-a-components-memory
+    type: doc
+    lang: pt
+    free: true
+  - title: "Renderizar e confirmar"
+    url: https://pt-br.react.dev/learn/render-and-commit
+    type: doc
+    lang: pt
+    free: true
+  - title: "Rules of Hooks"
+    url: https://react.dev/reference/rules/rules-of-hooks
+    type: doc
+    lang: en
+    free: true
+---
+
+Variáveis locais desaparecem quando o componente renderiza de novo. `useState`
+dá ao componente uma memória que persiste entre renderizações e, quando muda,
+pede ao React uma nova renderização.
+
+```jsx
+import { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+
+  function handleIncrement() {
+    setCount(count + 1);
+  }
+
+  return (
+    <section>
+      <p>Cliques: {count}</p>
+      <button onClick={handleIncrement}>Somar 1</button>
+    </section>
+  );
+}
+```
+
+`count` é o valor da renderização atual. `setCount` agenda uma atualização; ele
+não modifica a variável já existente no meio daquele mesmo render. Esse modelo é
+chamado de **snapshot** do estado.
+
+Hooks como `useState` seguem uma regra importante: chame-os no topo do componente
+ou de outro Hook, nunca dentro de `if`, `for` ou funções internas condicionais.
+
+```jsx
+// Evite:
+if (isLogged) {
+  const [name, setName] = useState('');
+}
+```
+
+<Mermaid
+  chart={`stateDiagram-v2
+    [*] --> Render
+    Render --> Evento: pessoa clica
+    Evento --> Atualizacao: setCount(count + 1)
+    Atualizacao --> Render: React renderiza com novo snapshot`}
+  caption="Estado em React funciona como snapshots: um evento agenda o próximo valor e uma nova renderização enxerga esse valor."
+/>
+
+### Mini missão: placar de combo
+
+Monte um placar com `score`, `combo` e um botão "acertou". Cada clique soma 10
+pontos e aumenta o combo. Um botão "resetar rodada" volta o combo para 0 sem
+apagar a pontuação total. É um jeito lúdico de sentir quais valores precisam
+persistir entre eventos.
+
+- **Estado:** guarda informação que influencia a interface.
+- **Setter:** agenda uma nova renderização com o próximo valor.
+- **Hooks:** precisam ser chamados na mesma ordem em todas as renderizações.
+
+> Dica: se um valor pode ser calculado diretamente de props e estado existentes,
+> talvez ele não precise de um `useState` próprio. Vamos voltar a isso mais adiante.
+
+Neste ponto, você já pode começar o projeto **Catálogo de Produtos em React**
+(`catalogo-de-produtos-react`) e adicionar um filtro interativo com estado.
+
+No próximo nó, vamos atualizar **objetos, arrays e múltiplas mudanças** sem
+mutar o estado existente.
+
+<Quiz
+  question="O que acontece quando você chama o setter de um useState?"
+  options={[
+    {
+      text: "O React agenda uma nova renderização usando o próximo valor de estado",
+      correct: true,
+    },
+    {
+      text: "A variável de estado atual é alterada imediatamente dentro de todo o código já executando",
+      correct: false,
+      explanation: "Cada renderização enxerga um snapshot; o novo valor aparece em uma renderização futura.",
+    },
+    {
+      text: "O componente inteiro é recriado no arquivo do projeto",
+      correct: false,
+      explanation: "O React executa novamente a função do componente; o arquivo não é recriado.",
+    },
+  ]}
+/>
