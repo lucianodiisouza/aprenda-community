@@ -6,6 +6,57 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.29.0] - 2026-09-04
+
+### Adicionado
+
+- ⚛️ **Trilha React do Zero** (`roadmaps/react-do-zero`, 24 nós): a
+  trilha prática e progressiva pra quem já conhece HTML, CSS e JavaScript
+  básico e quer aprender React desde o primeiro componente. Vai de
+  modelo mental e JSX até Vite, componentes, props, composição, eventos,
+  `useState`, imutabilidade, formulários controlados, acessibilidade em
+  componentes, elevação de estado, estado derivado, `useEffect`, fetch
+  com loading/erro, `useRef`, Custom Hooks, Context, `useReducer`,
+  arquitetura de componentes e debugging - fechando com um nó de
+  próximos passos pra trilhas mais especializadas (`form-libraries`,
+  `tanstack-query`, `testing-frontend`, `nextjs`). Posicionada como
+  **iniciante** (pré-requisitos: JS básico, funções, arrays, `map`,
+  módulos, `async/await`).
+  **Interatividade: 24 quizzes formativos, 8 diagramas Mermaid**. Inclui
+  5 projetos relacionados: Catálogo de Produtos, Habit Tracker, Jogo da
+  Memória, Kanban de Missões e Pokédex.
+  Decisões editoriais em
+  `roadmaps/react-do-zero/meta/editorial-decisions.md`.
+  Trilha escrita por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+- ⚛️ **React do Zero no bootcamp Desenvolvedor Frontend**: a trilha
+  entra como módulo entre `frontend` e `typescript` (depois da seção
+  central de JavaScript no browser, antes da tipagem estática) -
+  preenche o buraco entre "trilha generalista" e "stack tipado de
+  produção".
+
+### Alterado
+
+- 📚 **`CATALOGO.md`**: contagem de trilhas `39 → 40`, com a nova
+  trilha listada na seção "🎨 Frontend & Web".
+- 📝 **`README.md`**: badge de trilhas `39 → 40`, lista de áreas
+  atualizada pra mencionar a trilha React do Zero.
+
+### Corrigido
+
+- ✍️ **Trilha React do Zero** (#86): revisão editorial aplicada em
+  texto (em-dash removido, "permite" reescrito com verbos diretos,
+  "você pode" substituído por instrução), bullets alinhados ao padrão
+  `**Label:** descrição` e contagem real de diagramas Mermaid
+  documentada no `editorial-decisions.md` (4 → 8).
+
+### Créditos
+
+- Trilha React do Zero escrita por **Bruno Fernandes Horn**
+  ([@brunofhorn](https://github.com/brunofhorn)).
+- Revisão editorial por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
+
 ## [1.28.0] - 2026-09-03
 
 ### Adicionado

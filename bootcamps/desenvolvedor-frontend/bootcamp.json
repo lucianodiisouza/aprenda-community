@@ -20,6 +20,7 @@
     { "projeto": "landing-page-responsiva", "description": "Uma landing de produto impecável no mobile e no desktop com Tailwind — consolida estilização moderna e responsividade." },
     { "projeto": "quiz-react", "description": "Um quiz com pontuação e tela de resultado: fixa componentes, estado e a lógica de UI em React." },
     { "projeto": "clima-agora", "description": "Consuma uma API pública real e renderize os dados — o padrão fetch + estado + loading que aparece em toda app de verdade." },
+    { "trilha": "react-do-zero", "description": "O aprofundamento específico de React entre o generalismo da trilha `frontend` e a tipagem da `typescript`. JSX, componentes, props, estado, formulários, acessibilidade, efeitos, fetch, refs, Custom Hooks, Context, reducer, arquitetura e debugging - com 5 projetos pra consolidar." },
     { "trilha": "typescript", "description": "Tipagem estática logo depois de JavaScript, com a linguagem fresca na cabeça. TypeScript é o jeito padrão de escrever frontend no mercado." },
     { "trilha": "form-libraries", "description": "Formulários de produção: React Hook Form pra performance e Zod pra validação com type-safety ponta a ponta. Onde o `<form>` básico não escala." },
     { "trilha": "tanstack-query", "description": "Server state — a maior parte do estado de uma app real. Queries, mutations, cache, invalidação e optimistic updates com TanStack Query." },
