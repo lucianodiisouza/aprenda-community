@@ -1,0 +1,89 @@
+---
+id: ambiente-vite
+title: "Preparando o ambiente com Vite"
+resources:
+  - title: "Getting Started do Vite"
+    url: https://vite.dev/guide/
+    type: doc
+    lang: en
+    free: true
+  - title: "Início rápido do React"
+    url: https://pt-br.react.dev/learn
+    type: doc
+    lang: pt
+    free: true
+---
+
+Para aprender React, vale começar com um projeto pequeno e previsível. O Vite
+cria a estrutura, cuida do servidor de desenvolvimento e transforma JSX sem você
+precisar montar uma configuração de build do zero.
+
+```bash
+npm create vite@latest meu-react -- --template react
+cd meu-react
+npm install
+npm run dev
+```
+
+Depois da criação, os dois arquivos mais importantes são `src/main.jsx` e
+`src/App.jsx`.
+
+```jsx
+// src/main.jsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+```
+
+```jsx
+// src/App.jsx
+export default function App() {
+  return (
+    <main>
+      <h1>Meu primeiro app React</h1>
+      <p>Servidor rodando, componente renderizado.</p>
+    </main>
+  );
+}
+```
+
+`createRoot` conecta o React ao elemento `#root` do `index.html`. A partir dali,
+`<App />` vira a raiz da sua árvore de componentes. `StrictMode` ajuda a encontrar
+problemas comuns durante o desenvolvimento; ele não é um componente visual.
+
+- **Vite** cuida do ambiente de desenvolvimento e build.
+- **`main.jsx`** é o ponto de entrada que monta a aplicação.
+- **`App.jsx`** costuma ser o primeiro componente da árvore.
+
+> Dica: nesta trilha usamos JavaScript, não TypeScript, para manter o foco no
+> React. Depois você pode reaplicar os mesmos conceitos com tipagem.
+
+No próximo nó, vamos entender a sintaxe que parece HTML dentro do JavaScript:
+**JSX**.
+
+<Quiz
+  question="Qual é o papel de createRoot no arquivo main.jsx?"
+  options={[
+    {
+      text: "Conectar o React a um elemento do HTML onde a árvore de componentes será renderizada",
+      correct: true,
+    },
+    {
+      text: "Criar automaticamente todos os componentes da aplicação",
+      correct: false,
+      explanation: "Componentes continuam sendo funções que você escreve.",
+    },
+    {
+      text: "Substituir o servidor de desenvolvimento do Vite",
+      correct: false,
+      explanation: "Vite e createRoot resolvem problemas diferentes: ambiente de build e renderização React.",
+    },
+  ]}
+/>

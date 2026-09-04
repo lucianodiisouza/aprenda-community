@@ -1,0 +1,89 @@
+---
+id: componentes
+title: "Componentes: funções que constroem a UI"
+resources:
+  - title: "Seu primeiro componente"
+    url: https://pt-br.react.dev/learn/your-first-component
+    type: doc
+    lang: pt
+    free: true
+  - title: "Importando e exportando componentes"
+    url: https://pt-br.react.dev/learn/importing-and-exporting-components
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando uma parte da tela tem uma responsabilidade clara ou se repete, ela pode
+virar um componente. Componentes de função começam com letra maiúscula e retornam
+JSX.
+
+```jsx
+// src/components/Badge.jsx
+export default function Badge() {
+  return <span className="badge">Novo</span>;
+}
+```
+
+```jsx
+// src/components/ProductCard.jsx
+import Badge from './Badge.jsx';
+
+export default function ProductCard() {
+  return (
+    <article className="product-card">
+      <Badge />
+      <h2>Café Catuaí</h2>
+      <p>Torra média · 250 g</p>
+    </article>
+  );
+}
+```
+
+```jsx
+// src/App.jsx
+import ProductCard from './components/ProductCard.jsx';
+
+export default function App() {
+  return (
+    <main>
+      <h1>Produtos</h1>
+      <ProductCard />
+    </main>
+  );
+}
+```
+
+Separar arquivo não é obrigação. Um componente merece existir quando a divisão
+melhora leitura, reutilização ou responsabilidade — não só porque existem três
+linhas de JSX.
+
+- **Nome em maiúscula** diferencia componente React de tag HTML.
+- **`export`/`import`** permitem organizar componentes em arquivos.
+- **Composição** acontece quando um componente renderiza outro.
+
+> Dica: evite criar um componente para cada `div`. Componentização é uma decisão
+> de design, não uma contagem de tags.
+
+No próximo nó, vamos fazer o mesmo `ProductCard` receber dados diferentes usando
+**props**.
+
+<Quiz
+  question="Quando vale extrair uma parte da interface para um componente?"
+  options={[
+    {
+      text: "Quando ela tem responsabilidade clara, reaparece ou melhora a leitura ao ser isolada",
+      correct: true,
+    },
+    {
+      text: "Sempre que aparecer uma div",
+      correct: false,
+      explanation: "Quantidade de tags não define uma boa fronteira de componente.",
+    },
+    {
+      text: "Somente quando o componente tiver estado próprio",
+      correct: false,
+      explanation: "Componentes puramente visuais e sem estado também são úteis.",
+    },
+  ]}
+/>

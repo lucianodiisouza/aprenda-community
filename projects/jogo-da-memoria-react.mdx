@@ -1,0 +1,59 @@
+---
+slug: jogo-da-memoria-react
+title: "Jogo da Memória em React"
+description: "Construa um jogo da memória com cartas, estado de rodada, pares encontrados, bloqueio de jogadas e feedback visual."
+difficulty: intermediario
+published: "2026-09-03"
+skills:
+  - react
+  - use-state
+  - listas
+  - eventos
+  - renderizacao-condicional
+  - use-effect
+  - use-reducer
+  - acessibilidade
+trilhas:
+  - react-do-zero
+estimate: "1 fim de semana"
+creators:
+  - name: "Bruno Fernandes Horn"
+    github: "brunofhorn"
+---
+
+Crie um jogo da memória com cartas viradas para baixo. A pessoa revela duas por
+vez, encontra pares, acompanha tentativas e reinicia a rodada quando quiser.
+
+## Objetivo
+
+Praticar estado em uma interface lúdica: lista de cartas, carta selecionada,
+pares encontrados, bloqueio temporário de cliques, valores derivados e
+transições mais fáceis de organizar com `useReducer` quando a regra crescer.
+
+## Requisitos
+
+- [ ] Criar um baralho a partir de um array de temas, duplicando cada item para formar pares
+- [ ] Embaralhar as cartas ao iniciar ou reiniciar a rodada
+- [ ] Renderizar cartas com `map` e `key` estável
+- [ ] Guardar quais cartas estão viradas e quais pares já foram encontrados
+- [ ] Impedir que a mesma carta seja escolhida duas vezes na mesma tentativa
+- [ ] Bloquear novas jogadas enquanto duas cartas diferentes voltam a ficar ocultas
+- [ ] Contar tentativas, pares encontrados e progresso como valores visíveis
+- [ ] Exibir estado de vitória quando todos os pares forem encontrados
+- [ ] Permitir reiniciar a rodada sem recarregar a página
+- [ ] Usar botões para as cartas, com texto acessível indicando estado oculto, revelado ou encontrado
+
+## Desafios extras
+
+- [ ] Usar `useReducer` para organizar ações como `cardFlipped`, `pairMatched`, `pairMissed` e `gameReset`
+- [ ] Criar níveis de dificuldade com tamanhos diferentes de baralho
+- [ ] Persistir melhor pontuação em `localStorage`
+- [ ] Adicionar cronômetro com `useEffect` e cleanup
+- [ ] Criar animações de virar carta respeitando `prefers-reduced-motion`
+
+## Dicas
+
+- Comece com 4 pares. Quando a regra estiver firme, aumente o baralho.
+- Use ids diferentes para as duas cópias do mesmo par. O par pode compartilhar `pairId`.
+- Calcule vitória a partir da quantidade de pares encontrados, não como um estado separado sem necessidade.
+- Para acessibilidade, a carta pode ser bonita visualmente e ainda ser um `<button>`.

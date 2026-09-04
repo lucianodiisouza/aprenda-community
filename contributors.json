@@ -194,6 +194,55 @@
       ]
     },
     {
+      "github": "brunofhorn",
+      "name": "Bruno Fernandes Horn",
+      "avatar": "https://github.com/brunofhorn.png",
+      "profile": "https://github.com/brunofhorn",
+      "counts": {
+        "trilhas": 2,
+        "projetos": 6,
+        "bootcamps": 0,
+        "total": 8
+      },
+      "trilhas": [
+        {
+          "slug": "acessibilidade-web",
+          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
+        },
+        {
+          "slug": "react-do-zero",
+          "title": "React do Zero: Componentes, Estado e Hooks"
+        }
+      ],
+      "projetos": [
+        {
+          "slug": "auditoria-de-acessibilidade-web",
+          "title": "Auditoria de Acessibilidade Web"
+        },
+        {
+          "slug": "catalogo-de-produtos-react",
+          "title": "Catálogo de Produtos em React"
+        },
+        {
+          "slug": "habit-tracker-react",
+          "title": "Habit Tracker em React"
+        },
+        {
+          "slug": "jogo-da-memoria-react",
+          "title": "Jogo da Memória em React"
+        },
+        {
+          "slug": "kanban-de-missoes-react",
+          "title": "Kanban de Missões em React"
+        },
+        {
+          "slug": "pokedex-react",
+          "title": "Pokédex em React"
+        }
+      ],
+      "bootcamps": []
+    },
+    {
       "github": "obrenoalvim",
       "name": "Breno Alvim",
       "avatar": "https://github.com/obrenoalvim.png",
@@ -257,31 +306,6 @@
         {
           "slug": "processador-de-planilhas",
           "title": "Processador de Planilhas"
-        }
-      ],
-      "bootcamps": []
-    },
-    {
-      "github": "brunofhorn",
-      "name": "Bruno Fernandes Horn",
-      "avatar": "https://github.com/brunofhorn.png",
-      "profile": "https://github.com/brunofhorn",
-      "counts": {
-        "trilhas": 1,
-        "projetos": 1,
-        "bootcamps": 0,
-        "total": 2
-      },
-      "trilhas": [
-        {
-          "slug": "acessibilidade-web",
-          "title": "Acessibilidade Web: Interfaces para todas as pessoas"
-        }
-      ],
-      "projetos": [
-        {
-          "slug": "auditoria-de-acessibilidade-web",
-          "title": "Auditoria de Acessibilidade Web"
         }
       ],
       "bootcamps": []

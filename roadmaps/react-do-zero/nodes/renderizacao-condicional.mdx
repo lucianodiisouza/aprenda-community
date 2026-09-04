@@ -1,0 +1,75 @@
+---
+id: renderizacao-condicional
+title: "Renderização condicional"
+resources:
+  - title: "Renderização condicional"
+    url: https://pt-br.react.dev/learn/conditional-rendering
+    type: doc
+    lang: pt
+    free: true
+---
+
+Interfaces mudam de acordo com o estado: usuário logado ou não, carrinho vazio ou
+cheio, carregando ou pronto. Em React, condições comuns do JavaScript escolhem
+qual JSX deve ser renderizado.
+
+```jsx
+function CartSummary({ items }) {
+  if (items.length === 0) {
+    return <p>Seu carrinho está vazio.</p>;
+  }
+
+  return (
+    <section>
+      <h2>Seu carrinho</h2>
+      <p>{items.length} item(ns)</p>
+      {items.length >= 3 && <p>Frete grátis liberado!</p>}
+    </section>
+  );
+}
+
+export default function App() {
+  const isLogged = true;
+  const items = ['Catuaí', 'Bourbon', 'Geisha'];
+
+  return (
+    <main>
+      <p>{isLogged ? 'Olá, Bruno!' : 'Entre para continuar'}</p>
+      <CartSummary items={items} />
+    </main>
+  );
+}
+```
+
+Use `if` quando a condição muda uma parte grande do retorno, ternário quando há
+duas alternativas curtas e `&&` quando algo simplesmente aparece ou não.
+
+- **`if`** funciona bem para retornos antecipados.
+- **Ternário** escolhe entre duas expressões.
+- **`&&`** é útil para uma condição sem alternativa visual.
+
+> Dica: cuidado com `0 && <Componente />`: o número `0` pode aparecer na tela.
+> Prefira uma condição booleana explícita como `items.length > 0`.
+
+No próximo nó, vamos renderizar vários componentes a partir de um **array de
+dados**.
+
+<Quiz
+  question="Qual opção é mais adequada quando um bloco inteiro deve ser substituído por outro?"
+  options={[
+    {
+      text: "Um if com retorno antecipado costuma deixar a decisão clara",
+      correct: true,
+    },
+    {
+      text: "Usar sempre &&, mesmo quando existe uma alternativa",
+      correct: false,
+      explanation: "&& resolve bem o caso aparece/não aparece; duas alternativas ficam mais claras com if ou ternário.",
+    },
+    {
+      text: "Manipular o display do DOM manualmente com document.querySelector",
+      correct: false,
+      explanation: "Em React, normalmente você expressa a condição na renderização.",
+    },
+  ]}
+/>

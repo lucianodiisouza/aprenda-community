@@ -1,0 +1,96 @@
+---
+id: atualizando-estado
+title: "Atualizando objetos e arrays no estado"
+resources:
+  - title: "Enfileirando atualizações de estado"
+    url: https://pt-br.react.dev/learn/queueing-a-series-of-state-updates
+    type: doc
+    lang: pt
+    free: true
+  - title: "Atualizando objetos no estado"
+    url: https://pt-br.react.dev/learn/updating-objects-in-state
+    type: doc
+    lang: pt
+    free: true
+  - title: "Atualizando arrays no estado"
+    url: https://pt-br.react.dev/learn/updating-arrays-in-state
+    type: doc
+    lang: pt
+    free: true
+---
+
+Objetos e arrays em estado devem ser tratados como **imutáveis**. Em vez de mudar
+o valor existente, crie uma nova versão com as alterações.
+
+```jsx
+import { useState } from 'react';
+
+export default function Cart() {
+  const [items, setItems] = useState([
+    { id: 1, name: 'Catuaí', quantity: 1 },
+    { id: 2, name: 'Bourbon', quantity: 2 },
+  ]);
+
+  function increment(id) {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item,
+      ),
+    );
+  }
+
+  function remove(id) {
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== id),
+    );
+  }
+
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>
+          {item.name} · {item.quantity}
+          <button onClick={() => increment(item.id)}>+</button>
+          <button onClick={() => remove(item.id)}>Remover</button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+A forma `setItems((currentItems) => ...)` é útil quando o próximo estado depende
+do estado anterior. Para objetos, spread cria uma nova cópia; para arrays, métodos
+como `map`, `filter` e spread evitam mutação.
+
+- **Updater function** recebe o estado mais recente quando a atualização depende dele.
+- **Spread** ajuda a criar novos objetos e arrays preservando dados anteriores.
+- **`map`/`filter`** produzem novos arrays sem alterar o original.
+
+> Dica: `items.push(...)` seguido de `setItems(items)` reutiliza a mesma referência
+> e ainda muta o estado. Prefira `setItems([...items, novoItem])`.
+
+No próximo nó, vamos aplicar estado e eventos em um caso que aparece em quase
+todo app: **formulários**.
+
+<Quiz
+  question="Qual atualização remove um item sem mutar o array existente?"
+  options={[
+    {
+      text: "setItems(items => items.filter(item => item.id !== id))",
+      correct: true,
+    },
+    {
+      text: "items.splice(index, 1); setItems(items)",
+      correct: false,
+      explanation: "splice altera o array existente e a mesma referência é reutilizada.",
+    },
+    {
+      text: "items.pop();",
+      correct: false,
+      explanation: "Além de mutar o array, não chama o setter para informar a mudança ao React.",
+    },
+  ]}
+/>

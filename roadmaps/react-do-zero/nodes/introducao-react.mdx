@@ -1,0 +1,82 @@
+---
+id: introducao-react
+title: "React: pensando a interface como componentes"
+resources:
+  - title: "Início rápido do React"
+    url: https://pt-br.react.dev/learn
+    type: doc
+    lang: pt
+    free: true
+  - title: "Pensando em React"
+    url: https://pt-br.react.dev/learn/thinking-in-react
+    type: doc
+    lang: pt
+    free: true
+---
+
+Uma tela de e-commerce pode ter cabeçalho, busca, filtros, cards e carrinho. Em
+React, você não precisa tratar a página como um bloco único: cada parte pode ser
+um **componente** que recebe dados e devolve interface.
+
+```jsx
+function ProductCard({ name, price }) {
+  return (
+    <article>
+      <h2>{name}</h2>
+      <p>R$ {price.toFixed(2)}</p>
+      <button>Adicionar ao carrinho</button>
+    </article>
+  );
+}
+
+export default function App() {
+  return (
+    <main>
+      <h1>Cafés especiais</h1>
+      <ProductCard name="Cerrado" price={32.9} />
+      <ProductCard name="Mantiqueira" price={38.5} />
+    </main>
+  );
+}
+```
+
+O exemplo já mostra a ideia central: **descrever como a interface deve ficar a
+partir dos dados atuais**. Você diz que um produto tem nome e preço; o React se
+encarrega de manter a tela coerente quando esses dados mudarem.
+
+<Mermaid
+  chart={`flowchart TB
+    A[App] --> B[ProductCard Cerrado]
+    A --> C[ProductCard Mantiqueira]`}
+  caption="Uma interface React é formada por uma árvore de componentes que podem ser reutilizados."
+/>
+
+- **Componente** é uma unidade reutilizável de interface e lógica.
+- **Declarativo** significa descrever o resultado desejado, não uma sequência de manipulações do DOM.
+- **Árvore de componentes** ajuda a enxergar responsabilidades menores dentro de uma tela.
+
+> Dica: React não substitui HTML, CSS e JavaScript. Ele organiza a forma como
+> essas três peças trabalham juntas em interfaces que mudam com frequência.
+
+No próximo nó, vamos criar um projeto real com **Vite** e entender os arquivos
+mínimos que colocam um componente React na tela.
+
+<Quiz
+  question="Qual frase descreve melhor o modelo mental de React?"
+  options={[
+    {
+      text: "Você descreve a interface a partir dos dados e o React atualiza o DOM quando necessário",
+      correct: true,
+    },
+    {
+      text: "Você precisa localizar manualmente cada elemento com querySelector antes de mudar a tela",
+      correct: false,
+      explanation: "Esse é um fluxo imperativo comum no JavaScript direto; React trabalha de forma declarativa.",
+    },
+    {
+      text: "Cada arquivo React precisa representar uma página inteira",
+      correct: false,
+      explanation: "Componentes podem representar desde um botão pequeno até uma página completa.",
+    },
+  ]}
+/>

@@ -1,0 +1,76 @@
+---
+id: composicao-children
+title: "Composição e children"
+resources:
+  - title: "Passando props para um componente"
+    url: https://pt-br.react.dev/learn/passing-props-to-a-component
+    type: doc
+    lang: pt
+    free: true
+---
+
+Nem todo componente precisa saber exatamente o que haverá dentro dele. Um
+`Card`, `Modal` ou `Layout` pode cuidar da estrutura e deixar o conteúdo vir por
+`children`.
+
+```jsx
+function Card({ title, children }) {
+  return (
+    <section className="card">
+      <h2>{title}</h2>
+      <div className="card-content">{children}</div>
+    </section>
+  );
+}
+
+function App() {
+  return (
+    <main>
+      <Card title="Resumo do pedido">
+        <p>2 cafés · R$ 72,40</p>
+        <button>Finalizar compra</button>
+      </Card>
+
+      <Card title="Entrega">
+        <address>Rua das Interfaces, 42</address>
+      </Card>
+    </main>
+  );
+}
+
+export default App;
+```
+
+A mesma moldura recebe conteúdos diferentes sem precisar de props como
+`paragraph`, `buttonLabel`, `address` e muitas outras. Essa abordagem deixa os
+componentes mais flexíveis e costuma ser melhor do que transformar tudo em uma
+configuração gigante.
+
+- **`children`** representa o JSX colocado entre a abertura e o fechamento de um componente.
+- **Composição** combina componentes pequenos para formar interfaces maiores.
+- **API simples** costuma ser preferível a dezenas de props específicas.
+
+> Dica: antes de usar Context para evitar prop drilling, veja se passar um bloco
+> de JSX por `children` já encurta o caminho.
+
+No próximo nó, vamos escolher **quando um trecho de JSX aparece ou desaparece**.
+
+<Quiz
+  question="Qual é a principal vantagem de usar children em um componente de layout?"
+  options={[
+    {
+      text: "Permitir que a estrutura seja reutilizada com conteúdos diferentes",
+      correct: true,
+    },
+    {
+      text: "Fazer o React memorizar automaticamente o conteúdo",
+      correct: false,
+      explanation: "children é composição; não é uma ferramenta de memoização.",
+    },
+    {
+      text: "Evitar qualquer uso de props",
+      correct: false,
+      explanation: "children é uma prop especial e pode conviver com outras props normalmente.",
+    },
+  ]}
+/>

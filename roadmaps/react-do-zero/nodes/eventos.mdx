@@ -1,0 +1,80 @@
+---
+id: eventos
+title: "Eventos: reagindo às ações da pessoa"
+resources:
+  - title: "Respondendo a eventos"
+    url: https://pt-br.react.dev/learn/responding-to-events
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um botão só vira parte de uma interface interativa quando alguma lógica responde
+ao clique. Em React, você passa uma **função** para props de evento como
+`onClick`, `onChange` e `onSubmit`.
+
+```jsx
+function ProductCard({ product, onAdd }) {
+  function handleAdd() {
+    onAdd(product);
+  }
+
+  return (
+    <article>
+      <h2>{product.name}</h2>
+      <button type="button" onClick={handleAdd}>
+        Adicionar
+      </button>
+    </article>
+  );
+}
+
+export default function App() {
+  const product = { id: 1, name: 'Café Catuaí' };
+
+  function handleAddToCart(selectedProduct) {
+    console.log('Adicionado:', selectedProduct.name);
+  }
+
+  return <ProductCard product={product} onAdd={handleAddToCart} />;
+}
+```
+
+Repare em `onClick={handleAdd}`: passamos a função sem executá-la. Escrever
+`onClick={handleAdd()}` chamaria a função durante a renderização.
+
+Em formulários, o evento também permite impedir o comportamento padrão do
+navegador quando você quer tratar o envio com JavaScript:
+
+```jsx
+function handleSubmit(event) {
+  event.preventDefault();
+  console.log('Formulário enviado pelo React');
+}
+```
+
+- **Handler** é a função executada quando o evento acontece.
+- **Função como prop** permite que filhos comuniquem ações a componentes acima.
+- **`preventDefault()`** cancela um comportamento padrão, como recarregar a página no submit.
+
+No próximo nó, vamos guardar informação entre eventos usando **estado**.
+
+<Quiz
+  question="Qual forma passa corretamente um handler para onClick?"
+  options={[
+    {
+      text: "onClick={handleClick}",
+      correct: true,
+    },
+    {
+      text: "onClick={handleClick()}",
+      correct: false,
+      explanation: "Com os parênteses, a função é executada durante a renderização em vez de esperar o clique.",
+    },
+    {
+      text: "onClick=handleClick",
+      correct: false,
+      explanation: "JSX usa chaves para passar uma expressão JavaScript como valor da prop.",
+    },
+  ]}
+/>

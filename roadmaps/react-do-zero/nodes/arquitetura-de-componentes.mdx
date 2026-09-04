@@ -1,0 +1,113 @@
+---
+id: arquitetura-de-componentes
+title: "Arquitetura de componentes sem componente Deus"
+resources:
+  - title: "Pensando em React"
+    url: https://pt-br.react.dev/learn/thinking-in-react
+    type: doc
+    lang: pt
+    free: true
+  - title: "Escolhendo a estrutura do estado"
+    url: https://pt-br.react.dev/learn/choosing-the-state-structure
+    type: doc
+    lang: pt
+    free: true
+---
+
+Um componente não fica ruim porque tem muitas linhas; ele fica difícil quando
+mistura responsabilidades que mudam por motivos diferentes. Uma boa arquitetura
+começa separando **dados, ações e apresentação** em fronteiras compreensíveis.
+
+```jsx
+import { useState } from 'react';
+
+export default function ProductPage({ products }) {
+  const [query, setQuery] = useState('');
+  const filtered = products.filter((product) =>
+    product.name.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  return (
+    <main>
+      <SearchField value={query} onChange={setQuery} />
+      <ProductCount count={filtered.length} />
+      <ProductList products={filtered} />
+    </main>
+  );
+}
+
+function SearchField({ value, onChange }) {
+  return (
+    <input
+      aria-label="Buscar produtos"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}
+
+function ProductList({ products }) {
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id}>{product.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`ProductPage` coordena o estado da busca porque dois filhos dependem dele.
+`SearchField` cuida da interação do campo. `ProductList` só recebe uma coleção e
+renderiza. Nenhum componente precisa conhecer toda a aplicação.
+
+<Mermaid
+  chart={`flowchart TB
+    P["ProductPage: coordena estado"] --> S["SearchField: entrada"]
+    P --> C["ProductCount: leitura"]
+    P --> L["ProductList: coleção"]
+    L --> I["ProductItem: item"]
+    P -.-> D["Dados derivados ficam perto da fonte"]`}
+  caption="Uma arquitetura saudável separa coordenação, entrada, leitura e itens de lista em responsabilidades nomeáveis."
+/>
+
+### Mini missão: raio-x do componente grande
+
+Pegue um componente que parece bagunçado e marque cada trecho com uma etiqueta:
+`estado`, `evento`, `cálculo`, `efeito`, `lista`, `formulário` ou `visual`.
+Depois extraia só uma parte que tenha nome claro. O objetivo não é fatiar tudo;
+é encontrar uma fronteira que deixe o próximo passo mais óbvio.
+
+- **Coloque o estado perto de quem usa**, subindo apenas quando precisa ser compartilhado.
+- **Separe responsabilidades que mudam por motivos diferentes**.
+- **Prefira composição** a um "componente Deus" cheio de condicionais e props sem relação.
+
+> Dica: antes de extrair um componente, tente dar um nome para a responsabilidade.
+> Se o nome só for `ParteDeCima`, talvez a divisão ainda não esteja clara.
+
+Agora você tem repertório para o terceiro projeto:
+**Pokédex em React** (`pokedex-react`), que combina API,
+loading/erro, filtros, favoritos e reutilização de lógica.
+
+No próximo nó, vamos aprender a investigar quando alguma coisa **não se comporta
+como você esperava**.
+
+<Quiz
+  question="Qual sinal sugere que um componente está acumulando responsabilidades demais?"
+  options={[
+    {
+      text: "Ele coordena regras independentes, efeitos, formulário e várias áreas visuais que mudam por motivos diferentes",
+      correct: true,
+    },
+    {
+      text: "Ele usa uma função JavaScript",
+      correct: false,
+      explanation: "Todo componente de função React é uma função; isso por si só não indica problema.",
+    },
+    {
+      text: "Ele recebe children",
+      correct: false,
+      explanation: "children é uma ferramenta normal de composição e pode até reduzir acoplamento.",
+    },
+  ]}
+/>

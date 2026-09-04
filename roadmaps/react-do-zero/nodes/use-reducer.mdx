@@ -1,0 +1,118 @@
+---
+id: use-reducer
+title: "useReducer: estado complexo com ações explícitas"
+resources:
+  - title: "Extraindo lógica de estado para um reducer"
+    url: https://pt-br.react.dev/learn/extracting-state-logic-into-a-reducer
+    type: doc
+    lang: pt
+    free: true
+  - title: "Escalando com reducer e Context"
+    url: https://pt-br.react.dev/learn/scaling-up-with-reducer-and-context
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando um estado tem várias operações relacionadas, espalhar muitos setters pode
+esconder as regras de mudança. `useReducer` concentra essas transições em uma
+função pura que recebe `state` e `action`.
+
+```jsx
+import { useReducer } from 'react';
+
+function cartReducer(state, action) {
+  switch (action.type) {
+    case 'added':
+      return [...state, action.item];
+
+    case 'removed':
+      return state.filter((item) => item.id !== action.id);
+
+    case 'cleared':
+      return [];
+
+    default:
+      throw new Error(`Ação desconhecida: ${action.type}`);
+  }
+}
+
+export default function Cart() {
+  const [items, dispatch] = useReducer(cartReducer, []);
+
+  function addCoffee() {
+    dispatch({
+      type: 'added',
+      item: { id: crypto.randomUUID(), name: 'Catuaí' },
+    });
+  }
+
+  return (
+    <section>
+      <p>{items.length} item(ns)</p>
+      <button onClick={addCoffee}>Adicionar café</button>
+      <button onClick={() => dispatch({ type: 'cleared' })}>Limpar</button>
+
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>
+            {item.name}
+            <button onClick={() => dispatch({ type: 'removed', id: item.id })}>
+              Remover
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+As ações descrevem **o que aconteceu**; o reducer decide **como o estado muda**.
+Isso facilita testar regras e acompanhar transições quando o domínio cresce.
+
+<Mermaid
+  chart={`flowchart LR
+    UI["Componente"] -->|dispatch action| A["Action"]
+    A --> R["Reducer"]
+    R --> S["Novo state"]
+    S --> UI`}
+  caption="Com reducer, a interface dispara ações e uma função pura centraliza as transições de estado."
+/>
+
+### Mini missão: painel de missões
+
+Troque o carrinho por uma lista de missões com estados `pending`, `active` e
+`done`. Modele ações como `started`, `completed`, `reopened` e `cleared`.
+Quando os nomes das ações parecem uma história do domínio, o reducer fica mais
+fácil de ler.
+
+- **Reducer** transforma estado atual + ação em próximo estado.
+- **Action** é um objeto que descreve um evento relevante.
+- **`dispatch`** envia ações para o reducer.
+
+> Dica: não migre um contador simples para reducer só porque ele existe. Use
+> quando várias transições relacionadas ficam difíceis de acompanhar com setters.
+
+No próximo nó, vamos usar todos esses conceitos para decidir **onde cada estado e
+cada responsabilidade devem morar**.
+
+<Quiz
+  question="Qual é a responsabilidade de um reducer?"
+  options={[
+    {
+      text: "Receber estado e ação e devolver o próximo estado sem mutar o anterior",
+      correct: true,
+    },
+    {
+      text: "Renderizar JSX diretamente no lugar do componente",
+      correct: false,
+      explanation: "O reducer modela transições de estado; componentes continuam renderizando a interface.",
+    },
+    {
+      text: "Buscar dados da API automaticamente",
+      correct: false,
+      explanation: "Reducers devem permanecer puros; efeitos externos ficam fora deles.",
+    },
+  ]}
+/>

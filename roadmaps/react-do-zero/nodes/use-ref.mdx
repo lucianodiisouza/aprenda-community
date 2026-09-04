@@ -1,0 +1,83 @@
+---
+id: use-ref
+title: "useRef: referências sem nova renderização"
+resources:
+  - title: "Referenciando valores com refs"
+    url: https://pt-br.react.dev/learn/referencing-values-with-refs
+    type: doc
+    lang: pt
+    free: true
+  - title: "Manipulando o DOM com refs"
+    url: https://pt-br.react.dev/learn/manipulating-the-dom-with-refs
+    type: doc
+    lang: pt
+    free: true
+---
+
+Nem toda informação precisa aparecer na tela. `useRef` guarda um valor mutável
+entre renderizações sem pedir uma nova renderização quando `current` muda. Um uso
+muito comum é acessar um elemento do DOM.
+
+```jsx
+import { useRef, useState } from 'react';
+
+export default function SearchBox() {
+  const inputRef = useRef(null);
+  const [query, setQuery] = useState('');
+
+  function clearAndFocus() {
+    setQuery('');
+    inputRef.current?.focus();
+  }
+
+  return (
+    <section>
+      <label htmlFor="search">Busca</label>
+      <input
+        ref={inputRef}
+        id="search"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <button type="button" onClick={clearAndFocus}>
+        Limpar e focar
+      </button>
+    </section>
+  );
+}
+```
+
+O texto digitado fica em **estado** porque muda a interface. A referência do input
+fica em **ref** porque só precisamos do nó DOM para chamar `focus()`.
+
+Refs também podem guardar ids de timer ou valores anteriores que não participam
+da renderização.
+
+- **`ref.current`** persiste entre renderizações.
+- **Alterar ref não re-renderiza** o componente.
+- **DOM ref** é útil para foco, medição e integração com APIs imperativas.
+
+> Dica: não use ref como "atalho" para fugir do estado. Se mudar o valor deveria
+> atualizar o que aparece na tela, estado continua sendo a ferramenta principal.
+
+No próximo nó, vamos combinar Hooks existentes em um **Custom Hook** reutilizável.
+
+<Quiz
+  question="Quando useRef faz mais sentido do que useState?"
+  options={[
+    {
+      text: "Quando você precisa guardar uma referência ao DOM para focar um input sem renderizar por causa dessa referência",
+      correct: true,
+    },
+    {
+      text: "Quando o valor precisa aparecer atualizado na tela imediatamente após mudar",
+      correct: false,
+      explanation: "Mudanças em ref não pedem nova renderização; estado é mais adequado para dados visuais.",
+    },
+    {
+      text: "Sempre que houver um formulário",
+      correct: false,
+      explanation: "Formulários podem usar estado, refs ou bibliotecas dependendo do caso; não há essa regra.",
+    },
+  ]}
+/>

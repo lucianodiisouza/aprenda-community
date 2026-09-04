@@ -1,0 +1,87 @@
+---
+id: debugging-react
+title: "Debugging em React"
+resources:
+  - title: "React Developer Tools"
+    url: https://react.dev/learn/react-developer-tools
+    type: doc
+    lang: en
+    free: true
+  - title: "Renderizar e confirmar"
+    url: https://pt-br.react.dev/learn/render-and-commit
+    type: doc
+    lang: pt
+    free: true
+---
+
+Quando a interface dá um resultado estranho, comece reduzindo o problema: qual
+estado deveria ter mudado, qual prop chegou no componente e qual renderização
+produziu aquela tela? React DevTools ajuda a inspecionar a árvore e seus valores.
+
+Um erro clássico é mutar estado e reaproveitar a mesma referência:
+
+```jsx
+// Problema
+function addItem(newItem) {
+  items.push(newItem);
+  setItems(items);
+}
+
+// Melhor
+function addItem(newItem) {
+  setItems((currentItems) => [...currentItems, newItem]);
+}
+```
+
+Outro aviso frequente vem de listas sem key estável:
+
+```jsx
+// Problema
+{products.map((product) => <ProductCard product={product} />)}
+
+// Melhor
+{products.map((product) => (
+  <ProductCard key={product.id} product={product} />
+))}
+```
+
+Em desenvolvimento, `StrictMode` também pode executar alguns fluxos extras para
+expor Effects sem limpeza adequada. Se uma conexão abre duas vezes e nunca fecha,
+o problema não é "o React duplicou tudo": muitas vezes falta cleanup.
+
+```jsx
+useEffect(() => {
+  const connection = connect();
+  return () => connection.disconnect();
+}, []);
+```
+
+- **Leia warnings completos**: React costuma dizer qual componente iniciou o problema.
+- **Inspecione props e state** no React DevTools antes de adivinhar.
+- **Reproduza o menor caso possível** para separar sintoma de causa.
+
+> Dica: `console.log` continua útil, mas registre valores e eventos específicos em
+> vez de espalhar logs genéricos por todos os componentes.
+
+No último nó, vamos organizar o que estudar depois sem cair na armadilha de
+instalar dez bibliotecas antes de dominar a base.
+
+<Quiz
+  question="Qual é uma boa primeira ação ao investigar um bug de estado em React?"
+  options={[
+    {
+      text: "Ver qual estado/prop o componente recebeu e reproduzir o menor caso que gera o problema",
+      correct: true,
+    },
+    {
+      text: "Adicionar useMemo em todos os componentes",
+      correct: false,
+      explanation: "Memoização não corrige regra de estado incorreta e pode dificultar o diagnóstico.",
+    },
+    {
+      text: "Remover StrictMode sempre que um Effect executar mais de uma vez no desenvolvimento",
+      correct: false,
+      explanation: "StrictMode pode revelar efeitos sem cleanup; remover o sinal não corrige a causa.",
+    },
+  ]}
+/>

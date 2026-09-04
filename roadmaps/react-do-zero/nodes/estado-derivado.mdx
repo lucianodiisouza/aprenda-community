@@ -1,0 +1,90 @@
+---
+id: estado-derivado
+title: "Estado derivado: calcule em vez de duplicar"
+resources:
+  - title: "Escolhendo a estrutura do estado"
+    url: https://pt-br.react.dev/learn/choosing-the-state-structure
+    type: doc
+    lang: pt
+    free: true
+  - title: "Talvez você não precise de um Effect"
+    url: https://pt-br.react.dev/learn/you-might-not-need-an-effect
+    type: doc
+    lang: pt
+    free: true
+---
+
+Guardar no estado tudo que aparece na tela parece conveniente, mas pode criar
+duplicação. Se um valor pode ser calculado a partir de props ou outro estado,
+calcule-o durante a renderização.
+
+```jsx
+import { useState } from 'react';
+
+const products = [
+  { id: 1, name: 'Catuaí', price: 34.9 },
+  { id: 2, name: 'Bourbon', price: 39.5 },
+  { id: 3, name: 'Geisha', price: 58.0 },
+];
+
+export default function ProductSearch() {
+  const [query, setQuery] = useState('');
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(normalizedQuery),
+  );
+
+  return (
+    <section>
+      <input
+        aria-label="Buscar produto"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+
+      <p>{filteredProducts.length} resultado(s)</p>
+
+      <ul>
+        {filteredProducts.map((product) => (
+          <li key={product.id}>{product.name}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+```
+
+Não precisamos de `useState` para `filteredProducts` nem de um `useEffect` para
+sincronizá-lo. Enquanto `query` for a fonte de verdade, o filtro sempre estará
+coerente com ela.
+
+- **Estado mínimo** guarda apenas o que realmente muda de forma independente.
+- **Valor derivado** é calculado de props/estado existentes.
+- **Sincronização desnecessária** costuma ser sinal de estado duplicado.
+
+Você já pode encarar o segundo projeto:
+**Habit Tracker em React** (`habit-tracker-react`), que pratica
+formulários, estado imutável, filtros e estatísticas derivadas.
+
+No próximo nó, vamos aprender quando um **Effect é realmente necessário**.
+
+<Quiz
+  question="Qual valor provavelmente não precisa de um useState próprio?"
+  options={[
+    {
+      text: "Uma lista filtrada que pode ser calculada diretamente da lista original e do texto de busca",
+      correct: true,
+    },
+    {
+      text: "O texto que a pessoa digita em um input controlado",
+      correct: false,
+      explanation: "Esse valor muda por interação e pode ser uma fonte de verdade legítima.",
+    },
+    {
+      text: "O item selecionado pelo id quando a seleção precisa persistir entre eventos",
+      correct: false,
+      explanation: "Uma seleção persistente é um caso comum de estado.",
+    },
+  ]}
+/>
