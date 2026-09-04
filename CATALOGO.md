@@ -4,7 +4,7 @@ Lista completa de **trilhas**, **projetos** e **bootcamps** do Aprenda
 Community. É a fonte navegável do que existe hoje — o [README](./README.md)
 traz só o resumo e aponta pra cá.
 
-> Contagem atual: **39 trilhas**, **17 projetos**, **2 bootcamps**.
+> Contagem atual: **40 trilhas**, **17 projetos**, **2 bootcamps**.
 > A verdade sempre está nas pastas [`roadmaps/`](./roadmaps),
 > [`projects/`](./projects) e [`bootcamps/`](./bootcamps) — se algo aqui
 > divergir, a pasta ganha.
@@ -38,6 +38,7 @@ e projeto final. Organizadas por área.
 | [CSS Animações](./roadmaps/css-animacoes) | 6 | intermediário |
 | [CSS Moderno](./roadmaps/css-moderno) | 9 | avançado |
 | [Frontend](./roadmaps/frontend) | 12 | intermediário |
+| [React do Zero](./roadmaps/react-do-zero) | 24 | iniciante |
 | [TypeScript](./roadmaps/typescript) | 12 | intermediário |
 | [Angular](./roadmaps/angular) | 24 | intermediário |
 | [Next.js e Meta-frameworks](./roadmaps/nextjs) | 10 | intermediário |
