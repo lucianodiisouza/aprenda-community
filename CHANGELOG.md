@@ -6,6 +6,19 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.30.1] - 2026-11-18
+
+### Corrigido
+
+- 🔗 **Links entre trilhas** (`estruturas-de-dados`, `fundamentos-de-cs`,
+  `frontend`): 7 links que apontam para outra trilha usavam caminho
+  relativo (`../../<slug>`). Esse padrão resolve no GitHub, mas dá **404
+  no site** e é link morto no app mobile. Agora usam caminho absoluto
+  (`/trilhas/<slug>`), como a trilha `visibilidade-organica` já fazia.
+  Nós afetados: `algoritmos-e-complexidade`, `projeto-final` (frontend),
+  `projeto-final`, `auto-diagnostico` e `recursao-pratica` (estruturas
+  de dados).
+
 ## [1.30.0] - 2026-11-18
 
 ### Adicionado
@@ -961,7 +974,8 @@ check-links    → 80 ok, 0 com problema
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
   Open Graph Protocol.
 
-[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.30.0...HEAD
+[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.30.1...HEAD
+[1.30.1]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.30.1
 [1.30.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.30.0
 [1.25.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.25.0
 [1.0.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.0.0
