@@ -36,11 +36,11 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ### Alterado
 
-- 📚 **`CATALOGO.md`**: contagem de trilhas `40 → 41` e de projetos
+- 📚 **`CATALOGO.md`**: contagem de trilhas `41 → 42` e de projetos
   `17 → 18`, com a nova trilha listada na seção "🎨 Frontend & Web"
   logo abaixo de "SEO, AEO e GEO" e o novo projeto na seção de
   projetos intermediários.
-- 📝 **`README.md`**: badges de trilhas `40 → 41` e de projetos
+- 📝 **`README.md`**: badges de trilhas `41 → 42` e de projetos
   `17 → 18`.
 - 🔗 **Trilha SEO, AEO e GEO** (`roadmaps/seo-aeo-geo`): o fim do nó
   `monitoramento-visibilidade-ia` ganhou um bloco "Próximo passo"

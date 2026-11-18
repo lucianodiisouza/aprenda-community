@@ -4,7 +4,7 @@ Lista completa de **trilhas**, **projetos** e **bootcamps** do Aprenda
 Community. É a fonte navegável do que existe hoje — o [README](./README.md)
 traz só o resumo e aponta pra cá.
 
-> Contagem atual: **41 trilhas**, **18 projetos**, **2 bootcamps**.
+> Contagem atual: **42 trilhas**, **18 projetos**, **2 bootcamps**.
 > A verdade sempre está nas pastas [`roadmaps/`](./roadmaps),
 > [`projects/`](./projects) e [`bootcamps/`](./bootcamps) — se algo aqui
 > divergir, a pasta ganha.
