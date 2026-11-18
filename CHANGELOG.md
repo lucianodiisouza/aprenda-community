@@ -6,6 +6,8 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+## [1.30.0] - 2026-11-18
+
 ### Adicionado
 
 - 🌱 **Trilha Visibilidade Orgânica** (`roadmaps/visibilidade-organica`, 31 nós):
@@ -31,6 +33,30 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   (`projects/auditoria-visibilidade-organica`): capstone de 3 fases -
   diagnóstico, correção priorizada e prova com métricas antes/depois, nas
   quatro camadas (técnica, resposta direta, citação por IA e conversão).
+
+### Alterado
+
+- 📚 **`CATALOGO.md`**: contagem de trilhas `40 → 41` e de projetos
+  `17 → 18`, com a nova trilha listada na seção "🎨 Frontend & Web"
+  logo abaixo de "SEO, AEO e GEO" e o novo projeto na seção de
+  projetos intermediários.
+- 📝 **`README.md`**: badges de trilhas `40 → 41` e de projetos
+  `17 → 18`.
+- 🔗 **Trilha SEO, AEO e GEO** (`roadmaps/seo-aeo-geo`): o fim do nó
+  `monitoramento-visibilidade-ia` ganhou um bloco "Próximo passo"
+  apontando para a nova trilha avançada, e `meta/editorial-decisions.md`
+  registrou a nota de manutenção. Mudança **aditiva**: nenhum conteúdo
+  existente da trilha foi reescrito.
+- 🧭 **Links entre trilhas**: os links de borda da nova trilha usam
+  caminho absoluto (`/trilhas/<slug>`) em vez do padrão relativo do
+  repositório (`../../<slug>`). O padrão relativo resolve no GitHub,
+  mas dá 404 no site e é link morto no app mobile.
+
+### Créditos
+
+- Trilha Visibilidade Orgânica e Projeto Auditoria de Visibilidade
+  Orgânica escritos por **Luciano dii Souza**
+  ([@lucianodiisouza](https://github.com/lucianodiisouza)).
 
 ## [1.29.0] - 2026-09-04
 
@@ -935,6 +961,7 @@ check-links    → 80 ok, 0 com problema
 - Recursos curados a partir de MDN PT-BR, WCAG (W3C), web.dev e
   Open Graph Protocol.
 
-[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.25.0...HEAD
+[Não liberado]: https://github.com/lucianodiisouza/aprenda-community/compare/v1.30.0...HEAD
+[1.30.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.30.0
 [1.25.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.25.0
 [1.0.0]: https://github.com/lucianodiisouza/aprenda-community/releases/tag/v1.0.0
