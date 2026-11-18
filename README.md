@@ -6,7 +6,7 @@
 
 [![Licença código: AGPL-3.0](https://img.shields.io/badge/código-AGPL--3.0-blue.svg)](./LICENSE)
 [![Licença conteúdo: CC BY-SA 4.0](https://img.shields.io/badge/conteúdo-CC%20BY--SA%204.0-lightgrey.svg)](./LICENSE)
-[![Trilhas](https://img.shields.io/badge/trilhas-41-success.svg)](./roadmaps)
+[![Trilhas](https://img.shields.io/badge/trilhas-42-success.svg)](./roadmaps)
 [![Projetos](https://img.shields.io/badge/projetos-18-blue.svg)](./projects)
 [![Bootcamps](https://img.shields.io/badge/bootcamps-2-orange.svg)](./bootcamps)
 [![PRs bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-brightgreen.svg)](./CONTRIBUTING.md)
