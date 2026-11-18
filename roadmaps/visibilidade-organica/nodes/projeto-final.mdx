@@ -1,0 +1,202 @@
+---
+id: projeto-final
+title: "Projeto Final: Auditoria e Otimização Real"
+resources:
+  - title: "Guia inicial de SEO (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Relatório de desempenho do Search Console (Ajuda do Google, em inglês)"
+    url: https://support.google.com/webmasters/answer/9128668
+    type: doc
+    lang: en
+    free: true
+---
+
+Agora a parte que separa quem estudou de quem entrega: um site real, com
+problema real, corrigido e publicado. Este é o projeto de fechamento da
+trilha — e o entregável não é um relatório bonito, é a **mudança no ar**.
+
+## O essencial 🟢
+
+**O escopo:** um site real e de **3 a 5 páginas**. Pode ser o seu site, o site
+de um cliente (com permissão), o projeto open source de alguém, ou o site de
+um amigo. O que não pode é ser um site que você não consiga publicar.
+
+As páginas do escopo devem ser **heterogêneas de propósito**:
+
+- uma página que **já impressiona** na busca (a que tem mais chance de
+  converter visita em cliente);
+- uma página que **não está indexada** (a que resolve o vazamento mais
+  óbvio);
+- uma página de **conteúdo** (post ou artigo);
+- uma página de **produto ou serviço** (a que tem a oferta).
+
+**O que entregar:**
+
+1. **Relatório de auditoria** — a planilha com as dez colunas do nó
+   anterior, preenchida para as páginas do escopo.
+2. **As mudanças feitas** — o código, o arquivo, a linha. "Melhorei o SEO"
+   não é entrega; `canonical` corrigido em `src/app/planos/page.tsx` é.
+3. **Antes e depois** — a mesma métrica, medida nas duas pontas, na mesma
+   ferramenta.
+
+**Os critérios de aprovação** são três, e cada um precisa ter **uma melhoria
+verificável** — uma evidência que você mostra, não uma intenção que você
+declara:
+
+- **Camada 1 — SEO técnico.** Canonical correto, indexação confirmada,
+  `title` e `description` próprios de cada página, hierarquia de títulos
+  íntegra. Evidência: a inspeção de URL e o "ver código-fonte".
+- **Camada 2 — AEO.** Um bloco de resposta direta na página que responde à
+  pergunta: título que espelha a pergunta, resposta de 40 a 60 palavras,
+  detalhe depois. Evidência: o bloco no HTML.
+- **Camada 3 — GEO.** Um bloco citável: afirmação, número, fonte, data de
+  atualização visível e autor identificável. Evidência: o bloco mais a
+  resposta do motor de IA ao seu prompt.
+
+## Aprofundamento 🟡
+
+O fluxo do projeto tem cinco passos e fecha em ciclo:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Medir: linha de base"] --> B["Priorizar: a fila"]
+    B --> C["Corrigir: tecnico, AEO e GEO"]
+    C --> D["Publicar e pedir reindexacao"]
+    D --> E["Esperar 30 a 60 dias"]
+    E --> F["Medir de novo"]
+    F --> B
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#8250df,stroke:#ffffff,color:#ffffff
+    style C fill:#8250df,stroke:#ffffff,color:#ffffff
+    style D fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style E fill:#1a7f37,stroke:#ffffff,color:#ffffff
+    style F fill:#1a7f37,stroke:#ffffff,color:#ffffff`}
+  caption="O ciclo do projeto: medir antes, priorizar, corrigir nas três camadas, publicar, esperar e medir de novo. A segunda volta do ciclo é o que separa uma entrega de uma campanha de um dia."
+/>
+
+**Roteiro semana a semana.**
+
+- **Semana 1 — escopo e linha de base.** Escolha o site e as páginas. Rode a
+  auditoria em 6 passos. Preencha a planilha. Meça a linha de base de cada
+  métrica antes de mexer em qualquer coisa: sem isso, o depois não prova nada.
+- **Semana 2 — camada técnica.** Canonical, indexação, `title` e
+  `description`, hierarquia de títulos, performance. São mudanças pequenas e
+  de risco baixo: comece por aqui.
+- **Semana 3 — camada de conteúdo.** Bloco de resposta direta na página que
+  já posiciona, bloco citável com número e fonte, malha de links internos
+  ligando a página nova à que já tem visitação.
+- **Semana 4 — publicação e verificação.** Publique, peça a reindexação na
+  inspeção de URL, rode o prompt fixo nos motores de IA e guarde a resposta.
+  Marque no calendário a medição de retorno para 30 e 60 dias.
+
+**A planilha de métricas** precisa de antes e depois na mesma coluna:
+impressões, cliques, taxa de clique, posição, status HTTP, e — se houver
+conversão — a conversão por sessão orgânica. Some uma coluna de observação
+escrita: "o que mudou entre as duas medições". É essa coluna que transforma
+número em aprendizado.
+
+**Se você não puder publicar.** Use uma variante local: um fork do
+repositório em um domínio seu (um subdomínio de teste, uma branch em páginas
+estáticas). A camada técnica e a camada de conteúdo continuam verificáveis
+inteiras. O que não existe é a medição de tráfego — e isso precisa estar
+escrito com todas as letras no relatório: "sem alteração no ambiente
+público, a comparação de métricas fica indeterminada". Publicar num ambiente
+seu é melhor do que não publicar nada.
+
+> Atenção: o prazo de 90 dias é o do plano, não o do resultado. Se você
+> medir na semana 5, vai concluir que a camada técnica não funcionou —
+> e talvez ela seja justamente a que mais precisa de tempo.
+
+## Pra quem quer ir além 🔴
+
+Dá para ir além do site: transformar o relatório em conteúdo. Uma auditoria
+de páginas públicas, os erros que se repetem no seu setor e o que você
+descobriu medindo são exatamente o tipo de material que sustenta autoridade
+— e que citação por IA adora, porque tem número, método e data.
+
+E dá para automatizar: a planilha de auditoria é um conjunto de colunas
+fixas, e colunas fixas viram planilha, planilha vira script, script vira
+relatório semanal. É a mesma régua do produto que você já conhece —
+integração, teste, observabilidade — aplicada a um sistema que não tem
+deploy.
+
+## Exercício interativo
+
+<Quiz
+  question="No projeto final, o que conta como uma melhoria verificável na camada de GEO (citação por IA)?"
+  label="Quiz"
+  options={[
+    {
+      text: "Publicar dez artigos novos no blog para ter mais chances de ser citado.",
+      correct: false,
+      explanation: "Volume aumenta a chance de aparecer, mas não é verificável nem é citável. O critério pede uma evidência de citação, não mais texto.",
+    },
+    {
+      text: "Um bloco com afirmação, número, fonte e data de atualização, com o prompt fixo registrado e a resposta do motor de IA guardada.",
+      correct: true,
+      explanation: "Exato. É a evidência completa: a estrutura que favorece a citação, o prompt que você rodou e o resultado que você guardou. Dá para repetir e comparar.",
+    },
+    {
+      text: "Colocar mais palavras-chave no título das páginas do escopo.",
+      correct: false,
+      explanation: "Isso é trabalho de SEO técnico, não de GEO. Repetir palavras-chave no título não produz citação nenhuma.",
+    },
+    {
+      text: "Trocar o tema do site por um visual mais moderno.",
+      correct: false,
+      explanation: "Visual não é critério de aprovação em nenhuma das três camadas. Nenhuma das camadas pede mudança de aparência.",
+    },
+  ]}
+/>
+
+## No seu projeto
+
+Duas tarefas para começar hoje, antes de qualquer relatório:
+
+- [ ] Escolha o site e as 3 a 5 páginas do escopo, e anote por que cada página entrou. Guarde a lista: ela é a primeira linha do relatório.
+- [ ] Meça a linha de base das páginas do escopo no Search Console e guarde o print com a data. Sem a linha de base, o depois não é comparação, é impressão.
+
+**Rubrica do projeto** — marque cada item conforme entregar:
+
+*Escopo e auditoria*
+
+- [ ] Site real escolhido, com permissão para publicar, e as 3 a 5 páginas listadas com o motivo da escolha.
+- [ ] Planilha de auditoria preenchida com as dez colunas para cada página do escopo.
+- [ ] Linha de base medida antes de qualquer mudança, com a data anotada.
+- [ ] Fila priorizada com impacto, esforço e risco de cada tarefa, ordenada pelo score.
+
+*Camada 1 — SEO técnico*
+
+- [ ] Canonical de cada página do escopo aponta para a URL certa, confirmado na inspeção de URL.
+- [ ] Title e description próprios de cada página do escopo, com a promessa alinhada ao primeiro parágrafo.
+- [ ] Nenhuma página do escopo bloqueada no robots.txt ou com noindex indevido.
+- [ ] Código de status 200 em todas as páginas do escopo, sem cadeia de redirecionamento.
+- [ ] Um h1 por página e hierarquia de títulos sem pular nível.
+- [ ] JSON-LD válido em pelo menos uma página, validado com a ferramenta de rich results.
+
+*Camada 2 — AEO*
+
+- [ ] Uma página do escopo tem bloco de resposta direta: pergunta como título, resposta de 40 a 60 palavras, detalhe depois.
+- [ ] A resposta direta é autossuficiente e não depende de pronome do parágrafo anterior.
+- [ ] O bloco está na página que responde à pergunta, e não numa página genérica do site.
+
+*Camada 3 — GEO*
+
+- [ ] Um bloco citável com afirmação, número, fonte e data de atualização visível.
+- [ ] Autor identificável na página, com as mesmas informações que o JSON-LD.
+- [ ] Prompt fixo registrado e resposta do motor de IA guardada, com ou sem a sua citação.
+
+*Entrega*
+
+- [ ] Relatório entregue com as três camadas, o antes e o depois lado a lado e a coluna de observação escrita.
+- [ ] Mudanças publicadas e reindexação pedida na inspeção de URL.
+- [ ] Data de retorno marcada para 30 e 60 dias depois da publicação.
+
+## Fechamento
+
+Você entregou um site real, corrigido nas três camadas e medido. Falta só a
+parte que quase todo mundo deixa de fora: o que fazer na semana seguinte ao
+projeto, quando o resultado começa a decair.

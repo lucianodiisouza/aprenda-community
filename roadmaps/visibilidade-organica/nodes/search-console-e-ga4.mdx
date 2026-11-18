@@ -1,0 +1,299 @@
+---
+id: search-console-e-ga4
+title: "Search Console, GA4 e Logs: Medir o que Importa"
+resources:
+  - title: "Relatório de desempenho do Search Console (Ajuda do Google, em inglês)"
+    url: https://support.google.com/webmasters/answer/7576553
+    type: doc
+    lang: en
+    free: true
+  - title: "Search Console: um panorama dos relatórios (Ajuda do Google, em inglês)"
+    url: https://support.google.com/webmasters/answer/9128668
+    type: doc
+    lang: en
+    free: true
+  - title: "Eventos recomendados no GA4 (Ajuda do Google Analytics, em inglês)"
+    url: https://support.google.com/analytics/answer/9267735
+    type: doc
+    lang: en
+    free: true
+---
+
+Até aqui você melhorou o site com base em intuição e em boas práticas. A partir
+de agora, cada decisão passa por um número. Este nó é o painel mínimo de saúde
+orgânica — três ferramentas, três perguntas.
+
+## O essencial 🟢
+
+### Search Console: o que o buscador fez com o seu site
+
+É a única ferramenta onde o buscador conta o que ele fez com o seu site. Quatro
+relatórios que você precisa conhecer:
+
+| Relatório | A pergunta que ele responde |
+|---|---|
+| Desempenho | O que as pessoas buscaram e quantas vezes você apareceu |
+| Cobertura / indexação | Quais URLs o Google conhece e quais ele decidiu não indexar |
+| Sitemaps | O Google conseguiu ler e processar o seu sitemap |
+| Experiência (core web vitals) | As suas páginas passam nos limites de desempenho |
+
+E a **Inspeção de URL**: você cola uma URL e o Search Console diz o que o
+Googlebot encontrou nela — se está no índice, se foi detectada mas não
+indexada, qual foi a última vez que ele visitou. É a ferramenta de
+diagnóstico que responde "por que essa página não aparece?".
+
+### O relatório de desempenho: quatro números, uma armadilha
+
+O relatório de desempenho mostra **impressões**, **cliques**, **CTR** e
+**posição média**.
+
+- **Impressão**: seu site apareceu num resultado. A pessoa viu o título e o
+  trecho. Nada mais.
+- **Clique**: a pessoa abriu. Só isso conta como visita.
+- **CTR**: cliques dividida por impressões.
+- **Posição média**: a média das posições em que você apareceu.
+
+A armadilha é a última. A posição média **mistura consultas que não têm
+nada a ver entre si**. A mesma página pode estar em 1º lugar para "tarefa
+remota" e em 40º para "kanban online". A média vira um número que não
+corresponde a nenhuma busca que alguém fez de verdade.
+
+> Atenção: posição média do site inteiro é praticamente inútil. Posição média
+> **de uma consulta**, **de uma página**, é útil. O erro clássico é olhar o
+> número grande no topo do relatório e concluir que "está tudo bem".
+
+### GA4: três relatórios que importam
+
+O GA4 é uma ferramenta de produto, não de busca. Dentro dele, quase tudo é
+ruído para o seu objetivo. Fique com três:
+
+1. **Sessões orgânicas** — quantas visitas vieram da busca orgânica, sem
+   consulta de marca e sem os robôs.
+2. **Conversões** — quantas dessas sessões viraram cadastro, teste ou cliente.
+3. **Páginas de entrada** — quais páginas atraem visita de forma orgânica.
+
+O resto — demografia, telas, caminhos de navegação, tempo no site — responde
+perguntas de produto que não têm nada a ver com o seu crescimento orgânico.
+
+### Logs do servidor: o único lugar com a verdade
+
+O Search Console te diz o que o buscador **decidiu**. O log do servidor te
+diz o que ele **encontrou**.
+
+Cada requisição que chega no seu servidor deixa registrada: data e hora, URL,
+status (200, 301, 404, 500), tempo de resposta, tamanho da resposta e o
+`user-agent`. Quando o Googlebot passa às 3h da manhã e recebe 500, o
+Search Console não vai te mostrar isso com detalhe: o log mostra.
+
+Os logs respondem a perguntas que nenhuma outra ferramenta responde:
+
+- "O Googlebot acessou o CSS da minha página ou só o HTML?"
+- "Quantas vezes ele pediu a imagem que ninguém vê?"
+- "Ele está batendo em rota que devolve 404?"
+- "Os robôs de IA estão visitando meu site?"
+
+<Mermaid
+  chart={`flowchart LR
+    GSC["Search Console: impressoes, cliques, CTR, posicao"]
+    Paginas["Paginas: uma tabela por URL"]
+    GA4["GA4: sessoes organicas e paginas de entrada"]
+    Conv["Conversao: cadastro, teste, cliente"]
+    Conteudo["Conteudo: titulo, resposta direta, novas perguntas"]
+    GSC --> Paginas
+    Paginas --> GA4
+    GA4 --> Conv
+    Conv -.->|"o que converte vira assunto novo"| Conteudo
+    Conteudo -.->|"conteudo novo muda as metricas"| GSC
+    style GSC fill:#1f6feb,stroke:#fff,color:#fff
+    style Paginas fill:#388bfd,stroke:#fff,color:#fff
+    style GA4 fill:#388bfd,stroke:#fff,color:#fff
+    style Conv fill:#2ea043,stroke:#fff,color:#fff
+    style Conteudo fill:#d29922,stroke:#fff,color:#fff`}
+  caption="O painel em cadeia: o Search Console diz o que o buscador fez, a tabela por pagina organiza, o GA4 diz o que as visitas viraram, e a conversao volta como assunto de conteudo."
+/>
+
+**O que fixar aqui:** o Search Console mostra o que o buscador fez com você; o
+GA4 mostra o que a visita virou; o log do servidor mostra o que o buscador
+encontrou. E **posição média não é medida de nada** — é preciso descer para a
+página e para a consulta.
+
+## Aprofundamento 🟡
+
+### Uma tabela por URL, nunca a média do site
+
+O relatório de desempenho vem com uma visão agregada. Ela esconde o que
+importa. Desça um nível: uma linha por URL, com as colunas que você realmente
+decide em cima.
+
+| URL | impressões | cliques | CTR | posição |
+|---|---|---|---|---|
+| `/planos` | 1200 | 145 | 12% | 4,2 |
+| `/blog/kanban` | 800 | 120 | 15% | 2,1 |
+
+Essa tabela é a sua fila de trabalho. Cada linha é uma decisão diferente:
+
+- **CTR baixo com posição boa** → problema de título e descrição. Você está
+  na primeira página e ninguém clica: o título não está prometendo o que a
+  pessoa queria.
+- **CTR alto com posição ruim** → problema de relevância. A pessoa clica porque
+  o título acertou, mas a página não entrega.
+- **Impressões zero** → problema de indexação, não de conteúdo. Vá para a
+  Inspeção de URL antes de reescrever qualquer coisa.
+- **Tudo positivo e pouco volume** → seu texto não cobre o que o público
+  pesquisa. Volte para o mapa de palavras.
+
+### A pergunta certa para o Search Console
+
+"Por que minha página não aparece?" tem quatro respostas possíveis, e a
+Inspeção de URL te dá exatamente uma delas:
+
+1. **URL desconhecida** — ninguém linkedou e ela não está no sitemap.
+2. **Detectada, mas não indexada** — o Google viu e decidiu não guardar.
+   Motivo comum: conteúdo duplicado, canônico apontando para outro lugar, ou
+   página fina.
+3. **Indexada, mas não exibida** — está no índice, mas nenhuma busca mostra.
+   Aqui o problema é relevância e qualidade, não indexação.
+4. **Indexada e exibida** — funciona. A pergunta seguinte é: por que ela não
+   aparece nas outras buscas?
+
+Essa distinção evita o erro mais caro da área: reescrever o conteúdo de uma
+página que nunca foi indexada.
+
+### Como ler um log de servidor sem perder o dia
+
+Você não precisa de um sistema caro. Uma linha por requisição, no formato
+comum de servidor web, já resolve. O filtro prático:
+
+- **user-agent** — as requisições do Googlebot e dos robôs de IA.
+- **status** — 200 está bom; 301, 302, 404, 410 e 5xx merecem atenção.
+- **tempo de resposta** — o TTFB aparece aqui antes de aparecer no relatório
+  de core web vitals.
+- **URL** — quais rotas o crawler pede e quais ele nunca pede.
+
+> Dica: comece por uma pergunta só. "Quais status o Googlebot recebeu nas
+> últimas duas semanas?" Uma lista curta de rotas com 404 ou 5xx já é uma
+> fila de correção.
+
+## Pra quem quer ir além 🔴
+
+Três hábitos de quem mede sem se perder:
+
+**Uma planilha, uma linha por página, atualizada por mês.** Colunas: URL,
+impressões, cliques, CTR, posição, título, canonical, h1, schema, links
+internos, status. É a mesma planilha da auditoria que você vai montar no fim da
+trilha, e ela nasce aqui.
+
+**Cruze as três fontes antes de concluir.** Uma página que cai no Search
+Console pode estar no GA4 com tráfego estável (é o algoritmo variando) ou com
+queda real (é a página). Os logs separam os dois casos: se o crawler continua
+visitando a página e o status é 200, o problema não é técnico.
+
+**Automatize o corte, não a interpretação.** Um script que baixa o relatório
+do Search Console e a planilha, e calcula CTR e posição por URL, elimina o
+trabalho repetitivo. A interpretação — "isto é bom ou ruim?" — continua sendo
+sua, e é ela que vale.
+
+E um cuidado: **meça antes de mudar**. Comparar o antes e o depois de uma
+alteração em uma semana só prova que o buscador muda com o tempo. Mudanças
+de SEO precisam de 30 a 60 dias para serem julgadas, porque o buscador
+reindexa, reavalia e reordena em ciclos próprios.
+
+## Exercício interativo
+
+<Quiz
+  question="O relatório de desempenho mostra a posição média da sua página. Por que esse número engana?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque ela mistura consultas muito diferentes: a página pode estar em 1º numa busca e em 40ª em outra",
+      correct: true,
+      explanation: "É exatamente isso. A média de posições de consultas sem relação entre si não descreve nenhuma busca real. O número útil é a posição de uma consulta específica.",
+    },
+    {
+      text: "Porque a posição média só é calculada para páginas que já estão indexadas",
+      correct: false,
+      explanation: "A posição média aparece justamente para as páginas que recebem impressões, ou seja, as que o buscador já está exibindo.",
+    },
+    {
+      text: "Porque o Google esconde a posição real dos sites pequenos",
+      correct: false,
+      explanation: "Não existe isso. A posição média é a média real das posições em que você apareceu, para o seu site do mesmo jeito que para qualquer outro.",
+    },
+    {
+      text: "Porque ela desconta os cliques e mostra só as impressões",
+      correct: false,
+      explanation: "Posição e CTR são métricas diferentes: a posição é o lugar no resultado, o CTR é a proporção de impressões que virou clique.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Onde você descobre o que o Googlebot realmente encontrou na sua página?"
+  label="Quiz"
+  options={[
+    {
+      text: "Nos logs do servidor: status, tempo de resposta e user-agent de cada requisição do crawler",
+      correct: true,
+      explanation: "O log é o único lugar que mostra a requisição como ela aconteceu: o que devolveu, quanto tempo levou e quem pediu. O Search Console mostra a decisão do buscador, não a requisição.",
+    },
+    {
+      text: "No relatório de cobertura do Search Console",
+      correct: false,
+      explanation: "Cobertura mostra o estado de indexação das URLs (indexada, detectada, excluída). Não mostra status, tempo de resposta nem o que foi requisitado.",
+    },
+    {
+      text: "No relatório de experiência do Search Console",
+      correct: false,
+      explanation: "Experiência e desempenho de página (core web vitals). Serve para saber se a página é rápida, não para auditar o que o crawler recebeu.",
+    },
+    {
+      text: "Nas impressões do relatório de desempenho",
+      correct: false,
+      explanation: "Impressões dizem quantas vezes o seu conteúdo apareceu num resultado. Não dizem nada sobre o que o crawler achou ao chegar na URL.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `calcularSaude(linhas)` que devolve o CTR da linha com mais impressões, como uma string no formato `12%`. Regras: (1) a linha principal é a que tem o maior número de impressões; (2) o CTR é `cliques / impressoes`, em fração (0,12 para 12%); (3) se as impressões forem zero, o CTR é zero — cuide para não dividir por zero; (4) arredonde o percentual para o inteiro mais próximo e devolva a string com o símbolo de porcentagem no fim. A entrada já vem pronta no código: use o array `linhas`."
+  starterCode={`// Uma linha por página, com os dados do relatório de desempenho do Search Console.
+const linhas = [
+  { url: "/planos", impressoes: 1200, cliques: 145, posicao: 4.2 },
+  { url: "/blog/kanban", impressoes: 800, cliques: 120, posicao: 2.1 },
+  { url: "/app", impressoes: 0, cliques: 0, posicao: 0 },
+];
+
+// Qual é o CTR da página com mais impressões?
+function calcularSaude(linhas) {
+  // A linha com mais impressões já está pronta:
+  const principal = linhas.reduce((melhor, atual) =>
+    atual.impressoes > melhor.impressoes ? atual : melhor
+  );
+
+  // Escreva aqui: devolva o CTR da linha principal como "12%".
+  // Dica: o CTR é cliques / impressoes, em fração (0.12 para 12%).
+  // Dica: multiplique por 100 e arredonde com Math.round.
+  // Atenção: se as impressões forem zero, o CTR é zero — nunca divida por zero.
+}
+
+console.log(calcularSaude(linhas));
+`}
+  expected="12%"
+  slug="visibilidade-organica"
+  nodeId="search-console-e-ga4"
+/>
+
+## No seu projeto
+
+- [ ] Abra o Search Console, relatório de desempenho, e monte a tabela de uma
+      linha por URL com impressões, cliques, CTR e posição. Marque as três
+      linhas mais importantes para o seu negócio e diga, para cada uma, qual
+      das quatro situações (CTR baixo, posição ruim, zero impressões, volume
+      baixo) ela está.
+- [ ] No GA4, configure uma conversão para a ação que realmente importa no seu
+      produto (cadastro, teste, compra) e anote a taxa de conversão das sessões
+      orgânicas. Depois, pegue o código do exercício e adapte para os seus
+      dados reais do Search Console.
+
+No próximo nó você mede o que o Search Console **não** consegue ver: sua
+visibilidade dentro das respostas dos modelos de IA.

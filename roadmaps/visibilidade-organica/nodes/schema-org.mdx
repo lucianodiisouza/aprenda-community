@@ -1,0 +1,283 @@
+---
+id: schema-org
+title: "Schema.org: o Vocabulário que a Web Reutiliza"
+resources:
+  - title: "Schema.org: o vocabulário por dentro (documentação oficial, em inglês)"
+    url: https://schema.org/docs/full.html
+    type: doc
+    lang: en
+    free: true
+  - title: "Introdução aos dados estruturados (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+    type: doc
+    lang: en
+    free: true
+  - title: "O elemento script do HTML (MDN, em português)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/script
+    type: doc
+    lang: pt
+    free: true
+---
+
+Uma página diz "a Aurora custa 29 reais por mês". Um buscador lê aquilo como texto
+e adivinha o resto. Quando a mesma página declara que aquilo é um
+`SoftwareApplication` com um `Offer` de 29 BRL, o buscador para de adivinhar.
+Este nó é o mapa do vocabulário que você vai usar nos próximos três.
+
+## O essencial 🟢
+
+Schema.org é um **vocabulário**: uma lista pública de tipos (`Organization`,
+`Person`, `Article`, `Product`...) e de propriedades (`name`, `author`, `price`...)
+que dizem exatamente o que cada uma significa. Nenhuma empresa "inventa" um
+vocabulário: o Google, os buscadores e, cada vez mais, os modelos de IA leem o
+mesmo dicionário.
+
+Três peças resolvem quase tudo:
+
+- `@type`: **o que** a coisa é.
+- **propriedades**: os fatos sobre ela.
+- `@id`: **quem** ela é.
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Aurora",
+  "url": "https://aurora.test/",
+  "logo": "https://aurora.test/logo.png",
+  "sameAs": ["https://www.linkedin.com/company/aurora-exemplo"]
+}
+```
+
+Esse bloco diz: existe uma entidade do tipo Organization, que se chama Aurora,
+mora nesse endereço e tem esse logo. O `@context` é o que amarra o bloco ao
+vocabulário — sem ele, as propriedades não significam nada.
+
+### O `@id` é a identidade da entidade, não do documento
+
+Esse é o ponto que mais confunde. O `@id` não identifica a página onde o bloco
+aparece: identifica **a coisa descrita**. Se duas páginas (a home e a página
+`/planos`, por exemplo) falam da mesma empresa, elas devem usar o mesmo `@id`:
+
+```json
+{ "@id": "https://aurora.test/#organizacao", "@type": "Organization", "name": "Aurora" }
+```
+
+A segunda página só referencia: `"publisher": { "@id": "https://aurora.test/#organizacao" }`.
+O buscador costura as duas e entende que é a mesma empresa — em vez de duas
+empresas parecidas.
+
+### O grafo
+
+Cada documento descreve entidades e liga elas por propriedades. É isso que
+transforma um bloco de metadados em um grafo:
+
+<Mermaid
+  chart={`graph LR
+    Org["Organization @id: https://aurora.test/#organizacao"]
+    Pes["Person @id: https://aurora.test/#ana"]
+    Art["Article @id: https://aurora.test/blog/kanban"]
+    Pes -->|"worksFor"| Org
+    Art -->|"author"| Pes
+    Art -->|"publisher"| Org
+    style Org fill:#1f6feb,stroke:#fff,color:#fff
+    style Pes fill:#388bfd,stroke:#fff,color:#fff
+    style Art fill:#2ea043,stroke:#fff,color:#fff`}
+  caption="A pessoa trabalha para a organização e escreveu o artigo; o artigo foi publicado pela organização. Cada entidade tem seu próprio @id."
+/>
+
+Repare que o grafo **não precisa estar inteiro numa página**. A página do
+artigo descreve a pessoa e a organização; a home descreve a organização com
+mais detalhes. Juntas, elas formam o retrato completo da Aurora.
+
+> Nota: o `sameAs` liga a sua entidade a perfis externos — LinkedIn, GitHub,
+> Wikipedia, Wikidata. É o que permite ao buscador casar "Aurora" com a empresa
+> certa e não com a homotônima.
+
+**O que fixar aqui:** `@type` diz o que é; `@id` diz de quem é; `sameAs` liga
+a entidade ao mundo externo.
+
+## Aprofundamento 🟡
+
+### `@graph`: várias entidades em um único documento
+
+Quando um documento descreve três ou mais entidades que se referenciam, o
+padrão é um array `@graph`, no qual cada entidade é um objeto do grafo:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@id": "https://aurora.test/#organizacao",
+      "@type": "Organization",
+      "name": "Aurora",
+      "logo": "https://aurora.test/logo.png"
+    },
+    {
+      "@id": "https://aurora.test/#ana",
+      "@type": "Person",
+      "name": "Ana Ribeiro",
+      "jobTitle": "Head de Produto",
+      "worksFor": { "@id": "https://aurora.test/#organizacao" }
+    },
+    {
+      "@id": "https://aurora.test/blog/kanban",
+      "@type": "Article",
+      "headline": "Kanban para equipes remotas",
+      "author": { "@id": "https://aurora.test/#ana" },
+      "publisher": { "@id": "https://aurora.test/#organizacao" }
+    }
+  ]
+}
+```
+
+Lê assim: "a pessoa Ana, que trabalha para a organização Aurora, escreveu o
+artigo X, publicado pela mesma organização". Uma empresa aparece uma vez, com
+todas as suas propriedades; o resto só aponta para ela.
+
+> Dica: a regra prática é **definir a entidade uma vez e referenciar**. Se você
+> copiou a mesma organização com nome e logo em cinco blocos do site, você
+> criou cinco entidades diferentes do ponto de vista do buscador.
+
+### O vocabulário não é um formulário
+
+Schema.org não valida nada: ele descreve tipos e suas propriedades, com
+`domain` e `range` (onde a propriedade pode ser usada e que tipo de valor ela
+aceita). `author` espera uma `Person` ou uma `Organization`; `author` apontando
+para uma `Recipe` é sintaticamente aceito e semanticamente sem sentido.
+
+Por isso existem ferramentas que checam o **perfil** que o consumidor espera
+(o conjunto de campos que o Google recomenda para o `Article`, por exemplo).
+Vocabulário é dicionário; perfil é o formulário que o buscador preenche.
+
+### Por que isso importa mais para IA do que para rich result
+
+Rich result é um bônus visual, exibição especial no Google. Entidade é
+infraestrutura: é o que permite ao buscador — e a um modelo de linguagem que
+resolve o assunto — saber que "Aurora" é uma empresa de organização de tarefas
+com sede em São Paulo, que tem 40 pessoas, e que a pessoa que escreveu aquele
+artigo é a Ana, que trabalha lá.
+
+Você não precisa saber os centenas de tipos do Schema.org. Precisa saber que a maioria
+dos sites se organiza em torno de meia dúzia deles: `Organization`, `Person`,
+`Article`, `Product`, `FAQPage`, `BreadcrumbList`.
+
+## Pra quem quer ir além 🔴
+
+O grafo fica mais útil quando a mesma entidade aparece com propriedades
+complementares em lugares diferentes. A página `/planos` da Aurora pode
+descrever o `SoftwareApplication` e seus `Offer`; o blog descreve os
+`Article`; a home liga os dois com `sameAs` e `publisher`.
+
+Três hábitos que mantêm o grafo saudável:
+
+1. **Um `@id` por entidade, guardado em um só lugar** no seu código (uma
+   constante, uma função) — nunca `@id` digitado à mão em cada template.
+2. **Nada de `sameAs` para perfil que não existe.** Ligar a um LinkedIn
+   inexistente é pior do que não ligar.
+3. **`@type` descreve a página, não o seu objetivo.** A página de preços é
+   `Product` (ou `SoftwareApplication` com `offers`), não `Article` só porque
+   você escreveu texto ali.
+
+## Exercício
+
+<Quiz
+  question="O que a propriedade @id representa no JSON-LD?"
+  label="Quiz"
+  options={[
+    {
+      text: "O identificador único do documento HTML onde o bloco está",
+      correct: false,
+      explanation: "O @id não descreve a página, descreve a entidade. O mesmo @id pode aparecer em páginas diferentes de propósito.",
+    },
+    {
+      text: "A identidade da entidade descrita, que pode ser a mesma em várias páginas",
+      correct: true,
+      explanation: "É isso: o @id é a identidade da coisa (a empresa, a pessoa, o artigo), não do documento. Ele permite referenciar em vez de duplicar.",
+    },
+    {
+      text: "A URL pública da imagem de destaque da página",
+      correct: false,
+      explanation: "Isso é a propriedade image, que é outra coisa. O @id identifica a entidade descrita.",
+    },
+    {
+      text: "Um identificador temporário que o Google gera ao indexar a página",
+      correct: false,
+      explanation: "O @id é escrito por você, no seu código, e deve ser estável entre deploys.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Para que serve a propriedade sameAs?"
+  label="Quiz"
+  options={[
+    {
+      text: "Para apontar a entidade para perfis externos dela (LinkedIn, GitHub, Wikidata)",
+      correct: true,
+      explanation: "sameAs diz que a entidade é a mesma que aparece naquele perfil. Ajuda o buscador a resolver a marca e a pessoa certas.",
+    },
+    {
+      text: "Para listar as páginas do seu site que falam da mesma entidade",
+      correct: false,
+      explanation: "Isso é a função do @id: referenciar a mesma entidade de vários lugares. sameAs aponta para fora do seu site.",
+    },
+    {
+      text: "Para declarar que duas páginas têm o mesmo conteúdo (canônico)",
+      correct: false,
+      explanation: "Isso é rel=canonical, um atributo de link no head. sameAs liga entidades, não URLs.",
+    },
+    {
+      text: "Para agrupar vários JSON-LD do site num arquivo só",
+      correct: false,
+      explanation: "Para isso existe o @graph, que é outra coisa: ele agrupa entidades dentro de um mesmo documento.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `inferirTipo(pagina)`: devolve o `@type` do Schema.org mais adequado para a página. As regras (em ordem, a primeira que valer vence) e a entrada já vêm prontas no código."
+  starterCode={`// Página analisada: os dados de entrada já vêm prontos.
+const pagina = {
+  temPreco: false,
+  temReceita: false,
+  temPassos: true,
+  temAutor: true,
+  temLocal: false,
+};
+
+// Regras, na ordem de prioridade (a primeira que for verdadeira vence):
+// 1. temPassos  -> "HowTo"         (tutorial passo a passo)
+// 2. temReceita -> "Recipe"
+// 3. temPreco   -> "Product"
+// 4. temLocal   -> "LocalBusiness"
+// 5. temAutor   -> "Article"
+// 6. nenhuma    -> "WebPage"
+function inferirTipo(pagina) {
+  // Escreva aqui: devolva o @type conforme as regras acima.
+  // Dica: uma cadeia de if/else-if na ordem da lista resolve.
+  // Atenção: "temPassos" vence mesmo com "temAutor" verdadeiro — um tutorial
+  // normalmente tem autor, mas o que define a página é o passo a passo.
+}
+
+console.log(inferirTipo(pagina));
+`}
+  expected="HowTo"
+  slug="visibilidade-organica"
+  nodeId="schema-org"
+/>
+
+## No seu projeto
+
+- [ ] Abra a home do seu site e liste as entidades que existem ali: a
+      organização (ou a pessoa por trás do projeto), um produto ou serviço, e
+      qualquer pessoa citada. Escreva um `@id` para cada uma e guarde esses
+      `@id` em um arquivo único do seu projeto.
+- [ ] Escreva um JSON-LD de `Organization` para o seu site com `name`, `url`,
+      `logo` e pelo menos um `sameAs` de um perfil que exista de verdade. Depois
+      valide no Schema Markup Validator e no Rich Results Test (ambos são
+      ferramentas oficiais do Google e do Schema.org).
+
+No próximo nó você escreve esse JSON-LD de verdade — e descobre por que um
+erro de vírgula apaga o bloco inteiro.

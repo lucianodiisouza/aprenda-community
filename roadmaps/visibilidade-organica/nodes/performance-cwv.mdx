@@ -1,0 +1,236 @@
+---
+id: performance-cwv
+title: "Core Web Vitals: LCP, INP e CLS"
+resources:
+  - title: "Core Web Vitals (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/core-web-vitals
+    type: doc
+    lang: en
+    free: true
+  - title: "Web Vitals em um olhar (web.dev, em inglês)"
+    url: https://web.dev/articles/vitals
+    type: doc
+    lang: en
+    free: true
+  - title: "Medindo a Interaction to Next Paint (web.dev, em inglês)"
+    url: https://web.dev/articles/inp
+    type: doc
+    lang: en
+    free: true
+---
+
+O Google usa três medições de experiência real de uso como sinal. Elas
+respondem a três perguntas que qualquer pessoa já se fez ao abrir um site:
+carregou? respondeu? não pulou?
+
+## O essencial 🟢
+
+**LCP (Largest Contentful Paint)** — *carregou?* É o tempo até o maior
+elemento visível aparecer na tela. Se a sua página tem uma imagem de capa,
+o LCP é o instante em que ela aparece.
+
+**INP (Interaction to Next Paint)** — *respondeu?* É o tempo entre a pessoa
+clicar (ou tocar) e o navegador pintar a resposta na tela. Diferente do
+antigo FID, que media só o atraso do processamento: o INP mede o tempo **completo**.
+
+**CLS (Cumulative Layout Shift)** — *não pulou?* É quanto o conteúdo se
+moveu enquanto a página carregava. Se um banner aparece depois e empurra o
+texto para baixo, o CLS sobe.
+
+Os limiares do Google:
+
+| Métrica | Bom | Precisa melhorar | Ruim |
+|---|---|---|---|
+| LCP | até 2,5 s | até 4,0 s | acima |
+| INP | até 200 ms | até 500 ms | acima |
+| CLS | até 0,1 | até 0,25 | acima |
+
+E a ressalva que muda tudo: **o Google não olha a média**. Ele avalia o
+**percentil 75** das sessões reais do seu site. Ou seja: o número que importa
+é aquele em que 75% dos seus usuários tiveram uma experiência boa. Uma
+página rapidezinha no seu notebook de desenvolvimento não diz nada sobre
+isso.
+
+Para medir no seu próprio código, a biblioteca `web-vitals` faz o serviço
+completo (ela calcula o percentil e a nota por métrica):
+
+```js
+import { onLCP, onINP, onCLS } from 'web-vitals';
+
+// Cada callback recebe a medicao com name, value e rating ('good'|'needs-improvement'|'poor').
+onLCP((metric) => {
+  console.log(metric.name, metric.value, metric.rating);
+});
+
+onINP((metric) => {
+  console.log(metric.name, metric.value, metric.rating);
+});
+```
+
+Esse código manda as medições para o seu analytics — é assim que você descobre
+se a página lenta é a do seu usuário de verdade.
+
+O que você fixa daqui:
+
+- LCP = carregou, INP = respondeu, CLS = não pulou.
+- O Google usa o percentil 75 das sessões reais.
+- Otimizar performance é sinal de SEO, não um trabalho paralelo.
+
+## Aprofundamento 🟡
+
+Performance entra no SEO porque o Google usa as Core Web Vitals como **um dos
+sinais de experiência**, e porque a experiência tem efeito direto no negócio:
+página que demora e que pula faz a pessoa sair antes de converter. Os dois
+motivos apontam para a mesma parede.
+
+O que derruba cada métrica, na prática:
+
+**LCP.** Quase sempre é a imagem de capa ou o texto principal. As causas mais
+comuns: imagem servida em tamanho maior do que a tela, sem `preload` nem
+`fetchpriority="high"`; TTFB alto, porque o servidor demora a responder (aí
+o.cache ou a CDN entram); e fontes web que bloqueiam a renderização do texto.
+
+**INP.** É a métrica que mais mudou nos últimos anos, porque mede a interação
+de verdade. O que derruba: handlers de clique pesados, uma lista que
+re-renderiza mil itens ao clicar, scripts de terceiros que sequestram o
+thread principal. A regra prática é quebrar trabalho longo em pedaços
+menores, para o navegador ter chance de pintar entre eles.
+
+**CLS.** É quase sempre espaço reservado que não existe: imagem sem `width` e
+`height`, vídeo sem proporção, banner de cookies que empurra o conteúdo,
+fonte que troca de tamanho depois de carregar. A correção é sempre a mesma —
+reserve o espaço antes.
+
+E o ponto que mais tripula: **laboratório é diferente de campo**. O Lighthouse
+mede no seu computador, na sua rede, com cache limpo. Isso é ótimo para
+diagnosticar *por que* algo é lento, e não serve para dizer se o seu público
+está bem. Para saber como seus usuários realmente têm experiência, olhe para o
+CrUX (dados agregados reais do Chrome) ou para as suas próprias medições de
+campo. Testar no seu laptop engana — e engana especialmente em quem
+desenvolve em máquina boa com rede de fibra.
+
+## Pra quem quer ir além 🔴
+
+Vale registrar uma mudança de nomenclatura que pegou muita gente de surpresa:
+o **INP substituiu o FID** como métrica oficial. Se a sua documentação, seu
+dashboard ou seu relatório de performance ainda fala em FID, ele está
+medindo uma métrica que saiu de cena — e, mais importante, o FID media só o
+atraso do processamento, não o tempo até a tela pintar. Continua valendo a regra: meça
+o que o usuário sente.
+
+Outra nuance: o valor de LCP reported pelo `web-vitals` é medido em milissegundos
+em algumas versões e em segundos em outras. Se você for comparar números de
+ferramentas diferentes, normalize antes — misturar segundos com milissegundos
+é a forma mais rápida de tomar uma decisão errada.
+
+E sobre coletar dados próprios (RUM, Real User Monitoring): o CrUX já te dá
+dados agregados de usuários reais do Chrome, sem instalar nada. O RUM é o
+upgrade: você instala a biblioteca `web-vitals` no seu site e manda para o
+seu analytics. Você ganha dados de todos os navegadores, e ainda pode
+segmentar por página, por dispositivo e por país — que é exatamente a
+informação que o CrUX agregado não te dá.
+
+## Exercício interativo
+
+<Quiz
+  question="Qual das Core Web Vitals mede se a pagina responde rápido ao clique de quem esta usando?"
+  label="Quiz"
+  options={[
+    {
+      text: "LCP, porque mede o carregamento.",
+      correct: false,
+      explanation: "LCP e sobre a pagina aparecer. A metrica de resposta ao clique e o INP.",
+    },
+    {
+      text: "INP, que mede o tempo entre a interacao e a proxima pintura da tela.",
+      correct: true,
+      explanation: "Exato. INP substituiu o FID e mede o tempo completo, do clique ate o pixel na tela.",
+    },
+    {
+      text: "CLS, porque mede quanto a pagina se move.",
+      correct: false,
+      explanation: "CLS mede o deslocamento do layout, nao a resposta a interacao.",
+    },
+    {
+      text: "TTFB, porque mede o tempo de resposta do servidor.",
+      correct: false,
+      explanation: "TTFB e tempo de resposta do servidor e afeta o LCP, mas nao e uma das Core Web Vitals.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Por que rodar o Lighthouse no seu notebook e uma forma enganosa de avaliar a performance do seu site?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque o Lighthouse nao mede JavaScript.",
+      correct: false,
+      explanation: "Ele mede JavaScript, sim. O problema nao e o que ele mede, e sim quem ele mede.",
+    },
+    {
+      text: "Porque ele so funciona em ambiente de laboratorio, e nao nos dados reais dos seus usuarios.",
+      correct: true,
+      explanation: "Exato. O laboratorio e otimo para diagnosticar, mas quem vale e o percentil 75 das sessoes reais.",
+    },
+    {
+      text: "Porque os limiares do Google mudam toda semana.",
+      correct: false,
+      explanation: "Os limiares mudam pouco. O que muda e a medicao: laboratorio e dado de campo sao coisas diferentes.",
+    },
+    {
+      text: "Porque ele ignora a conexao movel.",
+      correct: false,
+      explanation: "Ele tem modo de simular celular. O ponto nao e a rede simulada, e sim que um usuario real nao se parece com a simulacao.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `classificarCwv(metricas)`: ela recebe um objeto com lcp, inp e cls e devolve 'bom', 'regular' ou 'ruim' aplicando os limiares do Google."
+  starterCode={`// Medicoes de campo (percentil 75) de uma pagina.
+const METRICAS = { lcp: 2.1, inp: 150, cls: 0.05 };
+
+function classificarCwv(metricas) {
+  const { lcp, inp, cls } = metricas;
+
+  // Limiares do Google:
+  //   LCP (segundos):       bom ate 2,5 | regular ate 4,0 | ruim acima
+  //   INP (milissegundos): bom ate 200 | regular ate 500 | ruim acima
+  //   CLS:                  bom ate 0,1 | regular ate 0,25 | ruim acima
+
+  // 1. Classifique cada metrica em 'bom', 'regular' ou 'ruim'.
+  //    Dica: valor <= bomAte ? 'bom' : valor <= regularAte ? 'regular' : 'ruim'
+  const nivel = (valor, bomAte, regularAte) => 'regular'; // TODO
+
+  const niveis = [nivel(lcp, 2.5, 4), nivel(inp, 200, 500), nivel(cls, 0.1, 0.25)];
+
+  // 2. Jogue a resposta final: as tres 'bom' e 'bom', as tres 'ruim' e 'ruim',
+  //    qualquer mistura e 'regular'.
+  //    Dica: niveis.every((n) => n === 'bom') responde "as tres sao boas?".
+  const resultado = 'regular'; // TODO
+
+  return resultado;
+}
+
+console.log(classificarCwv(METRICAS));
+`}
+  expected="bom"
+  slug="visibilidade-organica"
+  nodeId="performance-cwv"
+/>
+
+## No seu projeto
+
+- [ ] Meça as Core Web Vitals do seu site com a ferramenta PageSpeed Insights e anote os três números. Depois meça de novo em uma página específica do seu app — os números costumam ser bem diferentes entre a home e uma tela interna.
+- [ ] Instale o `web-vitals` no seu projeto e mande `metric.name`, `metric.value` e `metric.rating` para o seu analytics. Compare com o relatório de experiência do Search Console depois de uns dias.
+
+> Dica: comece pelo CLS. Ele é o mais fácil de corrigir (é quase sempre
+> `width`/`height` faltando em imagem) e o mais visível para quem usa. O INP
+> é o mais trabalhoso e o que mais exige olhar código de terceiros.
+
+## Fechamento
+
+Você já sabe medir e priorizar performance. No próximo nó você junta tudo isso
+com a parte que mais quebra em projeto real: o que acontece quando a página é
+construída por JavaScript.

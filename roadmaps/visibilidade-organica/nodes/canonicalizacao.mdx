@@ -1,0 +1,258 @@
+---
+id: canonicalizacao
+title: "Canonical, Duplicatas e a URL que Vale"
+resources:
+  - title: "Consolidando URLs duplicadas (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls
+    type: doc
+    lang: en
+    free: true
+  - title: "Versões localizadas e hreflang (Google Search Central, em inglês)"
+    url: https://developers.google.com/specialty/international/localized-versions
+    type: doc
+    lang: en
+    free: true
+---
+
+A mesma página pode existir em cinco endereços: com e sem `www`, com `http` e
+`https`, com parâmetro de campanha, com barra no final. Sem uma regra
+explícita, o buscador escolhe — e nem sempre escolhe a URL que você queria.
+
+## O essencial 🟢
+
+Duplicata não é só conteúdo repetido. É a **mesma página** servida em
+endereços diferentes. Cada cópia compete com a outra: o sinal de autoridade
+que entra nela se divide, o crawler gasta visita rastreando as duas, e o
+Google pode escolher a URL que você considera "errada" — ou trocar o
+endereço exibido no resultado de tempos em tempos.
+
+A ferramenta que resolve isso se chama `rel="canonical"`:
+
+```html
+<head>
+  <!-- Esta e a URL que vale para esta pagina -->
+  <link rel="canonical" href="https://seusite.com/planos" />
+</head>
+```
+
+Três regras que valem sempre:
+
+- **URL absoluta.** Escreva o endereço completo, com `https://` e o domínio.
+  Um `/planos` solto não funciona.
+- **Auto-referencial.** A página canônica aponta para ela mesma. Se a página
+  `/planos` é a original, o canonical dela é `/planos`.
+- **Uma por página.** Uma tag só. Canonical não acumula.
+
+E o detalhe que quase todo mundo erra: **canonical não redireciona**. Quem
+digita a URL com parâmetros de campanha (`utm_source=email`) continua na URL com
+parâmetros de campanha.
+A tag é uma dica para o robô, não um teleportador. Se você quer mover mesmo
+as pessoas, o caminho é um redirecionamento `301`:
+
+```bash
+# Resposta do servidor: o endereco novo e definitivo
+HTTP/1.1 301 Moved Permanently
+Location: https://seusite.com/planos
+```
+
+O que você fixa daqui:
+
+- Duplicata divide sinal e gasta rastreamento.
+- `canonical` = dica (só para o robô). `301` = mudança de verdade.
+- Canonical é sempre absoluto e auto-referencial.
+
+## Aprofundamento 🟡
+
+Quando não existe canonical, o Google escolhe por conta própria: um conjunto
+de sinais — quantos links internos apontam para cada URL, a que está no
+sitemap, a mais visitada, a mais antiga, a que tem o título mais parecido com
+a consulta. Você não escolhe; ele adivinha. É por isso que declarar é sempre
+melhor do que esperar.
+
+A armadilha prática do dia a dia são os **parâmetros de URL**:
+
+```text
+https://seusite.com/produtos?cor=azul&tamanho=g
+https://seusite.com/produtos?cor=azul&tamanho=p
+https://seusite.com/produtos?ordem=preco
+```
+
+Cada combinação é uma URL. Em uma loja, isso multiplica as páginas
+exponencialmente, e cada uma precisa ser rastreada e indexada. A regra
+prática: a página-base declara o canonical, e todas as variantes apontam
+para ele.
+
+```html
+<!-- Em /produtos?cor=azul -->
+<link rel="canonical" href="https://seusite.com/produtos" />
+```
+
+O mesmo vale para UTM. O `utm_source=...` é para o seu analytics, não para
+o buscador — a versão limpa é a que vale.
+
+E a comparação que todo mundo precisa fazer:
+
+| | O robô vai para | O usuário vai para | Use quando |
+|---|---|---|---|
+| `rel="canonical"` | para a canônica | fica onde está | a URL antiga precisa continuar existindo |
+| `301` | para a canônica | vai para a canônica | a URL antiga vai sumir de vez |
+| `hreflang` | não redireciona | fica onde está | existem versões por idioma/região |
+
+Sobre `hreflang`, que é a terceira ferramenta da caixa: ela **não substitui**
+o canonical. Cada versão declara a si mesma como canônica e aponta as irmãs:
+
+```html
+<link rel="canonical" href="https://seusite.com/pt/planos" />
+<link rel="alternate" hreflang="pt-BR" href="https://seusite.com/pt/planos" />
+<link rel="alternate" hreflang="en-US" href="https://seusite.com/en/plans" />
+```
+
+O canonical diz "destas duas versões, a do português é a oficial". O hreflang
+diz "existe uma versão em inglês, e ela está aqui". São camadas diferentes e
+as duas precisam existir.
+
+> Dica: se você tem um sitemap, ele deve conter **somente** as URLs
+> canônicas. Se o sitemap lista `/produtos?cor=azul`, você acabou de declarar
+> uma duplicata como página oficial.
+
+## Pra quem quer ir além 🔴
+
+Quando o canonical atravessa domínios (você tem `blog.seusite.com` e
+`seusite.com/blog` apontando um para o outro), o Google trata isso como
+"canonicalização entre domínios" e há um limite bem documentado: sinal
+externo, como links de outros sites, é transferido de forma mais lenta do
+que entre URLs do mesmo domínio. Quando a duplicata está no mesmo domínio, o
+processo é rápido.
+
+Dois casos de borda que aparecem bastante:
+
+**Canonical conflitante.** A página A aponta para B e a B aponta para A. O
+Google descarta as duas e pode indexar qualquer uma. Isso acontece com
+scripts que montam o canonical a partir da rota atual e com deploys
+desalinhados. Sempre aponte para um lado só.
+
+**`noindex` em vez de canonical.** Se você quer *remover* uma página do
+índice, o caminho é `noindex` — o canonical consolida, ele não remove. São
+respostas diferentes para perguntas diferentes: "qual é a oficial?" versus
+"esta não deve aparecer".
+
+E um cuidado de operação: quando você migra um site inteiro, a ordem importa.
+Se você primeiro aponta as tags canonical e depois liga o redirecionamento, tem
+um período em que as duas coisas coexistem sem conflito. Se você liga o 301
+primeiro, a tag nem precisa ser acertada — o redirecionamento já resolve.
+
+## Exercício interativo
+
+<Quiz
+  question="Qual e a diferenca real entre rel='canonical' e um redirecionamento 301?"
+  label="Quiz"
+  options={[
+    {
+      text: "Nao ha diferenca: os dois levam o usuario para a URL correta.",
+      correct: false,
+      explanation: "O canonical nao move ninguem. Quem digita a URL com UTM continua nela. O 301 e que redireciona o usuario.",
+    },
+    {
+      text: "O canonical so sugere ao buscador qual URL vale; o 301 move mesmo o usuario e o robô.",
+      correct: true,
+      explanation: "Exato. Canonical e um sinal para o crawler; 301 e uma resposta HTTP que troca o endereco de verdade.",
+    },
+    {
+      text: "O canonical so funciona entre sites diferentes; o 301, so dentro do mesmo dominio.",
+      correct: false,
+      explanation: "Os dois funcionam dentro do mesmo dominio. Canonical entre dominios ate existe, mas transfere sinal mais devagar.",
+    },
+    {
+      text: "O 301 e mais fraco, porque depende do servidor estar configurado.",
+      correct: false,
+      explanation: "E o contrario: o 301 e a solucao mais forte, porque nao depende de o crawler aceitar uma sugestao.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Voce tem a mesma pagina em portugues e em ingles. Qual e o papel do hreflang?"
+  label="Quiz"
+  options={[
+    {
+      text: "Ele escolhe qual das duas versoes e a canonica.",
+      correct: false,
+      explanation: "Isso e trabalho do canonical, e cada versao por idioma continua sendo canonica de si mesma.",
+    },
+    {
+      text: "Ele declara as variantes por idioma e regiao; cada versao aponta para si mesma como canonica.",
+      correct: true,
+      explanation: "Exato. Canonical diz qual URL de um grupo vale; hreflang diz que existem irmas em outros idiomas e onde elas moram.",
+    },
+    {
+      text: "Ele substitui o robots.txt em sites com varias linguas.",
+      correct: false,
+      explanation: "Nao tem relacao com robots.txt. Hreflang so descreve variantes de idioma e regiao.",
+    },
+    {
+      text: "Ele cria automaticamente as versoes traduzidas da pagina.",
+      correct: false,
+      explanation: "Hreflang e so um metadado. Quem traduz o conteudo e o seu processo de traducao.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `resolverCanonical(urls)`: ela recebe uma lista de paginas (cada uma com url e canonical) e devolve a URL que vence, ou seja, a canonica mais votada. Em caso de empate, vence a canonica que tambem e uma pagina da lista."
+  starterCode={`// Cada pagina do site declara para qual URL ela aponta como canonica.
+const PAGINAS = [
+  { url: 'https://promo.exemplo.com/planos', canonical: 'https://aurora.app/planos-antigos' },
+  { url: 'https://blog.exemplo.com/planos-gratis', canonical: 'https://aurora.app/planos-antigos' },
+  { url: 'https://aurora.app/planos', canonical: 'https://aurora.app/planos' },
+  { url: 'https://aurora.app/planos?ref=news', canonical: 'https://aurora.app/planos' }
+];
+
+// Recebe a lista de paginas e devolve a URL que vence: a canonica mais votada.
+// Em caso de empate, vence a que tambem aparece como url de alguma pagina.
+function resolverCanonical(urls) {
+  // 1. Conte quantas paginas apontam para cada canonica.
+  const contagem = {};
+  for (const p of urls) {
+    const chave = p.canonical;
+    contagem[chave] = (contagem[chave] || 0) + 1;
+  }
+
+  // 2. Ache o maior numero de votos.
+  const votos = Object.values(contagem);
+  const maximo = Math.max(...votos);
+
+  // 3. Candidatas: as canonicas que receberam mais votos.
+  //    Dica: Object.keys(contagem) devolve as chaves; filtre as que tem maximo votos.
+  const candidatas = [];
+
+  // 4. Desempate: vence a canonica que tambem e uma pagina da lista
+  //    (existe alguma pagina com url igual a essa canonica?).
+  //    Dica: urls.some((p) => p.url === c) responde essa pergunta.
+  //    Se ainda houver empate, vale a primeira candidata.
+  const vencedora = candidatas[0];
+
+  return vencedora;
+}
+
+console.log(resolverCanonical(PAGINAS));
+`}
+  expected="https://aurora.app/planos"
+  slug="visibilidade-organica"
+  nodeId="canonicalizacao"
+/>
+
+## No seu projeto
+
+- [ ] Liste as URLs do seu site que entregam o mesmo conteudo (com e sem `www`, com parâmetros de campanha, com filtros de busca) e escolha uma como a oficial de cada pagina.
+- [ ] Adicione `<link rel="canonical">` nas suas 5 paginas principais, sempre com URL absoluta e apontando para a propria pagina — e confira que o sitemap so tem as canonicas.
+
+> Atenção: se o seu site tem duas versoes do mesmo texto (uma em `/blog/post` e
+> outra em `/noticias/post`), defina o canonical **antes** de pedir um novo
+> rastreamento. Canonical e 301 brigando entre si é a causa mais comum de
+> URL oscilando no resultado da busca.
+
+## Fechamento
+
+Você já escolheu qual URL vale quando há duplicatas. No próximo nó você resolve
+o outro lado: como o crawler descobre as páginas que ninguém linkou e como
+você distribui autoridade entre elas.

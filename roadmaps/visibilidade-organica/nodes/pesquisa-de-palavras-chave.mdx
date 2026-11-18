@@ -1,0 +1,239 @@
+---
+id: pesquisa-de-palavras-chave
+title: "Pesquisa de Palavras-Chave sem Gastar Dinheiro"
+resources:
+  - title: "SEO Starter Guide (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Relatório de desempenho no Search Console (Ajuda do Google)"
+    url: https://support.google.com/webmasters/answer/7576553
+    type: doc
+    lang: en
+    free: true
+  - title: "Inspeção de URL no Search Console (Ajuda do Google, em inglês)"
+    url: https://support.google.com/webmasters/answer/9012289
+    type: doc
+    lang: en
+    free: true
+---
+
+Existe um número bonito que as ferramentas vendem caro: volume de busca. Ele
+quase nunca vira cliente. O que você precisa são as perguntas que as pessoas
+realmente digitam — e essa lista dá para montar de graça, em uma tarde, com o
+que você já tem.
+
+## O essencial 🟢
+
+**Cinco fontes gratuitas de pesquisa.**
+
+1. **Autocomplete do Google.** Digite e leia as sugestões. É a demanda real, em
+   ordem de popularidade, montada a partir do que as pessoas de fato digitam.
+2. **"Resultados relacionados a".** A expansão no rodapé do Google serve para
+   descobrir o grupo inteiro de buscas em torno da sua palavra.
+3. **Search Console.** As impressões reais do seu próprio site. É a única fonte
+   de volume verdadeiro que você tem sem pagar nada.
+4. **Seu próprio produto.** Busca interna do seu app, tickets de suporte, chat
+   de vendas: as palavras que os seus usuários já usam e que você nunca pensou
+   em usar no marketing.
+5. **PERK e ferramentas open source.** Varredura do autocomplete em escala,
+   para montar um mapa grande sem digitar nada à mão.
+
+**Impressão é volume real; clique é valor.** Toda ferramenta chama o número de
+vezes que seu site apareceu na tela de "impressões". A diferença entre
+impressão e clique é onde mora a decisão:
+
+```js
+// De impressões a cliques: qual volume vale a pena.
+// "gestao de tarefas" tem muito volume e clica pouco (quem busca isso
+// ainda está comparando). A cauda longa clica muito mais.
+const linhas = [
+  { keyword: "gestao de tarefas", impressoes: 1200, cliques: 48 },
+  { keyword: "tarefa equipes remotas", impressoes: 90, cliques: 21 },
+];
+
+for (const linha of linhas) {
+  const ctr = ((linha.cliques / linha.impressoes) * 100).toFixed(1);
+  console.log(linha.keyword + ": " + ctr + "% de CTR");
+}
+```
+
+O código imprime:
+
+```text
+gestao de tarefas: 4.0% de CTR
+tarefa equipes remotas: 23.3% de CTR
+```
+
+A segunda keyword tem 7,5% das impressões da primeira e entrega quase metade
+dos cliques. Tratar volume como sinônimo de valor é o erro que faz gente
+perseguir a keyword mais cara do mercado.
+
+**A cauda longa.** "Gestão de tarefas" é cabeça: volume enorme, competição
+feroz, um lugar só na primeira página. "Tarefa para equipes remotas" é cauda:
+volume pequeno, competição baixa e a intenção mais afiada que existe — quem
+digita isso sabe exatamente o que quer fazer. A combinação que funciona na
+maioria dos casos: uma página para a cabeça, várias para a cauda, todas
+apontando para a mesma oferta.
+
+**Grupo, não palavra isolada.** "Gestão de tarefas", "tarefa para equipes
+remotas" e "organizar tarefas em equipe" são a mesma intenção e devem morar
+na mesma página. Uma página por grupo. Se você abrir uma página para cada
+variante de palavra, as suas próprias páginas passam a disputar a mesma
+busca — o problema de canibalização que você viu no nó anterior.
+
+## Aprofundamento 🟡
+
+**Lendo a SERP de verdade.** Digite a consulta no Google e olhe os dez
+primeiros resultados, contando os tipos: se oito são fóruns, a SERP está
+pedindo discussão e não página de produto; se todos são PDF, está pedindo
+guia para download. Nenhuma ferramenta paga te dá essa leitura tão rápido.
+
+**Do volume reportado ao volume real.** "Volume" nas ferramentas é uma
+estimativa, e a unidade quase nunca é explicada: buscas por mês, em qual
+país, em qual dispositivo, somando quais variantes. O número verdadeiro de
+exposição é a impressão do Search Console, do seu site, do seu público. Mil e
+duzentas impressões reais batem mais que "dez mil buscas" estimadas que
+ninguém viu.
+
+**Volume de keyword não é volume de cliente.** Quem digita "melhor app de
+tarefas" ainda está comparando, e gente comparando converte pouco. Quem
+digita "aurora" já conhece o produto e está a um clique de assinar. Keyword de
+marca é o outro extremo: volume pequeno, conversão alta. O equilíbrio entre
+as duas é o seu mapa.
+
+> Dica: antes de escolher a keyword, digite a consulta e clique no primeiro
+> resultado. Se o texto que aparece na tela não é parecido com o que você
+> escreveria, você ainda não entendeu a intenção — e voltar ao nó anterior
+> custa menos caro do que escrever a página errada.
+
+## Pra quem quer ir além 🔴
+
+**Estimando cliques a partir da posição.** Uma vez que você sabe as
+impressões, a posição média da página na busca dá uma estimativa de clique.
+As médias abaixo são de mercado e servem para estimar, não para prever: o
+número real de cada site sai do próprio Search Console.
+
+```js
+// CTR médio por posição na primeira página (ordem de grandeza de mercado).
+const CTR_POR_POSICAO = [0.28, 0.15, 0.11, 0.09, 0.07, 0.05, 0.04, 0.03, 0.03, 0.02];
+
+// Uma página com 1200 impressões por mês na posição 3 entrega...
+const impressoes = 1200;
+const posicao = 3;
+const cliques = Math.round(impressoes * CTR_POR_POSICAO[posicao - 1]);
+console.log(cliques);
+```
+
+O código imprime `132`: é o tamanho real da disputa. Uma keyword com volume
+dobro, mas sempre na nona posição, entrega menos gente que uma keyword
+modesta na terceira.
+
+**Montando o mapa sem gastar uma hora por keyword.** O fluxo que funciona:
+liste 30 variações a partir do autocomplete e do "relacionados a"; agrupe
+por intenção; escolha uma página-alvo por grupo; só então escreva. Cada
+grupo vira uma página, e o mapa inteiro cabe numa planilha com quatro
+colunas: grupo, intenção, página existente ou a criar, prioridade.
+
+<Quiz
+  question="No Search Console, o que significa 'impressões'?"
+  label="Quiz"
+  options={[
+    {
+      text: "Quantas vezes o seu site foi exibido num resultado de busca, tenha sido clicado ou não.",
+      correct: true,
+      explanation: "É isso: exibição, não clique. Por isso o relatório separa impressões de cliques — são duas etapas diferentes do funil, e a distância entre elas é o seu CTR.",
+    },
+    {
+      text: "Quantas vezes alguém clicou no seu site vindo de uma busca.",
+      correct: false,
+      explanation: "Esse é o número de cliques. Misturar os dois é como dizer que a sua taxa de conversão de 4% é a sua taxa de cliques.",
+    },
+    {
+      text: "O número de palavras-chave diferentes para as quais o seu site aparece.",
+      correct: false,
+      explanation: "Existe uma métrica separada para isso, o número de consultas diferentes. Uma única keyword pode gerar dezenas de milhares de impressões.",
+    },
+    {
+      text: "O total de visitas do site, de todas as origens.",
+      correct: false,
+      explanation: "Impressões não são visitas nem sessões. O Search Console mostra o quanto o seu site apareceu; quem apareceu de fato foi contado pelo analytics.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Por que o volume de uma keyword não é a mesma coisa que volume de cliente?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque volume conta buscas, não pessoas qualificadas: quem busca 'melhor app' ainda está comparando, e a conversão depende da posição na busca e da promessa da página.",
+      correct: true,
+      explanation: "Exato. Volume é topo de funil, e topo de funil é onde a conversão é pior. Por isso o número bonito de volume precisa ser lido junto com clique e conversão.",
+    },
+    {
+      text: "Porque o volume informado pelas ferramentas é superestimado em cerca de dez vezes.",
+      correct: false,
+      explanation: "O volume é uma estimativa e pode estar errado, mas não existe um fator fixo de erro. O problema do volume não é o tamanho da estimativa: é ele não medir o que importa.",
+    },
+    {
+      text: "Porque palavra-chave com muito volume nunca é rentável.",
+      correct: false,
+      explanation: "Depende do mercado. Volume alto com conversão alta é ótimo. O problema é tratar volume como sinônimo de valor sem olhar clique e conversão.",
+    },
+    {
+      text: "Porque só palavras com a marca da própria empresa convertem.",
+      correct: false,
+      explanation: "Palavra de marca converte muito bem porque quem digita já conhece você. Mas o volume de quem ainda não conhece você é justamente o que constrói o negócio — só precisa de página e promessa diferentes.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `agruparPorSobreposicao(keywords, minimo)` que devolve a quantidade de grupos formados. Duas keywords ficam no mesmo grupo quando têm pelo menos `minimo` palavras em comum. A primeira keyword de um grupo abre o grupo; a seguinte entra no grupo existente se se sobrepuser a alguma keyword que já está nele; se não se sobrepuser a nenhuma, abre um grupo novo."
+  starterCode={`// Dado pronto: separa uma keyword em palavras e tira repetidas.
+function palavrasDe(keyword) {
+  return [...new Set(keyword.split(" "))];
+}
+
+// Implemente: devolva a QUANTIDADE de grupos formados.
+// 1. Guarde os grupos encontrados até aqui (cada grupo é uma lista
+//    de keywords).
+// 2. Para cada keyword, conte quantas palavras ela tem em comum com
+//    cada keyword que ja esta em algum grupo.
+// 3. Se ela tem pelo menos 'minimo' palavras em comum com alguma delas,
+//    ela entra nesse grupo. Se nao tem com nenhuma, abre um grupo novo.
+function agruparPorSobreposicao(keywords, minimo) {
+  return 0;
+}
+
+// Não edite abaixo: é o teste automático.
+// Não escreva console.log extras, ou a saída muda.
+const keywords = [
+  "gestao de tarefas para equipes remotas",
+  "tarefas equipes remotas",
+  "crm de vendas",
+  "crm vendas pipeline",
+  "notion ou trello",
+  "notion trello clickup",
+];
+
+console.log(agruparPorSobreposicao(keywords, 2));`}
+  expected="3"
+  slug="visibilidade-organica"
+  nodeId="pesquisa-de-palavras-chave"
+/>
+
+## No seu projeto
+
+- [ ] Abra o autocomplete do Google e escreva 20 variações da sua palavra-chave
+  principal. Guarde numa planilha e marque quais pertencem ao mesmo grupo de
+  intenção. Cada grupo vira uma página — não vinte.
+- [ ] Abra o Search Console, vá em Desempenho e liste as 10 consultas com mais
+  impressões, com o CTR de cada uma. Consulta com muita impressão e CTR baixo
+  é problema de título e de promessa, não de palavra-chave.
+
+Você fechou o módulo que responde "como te encontram". A partir do próximo nó
+a trilha entra na parte técnica: o que o crawler realmente enxerga no seu
+HTML, e o que fazer quando ele não enxerga.

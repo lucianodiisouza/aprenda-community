@@ -1,0 +1,227 @@
+---
+id: content-decay-e-refresh
+title: "Decaimento de Conteúdo: Atualizar ou Reescrever"
+resources:
+  - title: "Conteúdo útil e confiável (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/creating-helpful-content
+    type: doc
+    lang: en
+    free: true
+  - title: "Guia inicial de SEO (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+---
+
+Toda página que você publica começa a perder posição. Não é um problema: é o
+tempo. A pergunta nunca é "como impedir?", e sim "quando mexer, e mexer
+como?". Este nó é sobre essa decisão.
+
+## O essencial 🟢
+
+**Decaimento** é a página perder posição sem que você tenha mudado nada
+nela. Ele aparece de três formas:
+
+1. **O tema foi para outro lugar.** Alguém publicou a versão definitiva e o
+   Google passou a mostrar aquela.
+2. **Os dados envelheceram.** O texto falava de "os melhores preços de 2023" e
+   hoje não diz mais nada de verdade.
+3. **O comportamento da busca mudou.** O tipo de página que o Google decidiu
+   mostrar para aquele tema é outro (um vídeo, um fórum, uma lista).
+
+E existem três alavancas, com custos bem diferentes:
+
+| Ação | Quando usar | O que custa |
+|---|---|---|
+| **Atualizar** | o texto ainda responde, mas envelheceu | baixo — mantém o histórico |
+| **Reescrever** | o formato da página parou de responder à pergunta | alto — reinicia os sinais |
+| **Consolidar** | existem duas páginas para o mesmo tema | médio — você perde duas páginas e ganha uma |
+
+**Atualizar** é a resposta certa na maioria dos casos: você troca os números,
+acrescenta o que mudou e pronto. A página mantém a autoridade que já tinha.
+
+**Reescrever** é mais caro do que parece. Uma página nova começa do zero: ela
+não herda os anos de links e histórico que a antiga tinha. Reescrever só vale
+quando a versão nova é **melhor** do que a antiga — e não apenas mais nova.
+
+**Consolidar** é a opção que ninguém usa e deveria usar mais: duas páginas
+sobre o mesmo tema viram uma só, melhor. As duas se complementavam, ou
+simplesmente uma era fraca. Você escolhe a URL vencedora, e a outra aponta
+para ela com um redirecionamento permanente:
+
+```bash
+# A página fraca foi absorvida pela melhor: 301 move de verdade
+HTTP/1.1 301 Moved Permanently
+Location: https://seusite.com/blog/como-organizar-tarefas
+```
+
+O 301 é o que importa: ele transfere o histórico, os links e a autoridade da
+página velha para a nova. Sem ele, você joga fora o que tinha construído.
+
+> Dica: o sinal mais fácil de que dá para consolidar é ter duas páginas
+> disputando a mesma consulta. Se as duas aparecem alternando na mesma
+> busca, o Google não sabe qual escolher — e as duas perdem.
+
+## Aprofundamento 🟡
+
+**Como saber se a página está decaiando.** O Search Console mostra a queda por
+URL, e o padrão da queda diz o que está acontecendo:
+
+- **Posição caiu e tráfego caiu junto:** a página perdeu relevância. O tema
+  mudou de lugar ou o formato ficou velho.
+- **Impressões subiram e a taxa de clique caiu:** o conteúdo continua
+  aparecendo, mas o título ou o trecho pararam de convencer. Isso não é
+  decaimento — é o nó de título e descrição.
+- **Tudo estável e o tráfego caiu:** provavelmente é sazonalidade, não
+  decaimento. Compare com o mesmo período do ano anterior antes de mexer em
+  qualquer coisa.
+
+**Atualidade, com honestidade.** O Google valoriza conteúdo atualizado — e
+penaliza a manipulação de data. Mexer no `dateModified` sem mudar uma linha
+do texto é justamente a manipulação: você está dizendo "isto mudou" sem ter
+mudado. Quando você realmente reescreveu a seção, aí sim a data muda — e
+precisa mudar, porque é a verdade.
+
+> Atenção: publicar a mesma página com a data renovada, semana após semana,
+> é um dos jeitos mais comuns de queimar um site. O efeito não aparece na
+> semana; aparece três meses depois, quando o Google deixa de acreditar em
+> qualquer das suas datas.
+
+**A lista de verificação antes de mexer.** Responda estas cinco perguntas
+sobre a página:
+
+1. A página ainda dá a melhor resposta que existe hoje para aquele tema?
+2. Se eu visitasse hoje, eu sairia com o que vim buscar?
+3. Algum número, nome ou regra do texto está desatualizado?
+4. Existe outra página minha que responde melhor à mesma pergunta?
+5. O que mudou no mundo desde a última revisão — e isso afeta o texto?
+
+Se a resposta da 1 for "não" e a da 4 for "sim", o caso é consolidação. Se a
+3 for "sim" e as outras forem "sim", é atualização.
+
+## Pra quem quer ir além 🔴
+
+**Quando o tema muda tanto que a URL deixa de descrever a página.** Se o
+conteúdo passou de "planos de 2023" para "planos", o endereço `/planos-2023`
+passou a ser enganoso. Aí não é só atualizar: é mudar a URL, redirecionar a
+antiga com 301 e corrigir os links internos que apontam para ela. O mesmo
+vale para o título e para os links dentro do site — um redirecionamento que
+sobra links internos quebrados só transfere metade do sinal.
+
+**Quando remover de verdade.** Existem dois casos em que a página deve
+sair: quando ela nunca teve tráfego e nunca vai ter (nesse caso, `404` e
+pronto), e quando ela é uma duplicata near-perfeita de outra (nesse caso,
+301 para a vencedora). O que **não** é motivo para remover é "está me
+incomodando". Página que some leva com ela os links que você não vê.
+
+**O custo escondido de reescrever.** Reescrever é trabalho de produto, não de
+texto: exige pesquisa, reescrita de todas as páginas que citam aquela, e
+espera de semanas para o resultado aparecer. Por isso o caminho certo quase
+sempre é: atualizar primeiro, reescrever só com evidência, consolidar quando
+há duplicata. Nessa ordem, o custo é sempre o menor possível para o mesmo
+resultado.
+
+## Exercício interativo
+
+<Quiz
+  question="Quando vale a pena reescrever uma página em vez de apenas atualizá-la?"
+  label="Quiz"
+  options={[
+    {
+      text: "Sempre. Uma página reescrita é tratada como conteúdo novo e sobe mais rápido.",
+      correct: false,
+      explanation: "Não. Uma página reescrita reinicia os sinais: ela não herda os links nem o histórico da antiga. Reescrever é decisão, não reflexo.",
+    },
+    {
+      text: "Quando a queda de posição é grande e o formato da página parou de responder à pergunta que as pessoas fazem.",
+      correct: true,
+      explanation: "Exato. Atualizar conserta dados que envelheceram; não conserta uma página cujo formato inteiro ficou errado.",
+    },
+    {
+      text: "Nunca. Atualizar é sempre mais barato e entrega o mesmo resultado.",
+      correct: false,
+      explanation: "Nem sempre. Se o formato da página não é mais o que a busca quer, trocar os números não muda o resultado.",
+    },
+    {
+      text: "Quando a página tem mais de mil palavras.",
+      correct: false,
+      explanation: "Tamanho não tem relação com a decisão. O que decide é o que a página deixou de entregar.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="O que o Google pensa de você renovar a data de atualização sem mudar o conteúdo?"
+  label="Quiz"
+  options={[
+    {
+      text: "Nada: a data de atualização não é lida por ninguém.",
+      correct: false,
+      explanation: "A data é lida. O problema não é ela existir, é ela não refletir a realidade do texto.",
+    },
+    {
+      text: "É uma manipulação de sinal, e pode ser tratada como spam.",
+      correct: true,
+      explanation: "Certo. Dizer 'isto mudou' sem ter mudado é enganar o sinal de atualidade, e é exatamente o tipo de prática que as políticas de spam descrevem.",
+    },
+    {
+      text: "Melhora o sinal de atualidade da página e ajuda a subir de posição.",
+      correct: false,
+      explanation: "No curto prazo parece funcionar. O efeito é o contrário: a data perde credibilidade e o impacto aparece depois.",
+    },
+    {
+      text: "Só importa em páginas de notícias, onde a data aparece na tela.",
+      correct: false,
+      explanation: "A data importa em qualquer página, tenha ou não a data visível. O problema é a inconsistência entre data e conteúdo.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `decidirAcao(metricas)`: ela recebe `{ quedaPosicao, trafegoAtual, temDadosAntigos }` e devolve a ação recomendada, aplicando estas regras na ordem: (1) se a página ainda tem tráfego (`trafegoAtual` >= 1000) e tem dados desatualizados, devolve `atualizar`; (2) senão, se a página perdeu 10 posições ou mais (`quedaPosicao` >= 10), devolve `reescrever`; (3) senão, devolve `consolidar`."
+  starterCode={`// Métricas de uma página do seu blog, tiradas do Search Console.
+const METRICAS = {
+  quedaPosicao: 4,        // posições perdidas nos últimos 3 meses
+  trafegoAtual: 1800,     // visitas orgânicas no mês
+  temDadosAntigos: true   // o texto ainda cita limites de 2023
+};
+
+// Devolve a ação recomendada para a página:
+//   'atualizar'  -> ainda tem tráfego e o problema é dado desatualizado
+//   'reescrever' -> o formato da página parou de responder à pergunta
+//   'consolidar' -> o tema já existe melhor em outra página do site
+function decidirAcao(metricas) {
+  // Regra 1: temDadosAntigos e trafegoAtual >= 1000 -> 'atualizar'
+  // Dica: METRICAS.temDadosAntigos e METRICAS.trafegoAtual >= 1000
+  //
+  // Regra 2: se a regra 1 não valeu e quedaPosicao >= 10 -> 'reescrever'
+  // Dica: METRICAS.quedaPosicao >= 10
+  //
+  // Regra 3: nos outros casos -> 'consolidar'
+  //
+  // Escreva a sequência de if / else if / else devolvendo a string certa.
+  return '';
+}
+
+console.log(decidirAcao(METRICAS));
+`}
+  expected="atualizar"
+  slug="visibilidade-organica"
+  nodeId="content-decay-e-refresh"
+/>
+
+## No seu projeto
+
+- [ ] Abra o Search Console, ordene as suas URLs por tráfego orgânico e pegue as 10 piores. Para cada uma, responda as 5 perguntas da lista de verificação e anote a ação: atualizar, reescrever ou consolidar.
+- [ ] Escolha uma página que está na lista e faça a atualização "barata": troque os números desatualizados, acrescente uma seção nova com o que mudou e atualize a data de revisão. Marque a data de hoje no seu calendário para repetir a revisão daqui a 3 meses.
+
+> Atenção: antes de reescrever qualquer página, olhe o que ela tem que a
+> concorrentes não tem. Se a única diferença é o texto novo, você não está
+> reescrevendo — está gastando o histórico da página à toa.
+
+## Fechamento
+
+Você agora sabe quando mexer em uma página e como. No próximo nó vem o
+segredo da extração: como escrever o parágrafo que o buscador e a IA copiam
+para a resposta.

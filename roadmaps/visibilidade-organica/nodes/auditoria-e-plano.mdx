@@ -1,0 +1,263 @@
+---
+id: auditoria-e-plano
+title: "Auditoria Completa e Plano de 90 Dias"
+resources:
+  - title: "Guia inicial de SEO (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Relatório de desempenho do Search Console (Ajuda do Google, em inglês)"
+    url: https://support.google.com/webmasters/answer/9128668
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já sabe encontrar, entender, corrigir e medir. O que falta é a parte que
+transforma vinte problemas soltos em **uma fila de trabalho ordenada** — e
+uma fila de trabalho ordenada é o que transforma SEO em entrega.
+
+## O essencial 🟢
+
+A auditoria tem método. São seis passos, sempre na mesma ordem, porque cada
+um depende do anterior:
+
+<Mermaid
+  chart={`flowchart LR
+    A["1. Inventariar URLs"] --> B["2. Coletar metricas"]
+    B --> C["3. Checar renderizacao"]
+    C --> D["4. Checar indexacao"]
+    D --> E["5. Checar on-page e schema"]
+    E --> F["6. Checar fora do site"]
+    F --> G["Planilha de auditoria"]
+    G --> H["Fila priorizada"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style C fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style D fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style E fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style F fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style G fill:#8250df,stroke:#ffffff,color:#ffffff
+    style H fill:#1a7f37,stroke:#ffffff,color:#ffffff`}
+  caption="As seis etapas da auditoria. O resultado de cada etapa alimenta a planilha, e a planilha vira a fila priorizada."
+/>
+
+**1. Inventariar as URLs.** De onde saem: o `sitemap.xml`, a busca interna do
+site e o Analytics. Uma página que existe mas não está em nenhum desses
+lugares é uma candidata a página órfã.
+
+**2. Coletar as métricas.** Search Console, relatório de desempenho,
+filtrado por página: impressões, cliques, taxa de clique e posição. Sem
+métrica, não há diagnóstico.
+
+**3. Checar a renderização.** O que o crawler recebe no HTML inicial? Use o
+"ver código-fonte" (o HTML que chega antes do JavaScript rodar) e o inspetor
+de renderização do Search Console. É aqui que aparecem as páginas com
+conteúdo só depois do JavaScript.
+
+**4. Checar a indexação.** Cobertura, inspeção de URL, `robots.txt`, `meta
+robots`, `canonical`, código de status. Uma página que não está indexada
+não aparece na busca, por mais bem escrita que esteja.
+
+**5. Checar o que está na página e os dados estruturados.** `title`,
+`description`, `h1`, hierarquia de títulos, JSON-LD, `canonical`.
+
+**6. Checar fora do site.** Quem linka para você, como sua marca aparece,
+quais perfis oficiais existem. É o passo que quase todo mundo pula, e é o
+que revela a diferença entre o seu site e o da concorrência.
+
+O resultado de tudo isso cabe em **uma planilha**, e as colunas que importam
+são exatamente estas:
+
+| URL | impressões | CTR | posição | title | canonical | h1 | schema | links internos | status HTTP |
+|---|---|---|---|---|---|---|---|---|---|
+
+Uma linha por URL. É essa planilha que permite priorizar: problema sem
+métrica é palpite.
+
+## Aprofundamento 🟡
+
+Com a planilha pronta, o trabalho é ordenar. O método mais útil aqui é o
+**ICE/RICE**, adaptado para o caso de SEO com três grandezas: impacto,
+esforço e risco.
+
+```js
+// Prioridade = (impacto / esforco) / risco
+//   impacto: quanto a tarefa move o resultado (1 a 10)
+//   esforco: dias de trabalho necessarios (1 a 10)
+//   risco:   quanto a mudanca pode dar errado (1 a 5, onde 1 e sem risco)
+function prioridade(tarefa) {
+  const esforco = tarefa.esforco > 0 ? tarefa.esforco : 1; // nunca dividir por zero
+  const risco = tarefa.risco > 0 ? tarefa.risco : 1;
+  return (tarefa.impacto / esforco) / risco;
+}
+```
+
+Dividir por esforço é o que faz a conta funcionar: uma tarefa com impacto 9
+que leva 10 dias perde para uma com impacto 7 que leva 1 dia. E dividir por
+risco protege a fila de mudanças grandes e reversíveis que queimam o
+orçamento. Empate é resolvido pela ordem de entrada — a primeira da lista
+fica.
+
+**O que fazer primeiro, em quase todo caso:**
+
+1. **`title` e `description` das páginas que já impressionam.** São páginas
+   com demanda comprovada e posição de trabalho pronta: você só está
+   competindo pela atenção no clique.
+2. **`canonical` e indexação.** Erros aqui desperdiçam todo o resto.
+3. **Performance.** Cada métrica fora do lugar derruba conversão de quem
+   já chegou.
+4. **Blocos de resposta direta.** Uma pergunta respondida em 40-60 palavras,
+   logo abaixo do título, é a chance mais barata de sair do resultado comum
+   e entrar na resposta da IA.
+
+**O que empurrar para depois:**
+
+- **Redesenho completo do site.** Não é uma tarefa, é um projeto. Raramente
+  é o gargalo.
+- **Migração de stack.** Muda tudo e não muda resultado nenhum por si só.
+- **Aquisição de links em volume.** É a última da fila, não a primeira: link
+  aponta para uma página, e se a página está errada, o link só espalha o
+  erro mais rápido.
+
+> Atenção: priorização só funciona com números honestos. Se o esforço é
+> "2 dias" porque você nunca fez aquilo, o número vai dizer que é rápido.
+> Marcar esforço desconhecido como alto é a decisão mais barata que existe.
+
+## Pra quem quer ir além 🔴
+
+O plano de 90 dias é o que transforma a auditoria em entrega. A estrutura é
+sempre a mesma: **corrigir → crescer → consolidar**, com um indicador por
+fase.
+
+**Dias 1-30, corrigir.** Erros técnicos: `canonical`, indexação, `title` e
+`description` das páginas que já impressionam, performance. Indicadores:
+percentual de páginas válidas indexadas; `title` preenchido nas páginas com
+impressão; LCP, INP e CLS no percentil 75.
+
+**Dias 31-60, crescer.** Blocos de resposta direta nas páginas que já
+posicionam, conteúdo novo em temas onde você já tem presença, malha de links
+internos, presença da marca como entidade. Indicadores: número de blocos de
+resposta direta publicados; páginas que passaram da segunda para a primeira
+página; taxa de clique.
+
+**Dias 61-90, consolidar.** Dados estruturados avançados, feeds e arquivos
+legíveis por máquina, relações públicas digitais, atualização do conteúdo
+que decaiu. Indicadores: citações nos motores de IA (participação de voz),
+menções de marca, conversão por sessão orgânica.
+
+O **erro clássico** é medir resultado antes da hora. Mudança de título,
+canonical e indexação não aparece em três dias: o Google precisa rastrear,
+reindexar e reavaliar. Medir na semana 2 leva à conclusão errada de que
+"não funcionou" e à mudança de direção no meio do caminho.
+
+> Nota: 90 dias é o prazo do plano, não o prazo da melhora. A segunda fase
+> costuma render mais que a primeira, porque ela constrói sobre páginas que a
+> primeira deixou ser descobertas.
+
+## Exercício interativo
+
+<Quiz
+  question="Seu site tem 60 páginas, o Search Console mostra que 18 delas já impressionam e o título de 9 delas não corresponde ao conteúdo. O que vem primeiro?"
+  label="Quiz"
+  options={[
+    {
+      text: "Reescrever o título e a descrição das 9 páginas que já impressionam.",
+      correct: true,
+      explanation: "Exato. São páginas com demanda já comprovada e posição de trabalho pronta: você só está competindo pela atenção no clique.",
+    },
+    {
+      text: "Começar uma campanha de aquisição de links para aumentar a autoridade do site inteiro.",
+      correct: false,
+      explanation: "Aquisição de links em volume é a última da fila. Um link para uma página com título errado só espalha o erro mais rápido.",
+    },
+    {
+      text: "Redesenhar a página inicial, que é a mais visitada.",
+      correct: false,
+      explanation: "A página inicial ser a mais visitada não quer dizer que ela é o gargalo. Redesenho é um projeto, não uma tarefa da fila.",
+    },
+    {
+      text: "Migrar o site para um framework novo, que resolve o SEO de uma vez.",
+      correct: false,
+      explanation: "Mudar a stack não muda resultado por si só, consome o trimestre inteiro e traz risco alto sem garantir ganho.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Por que aquisição de links em volume quase nunca é a primeira tarefa da fila?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque o Google penaliza todos os backlinks que não forem naturais.",
+      correct: false,
+      explanation: "Não é uma penalidade geral: links editoriais e relevantes funcionam. O problema é de ordem, não de proibição.",
+    },
+    {
+      text: "Porque o link aponta para uma página: se a página ainda está errada, o link apenas propaga o erro mais rápido.",
+      correct: true,
+      explanation: "Exato. Autoridade aponta para dentro. Antes de buscar link, a página precisa de título certo, canonical certo e conteúdo que responda a pergunta.",
+    },
+    {
+      text: "Porque aquisição de links em volume demora meses e não cabe em um trimestre.",
+      correct: false,
+      explanation: "Demora, sim, mas essa é justamente a razão para começar cedo, se fosse prioridade. O argumento errado é de prazo, não de ordem.",
+    },
+    {
+      text: "Porque o Search Console não mostra os links que entram no site.",
+      correct: false,
+      explanation: "O Search Console mostra os sites que apontam para você. A ordem da fila se define pelo resultado da página, não pela ferramenta.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `priorizar(tarefas)`: recebe a fila (nome, impacto, esforco, risco) e devolve o nome da tarefa de maior score, (impacto / esforco) / risco. Empate: a primeira da lista."
+  starterCode={`// Fila de trabalho da auditoria da Aurora, ja pontuada.
+const TAREFAS = [
+  { nome: 'title das paginas que ja impressionam', impacto: 9, esforco: 2, risco: 1 },
+  { nome: 'canonical', impacto: 7, esforco: 1, risco: 1 },
+  { nome: 'indexacao das paginas publicas', impacto: 7, esforco: 1, risco: 1 },
+  { nome: 'blocos de resposta direta', impacto: 6, esforco: 3, risco: 2 },
+  { nome: 'performance', impacto: 8, esforco: 4, risco: 2 },
+  { nome: 'redesenho completo do site', impacto: 10, esforco: 10, risco: 5 },
+  { nome: 'link building em volume', impacto: 9, esforco: 8, risco: 4 }
+];
+
+function priorizar(tarefas) {
+  let melhorNome = null;
+  let melhorScore = -Infinity;
+
+  for (const tarefa of tarefas) {
+    // Piso de 1 para nunca dividir por zero.
+    const esforco = tarefa.esforco > 0 ? tarefa.esforco : 1;
+    const risco = tarefa.risco > 0 ? tarefa.risco : 1;
+
+    // TODO 1: calcule o score da tarefa: (impacto / esforco) / risco
+    const score = 0;
+
+    // TODO 2: guarde o nome da tarefa quando o score for MAIOR que o melhorScore.
+    //         Use > e nao >=, para o primeiro da lista vencer o empate.
+  }
+
+  return melhorNome;
+}
+
+console.log(priorizar(TAREFAS));
+`}
+  expected="canonical"
+  slug="visibilidade-organica"
+  nodeId="auditoria-e-plano"
+/>
+
+## No seu projeto
+
+- [ ] Monte a planilha de auditoria do seu site: uma linha por URL, com as dez colunas do nó. Use o Search Console para as métricas e o "ver código-fonte" para o title e o h1.
+- [ ] Pontue as dez primeiras tarefas da sua planilha (impacto, esforço, risco) e calcule o score de cada uma. Faça o mesmo antes e depois de uma semana de trabalho: a fila muda?
+
+## Fechamento
+
+Você tem método, planilha e fila ordenada. Falta montar tudo isso num
+projeto de verdade, do zero ao depois — com um site seu, com antes e depois
+mensuráveis.

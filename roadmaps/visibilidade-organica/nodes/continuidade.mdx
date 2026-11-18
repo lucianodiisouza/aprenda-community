@@ -1,0 +1,165 @@
+---
+id: continuidade
+title: "Depois da Trilha: Manutenção e o que Vem a Seguir"
+resources:
+  - title: "Guia inicial de SEO (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Guia de SEO para iniciantes (Moz, em inglês)"
+    url: https://moz.com/beginners-guide-to-seo
+    type: artigo
+    lang: en
+    free: true
+  - title: "Diretrizes para webmasters (Bing Webmaster, em inglês)"
+    url: https://www.bing.com/webmasters/help/webmaster-guidelines-30fba23a
+    type: doc
+    lang: en
+    free: true
+---
+
+A trilha termina, o site continua. E aqui está a parte que decide se o
+trabalho rendeu: **a manutenção**. Uma auditoria te leva a um site bom num
+dia. Manter esse site bom é trabalho de meses, e ele é bem mais barato do
+que parece — se for pequeno e com dono.
+
+## O essencial 🟢
+
+A cadência real de manutenção tem três frequências, e cada uma responde a uma
+pergunta diferente:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Mensal: Search Console"] --> B["Trimestral: conteudo"]
+    B --> C["Semestral: performance"]
+    C --> D["Publicar as mudancas"]
+    D --> E["Medir de novo"]
+    E --> A
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style C fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style D fill:#8250df,stroke:#ffffff,color:#ffffff
+    style E fill:#1a7f37,stroke:#ffffff,color:#ffffff`}
+  caption="O ciclo de manutenção. Cada roda do ciclo gera mudanças pequenas e publicadas, que são o que segura o resultado ao longo do tempo."
+/>
+
+**Todo mês — Search Console (uns 30 minutos).** Cobertura: o que entrou e
+saiu do índice. Desempenho por página: impressões, cliques, taxa de clique e
+posição. Erros de indexação. Experiência da página. A pergunta que a revisão
+mensal responde é uma só: *o que mudou no mês?* Se a resposta for "nada",
+você pode parar — e isso também é um resultado.
+
+**Todo trimestre — conteúdo (uma tarde).** Quais páginas perderam posição e
+por quê. Quais têm dado obsoleto. Quais páginas novas estão sem link
+interno. Onde falta um bloco de resposta direta. É a revisão que combate o
+decaimento, e ela só funciona se for trimestral de verdade: revisar todo mês
+não rende, porque a página ainda não.changeou de lugar.
+
+**Todo semestre — performance (um dia).** LCP, INP e CLS no percentil 75, a
+versão do seu orçamento de performance, dependências que ficaram pesadas, o
+tamanho do aplicativo se você tem um. Performance degrada sozinha: toda
+dependência nova, toda biblioteca, todo script de terceiro empurra as
+métricas para baixo sem que ninguém perceba.
+
+## Aprofundamento 🟡
+
+**O decaimento é inevitável.** Não é defeito seu nem do seu site: é a natureza
+do material orgânico. O tema envelhece, um concorrente publica algo melhor, o
+comportamento da busca muda, o que funcionava em 2024 já não funciona igual em
+2026. Ninguém escapa disso — quem escapa é quem **vê o decaimento cedo e
+age rápido**.
+
+Por isso a cadência existe. Não é para impedir a queda; é para encurtar o
+tempo entre "começou a cair" e "alguém fez alguma coisa". Uma queda de duas
+semanas com correção rápida quase não dói. A mesma queda de seis meses, sem
+ninguém olhando, derruba o site inteiro.
+
+**Quando o site precisa de gente.** Backlog de conteúdo de verdade é um
+custo recorrente: uma pessoa, um número de horas por semana, um processo de
+revisão. Se esse tempo não existe na sua agenda, o melhor caminho não é
+manter 200 páginas medianas — é manter 10 páginas excelentes e as outras
+apagadas ou consolidadas. A alternativa saudável é parecer pequeno e útil.
+
+**A régua é a mesma do produto.** Você já sabe fazer integração, teste e
+observabilidade. SEO não é uma disciplina nova: é o mesmo trio aplicado a
+um sistema que não tem deploy.
+
+- **Integração:** o Search Console e o analytics são integrações com a
+  plataforma de busca. A planilha de auditoria é a interface entre o que o
+  buscador fez e o que o time vai fazer.
+- **Teste:** mudar um `title` é um teste. Você mexe, publica, observa um
+  período e compara. Sem esse ciclo, você só tem opinião.
+- **Observabilidade:** uma página que cai 40% é um incidente. Configurar um
+  alerta de queda por página é o mesmo que configurar alerta de erro em
+  produção — e evita que a queda só seja percebida seis meses depois, no
+  relatório anual.
+
+> Nota: essa régua é a mesma para o site e para a loja de aplicativos. A
+> ficha da loja também precisa de ciclo: medir, mudar, publicar, medir.
+
+## Pra quem quer ir além 🔴
+
+Cinco caminhos que se abrem a partir daqui, em ordem de quanto valem para a
+maioria dos sites:
+
+1. **SEO internacional** — `hreflang`, URLs por idioma e por região, e o
+   canonical de cada página quando ela existe em mais de um idioma. É o
+   próximo degrau depois de dominar o site em um idioma só.
+2. **E-commerce e feeds** — sitemaps de produto, Merchant Center, feeds para
+   marketplaces, e o trabalho de manter Canonical em catálogo com variações,
+   filtros e parâmetros de URL.
+3. **SEO local** — perfil da empresa no Google, dados estruturados de
+   negócio local, páginas por cidade, consistência de endereço e telefone.
+4. **Dados estruturados avançados** — grafo com `@graph`, tipos que você
+   ainda não usa (`SoftwareApplication`, `Event`, `Review`) e a manutenção
+   disso ao longo do tempo.
+5. **Métricas de IA automatizadas** — o prompt set fixo virando rotina
+   automatizada: rodar, guardar o resultado, versionar e comparar a
+   participação de voz mês a mês.
+
+**Onde acompanhar.** O blog e a documentação do Google Search Central; os
+blogs oficiais dos modelos (a forma de acompanhar as mudanças de politica); os
+changelogs dos produtos que você usa; e, antes de todos, o Search Console do
+seu próprio site — que é a fonte mais confiável que existe, porque é o seu
+próprio dado.
+
+## Exercício interativo
+
+<Quiz
+  question="Qual é a cadência mínima viável de manutenção de um site depois da auditoria inicial?"
+  label="Quiz"
+  options={[
+    {
+      text: "Todo dia, olhando as métricas do dia anterior.",
+      correct: false,
+      explanation: "Não existe dado que mude de lugar em um dia. Revisar todo dia é trabalho sem retorno e, na prática, ninguém faz.",
+    },
+    {
+      text: "Search Console todo mês, conteúdo a cada trimestre e performance a cada semestre.",
+      correct: true,
+      explanation: "Exato. São três frequências porque são três tipos de problema: indexação e clique (mensal), material que envelhece (trimestral) e base técnica (semestral).",
+    },
+    {
+      text: "Só quando o tráfego cair.",
+      correct: false,
+      explanation: "Quando o tráfego cai, a queda já aconteceu e o período de recuperação começa. A manutenção existe para encurtar esse tempo, não para começar nele.",
+    },
+    {
+      text: "Uma vez por ano, na revisão de planejamento da empresa.",
+      correct: false,
+      explanation: "Um ano é o prazo médio do dano, não o prazo de manutenção. Nessa frequência, a queda de uma página já virou um caso perdido.",
+    },
+  ]}
+/>
+
+## No seu projeto
+
+- [ ] Marque no calendário as três revisões (mensal, trimestral e semestral) e defina o dono de cada uma. Revisão sem nome não acontece.
+- [ ] Pegue a página que mais perdeu posição na sua última medição e escreva três tópicos concretos para atualizá-la. Marque a data e meça de novo em 30 dias.
+
+## Fechamento
+
+Você fechou o ciclo: encontrar, entender, corrigir, converter, medir e
+manter. A partir daqui o caminho é seu — mas ele já tem método, um painel e
+uma cadência. O que falta nunca foi ferramenta. Era o hábito de olhar.

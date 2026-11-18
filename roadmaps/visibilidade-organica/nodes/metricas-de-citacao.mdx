@@ -1,0 +1,275 @@
+---
+id: metricas-de-citacao
+title: "Medindo Visibilidade em Motores de IA"
+resources:
+  - title: "Rastreadores da OpenAI (documentação oficial, em inglês)"
+    url: https://platform.openai.com/docs/bots
+    type: doc
+    lang: en
+    free: true
+  - title: "Rastreadores do Perplexity (guia oficial, em inglês)"
+    url: https://docs.perplexity.ai/guides/bots
+    type: doc
+    lang: en
+    free: true
+---
+
+Você mediu o site, o tráfego e a conversão. Mas existe um mercado novo onde a
+sua marca aparece — e ele não aparece em nenhum dos seus painéis.
+
+## O essencial 🟢
+
+### O problema do clique zero
+
+Quando alguém pergunta "qual a melhor ferramenta de organização de tarefas para
+equipe remota" a um modelo de IA, a resposta vem pronta, dentro da conversa.
+A pessoa lê, anota o nome, e segue. **Não houve clique. Não houve sessão. Não
+houve entrada no seu relatório.**
+
+Esse é o chamado **clique zero**: a resposta substitui a visita. O efeito é
+justamente o oposto do que você passou a trilha inteira otimizando.
+
+A consequência prática é séria: se você mede apenas o Search Console, sua
+visibilidade em IA aparece como zero — e isso é falso. Você não sabe se não
+está sendo citado ou se está sendo citado sem ninguém clicar. São dois
+problemas com consertos completamente diferentes.
+
+### A técnica: um conjunto fixo de perguntas
+
+A medição que funciona é quase chata:
+
+1. **Monte um conjunto fixo de perguntas** — de 20 a 40 — que o seu público
+   realmente faz. As perguntas do fórum, do seu suporte, do seu e-mail de
+   vendas. Fixas, escritas uma vez, nunca mais alteradas.
+2. **Rode todas elas, toda semana, em cada motor** que você acompanha.
+3. **Registre três coisas por resposta**: se a sua marca foi citada, **qual URL
+   foi citada** e como a sua marca aparece (citada como fonte? só listada? em
+   que posição?).
+4. **Repita a rodada duas ou três vezes.** Uma resposta isolada não é dado.
+
+O conjunto fixo é o que dá comparabilidade. Se você muda as perguntas de um
+mês para o outro, não tem como saber se melhorou ou se só mudou a prova.
+
+### Participação de voz
+
+Com o conjunto fixo rodando, um número fecha a conta: em que porcentagem das
+perguntas **a sua marca aparece citada**.
+
+Chamamos isso de **participação de voz** (o termo técnico é *share of voice*).
+Ele é sempre uma comparação: a sua porcentagem contra a do concorrente, no
+**mesmo conjunto de perguntas**. Por isso ele funciona bem — a base é fixa, o
+denominador é o mesmo para todo mundo, e a variação da semana a semana fica
+legível.
+
+> Dica: guarde o resultado bruto também, não só o percentual. A pergunta que
+> perdeu a citação na semana passada é mais informativa que o número geral.
+
+**O que fixar aqui:** o Search Console não vê IA; o conjunto fixo de perguntas
+é o que torna a medição possível; participação de voz é porcentagem de um
+conjunto fixo, comparada com quem concorre.
+
+## Aprofundamento 🟡
+
+### Ser citado não é ser a fonte citada
+
+Existem dois níveis, e a diferença entre eles é o seu objetivo real:
+
+- **Citado como fonte** — o modelo escreveu algo como "segundo a Aurora,
+  equipes remotas relatam...", com o link e a atribuição.
+- **Citado como opção** — o modelo listou a sua marca entre três ou quatro
+  nomes, do mesmo jeito que listaria qualquer concorrente.
+
+O segundo nível é frágil: você aparece, mas não impressiona ninguém. O
+primeiro é o que muda a decisão da pessoa.
+
+No registro da sua rodada, guarde os dois separadamente. Uma marca que sobe de
+30% para 40% de participação de voz, mas sempre como opção, não é a mesma
+coisa que uma marca que passou a ser citada como fonte duas vezes.
+
+### A medição tem ruído — e isso é normal
+
+Três fatos que quebram a leitura ingênua:
+
+1. **Os modelos mudam.** Uma atualização de modelo muda o conjunto de fontes
+   que ele prefere, do dia para a noite. Sua queda de uma semana pode ser uma
+   mudança de versão, não uma mudança sua.
+2. **A mesma pergunta dá respostas diferentes.** A geração é variacional.
+   Uma pergunta rodada uma vez não é um dado — é uma amostra de tamanho um.
+3. **O que responde uma pergunta depende do dia.** Fim de semana, feriado e
+   horário comercial mudam o ambiente de busca por trás da resposta.
+
+A prática que conserta: **compare janelas, não dias**. Uma semana contra a
+semana anterior, com a mesma lista, no mesmo motor, rodada no mesmo horário.
+
+### Os indicadores que antecedem a citação
+
+Antes de a citação aparecer, aparecem sinais mais cedo que ela:
+
+- **Frequência de rastreamento dos robôs de IA no seu log de servidor.** É o
+  único lugar onde você vê o `GPTBot`, o `ClaudeBot` ou o `PerplexityBot`
+  passando. Se o robô não visita, nenhuma citação é possível.
+- **Volume de menções da sua marca** fora do seu site, em conversa de forum,
+  e-mail e comentários.
+- **Tráfego de referência dos domínios dos modelos.** Ele aparece no GA4
+  como referência, junto com o do fórum — e é a única parte da conversa de IA
+  que vira visita.
+
+Esses três não substituem a medição de citação, mas avisam antes dela.
+
+### O que corrigir quando a citação não vem
+
+Quatro causas estatísticas, na ordem em que valem a pena investigar:
+
+1. **O bloco é isolado.** O modelo lê *passagens*, não páginas — você viu isso
+   no nó `como-ia-le-a-web`. Se a sua resposta está num parágrafo que só faz
+   sentido depois de três parágrafos anteriores, ela não é extraível.
+2. **A página não tem data.** O modelo prefere fonte atualizada. Página sem
+   data de atualização visível perde para a concorrente que tem.
+3. **A opinião não tem autor.** Opinião sem autor é opinião de ninguém. O nó
+   `eeat-e-qualidade` mostrou o que dá autoridade a um texto — inclusive o
+   `sameAs` do autor.
+4. **A afirmação não tem número com fonte.** O nó `conteudo-citavel` mostrou
+   que estatística com fonte é o achado mais forte da pesquisa sobre citação.
+   "Melhor opção" não é citável. "X% das equipes relatam Y (fonte, ano)" é.
+
+## Pra quem quer ir além 🔴
+
+### Automatize a rodada, não a planilha
+
+O trabalho repetitivo da medição é: rodar as 30 perguntas, ler as respostas,
+marcar, salvar. Isso é um script. Um script simples:
+
+- lê a lista de perguntas de um arquivo de texto (uma pergunta por linha);
+- chama a API de cada motor que você usa;
+- para cada resposta, verifica se a sua marca aparece e qual URL foi citada;
+- grava uma linha em um arquivo de tabela: `data`, `motor`, `pergunta`,
+  `citada`, `url_citada`, `posicao`.
+
+Com isso, a sua planilha deixa de ser digitada e passa a ser gerada. O que
+continua sendo seu é a leitura: quais perguntas perderam a citação, quais
+entraram, e o que isso diz sobre o conteúdo.
+
+### O que fazer com a planilha
+
+Três leituras que valem mais do que o número final:
+
+- **A lista de perguntas que você nunca foi citado** — é o mapa de lacunas.
+  Cada uma delas é uma página que falta ou que não está sendo extraída.
+- **A URL mais citada** — a sua página que os modelos consideram a melhor
+  fonte sobre o assunto. Vale a pena melhorá-la mais.
+- **A comparação com o concorrente, pergunta a pergunta** — não a média. Em
+  qual pergunta específica o concorrente ganha e você não? Essa pergunta é o
+  seu próximo conteúdo.
+
+### Os limites, ditos com honestidade
+
+Isso é uma **amostra controlada**, não um censo. Você não está medindo "a
+visibilidade da sua marca na IA" — está medindo "a sua marca em 30 perguntas
+escolhidas por você, em um dia, em um modelo". Isso já é útil demais para
+quase todo mundo, e é mais honesto do que qualquer painel que finja
+precisão.
+
+Três regras para não se enganar: não compare números de motores diferentes,
+não compare semanas de Conjuntos diferentes, e não persiga uma variação de
+cinco pontos — ruído é ruído.
+
+## Exercício interativo
+
+<Quiz
+  question="Por que o Search Console não mede a sua visibilidade nas respostas de IA?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque a resposta de IA é exibida sem clique: a pessoa lê a resposta e não chega no seu site, e isso não vira sessão nem aparece no relatório",
+      correct: true,
+      explanation: "É o clique zero: a resposta substitui a visita. Como não há sessão, o Search Console não tem nada para mostrar — o zero no relatório significa ausência de clique, não ausência de citação.",
+    },
+    {
+      text: "Porque o Google bloqueia os rastreadores de IA na maior parte dos sites",
+      correct: false,
+      explanation: "Não existe bloqueio automático. Cada site decide, no robots.txt, o que permite. E mesmo com bloqueio, o Search Console nunca mediria citações de IA.",
+    },
+    {
+      text: "Porque as respostas de IA não usam o índice de busca do Google",
+      correct: false,
+      explanation: "Alguns motores usam índice próprio, outros usam o do Google. De qualquer forma, a razão pela qual o Search Console não mede é ausência de clique, não de índice.",
+    },
+    {
+      text: "Porque o Search Console só reporta tráfego de busca paga",
+      correct: false,
+      explanation: "O relatório cobre justamente a busca orgânica. O que não aparece é o tráfego vindo de dentro de uma resposta de IA, que não é sessão.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="O que é participação de voz (share of voice) no contexto dos motores de IA?"
+  label="Quiz"
+  options={[
+    {
+      text: "A porcentagem de um conjunto fixo de perguntas em que a sua marca aparece citada, comparada com a dos concorrentes",
+      correct: true,
+      explanation: "É esse o sentido. A base é fixa e o denominador é o mesmo para todos, então o número é comparável entre você e o concorrente ao longo das semanas.",
+    },
+    {
+      text: "O número de menções da sua marca em toda a web",
+      correct: false,
+      explanation: "Menção é um sinal mais amplo e mais difícil de atribuir. A participação de voz mede presença citada dentro de um conjunto controlado de perguntas.",
+    },
+    {
+      text: "A posição média da sua marca dentro da resposta do modelo",
+      correct: false,
+      explanation: "Dentro da resposta não há posição média mensurável de forma estável entre execuções. O que se registra é se a marca foi citada e qual URL foi citada.",
+    },
+    {
+      text: "O percentual de cliques que vieram das respostas de IA",
+      correct: false,
+      explanation: "Esse percentual é zero na maioria dos casos: é justamente o clique zero. Medir a citação é o que substitui essa métrica impossível.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `shareOfVoice(respostas, marca)` que devolve a participação de voz da sua marca: o percentual inteiro de respostas em que a sua marca aparece citada. Regras: (1) cada resposta tem o campo `marca` com as marcas citadas, separadas por `|` quando são mais de uma; (2) o percentual é (respostas com a sua marca / total de respostas) vezes 100; (3) se não houver nenhuma resposta, o percentual é zero — cuide para não dividir por zero; (4) arredonde para o inteiro mais próximo e devolva como texto, sem o símbolo de porcentagem. A entrada já vem pronta no código: use o array `respostas` e o nome `marca`."
+  starterCode={`// Uma rodada da sua medição: em cada resposta, as marcas citadas separadas por "|".
+const respostas = [
+  { marca: "Aurora" },
+  { marca: "Taskade|Trello" },
+  { marca: "Notion" },
+  { marca: "Aurora|Todoist" },
+  { marca: "Todoist" },
+];
+
+// A marca que você quer medir.
+const marca = "Aurora";
+
+// Em quantos por cento das respostas a sua marca aparece citada?
+function shareOfVoice(respostas, marca) {
+  // Passo 1, já pronto: filtra as respostas em que a sua marca é citada.
+  const citadas = respostas.filter((r) => r.marca.split("|").includes(marca));
+
+  // Escreva aqui: devolva o percentual arredondado, como texto.
+  // Dica: o percentual é citadas.length / respostas.length, em fração (0.4 para 40).
+  // Dica: multiplique por 100 e arredonde com Math.round.
+  // Atenção: se a lista de respostas estiver vazia, o percentual é zero.
+}
+
+console.log(shareOfVoice(respostas, marca));
+`}
+  expected="40"
+  slug="visibilidade-organica"
+  nodeId="metricas-de-citacao"
+/>
+
+## No seu projeto
+
+- [ ] Escreva a lista de 20 perguntas que o seu público realmente faz — retire
+      do seu suporte, do fórum e das conversas de venda. Grave em um arquivo
+      de texto, uma pergunta por linha: essa lista é o seu instrumento de
+      medição e ela não muda mais.
+- [ ] Rode essa lista em um motor de IA, anote em uma tabela as colunas
+      `pergunta`, `citada` (sim/não) e `url_citada`, e calcule a participação
+      de voz com o código do exercício. Repita na semana que vem e compare.
+
+No próximo nó você trata o último pedaço da cadeia: o que acontece depois
+que a pessoa chega. Tráfego orgânico que não vira cliente não paga a conta.

@@ -1,0 +1,244 @@
+---
+id: intencao-de-busca
+title: "Intenção de Busca: o Que a Pessoa Realmente Quer"
+resources:
+  - title: "SEO Starter Guide (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Beginner's Guide to SEO (Moz)"
+    url: https://moz.com/beginners-guide-to-seo
+    type: artigo
+    lang: en
+    free: true
+  - title: "SEO - Glossário do MDN (PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/SEO
+    type: doc
+    lang: pt
+    free: true
+---
+
+Duas pessoas digitam "aurora" no mesmo segundo. Uma quer entrar na conta. A
+outra quer comparar com o Trello antes de assinar qualquer coisa. Mesmo
+produto, duas páginas completamente diferentes — e você tem só uma chance de
+escolher qual das duas você atende.
+
+## O essencial 🟢
+
+**As quatro intenções.**
+
+- **Informacional** — a pessoa quer entender. "O que é sprint de Scrum",
+  "como organizar tarefas em equipe".
+- **Comercial** — a pessoa quer comparar antes de decidir. "Melhor app de
+  gestão de tarefas", "alternativa ao Trello".
+- **Navegacional** — a pessoa quer um lugar específico. "Login da Aurora",
+  "documentação da API da Aurora".
+- **Transacional** — a pessoa quer comprar ou contratar agora. "Assinar plano
+  Aurora", "comprar Aurora".
+
+**A intenção mista.** "Qual o melhor app de gestão de tarefas para equipes
+remotas" tem a forma de uma pergunta, mas a intenção de uma comparação. É a
+forma mais comum das buscas comerciais, e por isso a mais confundida: muita
+gente classifica como informacional e escreve um artigo genérico para uma
+busca que queria um comparativo.
+
+**A tela muda conforme a intenção.** O Google não mostra dez links iguais
+para toda consulta:
+
+- **Informacional** — artigos, vídeos, fóruns, definições.
+- **Comercial** — comparativos, site oficial, avaliações, marketplaces.
+- **Navegacional** — o site da marca e páginas internas dele.
+- **Transacional** — página de produto, tabela de preço, anúncio, loja.
+
+**O formato vem do tipo de pergunta.** A pergunta que a pessoa faz já sugere o
+formato que ela espera encontrar:
+
+- "o que", "como", "por que" → artigo que responde direto
+- "melhor", "alternativa", "comparativo" → comparativo com critérios explícitos
+- "login", "site oficial", "documentação" → página oficial
+- "preço", "comprar", "assinar" → página de planos, com botão
+
+**Uma página para cada intenção.** O trabalho de mapear intenção vira uma
+tabela simples, e a tabela vira código:
+
+```js
+// Cada intenção pede um formato de página diferente.
+const FORMATO = {
+  informacional: "artigo que responde a pergunta em um paragrafo",
+  comercial: "comparativo com criterios explicitos",
+  navegacional: "pagina oficial ou central de ajuda",
+  transacional: "landing com preco e botao de compra",
+};
+
+// As suas paginas e a intencao que cada uma atende.
+const paginas = [
+  { caminho: "/blog/organizar-tarefas-em-equipe", intencao: "informacional" },
+  { caminho: "/comparativo", intencao: "comercial" },
+  { caminho: "/ajuda", intencao: "navegacional" },
+  { caminho: "/planos", intencao: "transacional" },
+];
+
+// Dada a intencao da busca, devolve a pagina que deve responder a ela.
+function paginaPara(intencao) {
+  const achada = paginas.find((p) => p.intencao === intencao);
+  return achada ? achada.caminho : "nenhuma pagina";
+}
+
+console.log(paginaPara("comercial") + " -> " + FORMATO.comercial);
+```
+
+O código imprime `/comparativo -> comparativo com criterios explicitos`: para a
+busca "melhor app de gestão de tarefas", a página que deve vencer é a de
+comparação, não um post de blog e não a home.
+
+Daqui sai a consequência prática. Se a Aurora só tem a página `/planos`, ela
+atende muito bem a intenção transacional e não tem onde aparecer na busca
+comercial "melhor ferramenta de gestão de tarefas para equipes remotas". A
+solução não é otimizar a página `/planos` para essa busca: é criar a página que
+falta.
+
+**Marca e genérica são buscas diferentes.** "Aurora" é busca de marca: quem
+digita isso já sabe que você existe. "Gestão de tarefas para equipes remotas" é
+busca genérica: quem digita isso ainda está escolhendo. A genérica traz
+volume, a de marca traz conversão. Você precisa das duas — e elas não podem
+morar na mesma página.
+
+## Aprofundamento 🟡
+
+**A SERP é a fonte da verdade.** Antes de escolher o formato de uma página,
+abra o Google e digite a consulta. Conte o que aparece: se os dez primeiros
+resultados são vídeo, a SERP está pedindo vídeo; se são comparativos, está
+pedindo comparativo. Nenhum palpite de palavra-chave supera isso, porque a
+SERP mostra o que o Google já decidiu que é a melhor resposta para aquela
+busca específica.
+
+**Duas páginas, uma busca: canibalização.** Se duas páginas do seu site
+disputam a mesma consulta, o motor não sabe qual delas responder — e as duas
+perdem força. A correção não é criar uma terceira: é consolidar em uma página
+melhor e redirecionar a outra.
+
+**A intenção muda com o tempo.** "Trello" era uma busca comercial e virou
+navegacional conforme a base de usuários cresceu. Daqui a dois anos, "Aurora"
+pode ter mudado de lugar. Reavaliar a intenção das suas páginas de marca faz
+parte da manutenção, não é uma tarefa de lançamento.
+
+> Dica: se você vai escrever uma página para uma busca, digite a consulta no
+> Google antes e olhe quem já está no topo. Esse é o formato que o motor já
+> validou para aquela busca.
+
+## Pra quem quer ir além 🔴
+
+**Quando uma página atende a duas intenções.** A página `/planos` da Aurora
+serve a intenção transacional ("assinar plano") e, para quem já conhece a
+marca, também à navegacional ("aurora planos"). Isso não é defeito: a
+intenção dominante define o formato da página, e o resto vira navegação
+interna. O defeito é quando duas páginas do mesmo site disputam a mesma
+busca.
+
+**Mapear a intenção de um site grande.** Comece pelo que já existe: as páginas
+com mais impressões revelam a intenção real, porque foi o mundo que te disse o
+que procurava. Depois confira se o formato de cada página bate com a intenção
+declarada — e essa checagem é a base do módulo de medição, mais adiante na
+trilha.
+
+<Quiz
+  question="Classifique a consulta 'login da Aurora'."
+  label="Quiz"
+  options={[
+    {
+      text: "Navegacional: a pessoa quer um destino específico que já sabe nomear.",
+      correct: true,
+      explanation: "Exato. Ela não quer entender login, nem comparar opções de login: quer chegar em um endereço que já conhece. A página que vence essa busca é a própria página de login.",
+    },
+    {
+      text: "Informacional: a pessoa quer entender como funciona o login.",
+      correct: false,
+      explanation: "Se a intenção fosse informacional, a consulta diria algo como 'como fazer login na Aurora' ou 'login com 2FA como funciona'. Sem essas palavras, é navegação.",
+    },
+    {
+      text: "Comercial: a pessoa está comparando o Aurora com outras ferramentas.",
+      correct: false,
+      explanation: "Comparação aparece com marcadores como 'melhor', 'alternativa', 'versus'. Nada disso está na consulta.",
+    },
+    {
+      text: "Transacional: a pessoa quer assinar um plano.",
+      correct: false,
+      explanation: "Transacional pede uma ação de compra: comprar, assinar, contratar. A pessoa está só querendo entrar na conta dela.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual formato de página atende melhor a busca 'melhor CRM para equipes remotas'?"
+  label="Quiz"
+  options={[
+    {
+      text: "Um comparativo com critérios explícitos, listando o que cada opção faz bem e mal.",
+      correct: true,
+      explanation: "A busca pede decisão. Quem responde bem mostra o critério da decisão: dá para o visitante comparar e escolher em vez de sair para pesquisar mais.",
+    },
+    {
+      text: "Um post de blog genérico sobre produtividade em times remotos.",
+      correct: false,
+      explanation: "Um post genérico responde a uma pergunta informacional. Quem está comparando quer saber quem ganha em quê, não ler mais texto sobre produtividade.",
+    },
+    {
+      text: "A página de login do produto.",
+      correct: false,
+      explanation: "A página de login serve a quem já decidiu usar o produto. Ela não tem nada a dizer sobre a comparação que a pessoa está fazendo.",
+    },
+    {
+      text: "Uma página só com um formulário de contato.",
+      correct: false,
+      explanation: "Formulário de contato não responde à pergunta. Quem busca 'melhor CRM' quer uma resposta agora, não uma promessa de retorno.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `detectarIntencao(consulta)` que devolve o tipo de intenção de uma busca: 'informacional', 'comercial', 'navegacional' ou 'transacional'. Use os marcadores que já estão definidos: para cada categoria da lista ORDEM, verifique se algum dos marcadores aparece dentro da consulta (tudo em minúsculas). A primeira categoria que casar vence. Se nenhuma casar, devolva 'informacional'."
+  starterCode={`// Marcadores de cada tipo de intencao (dado pronto).
+// Repare que estao sem acento: a comparacao e feita direto no texto.
+const MARCADORES = {
+  transacional: ["comprar", "contratar", "assinar", "cadastrar"],
+  comercial: ["melhor", "preco", "comparativo", "alternativa", "review"],
+  navegacional: ["login", "entrar", "painel", "app oficial"],
+  informacional: ["como", "o que", "por que", "guia", "tutorial", "dicas"],
+};
+
+// Ordem de verificacao: vence a primeira categoria que casar.
+const ORDEM = ["transacional", "comercial", "navegacional", "informacional"];
+
+// Implemente: devolva o nome da categoria da intencao.
+// 1. Pegue a consulta em minusculas.
+// 2. Para cada categoria da ORDEM, veja se algum marcador dela
+//    aparece dentro da consulta.
+// 3. Se nada casar, devolva "informacional".
+function detectarIntencao(consulta) {
+  return "";
+}
+
+// Não edite abaixo: é o teste automático.
+// Não escreva console.log extras, ou a saída muda.
+const consulta = "qual o melhor preco para equipes remotas";
+
+console.log(detectarIntencao(consulta));`}
+  expected="comercial"
+  slug="visibilidade-organica"
+  nodeId="intencao-de-busca"
+/>
+
+## No seu projeto
+
+- [ ] Abra o Google, digite as cinco perguntas que os seus clientes digitaria de
+  verdade e anote, para cada uma, o tipo de resultado que aparece no topo
+  (artigo, vídeo, comparativo, loja). Marque as buscas em que o seu site não
+  aparece.
+- [ ] Liste as dez URLs do seu site e classifique cada uma por intenção
+  (informacional, comercial, navegacional, transacional). Marque as que
+  disputam a mesma busca entre si.
+
+No próximo nó, você vai juntar o que aprendeu até aqui com a parte prática:
+descobrir as palavras que as pessoas realmente digitam, sem pagar ferramenta
+de keyword nenhuma.

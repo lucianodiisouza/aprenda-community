@@ -1,0 +1,276 @@
+---
+id: autoridade-e-links
+title: "Autoridade, Links e Digital PR"
+resources:
+  - title: "Guia para iniciantes em SEO (Moz, em inglês)"
+    url: https://moz.com/beginners-guide-to-seo
+    type: artigo
+    lang: en
+    free: true
+  - title: "Políticas de spam do Google Search Central (em inglês)"
+    url: https://developers.google.com/search/docs/essentials/spam-policies
+    type: doc
+    lang: en
+    free: true
+  - title: "Como qualificar links de saída (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links
+    type: doc
+    lang: en
+    free: true
+---
+
+Até agora você trabalhou dentro do seu site: indexação, estrutura, conteúdo. Este nó
+sai do site. Nenhum buscador te coloca na frente de ninguém porque o seu HTML está
+perfeito — alguém precisa falar de você em outro lugar.
+
+## O essencial 🟢
+
+Seu site é o que **você** publica. Autoridade é o que os **outros** publicam
+sobre você.
+
+### PageRank não é uma nota
+
+O termo PageRank aparece em toda ferramenta de SEO e é a fonte de metade do
+mal-entendido. Ele não é uma pontuação de 0 a 100, não aparece em relatório
+nenhum e, principalmente, **não se vende**. É o nome que o Google dá a um
+conjunto de sinais — e um dos mais conhecidos é a contagem de links que apontam
+para a sua página considerando a **qualidade e a relevância** de quem aponta.
+
+Duas consequências práticas: um link de um site respeitado no assunto vale mais
+que dez links de diretórios obscuros; e não existe "comprar PageRank". O que
+existe é comprar link — e isso é spam.
+
+### Como um link é lido
+
+Quando o buscador encontra um link, ele olha quatro coisas:
+
+1. **Quem aponta** — o domínio de destino.
+2. **O que o link diz** — o texto âncora, as palavras que descrevem a página.
+3. **O que está declarado** — os atributos `rel`.
+4. **Se o assunto combina** — se a página que fala do seu produto realmente
+   trata do tema do produto.
+
+O item 3 tem uma lista curta e que é usada o tempo todo:
+
+```html
+<!-- Link pago: o atributo sponsored declara que houve comparação comercial -->
+<a href="https://blog.exemplo.dev/parceria" rel="sponsored">parceria com a Aurora</a>
+
+<!-- Link de conteúdo de usuário: o próprio leitor escreveu aquilo -->
+<a href="https://blog.exemplo.dev/comentario" rel="ugc">comentário sobre a Aurora</a>
+
+<!-- Link editorial comum: é o link que você quer -->
+<a href="https://blog.exemplo.dev/kanban-remoto">como usar kanban em equipe remota</a>
+```
+
+`nofollow`, `ugc` e `sponsored` existem para **qualificar** o link: para deixar
+claro ao buscador que aquele link não é um endosso editorial da página que o
+publicou. O `nofollow` é o mais antigo e o mais genérico; `sponsored` e `ugc`
+são mais precisos, e são o padrão hoje para conteúdo pago e para conteúdo
+escrito por usuário.
+
+### A métrica honesta: tráfego de referência
+
+Existe um número que não mente sobre um link: **quantas pessoas chegaram pelo
+link**. Se um blog importante linka o seu produto e ninguém clica, o link não
+está trabalhando — nem para o seu tráfego, nem para a reputação do blog.
+
+Por isso o link ideal é simples de avaliar: **é o link que alguém clicaria de
+verdade**. Um link dentro de uma lista de "10 ferramentas parecidas", num
+parágrafo que realmente discute o problema que você resolve, com o texto âncora
+descrevendo o que a página faz. Nada de rodapé.
+
+<Mermaid
+  chart={`flowchart LR
+    Ativo["Ativo citavel: dados, ferramenta, estudo"]
+    Editorial["Link editorial em um site relevante"]
+    Ref["Trafego de referencia: pessoas chegam"]
+    Conv["Conversao: cadastro, demo, cliente"]
+    Ativo --> Editorial
+    Editorial --> Ref
+    Ref --> Conv
+    Conv -.->|"o que deu certo vira novo ativo"| Ativo
+    style Ativo fill:#1f6feb,stroke:#fff,color:#fff
+    style Editorial fill:#388bfd,stroke:#fff,color:#fff
+    style Ref fill:#2ea043,stroke:#fff,color:#fff
+    style Conv fill:#2ea043,stroke:#fff,color:#fff`}
+  caption="O ciclo do link editorial: um ativo citavel gera a publicação, a publicação gera trafego de referencia, e a conversao devolve insumo para o proximo ativo."
+/>
+
+Você não precisa de links. Precisa de gente que ache você útil o suficiente para
+citar.
+
+## Aprofundamento 🟡
+
+### O que é um ativo citável
+
+A forma mais honesta de conseguir link editorial é ter algo que as pessoas
+queiram citar. Quatro formatos que funcionam bem:
+
+- **Dados que só você tem** — um levantamento com números que só você coletou.
+- **Ferramenta gratuita** — uma calculadora, um gerador, um comparador. O link
+  entra porque a ferramenta é útil, não porque você pediu.
+- **Estudo com metodologia pública** — como você coletou, o que mediu, o que
+  ficou de fora. Quem publica estudo mostra o método para poder ser citado.
+- **Visualização** — gráficos e tabelas que as pessoas incorporam nos próprios
+  artigos e que carregam a sua marca junto.
+
+A Aurora, por exemplo, poderia publicar um "Índice de produtividade de equipes
+remotas": cruza dados de uso do app (anonimizados e agregados) com dados
+públicos de mercado. O importante não é o gráfico — é que **esse número não
+existe em outro lugar**. Um jornalista, um blog ou quem envia e-mails com
+curadoria de links tem um motivo concreto para linkar.
+
+### O que caracteriza spam de link
+
+O Google é explícito nas políticas de spam: comprar links é violação. Na
+prática, o padrão se repete em três formas:
+
+- **Link pago e vendido em bloco**, sem curadoria editorial.
+- **Rede de sites** — criticadas ou blogs criados só para linkar.
+- **Âncora exata em massa** — a mesma frase repetida em muitos sites para a
+  mesma página de destino.
+
+O último é o mais sutil, porque parece inofensivo: 40 blogs diferentes
+escrevendo "gerenciador de tarefas para equipes remotas" apontando para a
+mesma página. O buscador reconhece o padrão e o trata como manipulação.
+
+Por isso o texto âncora descritivo não é só "bom para o leitor": é o que
+distingue um link editorial de um padrão de spam. E o mais honesto de todos
+costuma ser o link com o **nome da sua marca** — ele não manipula, não promete
+palavra-chave e não precisa parecer natural.
+
+### O texto âncora, na prática
+
+Texto âncora é a frase que o leitor vê e que dá o contexto do link. A ordem
+certa é:
+
+1. Descritivo e específico: "kanban para equipes remotas".
+2. Nome da marca: "Aurora".
+3. Genérico: "clique aqui", "saiba mais", "confira".
+
+O terceiro tipo é o pior: não passa contexto nenhum e é exatamente o que a
+rede de sites faz.
+
+## Pra quem quer ir além 🔴
+
+Três hábitos que separaram quem consegue link editorial de quem só compra
+espaço:
+
+**Peça com contexto.** "Oi, fiz um levantamento, dá uma olhada?" não funciona.
+Funciona: "respondi a pergunta que o seu leitor fez sobre produtividade em
+equipe remota e montei os dados; se for útil, cito a fonte". Você oferece
+material, não link.
+
+**Um ativo por trimestre, não dez por semana.** Um ativo citável bem feito
+traz de três a dez links orgânicos ao longo de meses. Dez ativos meia-boca não
+trazem nenhum.
+
+**Qualifique o domínio sem ferramenta paga.** Antes de aceitar um link, olhe o
+site que aponta: o assunto é parecido com o seu? O site tem conteúdo próprio
+ou é um repositório de clippings? A página que linka fala de você com
+contexto ou só na lista de rodapé? Um site com 30 mil visitas e nenhum
+conteúdo próprio vale menos que um site de 2 mil visitas que publica
+mensalmente.
+
+E guarde o rótulo: **quando um link é ruim, você pode pedir para remover**.
+Ninguém é obrigado a aceitar link de ninguém.
+
+## Exercício interativo
+
+<Quiz
+  question="Um link com rel=`nofollow` apontando para a sua página tem efeito sobre a autoridade do site?"
+  label="Quiz"
+  options={[
+    {
+      text: "Nenhum: o buscador simplesmente descarta esse link",
+      correct: false,
+      explanation: "O link é lido e rastreado normalmente. O que muda é o sinal: o nofollow declara que o link não é um endosso editorial, então ele não repassa autoridade da mesma forma.",
+    },
+    {
+      text: "É lido e rastreado, mas não repassa o sinal de autoridade para a página de destino",
+      correct: true,
+      explanation: "É isso. nofollow não esconde o link: ele qualifica. O buscador continua sabendo que o link existe, apenas não o trata como endosso.",
+    },
+    {
+      text: "Conta exatamente como um link editorial comum, só que com um aviso",
+      correct: false,
+      explanation: "Se contasse igual, o atributo não teria função. O nofollow existe justamente para diferenciar um link editorial de um link que não valida a página de destino.",
+    },
+    {
+      text: "Faz a página de destino sair do índice",
+      correct: false,
+      explanation: "Não tem relação nenhuma com indexação. nofollow age sobre o sinal do link, não sobre a indexação da sua página.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual é o melhor ativo para conseguir links editoriais sem comprar link?"
+  label="Quiz"
+  options={[
+    {
+      text: "Um estudo com dados próprios que ninguém mais tem",
+      correct: true,
+      explanation: "É o formato mais forte: existe um motivo concreto para citar você, porque a informação não está em outro lugar. É o que a Aurora buscaria ao publicar seu índice de produtividade.",
+    },
+    {
+      text: "Um diretório pago que garante a publicação do seu link",
+      correct: false,
+      explanation: "É link comprado: as políticas de spam do Google tratam compra de links como violação. Além disso, diretório não passa contexto — o leitor não chega pelo seu conteúdo.",
+    },
+    {
+      text: "Um programa de troca de links com outros sites do mesmo setor",
+      correct: false,
+      explanation: "Rede de links é um dos padrões mais conhecidos de spam de link. Ninguém do outro lado está publicando algo pelo seu conteúdo; estão apenas trocando.",
+    },
+    {
+      text: "Um artigo no seu próprio blog com 50 links para outros sites de qualidade",
+      correct: false,
+      explanation: "Isso distribui o seu sinal de autoridade para fora e não cria nenhum sinal para dentro. Quem ganha autoridade aqui é o outro site.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `avaliarBacklink(link)` que classifica um link de entrada pela força do sinal de autoridade que ele gera, devolvendo `bom`, `neutro` ou `ruim`. Regras, na ordem (a primeira que valer vence): (1) se `link.rel` contém `sponsored`, devolva `ruim` — link pago não é endosso editorial; (2) se `link.rel` contém `nofollow` ou `ugc`, devolva `neutro` — o link é legítimo, mas não valida a página de destino; (3) se `link.mesmaLanguage` for falso, devolva `ruim` — o público da página de destino não é o seu; (4) se `link.temAnchor` for falso, devolva `neutro` — link sem texto âncora não passa contexto, mas não é erro; (5) se `link.trafegoEstimado` for maior ou igual a 1000, devolva `bom`; (6) nos demais casos, devolva `neutro`. A entrada já vem pronta no código: use o objeto `link`."
+  starterCode={`// Link de entrada avaliado: os dados de entrada já vêm prontos.
+const link = {
+  temAnchor: true,
+  anchorTexto: "gerenciador de tarefas para equipes remotas",
+  rel: "",
+  dominioDestino: "blog.remotework.dev",
+  trafegoEstimado: 5000,
+  mesmaLanguage: true,
+};
+
+// Classifique o link: "bom", "neutro" ou "ruim".
+function avaliarBacklink(link) {
+  // Regra 1, já pronta: link pago não é endosso editorial.
+  if (link.rel.includes("sponsored")) return "ruim";
+
+  // Escreva aqui as regras 2 a 6, na ordem do enunciado.
+  // Dica: cada regra cabe num if com return; a primeira que valer vence.
+  // Dica: o rel vazio ("") não contém nada — o includes resolve isso sozinho.
+}
+
+console.log(avaliarBacklink(link));
+`}
+  expected="bom"
+  slug="visibilidade-organica"
+  nodeId="autoridade-e-links"
+/>
+
+## No seu projeto
+
+- [ ] Liste dez sites onde o seu público já lê sobre o seu problema e monte
+      duas colunas: "publica conteúdo próprio?" e "já falou de concorrente
+      seu?". Escolha três que publicam dados ou ferramentas — são os seus
+      candidatos naturais a link editorial.
+- [ ] Pegue o classificador do exercício e rode com os cinco links que o seu
+      site já tem hoje (links internos com `rel`, diretórios, parceiros). Anote
+      o resultado de cada um e decida se vale a pena pedir a troca de um link
+      fraco por um editorial.
+
+No próximo nó você troca de objeto: não quem fala de você, mas **quem você
+é** — como o buscador entende a sua marca.

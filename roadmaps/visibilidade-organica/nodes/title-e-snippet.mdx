@@ -1,0 +1,243 @@
+---
+id: title-e-snippet
+title: "Title, Descrição e o Trecho que Convencer"
+resources:
+  - title: "Títulos e links de resultado (Google Search Central)"
+    url: https://developers.google.com/search/docs/appearance/title-link
+    type: doc
+    lang: en
+    free: true
+  - title: "Trechos de resultado e como o Google os escolhe (Google Search Central)"
+    url: https://developers.google.com/search/docs/appearance/snippet
+    type: doc
+    lang: en
+    free: true
+  - title: "Etiquetas de metadados que restringem a exibição (Google Search Central)"
+    url: https://developers.google.com/search/docs/crawling-indexing/special-tags
+    type: doc
+    lang: en
+    free: true
+---
+
+Antes da pessoa clicar, ela vê duas coisas: o título em azul e o trecho logo
+abaixo. São os dois únicos textos do seu site que aparecem antes da decisão.
+E são justamente os dois que a maioria dos sites preenche sem pensar muito.
+
+## O essencial 🟢
+
+O **título é o maior sinal da própria página**. O Google usa o texto do
+`<title>` como o principal rótulo do seu documento: ele aparece no resultado,
+na aba do navegador, no histórico e em boa parte dos lugares onde o seu
+conteúdo é listado.
+
+```html
+<head>
+  <!-- O maior sinal da página: o texto que o Google mostra em azul -->
+  <title>Planos e preços para equipes remotas | Aurora</title>
+
+  <!-- O texto do anúncio: não é sinal de ranking, é promessa para quem lê -->
+  <meta name="description" content="Compare os planos da Aurora: quanto custa por pessoa, quantas tarefas cabem e o que muda em cada nível." />
+</head>
+```
+
+Três coisas para fixar agora:
+
+- **Título é o maior sinal da página.** Trate-o como a frase mais importante
+  que você escreve no site.
+- **O limite prático é de 50 a 60 caracteres.** Mas o corte é por **largura em
+  pixels**, não por contagem de letras: um título de 48 caracteres com letras
+  largas pode ser cortado, e um de 58 com letras finas cabe inteiro. A régua
+  prática é "cabe em uma linha no celular".
+- **A descrição não é sinal de ranking.** Ela é só o texto do anúncio. O
+  Google pode ignorar o que você escreveu e reescrever o trecho com um pedaço
+  da própria página.
+
+## Aprofundamento 🟡
+
+**O Google reescreve o trecho.** Com frequência. O texto que aparece abaixo do
+link nem sempre é a sua meta description — muitas vezes é uma passagem da
+página, a que o sistema considera mais próxima da consulta. Isso tem uma
+consequência prática: escrever uma descrição que "venda" em vez de descrever
+custa caro, porque ela pode ser descartada; escrever uma descrição que
+descreva com precisão a página faz o mesmo trabalho em qualquer cenário.
+
+> Dica: escreva a descrição como se fosse a resposta a "o que eu encontro
+> aqui?". Se ela descreve a página, serve tanto como anúncio quanto como
+> passagem candidates à extração.
+
+**Os modelos de título.** A ordem das partes importa mais do que o texto
+exato:
+
+| Modelo | Quando usar |
+|---|---|
+| `Palavra-chave principal — benefício` | página que compete por um tema |
+| `Página \| Marca` | navegação do site (o padrão mais seguro) |
+| `Pergunta — resposta direta` | página que busca ser extraída como resposta |
+| `Marca: Página — benefício` | quando a marca já é forte no tema |
+
+Nas páginas internas, o padrão `Página | Marca` resolve quase tudo: o Google
+reconhece a sua marca e o leitor sabe onde está. E a palavra-chave vai **no
+começo** — o que aparece primeiro é o que fica visível quando o título é
+cortado.
+
+**A descrição e o título também valem fora da busca.** Quando alguém compartilha um
+link seu no WhatsApp ou no Twitter, quem mostra o texto é o `og:` e o cartão
+do Twitter, não o `<title>`:
+
+```html
+<!-- Como sua página aparece quando alguém compartilha o link -->
+<meta property="og:title" content="Planos e preços para equipes remotas | Aurora" />
+<meta property="og:description" content="Compare os planos da Aurora: quanto custa por pessoa e o que muda em cada nível." />
+<meta property="og:image" content="https://seusite.com/og-planos.png" />
+<meta name="twitter:card" content="summary_large_image" />
+```
+
+Isso é rede social, não busca. Nenhum desses quatro arquivos influencia o
+posicionamento.
+
+**Quando você quer calar a boca do Google**, existem duas etiquetas
+específicas:
+
+```html
+<!-- Esconde os links de seção da página (aqueles que apontam para âncoras) -->
+<meta name="nositelinkssearch" content="true" />
+
+<!-- Limita o tamanho do trecho exibido no resultado -->
+<meta name="max-snippet" content="50" />
+```
+
+Use `nositelinkssearch` em páginas onde os links de seção poluem o resultado
+(checkout, cadastro, login). Pense duas vezes antes de usar `max-snippet`: ele
+corta o trecho sem perguntar.
+
+**Testar título sem se enganar.** O jeito honesto é o Search Console: escolha
+uma página que já ganha impressões, mude **um** elemento (só o título), espere
+duas a três semanas e compare a taxa de clique antes e depois. Não compare
+posição — título muda taxa de clique, não posição. E não tire conclusão de
+uma semana: o Google alterna títulos e o número de impressões varia bastante
+de um dia para o outro.
+
+> Atenção: trocar o título de 30 páginas no mesmo dia e olhar o resultado na
+> semana seguinte não é teste nenhum. O Search Console separa por data, e uma
+> página só te ensina alguma coisa se for a única coisa que mudou.
+
+## Pra quem quer ir além 🔴
+
+O Google tem um recurso chamado **nome do site**: quando a busca identifica
+claramente um site, ele mostra o nome do site junto do link, em vez do título
+da página. Isso muda quando o título é muito genérico ("Início", "Página
+principal") ou quando a página é a porta de entrada da marca. O efeito
+prático: em página de marca, um título genérico não atrapalha — o Google
+mostra o nome do site de qualquer forma.
+
+Em sites com várias versões do mesmo conteúdo em idiomas diferentes, cada
+versão tem seu próprio `<title>` (e o `hreflang` cuida de dizer ao Google
+qual versão serve para qual região — você já viu isso no nó de canonical).
+O erro comum é traduzir a palavra-chave e esquecer que o termo que as pessoas
+buscam também muda: "quadro de tarefas" não é o que se busca em inglês.
+
+## Exercício interativo
+
+<Quiz
+  question="A meta description influencia diretamente o posicionamento da página?"
+  label="Quiz"
+  options={[
+    {
+      text: "Sim, o Google usa a descrição como um dos pesos de on-page, junto com o título.",
+      correct: false,
+      explanation: "Não. A descrição não é sinal de ranking. Ela é apenas o texto do anúncio, e o Google ainda pode reescrevê-la com um trecho da página.",
+    },
+    {
+      text: "Não. Ela é o texto do anúncio, e o Google pode reescrevê-la com um trecho da própria página.",
+      correct: true,
+      explanation: "Exato. O título é o grande sinal de on-page; a descrição só influencia o texto do anúncio, e nada além disso.",
+    },
+    {
+      text: "Sim, mas somente em páginas de produto, onde a descrição tem os dados que o Google busca.",
+      correct: false,
+      explanation: "Não há exceção por tipo de página. A descrição não é usada como sinal de ranking em nenhum cenário.",
+    },
+    {
+      text: "Não, e por isso ela nunca aparece no resultado da busca.",
+      correct: false,
+      explanation: "Ela aparece — quando o Google aceita o texto que você escreveu. O que não acontece é a descrição influenciar a posição.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="No fim das contas, quem decide o texto que aparece no trecho do resultado?"
+  label="Quiz"
+  options={[
+    {
+      text: "Você, porque a meta description é o texto do trecho por definição.",
+      correct: false,
+      explanation: "Nem sempre. O Google reescreve o trecho com frequência, escolhendo a passagem da página que melhor responde à consulta.",
+    },
+    {
+      text: "O Google, que pode trocar sua descrição por um trecho da própria página.",
+      correct: true,
+      explanation: "Certo. A descrição é uma sugestão. A descrição que aparece no resultado é a que o Google achou melhor para aquela consulta.",
+    },
+    {
+      text: "O primeiro visitante da página, que pode editar o texto em campo.",
+      correct: false,
+      explanation: "Isso não existe. Ninguém edita o trecho depois que a página foi publicada.",
+    },
+    {
+      text: "O arquivo sitemap.xml, que define o texto de cada página.",
+      correct: false,
+      explanation: "O sitemap diz quais URLs existem e quando mudaram. Ele não define nenhum texto de resultado.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `avaliarTitle(titulo, descricao)`: ela devolve `ok` quando o título tem entre 30 e 60 caracteres e a descrição tem entre 110 e 160; devolve `ajustar` quando algum dos dois está fora da faixa."
+  starterCode={`// Página /planos da Aurora: o título e a descrição como estão no <head>.
+const TITULO = 'Planos e preços para equipes remotas | Aurora';
+const DESCRICAO = 'Compare os planos da Aurora para equipes remotas: quantas tarefas, ' +
+  'quantos membros, quanto custa por pessoa, como funciona a cobrança mensal e ' +
+  'anual e o que muda em cada nível da ferramenta.';
+
+// Devolve 'ok' quando os dois textos estão dentro do tamanho recomendado
+// e 'ajustar' quando algum deles está fora.
+function avaliarTitle(titulo, descricao) {
+  const tamanhoTitulo = titulo.length;
+  const tamanhoDescricao = descricao.length;
+
+  // 1. O título tem entre 30 e 60 caracteres (contando os espaços)?
+  //    Dica: tamanhoTitulo >= 30 && tamanhoTitulo <= 60
+  const tituloOk = false; // TODO
+
+  // 2. A descrição tem entre 110 e 160 caracteres?
+  //    Dica: tamanhoDescricao >= 110 && tamanhoDescricao <= 160
+  const descricaoOk = false; // TODO
+
+  // 3. Se as duas condições valem, devolva 'ok'. Caso contrário, 'ajustar'.
+  //    Dica: um ternário resolve isso em uma linha.
+  return ''; // TODO
+}
+
+console.log(avaliarTitle(TITULO, DESCRICAO));
+`}
+  expected="ajustar"
+  slug="visibilidade-organica"
+  nodeId="title-e-snippet"
+/>
+
+## No seu projeto
+
+- [ ] Abra as 5 páginas mais importantes do seu site e anote o `<title>` e a meta description de cada uma. Meça os dois textos: se algum estiver fora de 30-60 ou 110-160 caracteres, reescreva hoje.
+- [ ] Abra o Search Console, filtre as páginas com muitas impressões e taxa de clique baixa e reescreva o título de uma delas: palavra-chave no começo, marca no fim. Registre a data da mudança e volte em 3 semanas para comparar a taxa de clique.
+
+> Atenção: título e descrição precisam prometer a mesma coisa que a página
+> entrega. Se o título diz "comparar planos" e a página é um formulário de
+> cadastro, você ganha o clique e perde a sessão — e a taxa de clique cai
+> junto, como se o título estivesse errado.
+
+## Fechamento
+
+Agora você escreve o texto que aparece antes do clique. No próximo nó você
+cuida do que aparece **dentro** da página: a estrutura do HTML e a ordem das
+títulos, que é o esqueleto que o Google e a IA leem.

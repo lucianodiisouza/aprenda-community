@@ -1,0 +1,253 @@
+---
+id: aso-lojas-de-app
+title: "ASO: App Store e Google Play como Canal Orgânico"
+resources:
+  - title: "Ficha da loja e o que pesa no ranqueamento (Google Play Console, em inglês)"
+    url: https://support.google.com/googleplay/android-developer/answer/9859455
+    type: doc
+    lang: en
+    free: true
+  - title: "Otimização de página de produto na App Store (Apple, em inglês)"
+    url: https://developer.apple.com/app-store/product-page/
+    type: doc
+    lang: en
+    free: true
+  - title: "Métricas do aplicativo no App Store Connect (Apple, em inglês)"
+    url: https://developer.apple.com/app-store/app-analytics/
+    type: doc
+    lang: en
+    free: true
+---
+
+Se você tem um aplicativo, tem um segundo buscador — e ele é maior do que
+você imagina. Quem abre a App Store ou o Google Play e digita "gerenciador de
+tarefas" está buscando, exatamente como no Google. Otimizar para esse
+buscador se chama **ASO** (otimização para lojas de aplicativos), e a lógica é
+a mesma do SEO, com duas diferenças: o espaço é minúsculo e o buscador é
+fechado.
+
+## O essencial 🟢
+
+A ficha do aplicativo é uma página, e a pessoa decide instalar em poucos
+segundos. O que ela vê, nessa ordem:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Busca na loja"] --> B["Ficha do aplicativo"]
+    B --> C["Icone e titulo: a promessa"]
+    B --> D["Screenshots: a pagina de topo"]
+    B --> E["Descricao e notas de versao"]
+    C --> F["Instalacao"]
+    D --> F
+    E --> F
+    F --> G["Retencao"]
+    G -.->|"pesa no ranking da loja"| A`}
+  caption="A ficha do aplicativo é uma página de destino: busca, promessa visual, argumento de venda, instalação e, depois, retenção — que volta a virar sinal de ranking."
+/>
+
+**O campo de palavras-chave é apertado.** No iOS, o nome do aplicativo (30
+caracteres), o subtítulo (30) e o **campo de palavras-chave** (100) é que
+indexam a busca. No Android, quem indexa é o título e a descrição. Isso é
+tudo: não existe "campo de descrição curta" para o iOS além desses três
+lugares.
+
+**Os screenshots são a página de topo da loja.** Eles concentram a maior taxa
+de conversão do ASO. O que importa é o **primeiro** screenshot: no iPhone ele
+aparece inteiro na tela da loja; os demais ficam com um ponto de rolagem.
+Ou seja, o primeiro é o argumento de venda e os outros são o argumento de
+detalhe.
+
+**O que pesa no ranqueamento da loja** não é só o nome com palavras-chave.
+Pesam, em conjunto:
+
+- volume de downloads grande;
+- **retenção** — quem fica é sinal forte;
+- taxa de desinstalação — quanto mais gente sai, pior;
+- avaliações (nota e volume);
+- velocidade de download;
+- **tamanho do aplicativo** — aplicativo grande perde instalações, porque
+  demore para baixar e muita gente desiste no meio do caminho.
+
+> Atenção: "ter muitos downloads" não é sinal por si só. Um aplicativo que
+> baixa muito e é desinstalado na primeira semana afunda o próprio
+> ranqueamento. O que a loja quer premiar é gente que fica.
+
+O **App Store Connect** e o **Play Console** são o Search Console do seu
+aplicativo: mostram de onde vieram as instalações, qual é a taxa de
+instalação sobre as visualizações da ficha, como estão a retenção e as
+desinstalações, e quais buscas dentro da loja leadaram ao seu app. É ali que
+seu trabalho vira número.
+
+## Aprofundamento 🟡
+
+Vamos abrir a ficha da Aurora na loja e olhar cada peça.
+
+**O título e o subtítulo** carregam a promessa em poucos caracteres. O
+título da Aurora hoje é "Aurora: Sprints para Times Remotos" — 34 caracteres,
+com a palavra que o público busca ("sprints") na frente. O subtítulo existe
+para dar a segunda chance de dizer o que o app faz, sem repetir a primeira.
+
+**O campo de palavras-chave** do iOS tem 100 caracteres, e cada um conta.
+Duas regras práticas: separe por vírgula **sem espaço depois** (o espaço
+come (o espaço já conta no limite), e use sinônimos de verdade — as palavras que seu público
+realmente digita. Repetir a mesma ideia com variações ("tarefa, tarefas,
+task, to-do") não amplia a busca; ocupa caracteres e ainda pode ser lido como
+enchimento.
+
+O **Android** não tem esse campo: a indexação vem do título e da descrição.
+Ali a estratégia é diferente — o título carrega a primeira palavra-chave e a
+descrição cobre o resto, de forma natural.
+
+**A descrição e as notas de versão** são o lugar do detalhe: para quem já
+instalou, as notas de versão são o canal mais direto de comunicação que você
+tem — e o único que chega a quem já te escolheu.
+
+**O ícone** é o primeiro contato visual e o único elemento que aparece
+pequeno, ao lado do nome. Ele precisa ser reconhecível em 40 pixels de lado.
+
+**O tamanho do aplicativo** entra na ficha como número visível na loja, e
+não é detalhe menor: em conexões móveis, cada megabyte extra derruba a taxa
+de instalação. Um aplicativo grande costuma ter justificativa (bibliotecas
+pesadas, recursos que few usam). A pergunta útil é: essas dependências
+servem a quem instala ou a quem mantém?
+
+**A otimização de página de produto da Apple** permite testar variantes de
+ícone e de screenshots na ficha, com métricas de conversão — é o teste A/B
+que você já usa no produto, aplicado à vitrine. E o **marketing URL** (a
+página do seu site para onde a loja leva) é o lugar onde o SEO e o ASO se
+encontram: quem chega da loja e clica no site precisa bater com a promessa
+da ficha, senão a taxa de conversão da loja e a do site caem por motivos
+diferentes.
+
+> Dica: escreva a descrição pensando em quem vai **ler no celular**, em
+> poucos segundos. Frases curtas e o benefício na primeira linha. O texto da
+> descrição é lido em 3 segundos dentro da loja.
+
+## Pra quem quer ir além 🔴
+
+O buscador da loja é proprietário e não oferece volume de busca como as
+ferramentas de palavras-chave do Google. Você vê **impressões** e **taxa de
+instalação** — não "12 mil pessoas searched por isso por mês". Isso muda a
+leitura: em vez de perseguir volume, você persegue taxa de instalação sobre
+visualizações, e é por isso que testar screenshots vale mais do que caçar
+palavra-chave.
+
+Vale olhar também a **primeira execução do aplicativo**. A ficha promete uma
+coisa e a primeira tela entrega outra: a pessoa desinstala em minutos, a
+retenção cai e o ranqueamento despenca. A ficha e o produto precisam contar a
+mesma história do começo ao fim.
+
+E as **avaliações** são conteúdo: o texto que as pessoas escrevem na loja é
+a resposta direta que outras pessoas leem antes de instalar. Vale olhar as
+perguntas e reclamações repetidas como uma lista de decisões de produto.
+
+## Exercício interativo
+
+<Quiz
+  question="O que realmente pesa no ranqueamento de um aplicativo na loja?"
+  label="Quiz"
+  options={[
+    {
+      text: "O total de downloads acumulados, porque é o número que a loja mostra em destaque.",
+      correct: false,
+      explanation: "Downloads sozinhos não bastam. Um app que baixa muito e é desinstalado na primeira semana perde posição, porque taxa de desinstalação e retenção entram na conta.",
+    },
+    {
+      text: "Um conjunto de sinais: downloads, retenção, taxa de desinstalação, avaliações, velocidade de download e tamanho do app.",
+      correct: true,
+      explanation: "Exato. Nenhum sinal sozinho decide: a loja quer premiar gente que instala e fica, e por isso app grande e desinstalação alta prejudicam.",
+    },
+    {
+      text: "A quantidade de palavras-chave no nome do aplicativo.",
+      correct: false,
+      explanation: "Repetir palavras-chave no nome não amplia a busca de forma útil e ainda pode ser tratado como enchimento pela loja.",
+    },
+    {
+      text: "A posição do aplicativo no gráfico da aba Mais Popular.",
+      correct: false,
+      explanation: "O gráfico é consequência de outros sinais (downloads, retenção, avaliações), não a causa. Perseguir a posição no gráfico é perseguir o resultado final.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Os screenshots e a descrição da ficha: qual tem mais peso na conversão?"
+  label="Quiz"
+  options={[
+    {
+      text: "A descrição, porque é o único texto que a pessoa lê com calma.",
+      correct: false,
+      explanation: "A descrição tem lugar, mas ninguém lê com calma dentro da loja. A decisão acontece em segundos, olhando.",
+    },
+    {
+      text: "Os screenshots, porque são a página de topo da loja e concentram a maior taxa de conversão do ASO.",
+      correct: true,
+      explanation: "Exato. E o primeiro screenshot é o que aparece inteiro na tela do iPhone: ele carrega o argumento de venda inteiro.",
+    },
+    {
+      text: "Os dois pesam igual, porque a loja os trata da mesma forma.",
+      correct: false,
+      explanation: "A loja não os trata igual. A descrição serve ao detalhe (e a quem já instalou, pelas notas de versão); os screenshots decidem a instalação.",
+    },
+    {
+      text: "O ícone, porque é o único elemento que aparece ao lado de todos os outros resultados.",
+      correct: false,
+      explanation: "O ícone é obrigatório e ajuda a reconhecer a marca, mas sozinho não converte: ele não explica o que o aplicativo faz.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `avaliarListing(listing)`: ela recebe a ficha do aplicativo e devolve 'otimo', 'melhoravel' ou 'ruim' conforme as regras do enunciado."
+  starterCode={`// Ficha da Aurora na loja, como o time de crescimento montou.
+const LISTING = {
+  titulo: 'Aurora: Sprints para Times Remotos',
+  keywordField: 'tarefas, sprints, equipes remotas, kanban, produtividade',
+  temScreenshots: true,
+  tamanhoMb: 42,
+  notaMedia: 4.6
+};
+
+function avaliarListing(listing) {
+  const { titulo, keywordField, temScreenshots, tamanhoMb, notaMedia } = listing;
+
+  // 1. Caso claramente ruim: sem screenshots, app com mais de 200 MB
+  //    ou campo de palavras-chave vazio.
+  if (!temScreenshots || tamanhoMb > 200 || keywordField.trim().length === 0) {
+    return 'ruim';
+  }
+
+  // 2. Caso 'otimo': as quatro condicoes abaixo precisam valer ao mesmo tempo.
+  //    - titulo entre 20 e 40 caracteres
+  //    - keywordField entre 1 e 100 caracteres
+  //    - tamanhoMb ate 100
+  //    - notaMedia maior ou igual a 4
+  const tituloOk = false;    // TODO
+  const palavrasOk = false;  // TODO
+  const tamanhoOk = false;   // TODO
+  const notaOk = false;      // TODO
+
+  if (tituloOk && palavrasOk && tamanhoOk && notaOk) {
+    return 'otimo';
+  }
+
+  return 'melhoravel';
+}
+
+console.log(avaliarListing(LISTING));
+`}
+  expected="otimo"
+  slug="visibilidade-organica"
+  nodeId="aso-lojas-de-app"
+/>
+
+## No seu projeto
+
+- [ ] Abra a ficha do seu aplicativo na loja e conte os caracteres do campo de palavras-chave. Se sobraram caracteres, preencha com sinônimos que o seu público realmente digita.
+- [ ] Reordene os screenshots do seu app: o primeiro precisa ser o argumento de venda, não a tela de login. Meça a taxa de instalação da ficha por sete dias antes e depois.
+
+## Fechamento
+
+A loja é mais um lugar onde seu produto compete por atenção. Agora falta a
+parte que responde à pergunta mais difícil: **o que fazer primeiro**, quando
+existem vinte problemas e só uma hora por semana.

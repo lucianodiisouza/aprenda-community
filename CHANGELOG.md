@@ -6,6 +6,32 @@ projeto adere a [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [Não liberado]
 
+### Adicionado
+
+- 🌱 **Trilha Visibilidade Orgânica** (`roadmaps/visibilidade-organica`, 31 nós):
+  a trilha **avançada** de **SEO, AEO e GEO** - como fazer um site ou um
+  app trazer clientes pelo caminho orgânico. Oito módulos: pipeline da busca e
+  leitura por IA, o trabalho técnico (renderização, indexação, canonical,
+  sitemap, Core Web Vitals, SPAs), on-page e conteúdo (title, HTML semântico,
+  E-E-A-T, decaimento, resposta direta, citação por IA), dados estruturados
+  (Schema.org, JSON-LD, rich results, feeds e `llms.txt`), fora do site
+  (autoridade, marca como entidade, comunidade), medição e conversão
+  (Search Console, métricas de citação, CRO, ASO, auditoria e plano de 90
+  dias) e fechamento com projeto real.
+  **Interatividade: 60 quizzes formativos, 23 checkpoints de JavaScript,
+  5 checkpoints visuais (DOM/CSS), 16 diagramas Mermaid** - todo nó termina
+  com um checklist "No seu projeto" para aplicar no site/app do aluno.
+  Acompanha o caso fictício "Aurora" (SaaS brasileiro com site e app).
+  **É a versão avançada de [`seo-aeo-geo`](../roadmaps/seo-aeo-geo)** (13 nós,
+  intermediário), que segue como porta de entrada introdutória - as duas se
+  complementam e não se contradizem. Os nós de borda apontam um para o outro.
+  Decisões editoriais em
+  `roadmaps/visibilidade-organica/meta/editorial-decisions.md`.
+- 🛠️ **Projeto Auditoria de Visibilidade Orgânica**
+  (`projects/auditoria-visibilidade-organica`): capstone de 3 fases -
+  diagnóstico, correção priorizada e prova com métricas antes/depois, nas
+  quatro camadas (técnica, resposta direta, citação por IA e conversão).
+
 ## [1.29.0] - 2026-09-04
 
 ### Adicionado

@@ -1,0 +1,262 @@
+{
+  "slug": "visibilidade-organica",
+  "title": "Visibilidade Orgânica: SEO, AEO e GEO na Prática",
+  "description": "Trilha avançada de crescimento orgânico para site e app: SEO técnico, AEO (resposta direta), GEO (citação por IA), dados estruturados, ASO, conversão e um plano de 90 dias. Versão profunda e aplicada da trilha introdutória 'SEO, AEO e GEO'.",
+  "difficulty": "avancado",
+  "published": "2026-11-18",
+  "skills": [
+    "seo",
+    "aeo",
+    "geo",
+    "search-engine-optimization",
+    "dados-estruturados",
+    "schema-markup",
+    "json-ld",
+    "core-web-vitals",
+    "performance",
+    "indexacao",
+    "canonicalizacao",
+    "sitemap",
+    "internlinkagem",
+    "html-semantico",
+    "e-e-a-t",
+    "content-strategy",
+    "keyword-research",
+    "search-intent",
+    "llm-optimization",
+    "llms-txt",
+    "entity-seo",
+    "link-building",
+    "digital-pr",
+    "analytics",
+    "search-console",
+    "cro",
+    "aso",
+    "app-store-optimization"
+  ],
+  "creators": [
+    {
+      "name": "Luciano dii Souza",
+      "github": "lucianodiisouza"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "introducao",
+      "title": "Visibilidade Orgânica: o Problema como Engenharia",
+      "type": "topic",
+      "recommended": true,
+      "children": ["pipeline-da-busca"]
+    },
+    {
+      "id": "pipeline-da-busca",
+      "title": "O Pipeline da Busca: do Crawl ao Ranking",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["como-ia-le-a-web"]
+    },
+    {
+      "id": "como-ia-le-a-web",
+      "title": "Como uma IA Generativa Lê a Web",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["intencao-de-busca"]
+    },
+    {
+      "id": "intencao-de-busca",
+      "title": "Intenção de Busca: o Que a Pessoa Realmente Quer",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["pesquisa-de-palavras-chave"]
+    },
+    {
+      "id": "pesquisa-de-palavras-chave",
+      "title": "Pesquisa de Palavras-Chave sem Gastar Dinheiro",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["renderizacao"]
+    },
+    {
+      "id": "renderizacao",
+      "title": "O que o Crawler Realmente Vê: HTML, CSR, SSR e SSG",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["indexacao"]
+    },
+    {
+      "id": "indexacao",
+      "title": "Indexação: robots.txt, meta robots e a Armadilha do noindex",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["canonicalizacao"]
+    },
+    {
+      "id": "canonicalizacao",
+      "title": "Canonical, Duplicatas e a URL que Vale",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["sitemap-e-internlinkagem"]
+    },
+    {
+      "id": "sitemap-e-internlinkagem",
+      "title": "Sitemap.xml e a Malha de Links Internos",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["performance-cwv"]
+    },
+    {
+      "id": "performance-cwv",
+      "title": "Core Web Vitals: LCP, INP e CLS",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["javascript-seo"]
+    },
+    {
+      "id": "javascript-seo",
+      "title": "SEO em Aplicações JavaScript: Onde Quebra",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["title-e-snippet"]
+    },
+    {
+      "id": "title-e-snippet",
+      "title": "Title, Descrição e o Trecho que Convencer",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["estrutura-semantica"]
+    },
+    {
+      "id": "estrutura-semantica",
+      "title": "HTML Semântico e a Hierarquia de Headings",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["eeat-e-qualidade"]
+    },
+    {
+      "id": "eeat-e-qualidade",
+      "title": "E-E-A-T, YMYL e Sinais de Qualidade",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["content-decay-e-refresh"]
+    },
+    {
+      "id": "content-decay-e-refresh",
+      "title": "Decaimento de Conteúdo: Atualizar ou Reescrever",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["resposta-direta"]
+    },
+    {
+      "id": "resposta-direta",
+      "title": "AEO: Ser Extraído para a Resposta",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["conteudo-citavel"]
+    },
+    {
+      "id": "conteudo-citavel",
+      "title": "GEO: Ser Citado por IA Generativa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["schema-org"]
+    },
+    {
+      "id": "schema-org",
+      "title": "Schema.org: o Vocabulário que a Web Reutiliza",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["jsonld-pratica"]
+    },
+    {
+      "id": "jsonld-pratica",
+      "title": "JSON-LD na Prática",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["rich-results"]
+    },
+    {
+      "id": "rich-results",
+      "title": "Rich Results: Article, FAQ, HowTo, LocalBusiness e mais",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["dados-para-ia"]
+    },
+    {
+      "id": "dados-para-ia",
+      "title": "Dados para IA: Feeds, llms.txt, AGENTS.md e MCP",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["autoridade-e-links"]
+    },
+    {
+      "id": "autoridade-e-links",
+      "title": "Autoridade, Links e Digital PR",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["marca-e-entity-seo"]
+    },
+    {
+      "id": "marca-e-entity-seo",
+      "title": "Marca, Entidades e como o Google te Reconhece",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["redes-e-comunidade"]
+    },
+    {
+      "id": "redes-e-comunidade",
+      "title": "Redes Sociais e Comunidade como Descoberta",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["search-console-e-ga4"]
+    },
+    {
+      "id": "search-console-e-ga4",
+      "title": "Search Console, GA4 e Logs: Medir o que Importa",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["metricas-de-citacao"]
+    },
+    {
+      "id": "metricas-de-citacao",
+      "title": "Medindo Visibilidade em Motores de IA",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["cro-organico"]
+    },
+    {
+      "id": "cro-organico",
+      "title": "Converter Tráfego Orgânico em Cliente",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["aso-lojas-de-app"]
+    },
+    {
+      "id": "aso-lojas-de-app",
+      "title": "ASO: App Store e Google Play como Canal Orgânico",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["auditoria-e-plano"]
+    },
+    {
+      "id": "auditoria-e-plano",
+      "title": "Auditoria Completa e Plano de 90 Dias",
+      "type": "subtopic",
+      "recommended": true,
+      "children": ["projeto-final"]
+    },
+    {
+      "id": "projeto-final",
+      "title": "Projeto Final: Auditoria e Otimização Real",
+      "type": "milestone",
+      "recommended": true,
+      "children": ["continuidade"]
+    },
+    {
+      "id": "continuidade",
+      "title": "Depois da Trilha: Manutenção e o que Vem a Seguir",
+      "type": "subtopic",
+      "recommended": true,
+      "children": []
+    }
+  ]
+}

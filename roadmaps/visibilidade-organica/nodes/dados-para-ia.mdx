@@ -1,0 +1,307 @@
+---
+id: dados-para-ia
+title: "Dados para IA: Feeds, llms.txt, AGENTS.md e MCP"
+resources:
+  - title: "A proposta do arquivo /llms.txt (llmstxt.org, em inglês)"
+    url: https://llmstxt.org/
+    type: doc
+    lang: en
+    free: true
+  - title: "Visão geral dos robôs da OpenAI (OpenAI Developers, em inglês)"
+    url: https://platform.openai.com/docs/bots
+    type: doc
+    lang: en
+    free: true
+  - title: "Robôs comuns do Google: Googlebot, Google-Extended e outros (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers
+    type: doc
+    lang: en
+    free: true
+---
+
+Um site pode estar impecável para o Google e ainda não aparecer nas respostas
+de uma IA. Não é falta de sorte: é diferença de objetivo. Este nó é sobre os
+formatos que existem para falar com máquina — e sobre o que eles realmente
+valem, sem exagero.
+
+## O essencial 🟢
+
+O buscador do Google percorre a web **inteira** e guarda o que encontra. Um
+modelo de linguagem com busca não faz isso: ele tem orçamento, visita um
+conjunto pequeno de páginas e monta a resposta a partir do que leu. Se a sua
+página não está nesse conjunto, ela não existe para ele.
+
+O que separa "indexado" de "citado" são três coisas:
+
+1. **Orçamento**: nem toda página do seu site é lida.
+2. **Parsing**: uma página com menu, banner e script vira ruído; o modelo
+   prefere texto limpo.
+3. **Priorização**: com várias fontes parecidas, ele escolhe — ecitou as que
+   parecem mais confiáveis e mais fáceis de verificar.
+
+O que ajuda, em ordem de esforço: conteúdo que se sustenta sozinho (cada
+seção faz sentido sem o resto da página), terminologia clara, dados
+estruturados (o módulo anterior), páginas com data de atualização e — o tema
+deste nó — **formatos feitos para máquina**.
+
+### `llms.txt`: a proposta, o formato e a realidade
+
+A ideia é simples: um arquivo Markdown na raiz do site, com nome, resumo e
+links para as seções que importam. É o "mapa do site para quem não quer
+navegar".
+
+```markdown
+# Aurora
+
+> SaaS brasileiro de organização de tarefas para equipes remotas. Planos, documentação e blog.
+
+## Documentação
+
+- [Primeiros passos](/docs/primeiros-passos): como criar uma equipe e convidar pessoas.
+- [Integrações](/docs/integracoes): Slack, Google Calendar e API.
+
+## Blog
+
+- [Kanban para equipes remotas](/blog/kanban-remoto): guia de 12 minutos.
+```
+
+O formato (na versão atual da proposta) é: um H1 com o nome do site — essa é
+a única parte obrigatória —, um blockquote com o resumo, seções H2 opcionais
+com listas de links no formato `- [nome](url): descrição`, e uma seção
+chamada `Optional` para o material secundário.
+
+> Nota: **`llms.txt` é uma proposta, não um padrão.** Não existe organismo que
+> obrigue ninguém a lê-lo, e nenhum buscador é obrigado a lê-lo. O que existe é
+> adoção real e voluntária: milhares de sites publicam o arquivo, plataformas
+> de documentação geram um automaticamente, o Lighthouse do Chrome passou a
+> auditar a presença dele, e os próprios OpenAI, Anthropic e Gemini publicam
+> `llms.txt` na documentação de desenvolvedor. Em junho de 2026 o Google deixou
+> claro que o arquivo **não é necessário** para a Busca e **não ajuda nem
+> atrapalha** a visibilidade — ele serve para outros sistemas que optam por lê-lo.
+>
+> Ou seja: vale como barato extra, não como estratégia.
+
+O `llms.txt` convive com o `sitemap.xml` sem substituí-lo. O sitemap lista
+**todas** as páginas indexáveis; o `llms.txt` é uma seleção curada, com
+contexto. Uma coisa que o sitemap não faz: apontar para a versão em Markdown
+da mesma página (`/docs/x.md`), que é o formato que um agente consegue
+consumir sem parsing de HTML.
+
+### Feeds: o formato mais velho e mais eficiente
+
+RSS e Atom já fazem exatamente o que se espera de um "dados para máquina":
+publicam **mudanças**, com data, em XML simples. Um feed do blog da Aurora:
+
+```xml
+<rss version="2.0">
+  <channel>
+    <title>Aurora — Blog</title>
+    <link>https://aurora.test/blog</link>
+    <item>
+      <title>Kanban para equipes remotas</title>
+      <link>https://aurora.test/blog/kanban-remoto</link>
+      <pubDate>Tue, 10 Mar 2026 12:00:00 -0300</pubDate>
+    </item>
+  </channel>
+</rss>
+```
+
+Feeds são consumidos por agregadores, por clientes de RSS e por robôs de IA.
+Não são um "hack": são o contrato mais estável que existe para "avise-me
+quando algo novo acontecer".
+
+## Aprofundamento 🟡
+
+### `robots.txt` e os robôs de IA: o que bloquear significa
+
+O `robots.txt` é lido por robôs que se identificam no user-agent. Para IA,
+hoje existem nomes diferentes para trabalhos diferentes — e essa distinção é
+justamente o que impede a decisão burra de bloquear tudo:
+
+```text
+User-agent: *
+Allow: /
+
+# Robô de busca da OpenAI (entra nas respostas do ChatGPT)
+User-agent: OAI-SearchBot
+Allow: /
+
+# Robô de treinamento da OpenAI (coleta para treinar modelos)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# Google-Extended controla o uso nos treinos do Gemini, não a indexação
+User-agent: Google-Extended
+Disallow: /
+```
+
+As regras são independentes entre si: você pode permitir o robô de **busca**
+e bloquear o de **treinamento**. Bloquear o de busca significa que seu site
+some das respostas de busca daquela IA (e, no caso do OAI-SearchBot, ele deixa
+de ser mostrado como resposta, ainda podendo aparecer como link); bloquear o
+de treinamento só diz que o conteúdo não entra em dataset de treino.
+
+> Atenção: `robots.txt` **não** remove nada do índice do Google e não protege
+> nada de verdade. Ele é um pedido, não um controle de acesso. E a mudança
+> demora: a OpenAI avisa que leva cerca de 24 horas para o ajuste valer.
+
+### `AGENTS.md` e MCP: a mesma ideia, do outro lado
+
+O `llms.txt` é a versão "para visitantes" dessa lógica. A versão "para quem
+trabalha no seu código" é o `AGENTS.md`: um arquivo na raiz do repositório com
+instruções para agentes de programação — como rodar os testes, qual convenção
+seguir, o que não tocar. É útil se você quer que um assistente construa em
+cima do seu código sem descobrir tudo na marra.
+
+O MCP (Model Context Protocol) resolve o outro lado da equação: em vez de o
+modelo ler a documentação do seu produto e adivinhar como chamar a API, você
+publica um servidor MCP que **expõe as capacidades do produto como
+ferramentas** — "criar tarefa", "listar quadro", "criar usuário" — com o
+contrato pronto. A interface de máquina deixa de ser texto para ser API.
+
+> Nota: nenhum dos dois é sinal de SEO. São padrões de produtividade para
+> agentes de software: você os usa porque o time (humano ou artificial) que
+> trabalha no seu código rende mais.
+
+### O que não fazer
+
+Publicar uma versão do conteúdo "só para o robô" — texto diferente, mais
+denso, escondido de gente — é **cloaking**, e é spam. A regra é simples: o
+que a máquina lê e a pessoa lê são a mesma coisa. Se o `llms.txt` aponta para
+uma página, essa página existe e é boa para quem chega nela pelo link.
+
+## Pra quem quer ir além 🔴
+
+Existe uma anatomia comum a todos esses formatos, e ela vale para qualquer
+"interface de máquina" que você inventar:
+
+1. **Um endereço estável** (`/llms.txt`, `/feed.xml`, `/AGENTS.md`).
+2. **Um resumo curto** que responde "o que é isso" sem navegação.
+3. **Links com descrição** — o rótulo do link é o que o modelo lê.
+4. **Data de atualização** — conteúdo velho e sem data é conteúdo que ninguém
+   cita.
+
+E existe a pergunta que ninguém quer fazer: **como saber se isso funcionou?**
+A resposta honesta está no log do servidor, não em painel: procurar o
+user-agent do robô nas requisições mostra se ele chegou até você. Medir
+citação de verdade (um conjunto fixo de perguntas, rodada em cada motor,
+comparando com o concorrente) é assunto do módulo de medição, mais adiante na
+trilha.
+
+## Exercício
+
+<Quiz
+  question="O `llms.txt` é um padrão oficial, reconhecido por buscadores e modelos?"
+  label="Quiz"
+  options={[
+    {
+      text: "Não. É uma proposta voluntária, e nenhum buscador é obrigado a ler o arquivo",
+      correct: true,
+      explanation: "É uma proposta de um site específico (llmstxt.org). A adoção é real e grande, mas é voluntária — e o Google já disse que o arquivo não muda a visibilidade dele.",
+    },
+    {
+      text: "Sim, é um padrão do W3C, e não implementá-lo prejudica a indexação",
+      correct: false,
+      explanation: "Não é padrão do W3C, nem de nenhum outro organismo. E o Google esclareceu publicamente que o arquivo não é necessário para a Busca.",
+    },
+    {
+      text: "Sim, o Google já usa o llms.txt como sinal de ranqueamento",
+      correct: false,
+      explanation: "Não usa. A posição pública do Google (junho de 2026) é que o arquivo não impacta a visibilidade, nem positiva nem negativamente.",
+    },
+    {
+      text: "É um padrão da IETF, equivalente ao robots.txt",
+      correct: false,
+      explanation: "Não existe padronização no IETF. O arquivo é uma convenção da web: nem o W3C nem a IETF padronizaram algo assim.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Bloquear o `GPTBot` no `robots.txt` tem qual consequência?"
+  label="Quiz"
+  options={[
+    {
+      text: "O conteúdo deixa de ser usado para treinar modelos, mas a indexação no Google e o robô de busca da OpenAI são decisões separadas",
+      correct: true,
+      explanation: "São robôs diferentes: o GPTBot coleta para treino, o OAI-SearchBot busca para as respostas do ChatGPT. Você decide sobre cada um separadamente.",
+    },
+    {
+      text: "A página sai do índice do Google também",
+      correct: false,
+      explanation: "Não. O robots.txt só conversa com os robôs que obedecem a ele — e o Google não lê suas regras para desindexar.",
+    },
+    {
+      text: "O site perde posição no ranking das buscas",
+      correct: false,
+      explanation: "Robots.txt não é sinal de ranqueamento. Ele só diz o que um robô pode ou não visitar.",
+    },
+    {
+      text: "Nada muda, porque robots.txt não tem efeito sobre indexação",
+      correct: false,
+      explanation: "Parcialmente verdade e parcialmente perigoso: não afeta o índice do Google, mas afeta sim o que os robôs que o respeitam coletam.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `gerarLlmsTxt(site)`: monta o arquivo `llms.txt` e devolve **apenas a primeira linha** (o cabeçalho `# Nome`). Monte um array `linhas` com uma linha do arquivo por item."
+  starterCode={`// Dados do site (aqui, a Aurora):
+const site = {
+  nome: "Aurora",
+  url: "https://aurora.test/",
+  resumo: "SaaS brasileiro de organização de tarefas para equipes remotas.",
+  secoes: [
+    {
+      titulo: "Documentação",
+      itens: [
+        { titulo: "Primeiros passos", url: "/docs/primeiros-passos" },
+        { titulo: "Integrações", url: "/docs/integracoes" }
+      ]
+    },
+    {
+      titulo: "Blog",
+      itens: [{ titulo: "Kanban para equipes remotas", url: "/blog/kanban-remoto" }]
+    }
+  ]
+};
+
+// Formato do arquivo, uma linha por item do array:
+//   "# " + site.nome
+//   ""                        (linha em branco)
+//   "> " + site.resumo
+//   ""                        (linha em branco)
+//   "## " + secao.titulo
+//   "- [" + item.titulo + "](" + item.url + ")"
+//   ""                        (linha em branco antes de cada secao)
+function gerarLlmsTxt(site) {
+  // 1. Monte o array "linhas" conforme o formato acima.
+  // 2. Devolva APENAS a primeira linha do arquivo (linhas[0]).
+}
+
+console.log(gerarLlmsTxt(site));
+`}
+  expected="# Aurora"
+  slug="visibilidade-organica"
+  nodeId="dados-para-ia"
+/>
+
+## No seu projeto
+
+- [ ] Escreva um `/llms.txt` na raiz do seu site: nome, resumo de duas
+      frases e as 5 seções que mais importam, cada link com uma descrição
+      curta. Teste abrindo o endereço no navegador e conferindo se o servidor
+      responde 200 nesse caminho.
+- [ ] Abra o `robots.txt` do seu site e procure os user-agents de IA
+      (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended).
+      Decida conscientemente o que bloquear — e escreva o motivo no README do
+      projeto. Não bloqueie por padrão só porque "disseram que dá problema".
+
+No próximo módulo a escala muda: seu site já está legível para máquina. Agora
+o assunto é fazer outras pessoas e outras máquinas acharem ele.

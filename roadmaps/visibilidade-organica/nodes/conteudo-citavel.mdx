@@ -1,0 +1,316 @@
+---
+id: conteudo-citavel
+title: "GEO: Ser Citado por IA Generativa"
+resources:
+  - title: "GEO: Generative Engine Optimization (Aggarwal et al., KDD 2024, em inglês)"
+    url: https://arxiv.org/abs/2311.09735
+    type: artigo
+    lang: en
+    free: true
+  - title: "Recursos de IA na busca e no Google (Google Search Central)"
+    url: https://developers.google.com/search/docs/appearance/ai-features
+    type: doc
+    lang: en
+    free: true
+---
+
+No nó anterior você escreveu para o buscador **copiar** sua resposta. Aqui o
+passo muda: a IA **cita** a sua página — e a citação vem com o nome de quem
+escreveu, com o número que você usou e com a data. Isso muda o que o texto
+precisa conter.
+
+## O essencial 🟢
+
+**GEO** (otimização para motores generativos) é o trabalho de fazer o modelo
+te citar com confiança. A diferença para o AEO é uma palavra: **atribuição**.
+O buscador copia a resposta e mostra um link. A IA responde e diz *"segundo o
+Relatório de Tendências 2025, 68 por cento das equipes…"* — e esse "segundo"
+vem da sua página. Se a sua página não tem número, fonte e data, a IA não
+tem o que te atribuir.
+
+**O que a pesquisa de 2024 mediu.** O trabalho "GEO: Generative Engine
+Optimization" (Aggarwal e colaboradores, publicado na KDD de 2024, também
+disponível como [preprint no arXiv](https://arxiv.org/abs/2311.09735)) testou
+um conjunto de táticas de conteúdo em um modelo generativo, medindo o quanto
+cada página aparecia nas respostas. O achado central: **táticas de conteúdo
+aumentaram a visibilidade em até 40%** nos modelos generativos. As táticas que
+mais se associaram às citações foram **citar estatísticas e fatos com a
+fonte identificada** e **citar fontes** — o estudo mediu "Fluency" (a
+fluência do texto) e "Statistics" (estatísticas citadas) como as duas de maior
+efeito.
+
+> Nota: seja honesto com o tamanho da evidência. É um estudo de 2024, feito
+> com um modelo e um conjunto de domínios específicos. Não é lei universal, e
+> nenhum número além do "até 40%" está garantido. O que dá para levar é a
+> direção: texto com dado, fonte e autor é mais citável do que texto sem
+> nenhum dos três.
+
+**As seis táticas que valem a pena.** Não são seis truques: são seis
+requisitos para que um trecho seja atribuível.
+
+1. **Estatística com fonte.** Número + ano + de onde veio. É o achado mais
+   forte da pesquisa.
+2. **Citação textual.** Uma frase precisa e memorável, que possa ser
+   repetida entre aspas com o seu nome junto.
+3. **Autoridade declarada.** "Segundo o [instituição]", "de acordo com o
+   [estudo]".
+4. **Atualidade declarada.** A data de revisão visível na página.
+5. **Estrutura em passagem.** Cada seção se sustenta sozinha: quem recorta só
+   ela entende do que se trata.
+6. **Densidade de termos.** Usar a terminologia da pergunta — e também os
+   sinônimos e as variações que as pessoas digitam.
+
+```html
+<!-- Um bloco citável: afirmação, número, fonte e data -->
+<p>
+  <strong>Segundo o Relatório de Tendências 2025</strong>, 68 por cento das
+  equipes remotas revisam o quadro de tarefas uma vez por semana, contra 24 por
+  cento das equipes que revisam de forma diária. <em>Revisado em março de 2026.</em>
+</p>
+```
+
+Repare o que esse parágrafo faz: ele dá um número, diz de onde o número veio,
+diz de quando ele é e diz quando alguém olhou para ele. Falta só o autor —
+que é a assinatura do texto.
+
+**O que não funciona:** texto inflado, conteúdo genérico, "escrever para a
+IA" como objetivo declarado e repetição de palavra-chave. Nenhuma dessas
+táticas cria o que falta, que é informação.
+
+O que você fixa daqui:
+
+- **Citação é atribuição**: número, fonte, data e autor.
+- **A tática de maior efeito na pesquisa de 2024 foi citar estatísticas com
+  a fonte identificada.**
+- **A evidência é de 2024, de um estudo específico** — use como direção, não
+  como fórmula.
+- **Texto inflado não substitui informação.**
+
+## Aprofundamento 🟡
+
+**A anatomia de um bloco citável.** Repare no que o parágrafo do exemplo tem
+e o que a maioria dos textos não tem:
+
+```text
+afirmação  ->  o que você diz
+número     ->  quanto, de quando
+fonte      ->  de onde veio o dado
+data       ->  quando alguém olhou para o texto
+autor      ->  quem assinou
+```
+
+Falta um elemento em quase todo texto de blog: **o autor**. É ele que fecha
+o circuito — sem assinatura, a IA pode usar a sua frase, mas não tem a quem
+atribuir. É por isso que o nó de E-E-A-T vem antes deste na trilha.
+
+**Passagem que se sustenta sozinha.** A IA não lê a sua página: ela lê um
+trecho, e às vezes lê esse trecho sem o título da seção. Se a seção diz
+*"Elas também devem revisar semanalmente"*, o "elas" aponta para nada. Reescreva
+com o sujeito dentro do parágrafo:
+
+```html
+<!-- Fraco: depende do parágrafo anterior -->
+<p>Elas também devem revisar o quadro uma vez por semana.</p>
+
+<!-- Forte: se sustenta sozinho -->
+<p>Cada equipe revisa o quadro de tarefas uma vez por semana.</p>
+```
+
+É a mesma regra da resposta direta, com outro motivo: aqui o motivo é o
+recorte que o modelo faz.
+
+**Quando a IA cita o concorrente em vez de você.** A leitura útil é comparar
+os trechos citados: pegue a pergunta que a IA respondeu, veja de qual página
+veio a resposta e pergunte o que aquele texto tinha que o seu não tem. Na
+prática, quase sempre são três coisas: um número com fonte, uma data de
+revisão e uma frase que dá para repetir. Você já sabe produzir as três.
+
+> Dica: a forma mais rápida de melhorar a citabilidade é o exercício mais
+> chato que existe — percorrer o texto procurando todos os substantivos e
+> verificar se cada um tem um substantivo antes dele. Toda frase com
+> pronome solto é uma frase que não pode ser citada isoladamente.
+
+## Pra quem quer ir além 🔴
+
+**O `llms.txt`, sem exagero.** Existe uma proposta de arquivo `llms.txt` (o site
+`llmstxt.org` é a referência), que sugere um índice de páginas em Markdown
+para os robôs de IA lerem. Trate com honestia: é uma **proposta voluntária, sem
+adoção garantida** — nenhum dos grandes modelos anunciou que vai ler esse
+arquivo por obrigação. Ele não atrapalha e custa pouco, então vale como
+experimento; mas tratar isso como estratégia é erro. O módulo de dados para IA
+volta no assunto com mais contexto, e o que realmente muda o jogo é o
+conteúdo em si, não o arquivo.
+
+**Como saber se a IA está te citando.** Duas formas simples, sem dashboard:
+pergunte periodicamente ao motor que importa para o seu público e anote se a
+sua página aparece na resposta e com qual URL; e acompanhe nos logs do
+servidor as requisições dos robôs de IA (eles têm nomes próprios e
+identificáveis). O módulo de medição, lá no fim da trilha, transforma isso em
+rotina.
+
+**O limite honesto do que você consegue controlar.** Você não escolhe o que o
+modelo cita. Você controla o material que existe para ser citado: o texto
+com fonte, com data, com autor, com estrutura de passagem. Essa parte é sua e
+funciona. O resto — qual modelo, quando, com que prompt — não é.
+
+## Exercício interativo
+
+<Mermaid
+  chart={`flowchart LR
+    A["1. Afirmação: o que você diz"] --> N["2. Número com ano"]
+    N --> F["3. Fonte: de onde veio o dado"]
+    F --> D["4. Data de revisão"]
+    D --> C["Citação pronta: segundo a FONTE, o NÚMERO"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style N fill:#1a7f37,stroke:#ffffff,color:#ffffff
+    style F fill:#388bfd,stroke:#ffffff,color:#ffffff
+    style D fill:#bf8700,stroke:#ffffff,color:#ffffff
+    style C fill:#8250df,stroke:#ffffff,color:#ffffff`}
+  caption="Anatomia de um bloco citável: afirmação, número, fonte e data. É esse conjunto que permite à IA atribuir a citação a você."
+/>
+
+<Quiz
+  question="Na pesquisa de 2024 sobre otimização para motores generativos, qual tática mais se associou às citações?"
+  label="Quiz"
+  options={[
+    {
+      text: "Citar estatísticas e fatos com a fonte identificada.",
+      correct: true,
+      explanation: "Exato. O estudo mediu \"Statistics\" e \"Fluency\" como as duas táticas de maior efeito, e citar fontes e citações também aumentou a visibilidade.",
+    },
+    {
+      text: "Escrever textos mais longos, para ocupar mais espaço na resposta.",
+      correct: false,
+      explanation: "Não. O efeito medido veio de conteúdo citável, não de volume de texto. Texto inflado não é sinal de qualidade.",
+    },
+    {
+      text: "Repetir a palavra-chave da pergunta várias vezes no texto.",
+      correct: false,
+      explanation: "Repetição de termo não está entre as táticas que funcionaram, e é o caminho mais curto para um texto que ninguém lê.",
+    },
+    {
+      text: "Adicionar muitas imagens decorativas ao longo do texto.",
+      correct: false,
+      explanation: "Imagens não entram no modelo de texto que a IA lê. Nenhuma tática do estudo foi sobre imagem.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Para uma IA citar a sua página, a autoria do texto importa?"
+  label="Quiz"
+  options={[
+    {
+      text: "Não. O modelo lê o texto e usa o que precisa, sem olhar quem escreveu.",
+      correct: false,
+      explanation: "O modelo usa o texto, mas precisa de algo para atribuir. Sem autoria, sobra uma afirmação anônima — e afirmação anônima é a que o modelo prefere evitar.",
+    },
+    {
+      text: "Sim. O estudo testou declarar o autor do conteúdo entre as táticas que aumentaram a visibilidade, e um texto sem autoria é difícil de atribuir.",
+      correct: true,
+      explanation: "Certo. Autor, fonte e data são o que fecha o circuito da atribuição — e é por isso que este vem depois do nó de E-E-A-T.",
+    },
+    {
+      text: "Só quando a página é de notícias, que mostra a assinatura por padrão.",
+      correct: false,
+      explanation: "O critério não é o tipo de página. Assinatura, bio e fontes importam em qualquer conteúdo que você queira que seja citado.",
+    },
+    {
+      text: "Não, desde que a URL esteja indexada pelo buscador.",
+      correct: false,
+      explanation: "Indexação garante que o texto seja encontrado. Para ser **citado** com atribuição, o texto precisa dizer de quem é.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `detectarCitavel(bloco)`: ela recebe um texto e devolve quantos dos quatro sinais de citação estão presentes — (1) estatística com fonte (um número e uma marca de fonte), (2) citação textual (um trecho entre aspas), (3) menção a autor ou instituição (uma marca de autor seguida de nome próprio) e (4) data (um ano com quatro dígitos)."
+  starterCode={`// Um parágrafo de blog, pronto para ser lido.
+const BLOCO = 'Segundo o Relatório de Tendências 2025, 68 por cento das equipes remotas ' +
+  'revisam o quadro de tarefas uma vez por semana. Esse ritmo explica parte da queda de ' +
+  '22 por cento no tempo de revisão apontada pela equipe de produto da empresa.';
+
+// Palavras que indicam de onde veio o dado.
+const MARCAS_FONTE = ['fonte', 'segundo', 'de acordo com', 'relatório', 'dados', 'pesquisa'];
+
+// Palavras que introduzem o nome de quem ou de qual instituição.
+const MARCAS_AUTOR = ['segundo', 'de acordo com'];
+
+// Palavras que não contam como nome próprio.
+const ARTIGOS = ['o', 'a', 'os', 'as', 'um', 'uma', 'do', 'da', 'dos', 'das', 'no', 'na'];
+
+// Devolve quantos dos quatro sinais de citação aparecem no texto.
+function detectarCitavel(bloco) {
+  const palavras = bloco.split(' ');
+  const minusculo = bloco.toLowerCase();
+
+  // Ajudante: alguma palavra do texto tem dígito?
+  function temNumero() {
+    for (const p of palavras) {
+      if (p.replace(/[^0-9]/g, '').length > 0) return true;
+    }
+    return false;
+  }
+
+  // Ajudante: alguma palavra do texto é um ano (quatro dígitos)?
+  function temAno() {
+    for (const p of palavras) {
+      if (p.replace(/[^0-9]/g, '').length === 4) return true;
+    }
+    return false;
+  }
+
+  // Ajudante: há um trecho entre aspas duplas?
+  function temAspas() {
+    return bloco.includes('"');
+  }
+
+  // Ajudante: alguma marca de autor é seguida de nome próprio?
+  function temNomeProprio() {
+    for (const marca of MARCAS_AUTOR) {
+      const posicao = minusculo.indexOf(marca);
+      if (posicao === -1) continue;
+      const depois = bloco.slice(posicao + marca.length).split(' ').slice(0, 3);
+      for (const p of depois) {
+        const limpa = p.replace(/[^A-Za-zÀ-ú]/g, '');
+        if (limpa === '') continue;
+        if (ARTIGOS.includes(limpa.toLowerCase())) continue;
+        if (limpa[0] === limpa[0].toUpperCase() && limpa[0] !== limpa[0].toLowerCase()) return true;
+      }
+    }
+    return false;
+  }
+
+  let sinais = 0;
+
+  // 1. Estatística com fonte: temNumero() e alguma MARCAS_FONTE no texto.
+  // 2. Citação textual: temAspas().
+  // 3. Autor ou instituição: temNomeProprio().
+  // 4. Data: temAno().
+  //
+  // Escreva as quatro linhas que somam 1 ponto quando o sinal está presente.
+  return sinais;
+}
+
+console.log(detectarCitavel(BLOCO));
+`}
+  expected="3"
+  slug="visibilidade-organica"
+  nodeId="conteudo-citavel"
+/>
+
+## No seu projeto
+
+- [ ] Escolha o texto mais importante do seu site e procure os quatro sinais: número com fonte, frase citável, autor identificável e data de revisão visível. Marque no documento quais já existem e quais faltam.
+- [ ] Reescreva um parágrafo do seu texto para conter os quatro: afirmação, número, fonte e data — e confira que ele continua fazendo sentido se alguém ler só ele, sem o resto da página.
+
+> Atenção: citação com atribuição depende de consistência. Se a sua empresa
+> aparece de cinco formas diferentes em cinco fontes, a IA não tem como
+> saber que são a mesma entidade — e prefere citar a fonte mais óbvia, que
+> provavelmente é a do concorrente.
+
+## Fechamento
+
+Você escreveu para ser extraído e para ser citado. O próximo módulo muda de
+assunto: como a sua página vira **dados estruturados**, o formato que o
+Google e a IA leem para entender o que é cada coisa da sua página.
