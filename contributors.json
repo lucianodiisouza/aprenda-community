@@ -8,10 +8,10 @@
       "avatar": "https://github.com/lucianodiisouza.png",
       "profile": "https://github.com/lucianodiisouza",
       "counts": {
-        "trilhas": 32,
-        "projetos": 12,
+        "trilhas": 33,
+        "projetos": 13,
         "bootcamps": 2,
-        "total": 46
+        "total": 48
       },
       "trilhas": [
         {
@@ -141,12 +141,20 @@
         {
           "slug": "typescript",
           "title": "TypeScript"
+        },
+        {
+          "slug": "visibilidade-organica",
+          "title": "Visibilidade Orgânica: SEO, AEO e GEO na Prática"
         }
       ],
       "projetos": [
         {
           "slug": "api-rest-com-autenticacao",
           "title": "API REST com Autenticação"
+        },
+        {
+          "slug": "auditoria-visibilidade-organica",
+          "title": "Auditoria de Visibilidade Orgânica"
         },
         {
           "slug": "busca-com-filtros",
