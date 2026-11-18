@@ -1,0 +1,272 @@
+---
+id: pipeline-da-busca
+title: "O Pipeline da Busca: do Crawl ao Ranking"
+resources:
+  - title: "How Search Works (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/how-search-works
+    type: doc
+    lang: en
+    free: true
+  - title: "Links rastreáveis e Googlebot (Google Search Central)"
+    url: https://developers.google.com/search/docs/crawling-indexing/links-crawlable
+    type: doc
+    lang: en
+    free: true
+  - title: "Rastreamento e indexação: visão geral (Google Search Central)"
+    url: https://developers.google.com/search/docs/crawling-indexing
+    type: doc
+    lang: en
+    free: true
+---
+
+Entre a sua página e o primeiro resultado na tela existe uma máquina com quatro
+etapas. Você não precisa saber o nome de cada algoritmo, mas precisa saber em
+qual etapa a coisa quebrou — porque cada etapa tem um conserto diferente, e
+otimizar a etapa errada é trabalho jogado fora.
+
+## O essencial 🟢
+
+**As quatro etapas.**
+
+1. **Crawl (rastreamento).** O robô — o Googlebot, no caso do Google — segue
+   links. Ele não "descobre" o site: ele percorre trilhas de links que já
+   conhece. Se nada na web aponta para a página `/planos` da Aurora, o robô
+   nunca chega até lá.
+2. **Render (renderização).** O robô executa o JavaScript da página para ver
+   o resultado final. Página que só existe depois do JS entra numa fila extra
+   de renderização, e nem sempre sai dela.
+3. **Index (indexação).** O que foi lido e considerado bom o bastante é
+   guardado no índice.
+4. **Rank (ranqueamento).** Na hora da busca, o motor ordena as páginas do
+   índice para aquela consulta específica.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Crawl"] -->|segue links| B["Render"]
+    B -->|HTML final| C["Index"]
+    C -->|entra no indice| D["Rank"]
+    D -->|ordena por sinais| E["SERP"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#388bfd,stroke:#ffffff,color:#ffffff
+    style C fill:#1a7f37,stroke:#ffffff,color:#ffffff
+    style D fill:#8250df,stroke:#ffffff,color:#ffffff
+    style E fill:#bf8700,stroke:#ffffff,color:#ffffff`}
+  caption="Pipeline do Google: cada etapa só recebe o que a anterior entregou, e uma falha em uma delas para todas as seguintes."
+/>
+
+**O índice não é a web.** O índice é a cópia do Google: um recorte do que ele
+conseguiu ver, organizado para consulta rápida. Tudo o que existe na internet e
+nunca foi rastreado simplesmente não existe ali. E o inverso também vale: o
+índice pode conter páginas que já foram apagadas do site, porque a remoção
+leva tempo.
+
+**Indexado não é ranqueado.** Estar no índice só garante que você é *candidato*.
+A ordem é decidida por centenas de sinais, e relevância de texto é só um
+deles.
+
+```js
+// Um "índice" simplificado: só entra o que foi rastreado E indexado.
+const indice = new Map();
+
+// Sinais usados no ranqueamento: relevância, autoridade e velocidade.
+const sinais = {
+  "https://aurora.app/planos": { relevancia: 0.9, autoridade: 0.6, velocidade: 0.4 },
+  "https://exemplo.com/planilhas": { relevancia: 0.8, autoridade: 0.7, velocidade: 0.9 },
+};
+
+// Páginas que o Google indexou.
+indice.set("https://aurora.app/planos", { titulo: "Planos da Aurora" });
+indice.set("https://exemplo.com/planilhas", { titulo: "Planilhas grátis para equipes" });
+
+// Ranqueamento: filtra o índice pela consulta e ordena pelos sinais.
+function ranquear(consulta) {
+  return [...indice.entries()]
+    .filter(([, pagina]) => pagina.titulo.toLowerCase().includes(consulta.toLowerCase()))
+    .map(([url]) => {
+      const s = sinais[url];
+      const score = s.relevancia * 0.6 + s.autoridade * 0.3 + s.velocidade * 0.1;
+      return { url, score };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+for (const resultado of ranquear("plan")) {
+  console.log(resultado.url);
+}
+```
+
+As duas páginas estão indexadas e as duas combinam com a busca. Mesmo assim a
+que tem relevância maior (0,9) fica em segundo: os outros sinais pesam. E uma
+terceira página, fora do índice, não aparece nem para ser considerada.
+
+**Crawl budget, em um parágrafo.** O robô tem capacidade finita e um orçamento
+de requisições. Em site pequeno, isso não é o seu problema. Em site grande —
+catálogo com filtros, calendários, paginação, variações de URL — o orçamento
+gasta em páginas que ninguém procura. Aí, cada URL inútil é uma página útil
+que o robô não visitou.
+
+**O que o crawler faz com links.** Só `<a href>` conta como link. Um `div` com
+`onclick` não é link. Um botão que navega por JavaScript não é link. `rel="nofollow"`
+faz o robô visitar a página, mas não repassa autoridade. E um `rel="canonical"`
+aponta para a versão que o motor deve considerar a sua.
+
+## Aprofundamento 🟡
+
+**Renderização é fila, não garantia.** O Google separa o rastreamento da
+renderização: a primeira leva o HTML bruto, a segunda executa o JavaScript.
+Páginas com JS pesado ou dados que só chegam por API entram numa fila que pode
+demorar. Se a fila está cheia, a página é indexada praticamente vazia — e é
+assim que uma SPA "some" da busca sem dar erro nenhum.
+
+**Soft 404: a página responde 200, mas não tem o que mostrar.** Se a sua rota
+devolve HTML de app vazio com status 200 para qualquer endereço, o motor
+indexa uma página sem conteúdo — várias, na verdade. Isso dilui o índice e faz
+sua página real parecer rasa.
+
+**O que o crawler descobre em um site inteiro.** Começando por uma raiz
+conhecida, ele segue links, aplica os sinais que o impedem de seguir (noindex,
+nofollow, canonical) e vai registrando o que viu. Páginas órfãs — sem nenhum
+link interno apontando para elas e sem sitemap — são as que mais custam
+caro: precisam ser adivinhadas ou anunciadas de fora.
+
+> Atenção: um sitemap.xml não é um mapa do site para o robô. Ele é uma lista de
+> URLs que você sugere para serem rastreadas. O robô continua decidindo o que
+> seguir pelos links e o que indexar pela qualidade do que encontrar.
+
+## Pra quem quer ir além 🔴
+
+**Reproduzindo o crawl na sua máquina.** Você não precisa de ferramenta
+paga para ver o que o robô enxerga. O `curl` mostra o HTML bruto que o
+servidor devolve, que é exatamente o ponto de partida do rastreamento:
+
+```bash
+# HTML bruto da home: é o que o Googlebot recebe antes de rodar qualquer JS
+curl -s https://seudominio.com/ | head -40
+
+# Só os links que o robô conseguiria seguir a partir dessa página
+curl -s https://seudominio.com/ | grep -o 'href="[^"]*"' | head -20
+```
+
+Se a segunda lista vier curta e o seu site tem muitas páginas, o problema
+está na malha de links internos — não no conteúdo.
+
+**O que decide o que fica no índice.** Depois de renderizar, o motor avalia
+qualidade, unicidade e sinais do site inteiro. Páginas quase idênticas entre
+si, sem autoridade, ou que já existam em versão melhor na web tendem a ficar
+de fora do índice. É por isso que "publicar mais" costuma render menos do que
+"publicar uma coisa que ainda não existe".
+
+<Quiz
+  question="Uma página do seu site só existe depois que o JavaScript roda. Qual etapa do pipeline falha primeiro?"
+  label="Quiz"
+  options={[
+    {
+      text: "A renderização: o robô recebe o HTML inicial, tenta renderizar e a página entra na fila extra de renderização.",
+      correct: true,
+      explanation: "Exato. O HTML bruto chega vazio na etapa de render. Se a fila está cheia ou o JS falha, o que o motor indexa é um esqueleto sem conteúdo.",
+    },
+    {
+      text: "O crawl, porque o robô não encontra nenhum link apontando para a página.",
+      correct: false,
+      explanation: "O problema descrito não é de descoberta: se a rota existe e é linkada, o robô a encontra normalmente. A falha é o que ele recebe depois de chegar lá.",
+    },
+    {
+      text: "A indexação, porque a página não tem texto suficiente para entrar no índice.",
+      correct: false,
+      explanation: "A indexação vem depois da renderização. Se o render falhou, o motor indexa o que ele viu (uma página vazia) — mas a causa raiz está um passo antes.",
+    },
+    {
+      text: "O ranqueamento, porque nenhum sinal é forte o suficiente para a página subir.",
+      correct: false,
+      explanation: "Ranqueamento pressupõe que a página está no índice. Uma página que nem foi renderizada corretamente não chega a concorrer por posição.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Por que um sitemap.xml não serve como um mapa do site para o crawler?"
+  label="Quiz"
+  options={[
+    {
+      text: "Ele é só uma lista de URLs que você sugere para rastreamento; o robô continua descobrindo páginas pelos links e continua decidindo sozinho o que indexar.",
+      correct: true,
+      explanation: "O sitemap informa a existência da URL, não a ordem de importância nem o conteúdo. Ele não substitui a malha de links internos.",
+    },
+    {
+      text: "Porque o Google parou de usar sitemap em 2020.",
+      correct: false,
+      explanation: "Não. Sitemap continua sendo um sinal oficial e válido, principalmente em site grande ou com conteúdo novo.",
+    },
+    {
+      text: "Porque o sitemap precisa listar as páginas na ordem de prioridade para funcionar.",
+      correct: false,
+      explanation: "A prioridade declarada no sitemap não define posição nenhuma. Ranqueamento é decidido por sinais de conteúdo, links e uso.",
+    },
+    {
+      text: "Porque sitemap só funciona em sites com mais de dez mil páginas.",
+      correct: false,
+      explanation: "Sitemap funciona (e ajuda) em qualquer tamanho de site. O que muda é a prioridade: quanto mais URLs inúteis, mais importante é limpá-lo.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `descobrirUrls(html, sitemap)` que devolve a quantidade de URLs únicas descobertas a partir de um HTML com links e de uma lista de sitemap. Regras: (1) use os `href` presentes no HTML; (2) some com as URLs do sitemap; (3) a mesma URL aparecendo duas vezes, ou aparecendo no HTML e no sitemap, conta uma vez só. A função `extrairHrefs` já está pronta."
+  starterCode={`// Dado pronto: extrai os href de todos os <a> que têm atributo href.
+// Repare que <a> sem href NÃO entra na lista — o crawler só segue link com href.
+function extrairHrefs(html) {
+  const hrefs = [];
+  for (const pedaco of html.split("<a ").slice(1)) {
+    const partes = pedaco.split('href="');
+    if (partes.length > 1) hrefs.push(partes[1].split('"')[0]);
+  }
+  return hrefs;
+}
+
+// Implemente: devolva a QUANTIDADE de URLs únicas descobertas.
+// 1. Pegue os hrefs do HTML com extrairHrefs.
+// 2. Some com as URLs do sitemap.
+// 3. Conte sem repetir: a mesma URL no HTML e no sitemap conta uma vez só.
+function descobrirUrls(html, sitemap) {
+  return 0;
+}
+
+// Não edite abaixo: é o teste automático.
+// Não escreva console.log extras, ou a saída muda.
+const html = [
+  '<a href="https://aurora.app/">Aurora</a>',
+  '<a href="https://aurora.app/planos">Planos</a>',
+  '<a href="https://aurora.app/planos">Planos no menu</a>',
+  '<a href="https://aurora.app/blog">Blog</a>',
+  '<a href="https://blog.aurora.app/dicas">Dicas</a>',
+  '<a href="https://docs.aurora.app/api">API</a>',
+  '<a href="https://aurora.app/contato">Contato</a>',
+  '<a>Botão sem href</a>',
+].join(" ");
+
+const sitemap = [
+  "https://aurora.app/",
+  "https://aurora.app/precos",
+  "https://aurora.app/precos",
+];
+
+console.log(descobrirUrls(html, sitemap));`}
+  expected="7"
+  slug="visibilidade-organica"
+  nodeId="pipeline-da-busca"
+/>
+
+## No seu projeto
+
+- [ ] Abra o código-fonte da sua home (view-source, ou `curl` no terminal) e
+  liste as URLs que um robô conseguiria seguir a partir dela. Se alguma página
+  importante não está na lista, ela está órfã: resolva antes de escrever
+  qualquer conteúdo novo.
+- [ ] Escolha a rota mais importante do seu site e verifique se o conteúdo
+  principal já está no HTML inicial ou só aparece depois que o JavaScript roda.
+  Se só aparece depois, anote isso: é a causa número um de página indexada
+  vazia.
+
+No próximo nó, o assunto muda de buscador para o outro lado da equação: como
+uma IA generativa lê a sua página, o que ela faz com o texto e por que isso
+muda o que você precisa escrever.

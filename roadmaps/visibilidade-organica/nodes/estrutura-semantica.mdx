@@ -1,0 +1,319 @@
+---
+id: estrutura-semantica
+title: "HTML Semântico e a Hierarquia de Headings"
+resources:
+  - title: "O elemento meta no HTML (MDN em português)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/meta
+    type: doc
+    lang: pt
+    free: true
+  - title: "Glossário de SEO (MDN em português)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/SEO
+    type: doc
+    lang: pt
+    free: true
+---
+
+O robô não lê a sua página como um desenho. Ele lê uma árvore de elementos, e
+cada elemento declara o que ele é. Quando essa árvore tem só `<div>` com
+classe, o Google precisa adivinhar o que é cada parte — e adivinha errado.
+
+## O essencial 🟢
+
+A diferença entre `<div class="menu">` e `<nav>` não é estética: é um
+**prometido**. O `div` não promete nada. O `nav` promete "aqui dentro estão
+links de navegação". E promessa é o que o motor de busca e o leitor de tela
+usam para se orientar.
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- O title rotula a aba do navegador e o resultado da busca -->
+    <title>Como organizar tarefas em equipe remota</title>
+  </head>
+  <body>
+    <!-- header: o topo da página -->
+    <header>
+      <!-- nav: um conjunto de links de navegação -->
+      <nav aria-label="Navegação principal">
+        <a href="/">Início</a>
+        <a href="/planos">Planos</a>
+      </nav>
+    </header>
+
+    <!-- main: o conteúdo principal da página. Um por página. -->
+    <main>
+      <article>
+        <!-- h1: o título do conteúdo. Um por página. -->
+        <h1>Como organizar tarefas em equipe remota</h1>
+        <p>Cada regra que você escreve aqui tira uma decisão do time.</p>
+
+        <section>
+          <!-- h2: uma seção do artigo -->
+          <h2>Defina um dono por tarefa</h2>
+          <p>Tarefa sem dono é pedido, não tarefa.</p>
+        </section>
+      </article>
+
+      <!-- aside: conteúdo lateral, complementar ao principal -->
+      <aside>
+        <h2>Leituras relacionadas</h2>
+      </aside>
+    </main>
+
+    <!-- footer: o rodapé -->
+    <footer>
+      <p>Copyright da empresa</p>
+    </footer>
+  </body>
+</html>
+```
+
+O que cada elemento promete, em uma linha:
+
+- **`<header>`** — o cabeçalho da página.
+- **`<nav>`** — links de navegação.
+- **`<main>`** — o conteúdo principal da página. É o que o leitor de tela
+  pula para quando a pessoa quer ir direto ao assunto.
+- **`<article>`** — um conteúdo que faz sentido sozinho, mesmo fora do site.
+- **`<section>`** — um agrupamento temático, que normalmente tem um título.
+- **`<aside>`** — conteúdo lateral, complementar.
+- **`<footer>`** — o rodapé.
+
+E a hierarquia de títulos, que é a parte que mais se erra:
+
+- **Um `<h1>` por página.** Ele é o título do conteúdo visível.
+- **`<h2>` é seção, `<h3>` é subseção.** Os níveis contam a história do texto.
+- **Não pule nível.** De `<h1>` para `<h3>` não tem nada no meio: você perdeu
+  um degrau e quebrou a estrutura que o texto descreve.
+- **`<title>` não é `<h1>`.** Um rotula a aba e o resultado da busca; o outro
+  rotula o conteúdo da página. São coisas diferentes e as duas são necessárias.
+
+O que você fixa daqui:
+
+- **Elemento semântico = promessa.** `<nav>` diz o que é; `<div class="nav">`
+  só sugere.
+- **Um `<h1>` por página**, e ele não é o `<title>`.
+- **A hierarquia desce um degrau por vez:** h1 → h2 → h3.
+- **`<main>` é o conteúdo principal** — um por página.
+
+## Aprofundamento 🟡
+
+**Por que o nível do título importa para quem usa leitor de tela.** O leitor
+de tela não mostra a página: ele anuncia uma lista de títulos, e a pessoa
+navega por essa lista para ter uma visão geral antes de ler. Quando o texto
+pula de `<h1>` para `<h3>`, a lista sai assim:
+
+```text
+Nível 1: Como organizar tarefas em equipe remota
+Nível 3: Defina um dono por tarefa
+Nível 3: Revise o quadro uma vez por semana
+```
+
+Dois níveis que não existem. Quem navega por títulos percebe que a estrutura
+está errada antes de ler a primeira frase. O mesmo acontece com o Google: o
+estrutura de títulos é o que ele usa para entender onde começa e onde termina
+cada parte do texto.
+
+> Dica: use a hierarquia com uma regra de bolso — **se um título parece
+> subtítulo de outro, ele é um nível abaixo**. "Defina um dono por tarefa"
+> abaixo de "Como organizar tarefas em equipe remota" é um `<h2>`.
+
+**O `<h1>` é o resumo da página.** Ele não precisa repetir o `<title>` igual,
+mas precisa dizer a mesma coisa: é o tema da página. Se o `<title>` promete
+"Planos e preços" e o `<h1>` diz "Bem-vindo", a página tem duas perguntas
+diferentes e o robô não sabe qual responder.
+
+**Usar títulos para fragmentar a leitura.** Todo título com `id` vira uma
+âncora:
+
+```html
+<!-- O id permite mandar a pessoa direto para esta parte -->
+<h2 id="revisao-semanal">Revise o quadro uma vez por semana</h2>
+```
+
+Isso serve para o menu lateral da página, para os links de seção que o Google
+às vezes mostra no resultado e, mais adiante, para a extração da resposta
+direta — a IA e o buscador recortam a página por título.
+
+**Quando não existe elemento semântico, use `aria-*`.** O `aria-label` dá um
+nome a um agrupamento que não tem elemento próprio:
+
+```html
+<nav aria-label="Navegação principal">...</nav>
+<div role="navigation" aria-label="Navegação do rodapé">...</div>
+```
+
+A regra é: **elemento nativo primeiro, `aria-*` só quando não existe
+elemento**. `role="navigation"` num `<div>` funciona, mas é mais trabalho e
+mais frágil do que usar `<nav>`.
+
+**`<article>` ou `<section>`?** A diferença é a independência. Um `<article>`
+faz sentido sozinho: um post de blog, uma notícia, uma avaliação. Se você
+tirar o `<article>` do contexto da página, o texto continua inteiro. Um
+`<section>` é um pedaço do documento: "Metodologia", "Preços", "FAQ" — ele
+depende da página para ter sentido. Na prática, use `<article>` para a
+unidade de conteúdo e `<section>` para as partes dela.
+
+## Pra quem quer ir além 🔴
+
+Dois detalhes que só aparecem quando o site é grande.
+
+**Um `<h1>` por página é a prática comum, não uma lei do HTML.** O padrão
+HTML5 permite vários `<h1>` em seções diferentes, e alguns navegadores
+aceitam. Mas quase todo mundo — inclusive o Google — trata o `<h1>` como "o
+título do documento". Se você usa vários, o resultado é um documento sem
+título claro. Com um, todo mundo entende.
+
+**`aria-labelledby` é a ponte para o `id`.** Quando um agrupamento precisa de
+um nome e esse nome já está num título, você aponta em vez de duplicar:
+
+```html
+<section aria-labelledby="revisao-semanal">
+  <h2 id="revisao-semanal">Revise o quadro uma vez por semana</h2>
+  <p>...</p>
+</section>
+```
+
+Assim o texto do título serve para dois lugares, e o leitor de tela anuncia a
+seção pelo nome certo.
+
+E uma preparação para o que vem depois: toda esta estrutura — título que
+espelha a pergunta, parágrafo que responde sozinho, seções que se sustentam —
+é exatamente o que a extração de resposta direta vai procurar. Você está
+construindo o esqueleto; os próximos nós preenchem o conteúdo.
+
+## Exercício interativo
+
+<Quiz
+  question="O `title` do documento substitui o `h1` da página?"
+  label="Quiz"
+  options={[
+    {
+      text: "Sim. O Google lê o `title` e usa como título visível da página.",
+      correct: false,
+      explanation: "O `title` aparece na aba do navegador e no resultado da busca. Ele não aparece no corpo da página: quem mostra o título do conteúdo é o `h1`.",
+    },
+    {
+      text: "Não. O `title` rotula a aba e o resultado da busca; o `h1` rotula o conteúdo visível e precisa existir na página.",
+      correct: true,
+      explanation: "Exato. São dois rótulos com públicos diferentes, e a página precisa dos dois.",
+    },
+    {
+      text: "Sim, mas só em páginas de blog. Em página de entrada o `h1` é obrigatório.",
+      correct: false,
+      explanation: "A regra não muda por tipo de página. Toda página tem um `title` e um `h1` com o mesmo assunto — só muda o texto.",
+    },
+    {
+      text: "Não, e o Google penaliza quem deixa de declarar o `title`.",
+      correct: false,
+      explanation: "A falta de `title` é um problema de apresentação e de trecho, não existe penalidade explícita por isso. E o `h1` continua sendo necessário.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="O que o elemento `main` promete?"
+  label="Quiz"
+  options={[
+    {
+      text: "Que o conteúdo mais importante do site inteiro está ali dentro.",
+      correct: false,
+      explanation: "Não. `main` é o conteúdo principal **daquela página**, não do site. Cada página tem o seu.",
+    },
+    {
+      text: "Que a página está dividida em blocos: cabeçalho, navegação, conteúdo e rodapé.",
+      correct: false,
+      explanation: "Isso é o documento inteiro, não o `main`. O `main` marca só o conteúdo principal da página.",
+    },
+    {
+      text: "Que o conteúdo principal da página está ali dentro — é o ponto de partida da navegação por marcos.",
+      correct: true,
+      explanation: "Exato. `main` marca o conteúdo principal, e o leitor de tela usa esse ponto de partida para ir direto ao assunto.",
+    },
+    {
+      text: "Nada: `main` é uma `div` com um nome mais bonito.",
+      correct: false,
+      explanation: "Não é só o nome: `main` cria um marco (landmark) que o leitor de tela reconhece e por ele começa a navegação.",
+    },
+  ]}
+/>
+
+<VisualCheckpoint
+  challenge="Corrija a hierarquia de títulos desta página: a sequência de títulos precisa ser h1, h2, h2, h3 (sem pular nível) e a página deve ter exatamente um h1."
+  starterHtml={`<header>
+  <nav aria-label="Navegação principal">
+    <a href="/">Início</a>
+    <a href="/planos">Planos</a>
+  </nav>
+</header>
+
+<main>
+  <article>
+    <h1>Como organizar tarefas em equipe remota</h1>
+    <p>Cada regra escrita aqui tira uma decisão do time.</p>
+
+    <h3>Defina um dono por tarefa</h3>
+    <p>Tarefa sem dono é pedido, não tarefa.</p>
+
+    <h3>Revise o quadro uma vez por semana</h3>
+    <p>Quinze minutos por semana bastam para tirar o que travou.</p>
+
+    <h3>Combine prazos com o fuso de cada pessoa</h3>
+    <p>Prazo que só faz sentido para quem está online de manhã não é prazo.</p>
+  </article>
+</main>
+
+<footer>
+  <p>Copyright da empresa</p>
+</footer>`}
+  starterCss={`article {
+  max-width: 42rem;
+}`}
+  assert={`
+    const nodes = root.querySelectorAll('h1,h2,h3');
+    const tags = [];
+    for (let i = 0; i < nodes.length; i++) {
+      tags.push(nodes[i].tagName.toLowerCase());
+    }
+
+    const h1s = root.querySelectorAll('h1').length;
+    if (h1s !== 1) {
+      return { pass: false, message: 'A pagina precisa de exatamente um <h1> (voce tem ' + h1s + ').' };
+    }
+
+    const esperado = ['h1', 'h2', 'h2', 'h3'];
+    const bate = tags.length === esperado.length;
+    if (!bate) {
+      return { pass: false, message: 'A sequencia de titulos precisa ser h1, h2, h2, h3 (voce tem ' + tags.join(', ') + ').' };
+    }
+    for (let i = 0; i < esperado.length; i++) {
+      if (tags[i] !== esperado[i]) {
+        return { pass: false, message: 'A sequencia de titulos precisa ser h1, h2, h2, h3 (voce tem ' + tags.join(', ') + ').' };
+      }
+    }
+
+    return { pass: true, message: 'Hierarquia de titulos correta: h1, h2, h2, h3.' };
+  `}
+  hint="Dica: nao pule nivel. O primeiro h3 da pagina precisa virar h2, o segundo tambem, e so o ultimo continua h3."
+  slug="visibilidade-organica"
+  nodeId="estrutura-semantica"
+/>
+
+## No seu projeto
+
+- [ ] Abra o HTML de uma das páginas principais do seu site e liste, em ordem, todos os `h1`, `h2` e `h3` que existem. Se algum nível foi pulado ou se há mais de um `h1`, corrija hoje.
+- [ ] Troque as `div` usadas só para estilo por `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<aside>` e `<footer>` na sua página inicial, sem mudar o visual — e confira que sobrou exatamente um `<main>` e um `<h1>`.
+
+> Atenção: em uma aplicação de página única (SPA), o `<h1>` costuma estar no
+> "esqueleto" e ser reescrito por JavaScript. Confira o HTML já renderizado
+> (o que você vê em "ver código-fonte da página" não é o suficiente) — se o
+> `<h1>` muda de texto quando a rota muda, ele está no lugar certo.
+
+## Fechamento
+
+Você deu ao documento uma estrutura que dá sentido e que o robô consegue
+ler. No próximo nó a pergunta é outra: quanto você pode confiar no que está
+escrito — e como você mostra isso para quem lê, para o buscador e para a IA.

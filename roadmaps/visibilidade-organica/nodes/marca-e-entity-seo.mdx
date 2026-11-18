@@ -1,0 +1,268 @@
+---
+id: marca-e-entity-seo
+title: "Marca, Entidades e como o Google te Reconhece"
+resources:
+  - title: "Dados estruturados do tipo Organization (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/organization
+    type: doc
+    lang: en
+    free: true
+  - title: "Etiquetas especiais de robots e indexação (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/special-tags
+    type: doc
+    lang: en
+    free: true
+---
+
+Você pode ter o site mais rápido do mundo, o melhor título e o Schema.org
+impecável — e ainda assim o buscador não saber dizer **o que é a sua empresa**.
+Este nó resolve essa parte.
+
+## O essencial 🟢
+
+### O buscador resolve entidades, não palavras
+
+Você digita o nome da sua empresa e o buscador não faz uma correspondência de
+texto: ele tenta resolver uma **entidade** — um objeto do mundo real, com
+propriedades e relações.
+
+O problema é que o mesmo nome pode designar várias coisas. O nome da sua
+empresa pode ser uma palavra comum que significa outra coisa, pode coincidir
+com outra empresa em outra cidade, pode ser igual ao nome de um produto que
+você nem faz. O buscador não tem como adivinhar: ele precisa de **indícios**.
+
+Esses indícios estão espalhados e precisam concordar entre si.
+
+### Consistência: nome, endereço, telefone
+
+O conjunto nome + endereço + telefone (o famoso NAP) aparece em diretórios
+comerciais, no mapa do Google, no rodapé de sites, na nota fiscal. Quando
+esses dados **concordam** em todos os lugares, o buscador monta a ficha da sua
+empresa com confiança. Quando discordam, ele monta duas ou três empresas
+diferentes — e a que você não controla fica com os links.
+
+A regra prática é chata e funciona: **o mesmo nome, o mesmo endereço, o mesmo
+telefone, em todos os canais**. Sem variação de grafia, sem "atendimento"
+num lugar e "sac" no outro.
+
+### `sameAs`: a chave que amarra tudo
+
+Você já viu `sameAs` no nó `schema-org`, onde ele liga a entidade do site aos
+perfis externos. Agora ele ganha o papel de chave: é a instrução que diz "este
+`Organization` no meu site é a mesma coisa que está naquele perfil lá".
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Sua Empresa",
+  "url": "https://suaempresa.test/",
+  "sameAs": [
+    "https://www.linkedin.com/company/suaempresa",
+    "https://github.com/suaempresa",
+    "https://www.wikidata.org/wiki/Q123456789"
+  ]
+}
+```
+
+O buscador lê: a entidade chamada "Sua Empresa" que está no meu site é a mesma
+que tem perfil no LinkedIn, no GitHub e no Wikidata. Uma frase só, e o
+ambiguidade cai.
+
+> Atenção: `sameAs` para um perfil que não existe é pior do que não ter. O
+> buscador tenta reconciliar, não encontra, e marca a sua própria página como
+> inconsistente.
+
+### Wikidata: o dossiê de identidade
+
+O item da sua empresa no Wikidata é um **dossiê editável por qualquer
+pessoa**. Ele registra o nome oficial, o país, a sede, a data de fundação, os
+identificadores (documento de registro, código de artículo) e — o mais
+importante — os **links para os perfis**.
+
+Ele funciona como um hub porque outros projetos referenciam esse item: a
+Wikipédia, catálogos, bases de conhecimento. Se o item está completo e
+correto, todos esses consumidores herdam a versão certa da sua empresa.
+
+Duas consequências: é o melhor lugar para declarar quem você é uma vez só; e é
+um lugar onde **qualquer pessoa pode escrever qualquer coisa** — o que inclui
+você mesmo, monitorando.
+
+**O que fixar aqui:** o buscador resolve entidades; a sua entidade é feita de
+consistência; `sameAs` liga a sua entidade aos perfis; o Wikidata é o dossiê
+compartilhado de identidade.
+
+## Aprofundamento 🟡
+
+### Menção sem link também conta
+
+Nem todo mundo vai linkar você. Uma menção da sua marca num artigo, num
+comentário, num e-mail de quem manda curadoria — sem link nenhum — ainda é
+uma ocorrência que o buscador registra.
+
+Por isso consistência de grafia importa tanto: se o nome aparece como
+"Sua Empresa", "suaempresa" e "SuaEmpresa" em fontes diferentes, o buscador
+precisa juntar três cadeias para chegar numa entidade só. Quando o nome é
+comum, essa junção é frágil e você perde a confiança que a consistência
+compraria.
+
+### Um site canônico, e só um
+
+Uma marca tem **um** site oficial. Perfis apontam para ele. O site aponta para
+os perfis, com `sameAs`. Sem essa simetria, o buscador encontra três ou quatro
+"sites oficiais" da mesma empresa, e a autoridade se divide entre eles sem
+que nenhum se concentre.
+
+É a mesma ideia de canonicalização que você viu no nó `canonicalizacao`,
+aplicada ao nível da marca: uma URL que vale para a entidade inteira.
+
+### O efeito de marca na tela de resultados
+
+Quando a sua marca tem volume de busca e reconhecimento, o Google muda a
+apresentação: em vez de listar dez resultados azuis, ele rola um bloco com o
+nome do site e os links de subpáginas. É o "efeito de marca".
+
+Esse bloco não é comprado nem pedido. Ele aparece quando a busca pela marca
+acontece — e quando a sua entidade está bem resolvida. É por isso que vale a
+pena medir busca pela **sua própria marca**: ela é um termômetro da sua
+presença, diferente das buscas genéricas, onde você disputa espaço com todo
+mundo.
+
+### Como preencher o item no Wikidata sem passar vergonha
+
+O item de uma empresa segue regras de formatação e de community, e são
+simples:
+
+- **O rótulo** é o nome oficial, como está no registro. Variações e apelidos
+  ficam em aliases.
+- **Toda afirmação tem referência.** Sem fonte, a informação é removida.
+- **O resumo é uma frase factual.** "Sua Empresa é uma empresa de software que
+  oferece ferramentas de organização de tarefas para equipes remotas." Nada de
+  "líder de mercado" ou "a melhor solução": superlativo é propaganda e é
+  removido.
+- **O desambiguador** resolve nome repetido: o item da empresa de software
+  ganha a nota entre parênteses.
+
+Se alguém editar o seu item com informação falsa, a correção é rápida: você
+edita de volta, com a fonte correta.
+
+## Pra quem quer ir além 🔴
+
+O maior ganho de consistência vem quando você para de manter os dados em
+cinco lugares. Guarde **uma fonte de verdade** no seu código — um arquivo de
+configuração com nome legal, endereço, telefone, URL do site e a lista de
+perfis — e parta dela:
+
+- o JSON-LD `Organization` da home;
+- o `Organization` das páginas internas;
+- o rodapé do site;
+- a ficha da loja de apps, quando você publicar;
+- o item do Wikidata, quando você atualizar.
+
+Quando essa fonte é atualizada, tudo junto. Quando cada página tem o seu
+avatar de dados, a inconsistência volta em dois meses.
+
+E um cuidado: consistência não é repetição. Copiar o mesmo texto de perfil em
+cinco plataformas não cria autoridade; cria ruído. Consistência é o **mesmo
+fato**, com a mesma grafia, apontando para o mesmo lugar.
+
+Para saber se está funcionando, faça o teste mais simples que existe: busque o
+nome da sua empresa e veja se o que aparece no resultado (o bloco, os perfis,
+o endereço, o telefone) bate com o que você escreveu no site. Se o bloco
+mostra um telefone antigo, você já achou a sua próxima tarefa.
+
+## Exercício interativo
+
+<Quiz
+  question="Para que serve o item da sua empresa no Wikidata?"
+  label="Quiz"
+  options={[
+    {
+      text: "É um dossiê de identidade sobre a marca, editável por qualquer pessoa e referenciado por outros projetos",
+      correct: true,
+      explanation: "É esse o papel: um lugar único, com os fatos da empresa e os links para os perfis, que a Wikipédia e outros projetos consomem. E como qualquer um pode editar, vale monitorar.",
+    },
+    {
+      text: "É o cadastro onde você envia os seus dados estruturados para o Google",
+      correct: false,
+      explanation: "Confundiu os dois lugares. Os dados estruturados ficam no seu site, no JSON-LD com @type Organization. O Wikidata é externo e serve de referência para outros projetos.",
+    },
+    {
+      text: "É um diretório de sites onde o Google cadastra empresas automaticamente",
+      correct: false,
+      explanation: "O Wikidata não é um diretório de sites. Ninguém é cadastrado nele: o item é criado e editado por pessoas, e é o mesmo item que outros projetos citam.",
+    },
+    {
+      text: "É um perfil verificado que garante posição fixa nas buscas de marca",
+      correct: false,
+      explanation: "Não existe verificação nem garantia de posição. O que existe é reconhecimento construído por consistência entre as várias fontes públicas.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="O que a propriedade `sameAs` faz no JSON-LD da sua empresa?"
+  label="Quiz"
+  options={[
+    {
+      text: "Aponta a entidade do seu site para os perfis externos dela, dizendo que são a mesma marca",
+      correct: true,
+      explanation: "Exato. É a amarração entre a sua entidade e o mundo externo: LinkedIn, GitHub, Wikidata, Crunchbase. Quanto mais lados da amarra, menos ambiguidade sobra.",
+    },
+    {
+      text: "Define a URL que o buscador deve considerar canônica entre as suas páginas",
+      correct: false,
+      explanation: "Isso é rel=canonical, no head da página. sameAs é do Schema.org e trabalha com entidades, não com URLs de páginas.",
+    },
+    {
+      text: "Lista as páginas do seu site que descrevem a mesma entidade",
+      correct: false,
+      explanation: "Esse papel é do @id: ele identifica a entidade para que as páginas a referenciem em vez de duplicá-la. sameAs aponta para fora do seu site.",
+    },
+    {
+      text: "Marca o bloco como conteúdo gerado por máquina, para ser ignorado",
+      correct: false,
+      explanation: "Não existe tal marca. sameAs nunca tem esse efeito; ele apenas declara equivalências de identidade.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `montarEntidade(marca)` que devolve quantas plataformas da sua marca têm `sameAs` preenchido. Uma plataforma conta como preenchida quando o valor não fica vazio depois de remover os espaços das pontas. A entrada já vem pronta no código: use o objeto `marca`."
+  starterCode={`// Sua marca nas plataformas onde ela existe.
+// Uma das plataformas está vazia de propósito: perfil que não existe não entra no sameAs.
+const marca = {
+  linkedin: "https://www.linkedin.com/company/suaempresa",
+  github: "https://github.com/suaempresa",
+  instagram: "",
+  wikidata: "https://www.wikidata.org/wiki/Q123456789",
+  crunchbase: "https://www.crunchbase.com/organization/suaempresa",
+};
+
+// Quantas plataformas têm perfil preenchido?
+function montarEntidade(marca) {
+  // Escreva aqui: conte apenas as plataformas com valor preenchido.
+  // Dica: Object.values(marca) devolve os cinco valores na ordem das chaves.
+  // Dica: um valor preenchido tem texto depois do trim; compare valor.trim() !== "".
+  // Atenção: conte os valores, não as chaves — as cinco chaves existem de qualquer forma.
+}
+
+console.log(montarEntidade(marca));
+`}
+  expected="4"
+  slug="visibilidade-organica"
+  nodeId="marca-e-entity-seo"
+/>
+
+## No seu projeto
+
+- [ ] Compare nome, endereço e telefone entre a home, o rodapé, o seu perfil no
+      LinkedIn e o cadastro que você tem no Google Business. Anote cada
+      divergência e corrija as que você consegue.
+- [ ] Monte a lista de cinco plataformas da sua marca com a URL de perfil de
+      cada uma — deixe vazio o que ainda não existe — e preencha o `sameAs` do
+      JSON-LD da sua home só com as que existem de verdade. Rode o código do
+      exercício com essa lista para conferir quantas plataformas ficaram.
+
+No próximo nó sai do seu site de novo: para as redes sociais e as comunidades,
+onde sua marca aparece **antes** de alguém pesquisar o nome dela.

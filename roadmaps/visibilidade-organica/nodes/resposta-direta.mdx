@@ -1,0 +1,282 @@
+---
+id: resposta-direta
+title: "AEO: Ser Extraído para a Resposta"
+resources:
+  - title: "Recursos de IA na busca e no Google (Google Search Central)"
+    url: https://developers.google.com/search/docs/appearance/ai-features
+    type: doc
+    lang: en
+    free: true
+  - title: "Trechos de resultado e como o Google os escolhe (Google Search Central)"
+    url: https://developers.google.com/search/docs/appearance/snippet
+    type: doc
+    lang: en
+    free: true
+---
+
+Existe um tipo de resultado que não é um link: é a **resposta**. O Google já
+mostra respostas prontas no topo da página, e as IAs generativas respondem
+citando a sua página. Neste nó você escreve o parágrafo que é copiado.
+
+## O essencial 🟢
+
+**AEO** (otimização para motores de resposta) é o trabalho de fazer a sua
+página ser **extraída** — e não só encontrar. Aparece em quatro lugares:
+
+- O **trecho em destaque** (o bloco de resposta que fica no topo do resultado).
+- O **"outras pessoas também perguntaram"**, que vira um bloco de perguntas.
+- A **resposta por voz**, que lê um trecho curto em voz alta.
+- O **resumo gerado pela IA** no topo da busca, que pode citar sua página.
+
+O padrão que o Google extrai é sempre o mesmo, e ele tem três partes:
+
+**1. Um título que espelha a pergunta. 2. Uma resposta direta de 40 a 60
+palavras. 3. O detalhe, depois.**
+
+```html
+<!-- 1. O título repete a pergunta que a pessoa digitou -->
+<h2>Quanto tempo a automação de tarefas economiza?</h2>
+
+<!-- 2. A resposta direta: 40 a 60 palavras e autossuficiente -->
+<p>
+  A automação de tarefas reduz em média 30 por cento o tempo de acompanhamento
+  da equipe, segundo pesquisa interna da Aurora com 38 clientes de produto.
+  Ela funciona melhor quando a regra vem do responsável pela área, e não do
+  time inteiro.
+</p>
+
+<!-- 3. O detalhe vem depois, com contexto e ressalvas -->
+<h3>Como funciona na prática</h3>
+<p>Cada regra do fluxo tem um dono...</p>
+```
+
+**Por que a resposta precisa ser autossuficiente.** A extração leva o
+trecho e **não leva o contexto da página**. Se o parágrafo começa com "Isso
+aumenta o prazo de entrega" e o "isso" só faz sentido lendo o parágrafo
+anterior, a pessoa que lê só o trecho não entende nada. A resposta extraída
+precisa fazer sentido sozinha.
+
+**O formato da resposta acompanha o tipo de pergunta:**
+
+| Tipo de pergunta | Formato que o Google extrai |
+|---|---|
+| "O que é X?" | um parágrafo |
+| "Como faço X?" | uma lista ordenada de passos |
+| "X ou Y?" | uma tabela |
+
+O que você fixa daqui:
+
+- **AEO é ser extraído**, não só ser encontrado.
+- **O padrão é: pergunta → resposta de 40 a 60 palavras → detalhe.**
+- **A resposta extraída é autossuficiente**: nada de "isso" ou "ele" puxando
+  o sentido do parágrafo anterior.
+- **O formato segue a pergunta**: parágrafo, lista ou tabela.
+
+## Aprofundamento 🟡
+
+**Resposta curta não é conteúdo raso.** É o erro mais comum de quem descobre
+esse padrão: a pessoa corta o texto para caber em 50 palavras e a página fica
+inútil. A ordem é o que importa — a **resposta vem antes**, o detalhe vem
+**depois**. Quem precisa de detalhe desce; quem precisa da resposta já
+recebeu. Ninguém perde nada.
+
+**O trecho em destaque não se pede.** Não existe marcação, não existe
+solicitação, não existe "eu quero ser a resposta". O que existe é o
+conteúdo que, para aquela pergunta, é a melhor resposta que existe na
+página. Quando ele é a melhor, o Google usa. Forçar isso não funciona:
+trechos em destaque aparecem e somem conforme a consulta e o conteúdo da
+concorrência.
+
+**AEO não é "escrever para o robô".** A diferença é o objetivo. "Escrever
+para o robô" é tentar adivinhar o que o parser gosta e repetir palavras
+até a página virar um texto sem leitor. Otimização para resposta é o oposto:
+é escrever para a pessoa que fez a pergunta, de um jeito que a resposta
+sozinha já resolve o assunto. O buscador e a IA são os Tailwind — eles
+levam o texto que já era bom.
+
+> Dica: escreva o parágrafo de resposta como se fosse a resposta no e-mail
+> para uma pessoa que perguntou. Se você precisa de "como vimos acima" para
+> ela entender, o parágrafo não está pronto.
+
+**O bloco de perguntas frequentes no fim da página.** É de onde sai boa parte
+do "outras pessoas também perguntaram" e é o formato que as IAs preferem
+quando precisam cobrir variações da mesma pergunta. A estrutura é simples:
+cada pergunta é um título (`<h3>`) e a resposta vem logo abaixo, em um
+parágrafo.
+
+```html
+<!-- Pergunta como título, resposta como parágrafo -->
+<h3>Automação funciona com times de menos de cinco pessoas?</h3>
+<p>
+  Funciona, e em times pequenos o ganho vem mais da regra compartilhada do
+  que da automação em si: o time passa a saber quem faz o quê.
+</p>
+```
+
+## Pra quem quer ir além 🔴
+
+**De onde tiram as perguntas certas.** Você não precisa adivinhar: as
+pessoas já escreveram as perguntas.
+
+- O **Search Console**, no relatório de consultas: as palavras que as pessoas
+  digitaram e que já bringem a sua página.
+- As **perguntas que o time de suporte recebe** e as **que o time de vendas
+  ouve** — são as perguntas reais, com as palavras de quem vai usar.
+- O **"outras pessoas também perguntaram"** da sua própria busca: pesquise o
+  tema e veja o que aparece logo abaixo do resultado principal.
+
+Use essas fontes para montar o mapa de perguntas da página: uma pergunta por
+título, cada uma com a resposta direta embaixo.
+
+**A lista de verificação do parágrafo de resposta.** Antes de publicar,
+confira:
+
+1. O título é uma pergunta (ou uma frase que a pessoa realmente digita)?
+2. O primeiro parágrafo responde em 40 a 60 palavras?
+3. Alguém que lê só esse parágrafo entende a resposta sem o resto da página?
+4. O parágrafo tem dados concretos (número, prazo, exemplo) e não só
+   afirmações genéricas?
+5. O detalhe, a ressalva e os exemplos ficaram **depois**?
+
+Se as cinco respostas forem sim, a página está pronta para ser extraída — e,
+antes disso, pronta para ser lida.
+
+**Anexo de exemplo.** Uma página da Aurora sobre revisão de tarefas teria
+esta estrutura: `<h1>` com o tema, um parágrafo de abertura (o contexto que
+falta para a pessoa nova), depois um `<h2>` por pergunta ("Quem revisa?",
+"Quando revisar?", "E se o time está em fusos diferentes?"), cada um com a
+resposta direta em 40 a 60 palavras e o detalhe depois, e um bloco final de
+perguntas frequentes. Quem chega pelo buscador encontra a resposta na
+primeira dobra; quem chega pelo link encontra o contexto e fica.
+
+## Exercício interativo
+
+<Mermaid
+  chart={`flowchart LR
+    P["Pergunta (o que a pessoa digita)"] --> R["Resposta direta: 40 a 60 palavras, autossuficiente"]
+    R --> D["Detalhe: contexto, exemplos, ressalvas"]
+    D --> F["Perguntas frequentes: uma pergunta por titulo"]
+    style P fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style R fill:#1a7f37,stroke:#ffffff,color:#ffffff
+    style D fill:#388bfd,stroke:#ffffff,color:#ffffff
+    style F fill:#8250df,stroke:#ffffff,color:#ffffff`}
+  caption="A ordem que o Google e a IA aproveitam: a pergunta vem primeiro, a resposta direta logo depois, e o detalhe só então."
+/>
+
+<Quiz
+  question="Qual é o tamanho do trecho que costuma ser extraído como resposta direta?"
+  label="Quiz"
+  options={[
+    {
+      text: "Cerca de 40 a 60 palavras, o suficiente para responder sem contexto externo.",
+      correct: true,
+      explanation: "Exato. É a faixa que cabe no bloco de resposta e ainda assim entrega a resposta completa.",
+    },
+    {
+      text: "Uma frase, no máximo 20 palavras: quanto mais curto, melhor.",
+      correct: false,
+      explanation: "Curto demais e a resposta fica incompleta. A faixa que funciona na prática é de 40 a 60 palavras.",
+    },
+    {
+      text: "Um parágrafo inteiro, com 150 palavras ou mais.",
+      correct: false,
+      explanation: "Parágrafo longo demais: um bloco de 150 palavras já são duas respostas, e a extração costuma descartar o resto.",
+    },
+    {
+      text: "Não há tamanho definido: o Google extrai o que achar melhor.",
+      correct: false,
+      explanation: "O Google escolhe, sim, mas o padrão que ele extrai de forma consistente é um trecho de 40 a 60 palavras. Escrever fora dessa faixa é perder a chance.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="É possível pedir ao Google que a sua página seja a resposta em destaque?"
+  label="Quiz"
+  options={[
+    {
+      text: "Sim: existe uma etiqueta de metadados que solicita o trecho em destaque.",
+      correct: false,
+      explanation: "Não existe. Nenhuma etiqueta, cabeçalho ou arquivo solicita esse resultado.",
+    },
+    {
+      text: "Sim: basta repetir a pergunta no título e no primeiro parágrafo.",
+      correct: false,
+      explanation: "Repetir a pergunta é parte do trabalho, mas não é um pedido: o bloco em destaque aparece quando a sua página é a melhor resposta que existe.",
+    },
+    {
+      text: "Não. Não existe pedido: o bloco em destaque é consequência de a página ser a melhor resposta para aquela consulta.",
+      correct: true,
+      explanation: "Certo. Ninguém solicita. Você escreve a melhor resposta, o Google reconhece e usa — e pode deixar de usar quando outra página ficar melhor.",
+    },
+    {
+      text: "Não, mas dá para pedir pelo Search Console.",
+      correct: false,
+      explanation: "O Search Console serve para medir, não para solicitar. Não existe canal de solicitação para esse resultado.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `avaliarRespostaDireta(bloco)`: ela recebe um parágrafo e devolve `boa` quando ele tem entre 40 e 60 palavras, começa respondendo a pergunta e não depende de pronome do parágrafo anterior; devolve `fraca` caso contrário."
+  starterCode={`// O bloco que responde a pergunta "Quanto tempo a automação de tarefas economiza?".
+const BLOCO = 'A automação de tarefas reduz em média 30 por cento o tempo de acompanhamento ' +
+  'da equipe, segundo pesquisa interna da Aurora com 38 clientes de produto. Ela funciona ' +
+  'melhor quando a regra vem do responsável pela área, e não do time inteiro. O padrão ' +
+  'adotado define limite automático e avisa o canal quando um item troca de responsável.';
+
+// Aberturas que enrolam antes de responder.
+const ABERTURAS_ENROLADAS = ['para entender', 'para saber', 'muitas vezes', 'vale notar', 'é importante'];
+
+// Pronomes e demonstrativos: o bloco passaria a depender do parágrafo anterior.
+const ABERTURAS_REFERENCIAIS = ['isso', 'ele', 'ela', 'este', 'esta', 'aquele', 'aquela'];
+
+// Devolve 'boa' quando o bloco tem 40 a 60 palavras, começa respondendo e
+// não depende do parágrafo anterior. Devolve 'fraca' caso contrário.
+function avaliarRespostaDireta(bloco) {
+  const palavras = bloco.trim().split(' ').filter((p) => p.length > 0);
+  const total = palavras.length;
+  const primeiraPalavra = palavras[0].toLowerCase().replace(/[^a-zà-ú]/g, '');
+
+  // 1. O bloco tem entre 40 e 60 palavras?
+  //    Dica: total >= 40 && total <= 60
+  const tamanhoOk = false; // TODO
+
+  // 2. O bloco começa respondendo, em vez de enrolar antes?
+  //    Dica: ABERTURAS_ENROLADAS.some((a) => bloco.toLowerCase().startsWith(a))
+  const comecarOk = false; // TODO
+
+  // 3. O bloco não depende do parágrafo anterior?
+  //    Dica: ABERTURAS_REFERENCIAIS.includes(primeiraPalavra)
+  const dependenciaOk = false; // TODO
+
+  // 4. Se as três condições valem, devolva 'boa'. Caso contrário, 'fraca'.
+  if (tamanhoOk && comecarOk && dependenciaOk) {
+    return 'boa';
+  }
+
+  return 'fraca';
+}
+
+console.log(avaliarRespostaDireta(BLOCO));
+`}
+  expected="boa"
+  slug="visibilidade-organica"
+  nodeId="resposta-direta"
+/>
+
+## No seu projeto
+
+- [ ] Pegue as 10 consultas com mais impressões no Search Console e escreva, para cada uma, o título que a pessoa digita. Se você não tem resposta direta para a pergunta, esse é o primeiro buraco da lista.
+- [ ] Escolha uma dessas páginas e reescreva o primeiro parágrafo depois do título como resposta direta de 40 a 60 palavras: o número ou o fato concreto primeiro, sem "isso" e sem "veja abaixo". Deixe o resto do texto como estava.
+
+> Atenção: a resposta direta não substitui o texto. Se você cortou o
+> parágrafo de 200 palavras para 50 e a página perdeu a explicação que as
+> pessoas precisavam, você não otimizou — você empobreciou a página. Corte da
+> resposta, não do conteúdo.
+
+## Fechamento
+
+Você escreve para que o trecho seja extraído. No próximo nó o passo muda de
+tamanho: em vez de a busca copiar a sua resposta, a IA **cita** a sua página
+com o nome de quem escreveu.

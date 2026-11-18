@@ -4,7 +4,7 @@ Lista completa de **trilhas**, **projetos** e **bootcamps** do Aprenda
 Community. É a fonte navegável do que existe hoje — o [README](./README.md)
 traz só o resumo e aponta pra cá.
 
-> Contagem atual: **40 trilhas**, **17 projetos**, **2 bootcamps**.
+> Contagem atual: **41 trilhas**, **18 projetos**, **2 bootcamps**.
 > A verdade sempre está nas pastas [`roadmaps/`](./roadmaps),
 > [`projects/`](./projects) e [`bootcamps/`](./bootcamps) — se algo aqui
 > divergir, a pasta ganha.
@@ -55,6 +55,7 @@ e projeto final. Organizadas por área.
 | [i18n / l10n](./roadmaps/i18n) | 7 | intermediário |
 | [Storybook & Design Systems](./roadmaps/storybook-design-systems) | 8 | intermediário |
 | [SEO, AEO e GEO](./roadmaps/seo-aeo-geo) | 13 | intermediário |
+| [Visibilidade Orgânica](./roadmaps/visibilidade-organica) | 31 | avançado |
 
 ### 🗄️ Backend & Dados
 
@@ -103,6 +104,7 @@ Detalhes de formato em [`projects/README.md`](./projects/README.md).
 | [API REST com Autenticação](./projects/api-rest-com-autenticacao.mdx) | intermediário |
 | [Auditoria de Acessibilidade Web](./projects/auditoria-de-acessibilidade-web.mdx) | intermediário |
 | [Auditoria de SEO, AEO e GEO](./projects/auditoria-seo-aeo-geo.mdx) | intermediário |
+| [Auditoria de Visibilidade Orgânica](./projects/auditoria-visibilidade-organica.mdx) | intermediário |
 | [Busca com Filtros](./projects/busca-com-filtros.mdx) | intermediário |
 | [Central de Notificações](./projects/central-de-notificacoes.mdx) | intermediário |
 | [Clima Agora](./projects/clima-agora.mdx) | intermediário |

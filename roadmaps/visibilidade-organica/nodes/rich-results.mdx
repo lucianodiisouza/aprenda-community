@@ -1,0 +1,287 @@
+---
+id: rich-results
+title: "Rich Results: Article, FAQ, HowTo, LocalBusiness e mais"
+resources:
+  - title: "Article: dados estruturados para posts e notícias (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/article
+    type: doc
+    lang: en
+    free: true
+  - title: "Local business: dados estruturados de negócio local (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/local-business
+    type: doc
+    lang: en
+    free: true
+  - title: "Breadcrumb: dados estruturados de trilha de navegação (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/breadcrumb
+    type: doc
+    lang: en
+    free: true
+---
+
+Saber escrever JSON-LD é metade do trabalho. A outra metade é escolher o
+`@type` certo para cada página — e essa escolha mudou bastante nos últimos
+anos, porque o Google foi **desligando** rich results. Este nó é o mapa do que
+ainda vale a pena marcar.
+
+## O essencial 🟢
+
+Rich result é o resultado de busca com mais do que link e texto: a foto do
+artigo, o preço, as estrelas, a trilha "Início › Blog › Post". Para ter essa
+aparência, a página precisa de dados estruturados — e o tipo do markup decide
+se ela é elegível.
+
+A regra de escolha é uma só: **o `@type` descreve o que a página é**, não o
+que você gostaria que o Google fizesse com ela. Uma página de preços é
+`Product` ou `SoftwareApplication` com `offers`, mesmo que você também tenha
+escrito um texto enorme nela. Um post de blog é `Article` (ou `BlogPosting`),
+mesmo que ele também contenha um passo a passo.
+
+O catálogo é grande, mas o que importa é o estado real de cada tipo hoje:
+
+```text
+AINDA GERAM RICH RESULT NO GOOGLE SEARCH
+Article / BlogPosting   titulo, imagem e autor de um post
+Product                 preco, moeda, disponibilidade, avaliacao
+LocalBusiness           endereco, horario, acoes no painel de conhecimento
+Event                   data, local, ingresso
+Recipe                  ingredientes, tempo, passos
+VideoObject             duracao, miniatura, capitulos
+BreadcrumbList          "Inicio > Blog > Post"
+Organization / Person   quem e a empresa e quem escreveu
+SoftwareApplication     app (sistema, preco, avaliacao)
+
+AINDA VALEM COMO SCHEMA.ORG, MAS O GOOGLE NAO EXIBE MAIS
+FAQPage                 perguntas e respostas visiveis na pagina
+HowTo                   tutorial passo a passo
+```
+
+> Nota: `FAQPage` e `HowTo` saíram do ar. O rich result de FAQ foi
+> descontinuado em **7 de maio de 2026** (a documentação saiu em junho) e o de
+> HowTo já tinha sido descontinuado em **setembro de 2023**. O vocabulário
+> continua existindo — e outros consumidores, inclusive modelos de IA, leem
+> esses dados — mas não espere mais a estrela na SERP.
+
+### Um artigo bem marcado
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Kanban para equipes remotas: um guia de 12 minutos",
+  "image": ["https://aurora.test/blog/kanban-capa.jpg"],
+  "datePublished": "2026-03-10T09:00:00-03:00",
+  "dateModified": "2026-04-02T14:30:00-03:00",
+  "author": {
+    "@type": "Person",
+    "name": "Ana Ribeiro",
+    "url": "https://aurora.test/sobre/ana"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Aurora",
+    "logo": { "@type": "ImageObject", "url": "https://aurora.test/logo.png" }
+  }
+}
+```
+
+Esse é um post do blog da Aurora. Repare que as propriedades descrevem fatos
+que já estão visíveis na página: título, imagem, datas e quem escreveu. É
+exatamente isso que o Google pede — **markup descreve o que existe, não
+inventa**.
+
+## Aprofundamento 🟡
+
+### Obrigatório é uma palavra que o Google deixou de usar
+
+A documentação atual diz, ao pé da letra, que **não há propriedades
+obrigatórias** para `Article`: "inclua quantas propriedades recomendadas se
+apliquem ao seu conteúdo". O que existe é um conjunto de campos recomendados
+por tipo, e a prática é marcar todos os que se aplicam:
+
+- `Article`: `headline`, `image`, `datePublished`, `dateModified`, `author`.
+- `FAQPage`: `mainEntity`, com `Question` e `acceptedAnswer`.
+- `HowTo`: `name` e `step`, com `HowToStep`.
+- `Product`: `name`, `image`, `offers` (com `price` e `priceCurrency`).
+- `LocalBusiness`: `name`, `address` e o resto do painel (horário, geolocalização).
+
+Quando um validador reclamar de "campo faltando", ele está se referindo a esse
+conjunto recomendado — não a uma trava rigidamente imposta.
+
+### FAQ e HowTo continuam válidos, com uma regra: tem que estar visível
+
+Se você marcar `FAQPage`, as perguntas e respostas precisam estar **visíveis na
+página**. Marcar conteúdo que o leitor não vê na tela é o erro clássico, e é
+violação das políticas de spam — pode gerar ação manual, não só perda de
+prêmio visual.
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "A Aurora funciona sem internet?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sim. Você cria e move tarefas offline; tudo sincroniza quando a conexão volta."
+      }
+    }
+  ]
+}
+```
+
+O `text` da resposta precisa ser o texto que está na página — se você
+reescreve no JSON-LD, virou conteúdo oculto.
+
+### `BreadcrumbList`: o mais fácil e o mais subestimado
+
+Mostrar "Início › Blog › Kanban para equipes remotas" no resultado custa meia
+hora de trabalho e ajuda o buscador a entender a hierarquia do site:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://aurora.test/" },
+    { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://aurora.test/blog" },
+    { "@type": "ListItem", "position": 3, "name": "Kanban para equipes remotas" }
+  ]
+}
+```
+
+O último item é a página atual: ele **não** leva `item`, porque não há URL
+dele mesmo. O `position` é obrigatório e começa em 1.
+
+## Pra quem quer ir além 🔴
+
+Vale registrar o que desligou, porque muita gente ainda persegue esses
+prêmios: `FAQPage` (maio de 2026), `HowTo` (setembro de 2023) e, ao longo de
+2025 e 2026, tipos como problema de prática, infos de curso, salário estimado,
+vídeo de aprendizagem, anúncio especial e listagem de veículos. Os tipos da
+lista da seção anterior continuam de pé.
+
+E vale registrar o que **não** mudou: dados estruturados não são sinal de
+ranqueamento. Ninguém rankeia melhor por ter `Product` marcado. O que o
+markup faz é **entender** — e entender é pré-requisito para ser citado por
+resposta de IA e para aparecer em painel de conhecimento.
+
+> Atenção: se o rich result não aparece, a ordem de diagnóstico é: (1) o
+> markup está no HTML inicial que o crawler recebe? (2) o JSON parseia? (3) os
+> campos recomendados estão lá? (4) o conteúdo marcado está visível na
+> página? (5) a página está indexável? Cada passo elimina uma causa.
+
+## Exercício
+
+<Quiz
+  question="Posso marcar `FAQPage` com perguntas que não aparecem na página?"
+  label="Quiz"
+  options={[
+    {
+      text: "Não. O que você marca precisa estar visível para quem lê a página",
+      correct: true,
+      explanation: "É a regra que vale para todo dado estruturado: markup descreve conteúdo visível. Marcar FAQ oculta é violação das políticas de spam.",
+    },
+    {
+      text: "Sim, desde que as perguntas sejam parecidas com as da página",
+      correct: false,
+      explanation: "Parecidas não é o mesmo que visíveis. Se a pessoa não encontra a pergunta na tela, ela não existe para ela.",
+    },
+    {
+      text: "Sim, porque o rich result de FAQ foi descontinuado e não é mais avaliado",
+      correct: false,
+      explanation: "O rich result saiu do ar em maio de 2026, mas a política de spam continua valendo, e outros consumidores leem esse dado.",
+    },
+    {
+      text: "Sim, mas só se a página também tiver um `Article`",
+      correct: false,
+      explanation: "Não existe essa troca. Ou o conteúdo está visível e você marca, ou você não marca.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual é o `@type` correto para uma página de tutorial passo a passo?"
+  label="Quiz"
+  options={[
+    {
+      text: "HowTo",
+      correct: true,
+      explanation: "HowTo é o tipo do Schema.org que descreve um passo a passo, com `name` e `step`. O Google parou de exibir o rich result em 2023, mas o tipo continua descrevendo a página.",
+    },
+    {
+      text: "Article",
+      correct: false,
+      explanation: "Article descreve um post, notícia ou artigo de blog. Um tutorial também pode ser Article, mas quem descreve os passos é o HowTo.",
+    },
+    {
+      text: "WebPage",
+      correct: false,
+      explanation: "WebPage é genérico demais: não diz nada sobre os passos. Você perde a informação que distingue a página.",
+    },
+    {
+      text: "FAQPage",
+      correct: false,
+      explanation: "FAQPage é para perguntas e respostas. Um tutorial com passos é outra coisa — dá para ter os dois tipos na mesma página.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente `validarSchema(schema)`: devolve `ok` se todos os campos do `@type` estão lá, ou o nome do PRIMEIRO que faltar. A lista por tipo e os schemas de teste já vêm no código."
+  starterCode={`// Campos que descrevem bem cada tipo (o Google hoje trata todos como
+// recomendados, mas sem marcar o conjunto inteiro a pagina fica pobre):
+const obrigatorios = {
+  Article: ["headline", "image", "datePublished", "author"],
+  FAQPage: ["mainEntity"],
+  HowTo: ["name", "step"],
+};
+
+// Artigo completo:
+const schema = {
+  "@type": "Article",
+  "headline": "Kanban para equipes remotas: um guia de 12 minutos",
+  "image": ["https://aurora.test/blog/kanban-capa.jpg"],
+  "datePublished": "2026-03-10T09:00:00-03:00",
+  "author": { "@type": "Person", "name": "Ana Ribeiro" },
+};
+
+// Artigo sem o headline:
+const schemaSemHeadline = {
+  "@type": "Article",
+  "image": ["https://aurora.test/blog/kanban-capa.jpg"],
+  "datePublished": "2026-03-10T09:00:00-03:00",
+  "author": { "@type": "Person", "name": "Ana Ribeiro" },
+};
+
+function validarSchema(schema) {
+  // 1. Pegue a lista de campos do tipo: obrigatorios[schema["@type"]]
+  // 2. Se a lista nao existir, devolva "ok" (tipo desconhecido: nada a checar).
+  // 3. Percorra a lista na ordem: se o campo nao existir no schema, devolva o
+  //    nome do campo (o primeiro que faltar).
+  // 4. Se todos existirem, devolva "ok".
+}
+
+console.log(validarSchema(schema));
+console.log(validarSchema(schemaSemHeadline));
+`}
+  expected={`ok
+headline`}
+  slug="visibilidade-organica"
+  nodeId="rich-results"
+/>
+
+## No seu projeto
+
+- [ ] Escolha 5 páginas do seu site e anote, para cada uma, o `@type` que
+      descreve o que a página **é** — não o que você quer que aconteça. Guarde
+      essa lista num arquivo do projeto; é o passo 1 de qualquer auditoria de
+      markup.
+- [ ] Implemente o `validarSchema` do checkpoint no seu código (como função do
+      seu projeto) e rode-o sobre os JSON-LD que você já tem: ele aponta
+      exatamente qual campo falta em cada página.
+
+No próximo nó a pergunta muda: se o buscador e a IA já entendem o seu site,
+como você **fala** com eles em um formato que a máquina lê?

@@ -1,0 +1,263 @@
+---
+id: renderizacao
+title: "O que o Crawler Realmente Vê: HTML, CSR, SSR e SSG"
+resources:
+  - title: "Elemento meta no HTML (MDN, em português)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/meta
+    type: doc
+    lang: pt
+    free: true
+  - title: "Noções básicas de SEO em JavaScript (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics
+    type: doc
+    lang: en
+    free: true
+---
+
+Toda página que existe na internet chega ao buscador em algum formato. A
+decisão que você toma no stack — se o React monta a tela no navegador, no
+servidor ou no build — decide se esse formato tem o seu conteúdo dentro.
+
+## O essencial 🟢
+
+O crawler pede uma URL e recebe **HTML**. Tudo que você escreve no seu
+frontend precisa chegar nesse HTML para o buscador ler.
+
+Existem três estratégias clássicas:
+
+**CSR (Client-Side Rendering)** — o servidor entrega um "app shell" e o
+JavaScript monta a página depois, no navegador de quem chegou:
+
+```html
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Aurora</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
+```
+
+Repare no que o crawler recebeu: um `<div id="root">` **vazio**. O título
+"Planos da Aurora", os preços, os textos de FAQ — nada disso está no HTML.
+Estão no bundle de JavaScript.
+
+**SSR (Server-Side Rendering)** — o servidor monta a página antes de enviar.
+O HTML chega pronto:
+
+```html
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Planos da Aurora | Aurora</title>
+    <meta name="description" content="Planos da Aurora para equipes remotas." />
+  </head>
+  <body>
+    <h1>Planos da Aurora</h1>
+    <p>Escolha o plano que combina com a sua equipe.</p>
+  </body>
+</html>
+```
+
+**SSG (Static Site Generation)** — o build gera o HTML antes de qualquer
+requisição. O resultado final é parecido com o do SSR, mas o servidor não faz
+trabalho nenhum: ele só entrega arquivos que já estavam prontos.
+
+A consequência prática do CSR é cara: para ler a sua página, o Google precisa
+**renderizar o JavaScript** — a segunda etapa do pipeline que você viu no nó
+`pipeline-da-busca`. Essa etapa é mais lenta que o rastreamento normal, roda
+em uma fila separada, e em página com JavaScript pesado ou que depende de
+interação, às vezes o render nunca chega a bom fim.
+
+O que você fixa daqui:
+
+- CSR entrega um shell; SSR e SSG entregam conteúdo.
+- Se o texto não está no HTML inicial, você depende da etapa de rendering.
+- **SSR ou SSG é o padrão.** CSR é uma escolha consciente, não um padrão.
+
+## Aprofundamento 🟡
+
+<Mermaid
+  chart={`flowchart LR
+    subgraph CSR["CSR - o que chega no HTML inicial"]
+      C1["div#root vazio"] --> C2["app.js monta a tela"]
+    end
+    subgraph SSR["SSR - HTML montado no servidor"]
+      S1["title + description"] --> S2["h1 e conteudo no body"]
+    end
+    subgraph SSG["SSG - HTML pronto no build"]
+      G1["title + description"] --> G2["h1 e conteudo no body"]
+    end
+    C2 -.-> R["Fila de rendering"]
+    R -.-> I["Indexavel, mais lento"]
+    S2 --> I2["Indexavel de imediato"]
+    G2 --> I2
+    style C1 fill:#8b949e,stroke:#fff,color:#fff
+    style R fill:#d29922,stroke:#fff,color:#fff
+    style I fill:#d29922,stroke:#fff,color:#fff
+    style I2 fill:#3fb950,stroke:#fff,color:#fff`}
+  caption="CSR entrega um shell e depende da fila de rendering. SSR e SSG entregam o conteudo pronto no HTML inicial."
+/>
+
+O desenho acima é a regra geral, mas dá para ter **os dois**. As duas saídas
+mais comuns hoje:
+
+**Streaming (SSR com streaming)** — o servidor envia o HTML em pedaços, sem
+esperar a página inteira. O `<head>` e o primeiro conteúdo chegam na hora; o
+resto vem depois. Você ganha velocidade sem perder indexação.
+
+**Partial prerender (SSG com re-render sob demanda)** — o build gera o HTML
+estático das rotas públicas, e o servidor só renderiza de verdade quando
+precisa (uma rota nova, um pedido de login). É o meio-termo que a maioria dos
+frameworks modernos implementa.
+
+O trade-off real, sem mythologia:
+
+| | Complexidade | Indexação | Custo por request |
+|---|---|---|---|
+| CSR | baixa | depende da fila de rendering | barato |
+| SSR | média | imediata | alto (o servidor renderiza) |
+| SSG | média | imediata | quase zero (arquivo estático) |
+
+E há um quarto caminho, o **híbrido**: o shell vem do build com o conteúdo
+das rotas públicas já dentro, e só a parte que precisa de dados do usuário é
+montada no navegador. É o que a maioria dos sites de conteúdo deveria usar.
+
+> Nota: nem toda página precisa ser indexável. Um painel interno, uma área
+> logada, uma tela de configuração — ninguém procura isso no Google. CSR é uma
+> escolha boa e econômica para tudo que vive atrás do login.
+
+## Pra quem quer ir além 🔴
+
+Como conferir na prática o que o crawler recebeu? Abra o `view-source:` da sua
+URL no navegador — é o HTML cru que o servidor entregou, sem executar
+JavaScript. Se o seu texto principal não está ali, você já sabe o que
+fazer.
+
+No Search Console, a ferramenta "Inspeção de URL" mostra as duas etapas
+separadas: o HTML que o Googlebot encontrou e o HTML **depois do
+rendering**. A diferença entre as duas colunas é exatamente o custo do seu
+CSR.
+
+E um efeito colateral que costuma assustar: em CSR, o título e a meta
+description às vezes são definidos por JavaScript, o que significa que
+dependem de hydration. Se o JavaScript falhar, ou se o hydration receber um
+HTML diferente do esperado, a página sobe com o conteúdo de outra rota —
+o assunto de hydration mismatch é detalhado no nó `javascript-seo`.
+
+## Exercício interativo
+
+<Quiz
+  question="Sua SPA em React entrega um HTML inicial com apenas um div#root vazio. O que acontece com a indexacao dessa pagina?"
+  label="Quiz"
+  options={[
+    {
+      text: "A pagina nao e indexada, porque o crawler nao executa JavaScript.",
+      correct: false,
+      explanation: "O Google executa JavaScript. O que ele faz e uma segunda etapa, de rendering, em uma fila separada e mais lenta.",
+    },
+    {
+      text: "A pagina so e indexada depois da etapa de rendering, que e mais lenta e pode falhar em paginas pesadas.",
+      correct: true,
+      explanation: "Isso. O crawler passa pelo pipeline de rendering antes de indexar. Em CSR isso leva mais tempo e depende do JavaScript funcionar.",
+    },
+    {
+      text: "A pagina e indexada normalmente, ja que o conteudo aparece para o usuario.",
+      correct: false,
+      explanation: "O buscador le o HTML, nao a tela. Se o conteudo so existe depois que o JavaScript roda, ele precisa de uma etapa extra para ver.",
+    },
+    {
+      text: "O Google penaliza paginas que usam CSR.",
+      correct: false,
+      explanation: "Nao ha penalidade. CSR e uma escolha de arquitetura, com um custo de indexacao conhecido, nao uma violacao.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual combinacao describe melhor a estrategia que voce deve adotar por padrao num site de conteudo?"
+  label="Quiz"
+  options={[
+    {
+      text: "CSR com pre-render no cliente, porque o usuario sempre ve a pagina na hora.",
+      correct: false,
+      explanation: "O usuario ve a pagina rapido, mas o buscador ve um shell vazio. Voce trocou a experiencia do visitante pela indexacao.",
+    },
+    {
+      text: "SSG ou SSR, para que o HTML inicial ja traga titulo, descricao e conteudo.",
+      correct: true,
+      explanation: "Exato. O HTML inicial completo e o que garante que o crawler le a pagina sem depender de rendering.",
+    },
+    {
+      text: "SSR para tudo, mesmo em paginas que quase nunca mudam.",
+      correct: false,
+      explanation: "Funciona, mas voce paga servidor para gerar de novo um HTML que poderia ter sido gerado no build.",
+    },
+    {
+      text: "CSR para conteudo e SSR para o resto, porque conteudo nunca muda.",
+      correct: false,
+      explanation: "E o contrario do que faz sentido: conteudo e justamente o que voce quer que o buscador leia.",
+    },
+  ]}
+/>
+
+<VisualCheckpoint
+  challenge="Monte o head completo de uma pagina publica: uma tag title, uma meta description, uma meta robots e um h1. No final, acrescente um script type='application/ld+json' com um JSON valido descrevendo a pagina."
+  starterHtml={`<h1>Como organizar sprints de equipes remotas</h1>
+<p>Um guia curto para quem distribute trabalho entre pessoas em fusos horarios diferentes.</p>`}
+  starterCss={`h1 { font-size: 24px; }`}
+  assert={`
+    const title = root.querySelector('title');
+    const desc = root.querySelector('meta[name="description"]');
+    const robots = root.querySelector('meta[name="robots"]');
+    const h1 = root.querySelector('h1');
+    const ld = root.querySelector('script[type="application/ld+json"]');
+
+    if (!title || !title.textContent.trim()) {
+      return { pass: false, message: 'Falta a tag <title> com conteudo.' };
+    }
+    if (!desc || !desc.getAttribute('content')) {
+      return { pass: false, message: 'Falta <meta name="description"> com o atributo content.' };
+    }
+    if (!robots || !robots.getAttribute('content')) {
+      return { pass: false, message: 'Falta <meta name="robots"> com o atributo content.' };
+    }
+    if (!h1 || !h1.textContent.trim()) {
+      return { pass: false, message: 'Falta o <h1> da pagina.' };
+    }
+    if (!ld) {
+      return { pass: false, message: 'Falta o <script type="application/ld+json">.' };
+    }
+    let dados = null;
+    try {
+      dados = JSON.parse(ld.textContent);
+    } catch (e) {
+      return { pass: false, message: 'O conteudo do JSON-LD nao e um JSON valido.' };
+    }
+    if (!dados || !dados['@context']) {
+      return { pass: false, message: 'O JSON-LD precisa ter a propriedade @context.' };
+    }
+    return { pass: true, message: 'Head completo e JSON-LD valido.' };
+  `}
+  hint="Dica: as tags vao no topo do HTML. O JSON-LD e um script com type='application/ld+json' e o JSON dentro."
+  slug="visibilidade-organica"
+  nodeId="renderizacao"
+/>
+
+## No seu projeto
+
+- [ ] Abra `view-source:` da URL principal do seu site e leia o `<head>`: o title e a description estão lá, ou só aparecem depois que o JavaScript roda?
+- [ ] Pegue o head que você montou no exercício, troque o título e a descrição pelos do seu produto e cole as tags no seu projeto — começando pelo `<title>` e pelo `<h1>`.
+
+> Dica: se você usa Vite, Next.js, Nuxt ou Astro, nenhuma dessas tags exige
+> biblioteca. É uma linha de template, no lugar certo do arquivo.
+
+## Fechamento
+
+Agora você sabe o que o crawler recebe. O próximo passo é decidir o que ele
+*faz* com isso: quais páginas ele pode visitar e quais podem entrar no índice.

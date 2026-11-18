@@ -1,0 +1,264 @@
+---
+id: indexacao
+title: "Indexação: robots.txt, meta robots e a Armadilha do noindex"
+resources:
+  - title: "Introdução ao robots.txt (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/robots/intro
+    type: doc
+    lang: en
+    free: true
+  - title: "Meta robots e a tag noindex (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag
+    type: doc
+    lang: en
+    free: true
+  - title: "Bloqueio de indexação: noindex, robots.txt e autenticação (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/block-indexing
+    type: doc
+    lang: en
+    free: true
+---
+
+Você já tem conteúdo no ar. Agora a pergunta é outra: o buscador consegue *entrar*
+na sua página e *guardá-la* no índice? São dois botões diferentes — e é
+justamente aí que mora a armadilha mais cara do SEO técnico.
+
+## O essencial 🟢
+
+São duas instruções, com metáforas diferentes:
+
+| Onde você escreve | O que diz | Traduzindo |
+|---|---|---|
+| `robots.txt` (na raiz do domínio) | `Disallow: /admin` | "não me visites" |
+| `<meta name="robots">` (na página) | `noindex` | "não me guarde" |
+
+O `robots.txt` mora **fora** das suas páginas, na raiz do site. Ele responde
+"o robô pode passar por aqui?".
+
+```text
+# robots.txt fica na raiz do dominio: https://seusite.com/robots.txt
+User-agent: *
+Disallow: /admin
+Disallow: /privado
+Sitemap: https://seusite.com/sitemap.xml
+```
+
+Esse arquivo diz ao crawler que ele deve evitar `/admin` e `/privado`. Repare
+na última linha: ele também serve para **apontar onde está o seu sitemap**.
+
+Já o `meta robots` mora **dentro** da página, no `<head>`, e responde "o que
+você faz com esta página depois que a leu?".
+
+```html
+<head>
+  <!-- Esta pagina existe para o usuario, mas nao deve entrar no indice -->
+  <meta name="robots" content="noindex, follow">
+</head>
+```
+
+O `noindex` tira a página do índice. O `follow` (que é o padrão) continua
+seguindo os links que estão nela. Muita gente usa `noindex, nofollow` sem
+saber que o `nofollow` ainda existe e ainda dói.
+
+O que você fixa daqui:
+
+- `robots.txt` controla **acesso**; `meta robots` controla **indexação**.
+- O `noindex` só funciona se o crawler **chegar** na página.
+- Para tirar algo do índice: deixe a página rastreável e coloque `noindex`.
+
+## Aprofundamento 🟡
+
+Aqui está a armadilha, e ela acontece o tempo todo porque as duas ferramentas
+parecem resolver o mesmo problema.
+
+Você cria uma página interna de teste, escreve `noindex` nela e — por
+segurança — bloqueia a pasta no `robots.txt`:
+
+```text
+User-agent: *
+Disallow: /interno
+```
+
+```html
+<!-- em https://seusite.com/interno/teste -->
+<meta name="robots" content="noindex">
+```
+
+O que você queria: "essa página nunca aparece na busca". O que acontece de
+verdade:
+
+1. O crawler pede `/interno/teste`.
+2. O `robots.txt` diz que ele não pode ir lá.
+3. Ele **nunca chega** na página — logo, **nunca lê** o `noindex`.
+4. A URL pode aparecer indexada sem título e sem descrição, apontando para
+   uma página que ninguém deveria ver.
+
+Ou seja: **o bloqueio apaga o aviso**. É por isso que a ordem importa — para
+remover uma página do índice você precisa que o robô a visite, leia o
+`noindex` e saia.
+
+<Mermaid
+  chart={`flowchart TB
+    A["Crawler pede uma URL"] --> B{"robots.txt permite?"}
+    B -- "nao" --> C["Nao entra na pagina"]
+    B -- "sim" --> D{"A pagina tem noindex?"}
+    D -- "sim" --> E["Entra, mas nao e indexada"]
+    D -- "nao" --> F["Entra e e indexada"]
+    style A fill:#1f6feb,stroke:#fff,color:#fff
+    style C fill:#8b949e,stroke:#fff,color:#fff
+    style E fill:#d29922,stroke:#fff,color:#fff
+    style F fill:#3fb950,stroke:#fff,color:#fff`}
+  caption="Ordem de precedencia: o robots.txt vem antes do noindex. Se o robo nao entra, ele nao le o aviso."
+/>
+
+Duas ferramentas que você usa no lugar errado:
+
+**`X-Robots-Tag` é a versão HTTP do `noindex`.** Serve para arquivos que não
+são HTML — PDF, planilha, imagem — que não têm `<head>`:
+
+```bash
+# No servidor, na resposta HTTP do arquivo:
+X-Robots-Tag: noindex
+```
+
+**`nofollow` não é o mesmo que `ugc` e `sponsored`.** Desde 2019 o Google
+trata os três: `nofollow` diz "não passe o sinal daqui", `ugc` diz "isso foi
+escrito por um usuário" e `sponsored` diz "isso é conteúdo pago". Os dois
+últimos não bloqueiam a indexação do link — só marcam o tipo dele.
+
+E o que o `robots.txt` **não** faz, o que muita gente believes que faz:
+
+- **Não é firewall.** Ele é um pedido — um crawler mal-intencionado ignora.
+- **Não é autenticação.** Para proteger `/admin`, use senha de verdade no
+  servidor.
+- **Não remove nada do índice.** Ele só evita novas visitas. Páginas já
+  indexadas continuam lá (é por isso que a URL "vaza" no exemplo acima).
+
+## Pra quem quer ir além 🔴
+
+Quando uma página sai do índice, ela não some na hora. O Google pode levar de
+alguns dias a várias semanas para reprocessar tudo, e a URL costuma ficar
+visível por um tempo como resultado sem descrição. O painel de indexação do
+Search Console mostra o estado real de cada URL — vale olhar lá antes de
+concluir que "não funcionou".
+
+Existe ainda um terceiro caminho para tirar uma página do índice, e ele é o
+mais limpo: **não existir**. Se a rota devolve `404` de verdade e não tem
+link apontando para ela, ela desaparece do índice sozinha com o tempo. O
+problema do `404` falso (a rota devolve `200` com "página não encontrada")
+você vai ver em detalhe no nó de SEO em JavaScript.
+
+E um cuidado com `robots.txt`: ele é público. Qualquer pessoa pode ler as
+regras que você escreveu. Listar `/admin` ali não protege nada — só anuncia
+onde está o que você quer proteger.
+
+## Exercício interativo
+
+<Quiz
+  question="Uma pagina tem <meta name='robots' content='noindex'> e o robots.txt do site tem Disallow: /blog. O que acontece com essa pagina?"
+  label="Quiz"
+  options={[
+    {
+      text: "Ela nao e indexada, porque o noindex sempre tem prioridade.",
+      correct: false,
+      explanation: "O noindex so tem efeito se o crawler chegar a ler a pagina. Aqui o robots.txt impede a visita, entao o aviso nunca e lido.",
+    },
+    {
+      text: "O crawler nem chega nela, entao o noindex nunca e lido e a URL pode vazar no indice sem titulo.",
+      correct: true,
+      explanation: "Exatamente. robots.txt controla acesso, meta robots controla indexacao. Bloquear o caminho apaga o aviso de noindex.",
+    },
+    {
+      text: "O Google remove a pagina do indice assim que percebe o bloqueio.",
+      correct: false,
+      explanation: "robots.txt nao remove nada do indice. Ele so evita novas visitas, entao uma URL ja indexada continua aparecendo por um tempo.",
+    },
+    {
+      text: "O canonical global do site passa a valer para essa pagina.",
+      correct: false,
+      explanation: "Canonical e outra ferramenta, de outra camada. Ele escolhe qual URL vale quando existem duplicatas; nao tem relacao com robots.txt.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual destas afirmacoes sobre o robots.txt e verdadeira?"
+  label="Quiz"
+  options={[
+    {
+      text: "Ele protege paginas administrativas que exigem senha.",
+      correct: false,
+      explanation: "Nao. O robots.txt e um pedido educado ao crawler, nao um controle de acesso. Quem protege a area administrativa e a senha no servidor.",
+    },
+    {
+      text: "Ele bloqueia o rastreamento de caminhos especificos do site.",
+      correct: true,
+      explanation: "Isso sim: as regras Disallow dizem ao crawler quais caminhos evitar.",
+    },
+    {
+      text: "Ele remove do indice as paginas que ele bloqueia.",
+      correct: false,
+      explanation: "Nao remove. Páginas ja indexadas continuam no indice; o robots.txt apenas evita novas visitas.",
+    },
+    {
+      text: "Ele substitui a tag noindex dentro das suas paginas.",
+      correct: false,
+      explanation: "Sao camadas diferentes: robots.txt diz se o robô visita, meta robots diz o que fazer depois que ele leu a pagina.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `podeRastrear(robotsTxt, userAgent, url)`: ela recebe o texto do robots.txt, o nome do robo e a URL que ele quer visitar, e devolve 'bloqueado' ou 'permitido'."
+  starterCode={`// O robots.txt do site: um grupo "User-agent: *" com duas pastas bloqueadas.
+const ROBOTS = [
+  'User-agent: *',
+  'Disallow: /admin',
+  'Disallow: /privado',
+  'Sitemap: https://exemplo.com/sitemap.xml'
+].join('\\n');
+
+// Recebe o robots.txt, o nome do robo e a URL que ele quer visitar.
+// Devolve "permitido" ou "bloqueado".
+function podeRastrear(robotsTxt, userAgent, url) {
+  // So o caminho importa: https://exemplo.com/admin/painel vira /admin/painel
+  const caminho = new URL(url).pathname;
+
+  // 1. Separe o robots.txt em linhas, sem espaco nas pontas e sem linhas vazias.
+  const linhas = robotsTxt.split('\\n').map((l) => l.trim()).filter((l) => l !== '');
+
+  // 2. Descubra quais caminhos estao bloqueados PARA ESTE ROBO.
+  //    O arquivo e uma sequencia de grupos: "User-agent: X" abre um grupo e
+  //    "Disallow: /caminho" e uma regra dentro do grupo atual.
+  //    A regra vale para este robo se o grupo atual for "*" ou for o userAgent.
+  //    Dica: ande pelas linhas guardando o grupo atual numa variavel.
+  const bloqueados = []; // TODO: preencha com os caminhos bloqueados
+
+  // 3. Uma regra bloqueia quando o caminho pedido COMECA com o caminho bloqueado.
+  const bloqueado = bloqueados.some((p) => caminho.startsWith(p));
+
+  return bloqueado ? 'bloqueado' : 'permitido';
+}
+
+// Nao mexa daqui para baixo: e o teste que roda.
+console.log(podeRastrear(ROBOTS, 'Googlebot', 'https://exemplo.com/admin/painel'));
+`}
+  expected="bloqueado"
+  slug="visibilidade-organica"
+  nodeId="indexacao"
+/>
+
+## No seu projeto
+
+- [ ] Baixe o `robots.txt` do seu site (o endereço é `https://seusite.com/robots.txt`) e leia linha por linha: existe alguma rota importante bloqueada por engano?
+- [ ] Rode no console do navegador `fetch('/robots.txt').then(r => r.text()).then(console.log)` e confira se ele lista o caminho do seu `sitemap.xml`.
+
+> Atenção: corrigir `robots.txt` é imediata; corrigir indexação leva dias ou
+> semanas. Comece pelo que dói menos: a página que estava bloqueada por engano
+> é a que recupera posição mais rápido.
+
+## Fechamento
+
+Você já controla quem entra no seu site e quem fica no índice. No próximo nó
+você resolve o outro lado da moeda: quando várias URLs mostram o mesmo
+conteúdo, qual delas é a que vale.

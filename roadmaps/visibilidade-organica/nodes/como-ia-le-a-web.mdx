@@ -1,0 +1,246 @@
+---
+id: como-ia-le-a-web
+title: "Como uma IA Generativa Lê a Web"
+resources:
+  - title: "GEO: Generative Engine Optimization (KDD 2024, arXiv)"
+    url: https://arxiv.org/abs/2311.09735
+    type: artigo
+    lang: en
+    free: true
+  - title: "Rastreadores da OpenAI: GPTBot e OAI-SearchBot"
+    url: https://platform.openai.com/docs/bots
+    type: doc
+    lang: en
+    free: true
+  - title: "PerplexityBot: o que ele faz e como bloquear"
+    url: https://docs.perplexity.ai/guides/bots
+    type: doc
+    lang: en
+    free: true
+---
+
+Um buscador te classifica num índice e te mostra numa lista de dez links. Uma IA
+generativa te lê, te fatia em pedaços e te reconstrói dentro de uma frase. A
+diferença parece detalhe de vocabulário, mas muda o que você precisa escrever:
+o buscador precisa que sua página seja boa; a IA precisa que sua página seja
+*recuperável*.
+
+## O essencial 🟢
+
+**O pipeline com busca.** Quando um chatbot responde usando a web, o caminho é
+este:
+
+1. **Crawl** — o robô do modelo busca páginas. É um buscador, só que interno.
+2. **Chunk** — o texto é cortado em pedaços, porque o modelo processa um
+   contexto limitado.
+3. **Embed** — cada pedaço vira um vetor numérico, uma coordenada de
+   significado.
+4. **Retrieve** — a pergunta também vira vetor; o sistema busca os pedaços mais
+   próximos e monta o contexto.
+5. **Generate** — o modelo escreve a resposta usando apenas esse contexto.
+6. **Cite** — as fontes consultadas aparecem na resposta, com link.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Crawl"] --> B["Chunk"] --> C["Embed"] --> D["Retrieve"] --> E["Generate"] --> F["Cite"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#388bfd,stroke:#ffffff,color:#ffffff
+    style C fill:#1a7f37,stroke:#ffffff,color:#ffffff
+    style D fill:#8250df,stroke:#ffffff,color:#ffffff
+    style E fill:#bf8700,stroke:#ffffff,color:#ffffff
+    style F fill:#cf222e,stroke:#ffffff,color:#ffffff,stroke-width:4px`}
+  caption="Pipeline de leitura de uma IA generativa: o passo final, Cite, é o único que o leitor percebe — e o único que você não controla diretamente."
+/>
+
+**Chunking: o modelo lê passagens, não páginas.** O corte é o que decide o que
+a IA enxerga do seu conteúdo. Uma seção que só faz sentido depois de três
+parágrafos anteriores vira um pedaço inútil depois do corte.
+
+```js
+// Corta um texto em pedaços de no máximo `tamanho` palavras.
+// É o passo que decide o que a IA consegue enxergar da sua página.
+function chunkir(texto, tamanho) {
+  const palavras = texto.split(" ");
+  const chunks = [];
+  for (let i = 0; i < palavras.length; i += tamanho) {
+    chunks.push(palavras.slice(i, i + tamanho).join(" "));
+  }
+  return chunks;
+}
+
+const texto = [
+  "Buscadores tradicionais leem páginas inteiras e escolhem um resultado.",
+  "IAs generativas leem pedaços isolados e montam uma resposta.",
+  "Por isso o título e o parágrafo inicial importam tanto.",
+].join(" ");
+
+for (const chunk of chunkir(texto, 8)) {
+  console.log("[" + chunk + "]");
+}
+```
+
+O código divide o texto em pedaços de até 8 palavras e imprime cada um:
+
+```text
+[Buscadores tradicionais leem páginas inteiras e escolhem um]
+[resultado. IAs generativas leem pedaços isolados e montam]
+[uma resposta. Por isso o título e o]
+[parágrafo inicial importam tanto.]
+```
+
+Repare no terceiro pedaço: "Por isso o título e o" não diz de que título
+fala. Se o seu conteúdo estiver escrito assim, a IA recupera o pedaço e não
+tem com quem completar a frase — a citação fica fraca ou não vem.
+
+> Nota: `split(" ")` serve para texto de uma linha. Se o texto tiver quebras
+> de linha ou espaços duplos, normalize antes (por exemplo, trocando os
+> espaços repetidos por um só).
+
+**Treinar e buscar são coisas diferentes.** Cada empresa de IA publica robôs
+com nomes próprios, e eles fazem trabalhos diferentes:
+
+- **GPTBot** — coleta páginas para treinar o modelo.
+- **OAI-SearchBot** — busca páginas na hora de montar a resposta; é ele que
+  traz a citação com link.
+- **ClaudeBot** — coleta páginas para treinar os modelos da Anthropic.
+- **PerplexityBot** — busca e cita em tempo real nas respostas do Perplexity.
+- **Google-Extended** — é o interruptor do Google sobre usar seu conteúdo em
+  respostas de IA. Ele não afeta o ranking da Busca do Google.
+
+> Atenção: bloquear o robô de treino não bloqueia o robô de busca. São agentes
+> separados, com decisões separadas. Se você quer ser lido e citado mas não
+> quer ser treinado, bloqueie um e libere o outro — nunca o contrário sem
+> pensar.
+
+## Aprofundamento 🟡
+
+**Alucinação é falha de contexto.** O modelo escreve o que tem no contexto que
+lhe deram. Se a passagem recuperada não contém a resposta, ele completa com o
+que aprendeu no treino — e erra. A citação com URL existe exatamente para dar
+a você uma forma de checar. Daí a regra prática: cada passagem tem que se
+sustentar sozinha.
+
+**A IA não te "classifica" num índice.** Um buscador mantém um índice
+permanente, com centenas de sinais por página, construído ao longo de meses.
+Uma IA monta um contexto temporário, pergunta por pergunta, e esquece. O modo
+de falha não é "não estar indexado": é "não ser recuperado". Sua página pode
+estar lindamente indexada no Google e nunca aparecer numa resposta de IA,
+porque o pedaço dela não tem similaridade com a pergunta.
+
+**O robô de IA tem orçamento menor.** Os rastreadores dos modelos visitam
+menos páginas que o Googlebot e priorizam o que já é popular. Estar num site
+grande não garante leitura; estar num site pequeno e estável, às vezes,
+garante mais.
+
+## Pra quem quer ir além 🔴
+
+**llms.txt e os arquivos escritos para máquina.** Existe uma proposta de
+arquivo `llms.txt` na raiz do site, apontando as páginas que você quer expor
+a sistemas de IA. O estado real: é voluntário, não existe padrão reconhecido e
+a adoção é incerta. Trate como experimento barato, não como otimização. O
+módulo de dados para IA volta no assunto com mais detalhe.
+
+**Como saber se a IA te lê.** O lugar mais confiável hoje é o log do seu
+servidor: procure o nome do robô e veja quais URLs ele visita.
+
+```bash
+# Quantas vezes cada robô de IA bateu no seu servidor
+grep -c "GPTBot" access.log
+grep -c "OAI-SearchBot" access.log
+grep -c "PerplexityBot" access.log
+```
+
+Se o número é zero e você acha estranho, o próximo passo é olhar o `robots.txt`
+e ver se algum desses nomes está bloqueado.
+
+<Quiz
+  question="Qual é a diferença entre GPTBot e OAI-SearchBot?"
+  label="Quiz"
+  options={[
+    {
+      text: "GPTBot coleta páginas para treinar o modelo; OAI-SearchBot busca páginas na hora de montar a resposta e é ele que traz a citação com link.",
+      correct: true,
+      explanation: "É a distinção que importa na prática: treinar é usar seu texto para o modelo ficar melhor no futuro; buscar é usar seu texto para responder agora, com o link aparecendo na tela.",
+    },
+    {
+      text: "São o mesmo robô com nomes diferentes, mudando conforme o dia.",
+      correct: false,
+      explanation: "Não. São agentes separados, com finalidades e decisões separadas. Você pode bloquear um e liberar o outro sem interferir no outro.",
+    },
+    {
+      text: "GPTBot é o buscador do ChatGPT e OAI-SearchBot treina o modelo.",
+      correct: false,
+      explanation: "Está invertido. Quem busca na hora de responder é o OAI-SearchBot; quem coleta material para treino é o GPTBot.",
+    },
+    {
+      text: "OAI-SearchBot só lê o que já está em cache; GPTBot busca as páginas ao vivo.",
+      correct: false,
+      explanation: "Não é assim que funciona. Os dois acessam o site diretamente, e é por isso que o log do servidor mostra as visitas de cada um.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Por que o chunking importa para quem quer ser citado por uma IA?"
+  label="Quiz"
+  options={[
+    {
+      text: "Porque o modelo lê passagens isoladas dentro de um contexto limitado: um pedaço que perde o assunto fora do contexto não tem como ser recuperado depois.",
+      correct: true,
+      explanation: "O corte é o gargalo. Se a passagem não se sustenta sozinha, ela vira ruído no contexto — e um bom texto pode simplesmente nunca aparecer na resposta.",
+    },
+    {
+      text: "Porque o chunking define a posição da sua página no ranking do Google.",
+      correct: false,
+      explanation: "O ranking do Google é decidido por sinais de página (relevância, links, uso), não por como o texto foi cortado. Nenhuma empresa usa chunking para ranquear.",
+    },
+    {
+      text: "Porque sem chunking o motor não consegue indexar a URL do site.",
+      correct: false,
+      explanation: "Chunking é um conceito do lado da IA. A indexação da URL é problema do motor de busca, que funciona de forma totalmente diferente.",
+    },
+    {
+      text: "Porque o chunking é o que define quantos caracteres o título da página pode ter.",
+      correct: false,
+      explanation: "O tamanho do título é limitado pela largura em pixels do resultado, não por corte de texto. São coisas sem relação.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a função `chunkir(texto, tamanho)` que devolve a quantidade de chunks gerados ao dividir o texto em pedaços de no máximo `tamanho` palavras. O último chunk pode ter menos palavras que as demais. Use apenas as palavras do texto, sem cortar nenhuma no meio."
+  starterCode={`// Implemente chunkir(texto, tamanho): devolva a quantidade de chunks.
+// 1. Separe o texto em palavras (o texto de entrada tem uma linha só,
+//    então basta dividir por espaço).
+// 2. Cada chunk tem no máximo 'tamanho' palavras.
+// 3. Use Math.ceil na divisão: ele arredonda para cima, que é o que
+//    acontece com o último chunk, mais curto que os outros.
+function chunkir(texto, tamanho) {
+  return 0;
+}
+
+// Não edite abaixo: é o teste automático.
+// Não escreva console.log extras, ou a saída muda.
+const texto = 'Buscadores tradicionais leem páginas inteiras e escolhem um resultado. ' +
+  'IAs generativas leem pedaços isolados e montam uma resposta. ' +
+  'Por isso o título e o parágrafo inicial importam tanto.';
+
+console.log(chunkir(texto, 8));`}
+  expected="4"
+  slug="visibilidade-organica"
+  nodeId="como-ia-le-a-web"
+/>
+
+## No seu projeto
+
+- [ ] Abra o log de acesso do seu servidor e procure por "GPTBot",
+  "OAI-SearchBot", "ClaudeBot" e "PerplexityBot". Anote quais robôs te
+  visitaram, quantas vezes e quais URLs eles buscaram. Se nenhum aparece,
+  confira se o `robots.txt` está bloqueando por nome de robô.
+- [ ] Pegue a página mais importante do seu site e corte o conteúdo em blocos
+  de 200 palavras (use a função `chunkir` do checkpoint). Leia cada bloco
+  sozinho: ele ainda faz sentido sem o bloco anterior? Reescreva o primeiro
+  que não fizer.
+
+No próximo nó, você volta para o buscador e olha para a pergunta que a pessoa
+realmente digitou: a intenção por trás de cada busca.

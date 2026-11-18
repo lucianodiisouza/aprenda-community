@@ -1,0 +1,138 @@
+---
+slug: auditoria-visibilidade-organica
+title: "Auditoria de Visibilidade Orgânica"
+description: "Escolha um site ou app real, audite as quatro camadas da descoberta orgânica (técnica, resposta direta, citação por IA e conversão) e publique as melhorias com métricas antes e depois."
+difficulty: intermediario
+skills:
+  - seo
+  - aeo
+  - geo
+  - auditoria-tecnica
+  - dados-estruturados
+  - core-web-vitals
+  - analytics
+  - cro
+  - aso
+trilhas:
+  - visibilidade-organica
+estimate: "2-3 fins de semana"
+published: "2026-11-18"
+creators:
+  - name: "Luciano dii Souza"
+    github: "lucianodiisouza"
+---
+
+Este é o projeto de fechamento da trilha. Ele não tem gabarito: cada site é um
+caso diferente, e a ordem certa de ataque depende do que você encontra.
+
+A tarefa é escolher **um produto real** - seu site, o site de um projeto
+personal, ou o app de alguém que te autorize - e levá-lo das quatro camadas da
+visibilidade até um estado que você consegue defender com números.
+
+## Objetivo
+
+Diagnosticar antes de otimizar, corrigir nas quatro camadas e provar, com
+métrica antes/depois, que a mudança funcionou.
+
+## As quatro camadas
+
+A trilha separou o caminho em quatro camadas. Audite as quatro:
+
+1. **Técnica** - o buscador consegue encontrar, renderizar e indexar suas
+   páginas?
+2. **Resposta direta (AEO)** - suas páginas são extraíveis como resposta?
+3. **Citação por IA (GEO)** - uma IA generativa consegue citar você com
+   atribuição?
+4. **Conversão** - quem chega consegue virar cliente?
+
+## Requisitos
+
+### Fase 1 - Diagnóstico (sem mudar nada)
+
+- [ ] Levantar **todas** as páginas indexáveis do site (sitemap + rastreamento
+      dos links internos) e registrar a contagem
+- [ ] Exportar as métricas dos últimos 90 dias por URL: impressões, cliques,
+      CTR e posição média
+- [ ] Verificar o que o crawler vê de verdade em cada página: HTML inicial
+      (com JavaScript desligado), `<title>`, `<meta name="description">`,
+      `<link rel="canonical">`, `<meta name="robots">`, hierarquia de headings
+- [ ] Conferir indexação: cobertura no Search Console, presença no sitemap,
+      regras do `robots.txt`, `X-Robots-Tag` nas respostas
+- [ ] Conferir renderização: a página funciona com JavaScript desligado? O
+      conteúdo principal está no HTML inicial?
+- [ ] Medir Core Web Vitals em campo (não só em laboratório) e identificar a
+      métrica pior
+- [ ] Auditar os dados estruturados: quais `@type` existem, quais têm campos
+      obrigatórios faltando, e se batem com o que está visível na página
+- [ ] Testar 5 perguntas reais do seu público no Google, no ChatGPT e no
+      Perplexity, e registrar: aparece? é citado? a URL citada é a sua?
+- [ ] Medir a conversão das páginas que recebem tráfego orgânico
+
+### Fase 2 - Correção priorizada
+
+- [ ] Montar a lista de achados com **impacto × esforço ÷ risco** e justificar
+      a ordem em uma frase por item
+- [ ] Corrigir os itens P0 (o que impede indexação ou habilita a página)
+- [ ] Corrigir os itens P1 (ganho de conversão e de extração)
+- [ ] Aplicar **uma melhoria de resposta direta** em pelo menos uma página: bloco
+      de resposta autossuficiente, heading em forma de pergunta, lista ou
+      tabela extraível
+- [ ] Aplicar **uma melhoria de citação por IA**: estatística com fonte
+      citada, autor identificado com experiência, data de atualização visível
+- [ ] Aplicar **uma melhoria de conversão**: alinhamento entre a promessa do
+      título e a primeira dobra da página
+- [ ] Publicar tudo e pedir reindexação no Search Console
+
+### Fase 3 - Prova
+
+- [ ] Medir de novo 30 dias depois e comparar com a linha de base
+- [ ] Repetir as 5 perguntas nos motores de IA e comparar as citações
+- [ ] Registrar o que mudou, o que não mudou e **por que** você acha que mudou
+
+## Entregas
+
+- [ ] Uma planilha de auditoria com uma linha por URL e as colunas: URL,
+      impressões, cliques, CTR, posição, title, description, canonical,
+      robots, H1, `@type` do schema, links internos, status HTTP
+- [ ] O registro do antes/depois (números, não impressão)
+- [ ] Um documento de 1 página com: os 5 achados mais graves, o que você fez
+      sobre cada um e o resultado medido
+- [ ] O diff ou o PR com as mudanças aplicadas
+
+## Desafios extras
+
+- [ ] Transformar o achado mais caro em **ativo citável**: um calculadora,
+      uma ferramenta gratuita, um conjunto de dados original ou uma pesquisa
+      própria que outras pessoas queiram citar
+- [ ] Consolidar páginas duplicadas ou de baixo valor em uma página melhor,
+      com o redirecionamento 301 correto
+- [ ] Deixar a página de conteúdo com um bloco de FAQ que exista **visível na
+      página** e virar `FAQPage` — sem inventar pergunta que o conteúdo não
+      responde
+- [ ] Montar um conjunto fixo de 20 perguntas do seu público e automatizar a
+      checagem semanal nos motores de IA, guardando histórico
+- [ ] Se o seu produto tiver app, auditar a ficha na loja também: título,
+      keyword field, screenshots e tamanho do app
+
+## Dicas
+
+- **Meça antes de mexer.** Sem a linha de base, a segunda fase vira opinião.
+- **Uma página bem corrigida ensina mais que dez páginas mexidas pela metade.**
+  Escolha a página que já impressiona e não aparece na frente - ela é o
+  melhor retorno por hora trabalhada.
+- **Não troque URL sem pensar.** A mudança mais difícil de reverter é a que
+  muda o endereço de uma página que já ranqueia.
+- **O que não mudou também é dado.** Se você corrigiu e a métrica ficou igual,
+  isso vale mais que uma melhora sem explicação - provavelmente a página não
+  era o gargalo, ou ainda não passou tempo suficiente.
+- **Não publique dados estruturados que a página não mostra.** A página
+  precisa ter o conteúdo visível; o schema é a forma legível dele, não um
+  atalho para pular a parte difícil.
+
+---
+
+Para a referência de cada camada, veja os nós correspondentes da trilha
+[`visibilidade-organica`](../roadmaps/visibilidade-organica): `indexacao` e
+`canonicalizacao` (camada técnica), `resposta-direta` (camada AEO),
+`conteudo-citavel` e `dados-para-ia` (camada GEO), `cro-organico` (conversão) e
+`auditoria-e-plano` (método e priorização).

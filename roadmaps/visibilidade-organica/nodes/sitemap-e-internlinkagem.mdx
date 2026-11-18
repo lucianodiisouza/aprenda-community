@@ -1,0 +1,300 @@
+---
+id: sitemap-e-internlinkagem
+title: "Sitemap.xml e a Malha de Links Internos"
+resources:
+  - title: "Criando e enviando um sitemap (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap
+    type: doc
+    lang: en
+    free: true
+  - title: "Sitemaps grandes e sitemaps de índice (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/sitemaps/large-sitemaps
+    type: doc
+    lang: en
+    free: true
+  - title: "Links que o Google consegue rastrear (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/links-crawlable
+    type: doc
+    lang: en
+    free: true
+---
+
+O sitemap diz ao buscador que uma página existe. A malha de links internos diz
+por que essa página deveria importar. São duas ferramentas complementares: a
+primeira resolve as páginas órfãs, a segunda distribui autoridade.
+
+## O essencial 🟢
+
+Um `sitemap.xml` é uma lista de URLs do seu site. Só isso:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://seusite.com/</loc>
+    <lastmod>2026-01-10</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://seusite.com/blog</loc>
+    <lastmod>2026-02-01</lastmod>
+    <priority>0.8</priority>
+  </url>
+</urlset>
+```
+
+Ele fica na raiz do site (`https://seusite.com/sitemap.xml`) e o
+`robots.txt` aponta pra ele:
+
+```text
+User-agent: *
+Disallow: /admin
+Sitemap: https://seusite.com/sitemap.xml
+```
+
+O que o sitemap **faz**: diz ao crawler "existem essas páginas". Ele acelera a
+descoberta de conteúdo novo e, principalmente, **denuncia as páginas órfãs** —
+aquelas que ninguém linka, nem de fora nem de dentro do site.
+
+O que o sitemap **não** faz:
+
+- Não garante indexação. Quem decide isso é o `canonical` e o `meta robots`.
+- Não obriga o crawler a visitar. Ele prioriza links.
+- Não substitui links internos. Uma página listada no sitemap e sem nenhum
+  link apontando para ela continua fraca.
+
+E o `<lastmod>` precisa ser honesto. Ele existe para dizer "isto mudou de
+verdade". Se todo deploy reescrevesse a data de hoje, você estaria
+ensinando o crawler a ignorar o campo — é o "profeta do mal" do SEO técnico.
+A data tem que vir do seu histórico (último commit que mexeu na página, data
+de publicação real), não de `new Date()`.
+
+O outro lado da moeda é a malha interna. Um link interno é um `<a href>` de
+verdade:
+
+```html
+<nav>
+  <a href="/blog/sprints-remotas">Guia de sprints para equipes remotas</a>
+  <a href="/blog/retrospectiva">Como fazer retrospectiva remota</a>
+</nav>
+```
+
+O texto do link (`Guia de sprints para equipes remotas`) é o que diz ao
+buscador **do que fala a página de destino**. É a única forma de você
+controlar o assunto sobre o qual aquela URL é indexada. "Clique aqui" não
+serve para nada.
+
+O que você fixa daqui:
+
+- Sitemap = lista de URLs; não controla indexação.
+- `lastmod` honesto muda a data só quando o conteúdo muda.
+- Link interno é `<a href>` com texto descritivo.
+
+## Aprofundamento 🟡
+
+<Mermaid
+  chart={`flowchart TB
+    HOME["Home"] --> HUB["Pagina pilar: /blog"]
+    HUB --> S1["Artigo: sprints"]
+    HUB --> S2["Artigo: retrospectiva"]
+    HUB --> S3["Artigo: estimativas"]
+    S1 --> CTA["CTA /planos"]
+    S2 --> CTA
+    S3 --> CTA
+    ORFA["Pagina orfa (sem link)"] -.->|entra pelo sitemap| S1
+    style HUB fill:#1f6feb,stroke:#fff,color:#fff
+    style CTA fill:#3fb950,stroke:#fff,color:#fff
+    style ORFA fill:#d29922,stroke:#fff,color:#fff`}
+  caption="Arquitetura hub-and-spoke: uma pagina pilar concentra os links das paginas de apoio, e o CTA fecha o caminho. A pagina orfa so aparece se o sitemap a denunciar."
+/>
+
+A malha ideal não é uma árvore nem um grafo todo ligado: é **hub-and-spoke**.
+Uma página pilar (o hub) recebe links de todas as páginas de apoio (os
+spokes), e cada página de apoio aponta de volta para o hub e para o CTA.
+Isso faz duas coisas ao mesmo tempo: distribui autoridade para as páginas que
+interessa e cria caminhos de volta para a conversão.
+
+Regras práticas de malha:
+
+- **Profundidade.** Toda página importante deve estar a até 3 cliques da home.
+  Passou disso, ela quase não recebe sinal.
+- **Âncora descritiva.** O texto do link diz o assunto da página de destino.
+  Evite "clique aqui", "saiba mais" e "leia".
+- **Links de verdade.** Navegação por `onclick` sem `href` não é link — o
+  crawler não segue (você vai ver isso em detalhe no nó `javascript-seo`).
+- **Sem páginas órfãs.** Cada URL publicada deveria receber pelo menos um link
+  interno. Ou entra no sitemap, ou entra na malha. Idealmente, os dois.
+
+E um detalhe sobre o sitemap que costuma passar batido: ele não é uma lista de
+prioridades para o Google, é um índice de existência. O Google inclusive
+ignora as tags `<priority>` e `<changefreq>` — o que sobra é o `<loc>` e o
+`<lastmod>`. Outro detalhe: o `<lastmod>` só deve mudar quando o **conteúdo**
+muda, não quando você mexe no CSS.
+
+## Pra quem quer ir além 🔴
+
+Limites práticos: um arquivo de sitemap suporta 50.000 URLs e 50 MB (sem
+compressão). Passando disso, você divide em vários arquivos e aponta para
+eles com um **sitemap índice**, que é um sitemap que só lista outros
+sitemaps:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://seusite.com/sitemap-blog.xml</loc>
+  </sitemap>
+  <sitemap>
+    <loc>https://seusite.com/sitemap-produtos.xml</loc>
+  </sitemap>
+</sitemapindex>
+```
+
+Existe ainda o **sitemap de imagens**, que aponta para arquivos de imagem
+(você também pode declarar as imagens dentro do sitemap normal, com a tag
+`<image:image>`). Ele é a forma de você dizer ao Google "esta imagem faz
+parte desta página", em vez de deixar o buscador adivinhar.
+
+E uma armadilha de operações: **tirar a página do sitemap não a tira do
+índice**. Ela pode continuar indexada se tiver links apontando para ela. Para
+remover, o caminho é `noindex` (que você já viu) ou `301` para outra página.
+
+Por fim, o relatório de sitemaps no Search Console mostra o que o Google
+achou: quantas URLs você mandou, quantas ele leu, quantas foram indexadas e
+quais ele ignorou. É o lugar para descobrir que você listou 800 URLs e 300
+delas retornam 404.
+
+## Exercício interativo
+
+<Quiz
+  question="O que o sitemap.xml realmente garante?"
+  label="Quiz"
+  options={[
+    {
+      text: "Garante que as paginas listadas sejam indexadas no Google.",
+      correct: false,
+      explanation: "Nao. O sitemap so avisa que as paginas existem. Quem decide a indexacao sao o canonical e o meta robots.",
+    },
+    {
+      text: "Avisa ao buscador quais URLs existem, facilitando o rastreamento e denunciando paginas orfas.",
+      correct: true,
+      explanation: "Exato. E util principalmente para conteudo novo ou paginas que ninguem linka, que sozinhas demorariam a ser descobertas.",
+    },
+    {
+      text: "Define qual URL e a canonica de cada pagina do site.",
+      correct: false,
+      explanation: "Isso e o canonical, outra tag, dentro de cada pagina. O sitemap nunca escolhe a URL que vale.",
+    },
+    {
+      text: "Limita quantas paginas o buscador pode rastrear no seu site.",
+      correct: false,
+      explanation: "Nao. Se ha algo limitando o rastreamento, e o crawl budget, que e definido pelo tamanho e pela qualidade do site.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Qual texto ancora e o mais util para o SEO de uma pagina interna?"
+  label="Quiz"
+  options={[
+    {
+      text: "Clique aqui",
+      correct: false,
+      explanation: "Nao diz nada sobre o assunto da pagina de destino. O buscador nao tem como saber do que ela fala.",
+    },
+    {
+      text: "Saiba mais",
+      correct: false,
+      explanation: "Generico demais. Cada pagina precisa de um texto que descreva o que ela entrega.",
+    },
+    {
+      text: "Guia de sprints para equipes remotas",
+      correct: true,
+      explanation: "Isso. O texto ancora e o principal sinal que o buscador usa para entender o assunto da pagina de destino.",
+    },
+    {
+      text: "O mesmo texto em todos os links do rodape",
+      correct: false,
+      explanation: "Se todo link diz a mesma coisa, nenhum deles descreve a pagina de destino. A ancora precisa ser especifica.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `gerarSitemap(routes)`: ela recebe as rotas do site (path, lastmod e priority) e devolve o XML dos itens do sitemap, ou seja, os blocos url concatenados, sem espaco entre eles."
+  starterCode={`// Rotas do site: caminho, data da ultima mudanca de verdade e prioridade.
+const ROTAS = [
+  { path: '/', lastmod: '2026-01-10', priority: '1.0' },
+  { path: '/blog', lastmod: '2026-02-01', priority: '0.8' }
+];
+
+// Cabecalho e rodape do arquivo sitemap.xml (eles sao fixos).
+const CABECALHO = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+const RODAPE = '</urlset>';
+
+// Devolve o XML dos itens do sitemap: os blocos <url> concatenados.
+function gerarSitemap(routes) {
+  // 1. Transforme cada rota em um bloco:
+  //    <url><loc>URL</loc><lastmod>DATA</lastmod><priority>PRIORIDADE</priority></url>
+  //    A URL completa e 'https://exemplo.com' + o path da rota.
+  const itens = [];
+
+  // 2. Junte os itens, sem separador nenhum.
+  return itens.join('');
+}
+
+// O arquivo final que voce publica no servidor:
+// const sitemap = CABECALHO + gerarSitemap(ROTAS) + RODAPE;
+
+console.log(gerarSitemap(ROTAS));
+`}
+  expected="<url><loc>https://exemplo.com/</loc><lastmod>2026-01-10</lastmod><priority>1.0</priority></url><url><loc>https://exemplo.com/blog</loc><lastmod>2026-02-01</lastmod><priority>0.8</priority></url>"
+  slug="visibilidade-organica"
+  nodeId="sitemap-e-internlinkagem"
+/>
+
+<VisualCheckpoint
+  challenge="Corrija a malha interna desta pagina: acrescente o link canonical apontando para a URL oficial e transforme os links do nav em hrefs relativos."
+  starterHtml={`<h1>Guia de sprints para equipes remotas</h1>
+<h2>Como dividir o trabalho</h2>
+<p>Cada sprint precisa de um responsavel por tarefa, e o responsavel precisa estar no mesmo fuso da maioria do time.</p>
+<nav>
+  <a href="https://exemplo.com/blog">Blog</a>
+  <a href="https://exemplo.com/precos">Precos</a>
+</nav>`}
+  starterCss={`nav a { margin-right: 12px; }`}
+  assert={`
+    const canonical = root.querySelector('link[rel="canonical"]');
+    const nav = root.querySelector('nav');
+    const relativo = root.querySelector('a[href^="/"]');
+
+    if (!canonical) {
+      return { pass: false, message: 'Falta o <link rel="canonical"> apontando para a URL oficial da pagina.' };
+    }
+    if (!nav) {
+      return { pass: false, message: 'Falta o <nav> que agrupa os links internos.' };
+    }
+    if (!relativo) {
+      return { pass: false, message: 'Nenhum link interno com href relativo (comecando com barra).' };
+    }
+    return { pass: true, message: 'Malha interna corrigida.' };
+  `}
+  hint="Dica: o canonical e uma tag link com rel='canonical' e href com a URL completa. No nav, um href que comeca com barra aponta para a mesma pagina."
+  slug="visibilidade-organica"
+  nodeId="sitemap-e-internlinkagem"
+/>
+
+## No seu projeto
+
+- [ ] Gere o `sitemap.xml` do seu site a partir das rotas reais (você pode adaptar o código do checkpoint) e confira se ele lista só as URLs que você quer que existam.
+- [ ] Abra a página mais importante do seu projeto e conte quantos links internos apontam para ela. Se a conta for zero, ela está órfã: linke a partir de outra página.
+
+> Atenção: confira se toda página do sitemap responde 200. Uma lista com 30% de
+> URLs quebradas faz o crawler gastar visita com erro e passa a passar um sinal
+> ruim sobre a saúde do seu site.
+
+## Fechamento
+
+Você já controla o que o crawler visita e o que ele indexa. No próximo nó você
+ataca o que a pessoa **sente** ao chegar: a velocidade e a estabilidade da
+página, que o Google também usa como sinal.

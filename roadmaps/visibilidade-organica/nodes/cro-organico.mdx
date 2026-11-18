@@ -1,0 +1,251 @@
+---
+id: cro-organico
+title: "Converter Tráfego Orgânico em Cliente"
+resources:
+  - title: "Trechos e snippets na busca (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/snippet
+    type: doc
+    lang: en
+    free: true
+  - title: "Core Web Vitals (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/core-web-vitals
+    type: doc
+    lang: en
+    free: true
+---
+
+Trazer alguém até a sua página é a parte visível do trabalho. Transformar essa
+visita em cliente é a parte que quase todo mundo pula — e é exatamente onde
+está a maior perda do funil orgânico.
+
+## O essencial 🟢
+
+O caminho de quem chegou pela busca é sempre o mesmo, e ele vaza em todos os
+lugares:
+
+<Mermaid
+  chart={`flowchart LR
+    A["Busca"] -->|"promessa desalinhada"| B["Clique"]
+    B --> C["Pagina de entrada"] --> D["Cadastro"] --> E["Ativacao"] --> F["Retencao"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#8250df,stroke:#ffffff,color:#ffffff
+    style C fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style D fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style E fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style F fill:#1a7f37,stroke:#ffffff,color:#ffffff`}
+  caption="A curva do funil orgânico. A maior perda acontece entre a busca e o clique, quando a promessa do resultado não bate com o que a página entrega."
+/>
+
+Repare onde o funil afunda: **entre a busca e o clique**. Quem vê o resultado
+decide clicar. Quem chega na página descobre que não era aquilo e volta. O
+título prometeu uma coisa, a página entregou outra.
+
+A correção se chama **alinhamento de promessa**, e promessa tem exatamente
+três partes:
+
+1. o **título** — o que o buscador escreveu no resultado;
+2. o **primeiro parágrafo** — o que a pessoa lê antes de rolar a página;
+3. a **oferta** — o que você entrega de verdade e por quê.
+
+Se as três não contam a mesma história, tudo o que você fizer depois
+(velocidade, prova social, formulário curto) trabalha contra o vazamento.
+
+Uma página de entrada que vem de uma busca precisa **repetir a pergunta** e
+**responder em um parágrafo**. A pergunta é a mesma que a pessoa digitou; a
+resposta vem antes de qualquer contexto, apresentação ou história da marca.
+
+Depois da resposta, vêm a **prova** (avaliação de quem já usa, logotipos,
+números concretos, demonstração) e a **oferta** (o que fazer agora). O
+formulário entra por último e por um motivo só: pedir o mínimo necessário
+para entregar o primeiro valor.
+
+E a métrica que importa aqui não é sessão, é **conversão por sessão
+orgânica** — quantos clientes você extrai de cada visita que veio da busca:
+
+```js
+// Taxa de conversao por sessao organica: o unico numero que responde
+// "o trafego que veio da busca esta virando cliente?".
+function taxaOrganica({ sessoesOrganicas, conversoesOrganicas }) {
+  if (sessoesOrganicas === 0) return 0; // evita divisao por zero
+  return (conversoesOrganicas / sessoesOrganicas) * 100;
+}
+
+const resultado = taxaOrganica({ sessoesOrganicas: 1840, conversoesOrganicas: 92 });
+console.log(resultado.toFixed(1) + '%');
+```
+
+O código acima divide as conversões do canal orgânico pelas sessões do mesmo
+canal e devolve o percentual com uma casa decimal. Repare que ele **não**
+divide pelo total de sessões do site: misturar tráfego pago com tráfego de
+busca esconde exatamente o efeito que você quer enxergar.
+
+O que você fixa daqui:
+
+- A maior perda do funil orgânico está entre a busca e o clique.
+- Promessa = título + primeiro parágrafo + oferta, e as três precisam bater.
+- A métrica que importa é conversão por sessão orgânica, não sessão.
+
+## Aprofundamento 🟡
+
+O formulário é a parte que todo mundo otimiza primeiro, e é a parte menos
+importante. Ainda assim, ela importa — porque cada campo extra derruba a
+conversão. Nome e e-mail costumam bastar para começar; empresa, cargo e
+tamanho da time podem ser pedidos depois, quando a pessoa já está usando o
+produto e o motivo existe.
+
+Erro amigável é o outro metade. "Campo obrigatório" não é erro amigável:
+é a interface repetindo uma exigência sem explicar nada. "Precisamos do e-mail
+para enviar o acesso à sua conta" é o mesmo erro explicado. E, do lado
+técnico, a submissão precisa ser rápida: um botão que trava por três
+segundos enquanto o servidor processa é uma página de entrada lenta com
+outro nome — e você já sabe o que performance faz com a taxa de conversão.
+
+**Práticas enganosas destroem confiança.** Assinatura escondida num
+rodapé, cancelamento difícil de achar, caixa de "aceito os termos" já
+marcada, cobrança que aparece só na segunda tela: tudo isso pode inflar a
+conversão por uma semana e depois virar reclamação pública, reembolso e
+revisão do produto. Você ganha um clique e perde a conta.
+
+Duas páginas que quase todo site trata como fim de linha e que são, na
+verdade, oportunidades:
+
+- **Página de erro (404).** Quem chegou pela busca e caiu num link quebrado
+  está procurando algo que você provavelmente tem. Uma busca interna e três
+  links para o conteúdo mais acessado salvam mais sessão do que qualquer
+  anúncio.
+- **Busca interna sem resultado.** A pessoa digitou um termo e não achou
+  nada. É o momento de oferecer a alternativa mais próxima — e de registrar
+  esse termo: uma lista de buscas sem resultado é uma lista de páginas que
+  você ainda não tem.
+
+> Atenção: a taxa de conversão alta com sessão média baixa é o sinal clássico
+> de desalinhamento de promessa. Você não está resolvendo problema — está
+> entregando a página errada para a pessoa certa.
+
+## Pra quem quer ir além 🔴
+
+A curva não termina no cadastro. **Ativação** é o momento em que a pessoa
+faz a primeira coisa que trouxe valor — e é dali que nasce a retenção. Um
+cadastro que não ativa é tráfego pago com custa de aquisição.
+
+Por isso, ao olhar a página de entrada, olhe duas taxas e não uma: a taxa de
+conversão (visitante virou cadastro) e a taxa de ativação (cadastro virou
+usuário). Uma página pode ter a melhor taxa de conversão do site e ser a
+pior para o negócio, se atrai quem não é seu cliente.
+
+E um detalhe de leitura de dados que evita muita confusão: **compare por
+página, não pela média do site**. A taxa de conversão média esconde exatamente
+a página que está desalinhada, porque ela fica diluída pelas páginas que
+funcionam bem. Uma tabela por URL resolve o problema em cinco minutos.
+
+## Exercício interativo
+
+<Quiz
+  question="Em um site que recebe bastante tráfego da busca, onde está a maior perda entre a busca e o primeiro cadastro?"
+  label="Quiz"
+  options={[
+    {
+      text: "No formulário de cadastro, porque tem campos demais.",
+      correct: false,
+      explanation: "O formulário importa, mas quase nunca é o maior vazamento. Ele só aparece depois que a pessoa decidiu ficar.",
+    },
+    {
+      text: "Entre a busca e o clique, porque o título promete uma coisa e a página entrega outra.",
+      correct: true,
+      explanation: "Exato. O desalinhamento de promessa entre título, primeiro parágrafo e oferta é o maior vazamento do funil orgânico.",
+    },
+    {
+      text: "Na ativação, porque o produto é difícil de usar.",
+      correct: false,
+      explanation: "Ativação é problema de produto, e pesa muito. Mas ela vem depois do clique: se a pessoa nem entra, o problema está antes.",
+    },
+    {
+      text: "Na retenção, porque o cancelamento é fácil.",
+      correct: false,
+      explanation: "Retenção é o fim da curva e não muda a quantidade de visitas. Quem nunca entrou não chega ao cancelamento.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Seu formulário de cadastro pede nome, e-mail, senha, empresa, cargo, telefone e tamanho da equipe. O que fazer?"
+  label="Quiz"
+  options={[
+    {
+      text: "Manter os sete campos: mais informação ajuda o time de vendas.",
+      correct: false,
+      explanation: "Cada campo extra derruba a conversão, e os dados só têm valor depois que a pessoa entrou. Além disso, telefone e cargo quase nunca são usados.",
+    },
+    {
+      text: "Cortar para o mínimo (nome e e-mail) e pedir o resto depois do primeiro valor entregue.",
+      correct: true,
+      explanation: "Exato. A regra é pedir o mínimo necessário para entregar algo, e pedir o resto quando o motivo passou a existir.",
+    },
+    {
+      text: "Ficar só com o e-mail, sem senha, e mandar o acesso por e-mail.",
+      correct: false,
+      explanation: "Sem senha você troca um atrito pequeno por um atrito grande: a pessoa precisa abrir o e-mail e confirmar. O corte é no que é opcional, não no essencial.",
+    },
+    {
+      text: "Pedir tudo, mas em duas etapas separadas.",
+      correct: false,
+      explanation: "Duas etapas com sete campos continuam sendo sete campos. A pessoa vê o formulário longo e desiste no primeiro passo.",
+    },
+  ]}
+/>
+
+<VisualCheckpoint
+  challenge="Melhore a pagina de entrada: escreva um h1 que repita a promessa (sprints, equipes remotas ou tarefas) e um botao de chamada para acao que diga o que a pessoa ganha."
+  starterHtml={`<h1>Novo portal de tarefas</h1>
+<p>Organize sprints de equipes remotas sem perder tarefa.</p>
+<button>Clique aqui</button>`}
+  starterCss={`h1 { font-size: 22px; }
+p { max-width: 60ch; }`}
+  assert={`
+    const h1 = root.querySelector('h1');
+    const paragrafo = root.querySelector('p');
+    const cta = root.querySelector('a, button');
+
+    if (!h1 || !h1.textContent.trim()) {
+      return { pass: false, message: 'Falta um <h1> com a promessa principal da pagina.' };
+    }
+    if (!paragrafo || !paragrafo.textContent.trim()) {
+      return { pass: false, message: 'Falta o paragrafo que responde a pergunta da busca.' };
+    }
+    if (!cta || !cta.textContent.trim()) {
+      return { pass: false, message: 'Falta o botao (ou link) de chamada para acao.' };
+    }
+
+    // O h1 precisa repetir a promessa: alguma palavra do paragrafo de resposta
+    // tem que aparecer nele (sprint, equipe, remota ou tarefa).
+    const palavras = ['sprint', 'equipe', 'remota', 'tarefa'];
+    const h1Texto = h1.textContent.toLowerCase();
+    const repetePromessa = palavras.some((p) => h1Texto.includes(p));
+    if (!repetePromessa) {
+      return { pass: false, message: 'O h1 precisa repetir a promessa (sprints, equipes remotas ou tarefas).' };
+    }
+
+    // "Clique aqui" nao diz o que a pessoa ganha: e um texto ancora generico.
+    const genericos = ['clique aqui', 'saiba mais', 'ler mais', 'mais', 'ok', 'click here', 'learn more'];
+    const ctaTexto = cta.textContent.trim().toLowerCase();
+    if (genericos.includes(ctaTexto)) {
+      return { pass: false, message: 'O texto do botao precisa dizer o que a pessoa ganha, em vez de "clique aqui".' };
+    }
+
+    return { pass: true, message: 'A pagina repete a promessa e tem uma chamada para acao que diz o que a pessoa ganha.' };
+  `}
+  hint="O h1 precisa repetir a promessa da pagina. No botao, escreva o ganho (ex.: 'Criar minha conta gratis')."
+  slug="visibilidade-organica"
+  nodeId="cro-organico"
+/>
+
+## No seu projeto
+
+- [ ] Abra no Search Console a página que mais recebe cliques da busca e escreva o que o título promete e o que o primeiro parágrafo entrega. Se não baterem, reescreva o parágrafo.
+- [ ] Conte os campos do seu formulário de cadastro e corte um: peça o resto depois que a pessoa usou o produto. Meça a conversão por sessão orgânica antes e depois, usando o código do nó.
+
+## Fechamento
+
+Você já sabe transformar visita em cliente no seu site. Mas muita gente também
+tem um aplicativo — e dentro da loja de apps existe um buscador inteiro,
+esperando por gente que procura exatamente o que o aplicativo faz.

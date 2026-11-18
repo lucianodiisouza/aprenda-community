@@ -1,0 +1,285 @@
+---
+id: jsonld-pratica
+title: "JSON-LD na Prática"
+resources:
+  - title: "JSON-LD: o formato de dados estruturados linked data (em inglês)"
+    url: https://json-ld.org/
+    type: doc
+    lang: en
+    free: true
+  - title: "O elemento script do HTML (MDN, em português)"
+    url: https://developer.mozilla.org/pt-BR/docs/Web/HTML/Element/script
+    type: doc
+    lang: pt
+    free: true
+  - title: "Introdução aos dados estruturados (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
+    type: doc
+    lang: en
+    free: true
+---
+
+No nó anterior você entendeu o vocabulário. Agora é hora de escrever: um bloco
+de dados estruturados é código — e código pode estar errado. O erro mais comum
+não é "campo faltando", é **sintaxe**: e sintaxe quebrada derruba o bloco
+inteiro, silenciosamente.
+
+## O essencial 🟢
+
+Existem três formas de marcar dados estruturados no HTML. O Microdata espalha
+atributos pelo documento:
+
+```html
+<article itemscope itemtype="https://schema.org/Article">
+  <h1 itemprop="headline">Kanban para equipes remotas</h1>
+  <p>Por <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+    <span itemprop="name">Ana Ribeiro</span></span></p>
+</article>
+```
+
+Funciona, mas amarra o dado à apresentação: se alguém refatorar o `<h1>` para um
+`<div>`, o markup morre junto. O JSON-LD separa os dois — o dado mora num
+bloco próprio, o HTML pode mudar à vontade:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Kanban para equipes remotas",
+  "author": { "@type": "Person", "name": "Ana Ribeiro" }
+}
+</script>
+```
+
+É esse o formato que o Google recomenda e o que a maioria dos Sites usa. O
+`type="application/ld+json"` é o que faz o navegador não executar o conteúdo
+como JavaScript: ele só guarda o texto para quem quiser ler.
+
+### O esqueleto mínimo
+
+Quatro peças, e só:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Aurora",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web, iOS, Android"
+}
+</script>
+```
+
+- `@context` aponta para o vocabulário. Sem `https://` ou com o caminho errado,
+  as propriedades não têm significado.
+- `@type` diz o que a entidade é.
+- O resto são propriedades do vocabulário, cada uma com seu valor.
+
+Esse bloco descreve o aplicativo da Aurora. Ele pode ir no `<head>` ou no
+`<body>`: o que importa é que chegue no HTML que o buscador baixa (você viu no
+nó de renderização que o crawler nem sempre vê o que só existe depois do JS).
+
+> Dica: o `@type` pode ser uma lista, quando a página é mais de uma coisa:
+> `"@type": ["Article", "FAQPage"]`.
+
+## Aprofundamento 🟡
+
+### Os erros que apagam o bloco inteiro
+
+Diferente de um campo faltando, um erro de sintaxe faz o parser **jogar o
+bloco fora inteiro**. Nenhum dado é lido, e você não recebe nenhum aviso no
+console da página — o script nem é executado por ser `ld+json`.
+
+Este bloco **não** é um JSON válido (é justamente o exemplo do erro):
+
+```text
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Aurora",      // <- vírgula sobrando aqui quebra o JSON inteiro
+  "url": "https://aurora.test/"
+}
+```
+
+Os cinco erros que você mais vai encontrar:
+
+1. **Vírgula sobrando** antes de `}` ou `]`.
+2. **Aspas simples** (`'Aurora'`). JSON só aceita aspas duplas.
+3. **Comentário** (`// ...` ou `/* ... */`). JSON não tem comentário.
+4. **`@context` errado**: `"schema.org"` sem o `https://` não resolve para o
+   vocabulário.
+5. **HTML entity dentro do JSON**: `&quot;` em vez de `\"`. Acontece quando
+   você copia o bloco de uma página já renderizada.
+
+### `null` é diferente de omitir
+
+```json
+{ "@type": "Organization", "name": "Aurora", "telephone": null }
+```
+
+Aqui você está dizendo "a entidade tem telefone, e ele é nulo". O que você
+queria dizer é "não tenho telefone" — e para isso a chave **não deve existir**.
+Quando a informação não existe, omita a propriedade; `null` é um valor
+declarado, não uma ausência.
+
+### Datas em ISO 8601
+
+O formato é `AAAA-MM-DD` para data e `AAAA-MM-DDTHH:MM:SS-03:00` para data e
+hora com fuso. `10/03/2026` não é aceito — nem `10 de março de 2026`.
+
+### Trate o JSON-LD como código
+
+Bloco colado à mão em quarenta templates apodrece. A versão que escala é uma
+função que monta o objeto a partir dos seus dados:
+
+```js
+// src/seo/jsonld.js
+export function jsonLdDaHome(site) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": site.url + "#organizacao",
+    name: site.nome,
+    url: site.url,
+    logo: site.logo,
+    sameAs: site.perfis,
+  };
+}
+```
+
+E a injeção no HTML é sempre a mesma, com `JSON.stringify`:
+
+```js
+const bloco = JSON.stringify(jsonLdDaHome(site));
+// ... e no template:
+// <script type="application/ld+json">{bloco}</script>
+```
+
+Assim existe **um** lugar que decide o que a página diz. No repositório, com
+histórico, com revisão de código.
+
+> Atenção: se algum texto que você injeta puder conter a sequência `</script>`,
+> ela fecha o seu bloco antes da hora e quebra a página. Troque `<` por
+> `\u003c` no texto serializado antes de injetar.
+
+### Validação
+
+Duas ferramentas oficiais resolvem quase tudo: o **Rich Results Test** (mostra
+os campos que faltam para cada tipo e mostra um preview do resultado) e o
+**Schema Markup Validator** (valida contra o vocabulário inteiro, não só
+contra o perfil do Google). E, se o bloco é gerado por código, vale um teste
+automático que faça `JSON.parse` do resultado e quebre a build se falhar.
+
+## Pra quem quer ir além 🔴
+
+Um JSON-LD **válido** não é necessariamente um JSON-LD **aproveitado**. O
+Google só transforma alguns tipos em rich result — e hoje restringiu o de
+`FAQPage` a sites de governo e saúde reconhecidos. Mas o dado continua sendo
+lido por outros consumidores e por modelos de IA. Ou seja: marque pelo
+sentido, não pelo prêmio.
+
+E vale a regra que vem do nó anterior: **uma verdade por documento**. Se a
+página descreve várias entidades que se referenciam, use `@graph` e reference
+por `@id` — em vez de repetir a organização com nome e logo em três blocos
+diferentes da mesma página.
+
+## Exercício
+
+<Quiz
+  question="Qual é a diferença prática entre JSON-LD e Microdata?"
+  label="Quiz"
+  options={[
+    {
+      text: "JSON-LD fica num bloco script separado do HTML, então o dado não quebra quando o layout muda",
+      correct: true,
+      explanation: "É essa a vantagem: separação entre dado e apresentação. O Microdata prende o dado aos elementos do HTML.",
+    },
+    {
+      text: "JSON-LD ocupa menos bytes que o Microdata",
+      correct: false,
+      explanation: "Nem sempre: o Microdata polui cada elemento, o JSON-LD concentra tudo num bloco só. O motivo de adotá-lo é a robustez, não o tamanho.",
+    },
+    {
+      text: "O Microdata foi descontinuado e não é mais lido por ninguém",
+      correct: false,
+      explanation: "Microdata ainda é suportado, mas o Google recomenda JSON-LD. E a escolha não é sobre velocidade de leitura.",
+    },
+    {
+      text: "O JSON-LD permite inventar tipos novos que o Google passa a reconhecer",
+      correct: false,
+      explanation: "O vocabulário é fechado: os tipos vêm do Schema.org. Inventar propriedade não cria sinal nenhum.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="O JSON-LD da sua página tem uma vírgula sobrando no fim do objeto. O que acontece?"
+  label="Quiz"
+  options={[
+    {
+      text: "O bloco inteiro é descartado: nenhum dado estruturado daquela página é lido",
+      correct: true,
+      explanation: "É o modo de falha clássico do JSON-LD: um erro de sintaxe invalida o bloco todo, em silêncio.",
+    },
+    {
+      text: "O buscador lê tudo e ignora apenas o último item",
+      correct: false,
+      explanation: "Não existe leitura parcial: o parser tenta converter o bloco inteiro em JSON e, se falha, descarta tudo.",
+    },
+    {
+      text: "O Google detecta o erro e envia um aviso no Search Console",
+      correct: false,
+      explanation: "O Search Console mostra rich results inválidos, mas o aviso chega depois que a página já está no ar sem dados estruturados.",
+    },
+    {
+      text: "Funciona igual, com um aviso no console do navegador",
+      correct: false,
+      explanation: "O navegador nem executa o bloco (o type não é JavaScript), então nem existe erro visível no console.",
+    },
+  ]}
+/>
+
+<VisualCheckpoint
+  challenge="Adicione ao HTML um bloco `<script type='application/ld+json'>` com um JSON-LD da página: precisa parsear, com `@context` = `https://schema.org` e `@type` presente."
+  starterHtml={`<h1>Organize as tarefas da sua equipe remota</h1>
+<p>A Aurora é o SaaS brasileiro de organização de tarefas para equipes remotas.</p>`}
+  starterCss={`h1 {
+  color: #14532d;
+}`}
+  assert={`
+    const el = root.querySelector('script[type="application/ld+json"]');
+    if (!el) {
+      return { pass: false, message: 'Falta o bloco <script type="application/ld+json"> no HTML.' };
+    }
+    let dados;
+    try {
+      dados = JSON.parse(el.textContent);
+    } catch (erro) {
+      return { pass: false, message: 'O JSON-LD não é JSON válido: ' + erro.message };
+    }
+    if (dados['@context'] !== 'https://schema.org') {
+      return { pass: false, message: 'O "@context" precisa ser exatamente "https://schema.org".' };
+    }
+    if (!dados['@type']) {
+      return { pass: false, message: 'Falta o "@type": diga o que a página descreve.' };
+    }
+    return { pass: true, message: 'JSON-LD válido: parseia, tem o contexto certo e declara o tipo.' };
+  `}
+  hint="O script precisa do type application/ld+json. Dentro dele, um objeto JSON com as chaves @context, @type e as propriedades."
+  slug="visibilidade-organica"
+  nodeId="jsonld-pratica"
+/>
+
+## No seu projeto
+
+- [ ] Escolha a página mais importante do seu site e escreva o JSON-LD dela
+      **como função**, não como texto colado: a função recebe os dados (nome,
+      url, logo) e devolve o objeto. Use `JSON.stringify` para injetar.
+- [ ] Rode `JSON.parse` no bloco gerado dentro do seu teste ou no seu CI, e
+      faça a build falhar se o JSON quebrar. Depois valide a página no Rich
+      Results Test e no Schema Markup Validator.
+
+No próximo nó você escolhe o `@type` certo para cada página e descobre quais
+tipos ainda valem um rich result.

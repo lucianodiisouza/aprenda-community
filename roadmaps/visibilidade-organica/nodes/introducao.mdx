@@ -1,0 +1,216 @@
+---
+id: introducao
+title: "Visibilidade Orgânica: o Problema como Engenharia"
+resources:
+  - title: "SEO Starter Guide (Google Search Central)"
+    url: https://developers.google.com/search/docs/fundamentals/seo-starter-guide
+    type: doc
+    lang: en
+    free: true
+  - title: "Beginner's Guide to SEO (Moz)"
+    url: https://moz.com/beginners-guide-to-seo
+    type: artigo
+    lang: en
+    free: true
+  - title: "SEO - Glossário do MDN (PT-BR)"
+    url: https://developer.mozilla.org/pt-BR/docs/Glossary/SEO
+    type: doc
+    lang: pt
+    free: true
+---
+
+Existe um canal de aquisição que não despenca quando o orçamento acaba: o tráfego
+orgânico. Ele custa tempo e conteúdo agora, e devolve visitas durante meses.
+O anúncio pago volta a custar o mesmo preço de clique toda semana, e sempre um
+pouco mais, porque o leilão é de todo mundo.
+
+Esta trilha trata visibilidade orgânica como o que ela é de verdade: um
+problema de engenharia. Existem etapas, existem medições e existem consertos.
+Nada aqui depende de sorte ou de conexão.
+
+> Nota: esta é a versão **avançada** do assunto. Se você ainda não viu o
+> básico, comece pela trilha
+> [SEO, AEO e GEO](/trilhas/seo-aeo-geo) — são 13 nós curtos que dão o mapa do
+> terreno. Aqui você encontra o mesmo mapa, com a implementação por trás: o
+> que dá errado em cada etapa, como medir e o que fazer quando dá.
+
+## O essencial 🟢
+
+**O tripé da visibilidade.** Toda visita orgânica passa por três momentos, e
+cada um tem um número próprio:
+
+1. **Ser encontrado** — o motor olhou sua página e decidiu que ela existe.
+2. **Ser escolhido** — entre dezenas de resultados, alguém clicou na sua.
+3. **Ser convertido** — quem clicou virou cliente.
+
+Se o funil vaza num desses três, mexer nos outros dois não recupera o que
+vazou. Este é o primeiro hábito: medir antes de otimizar.
+
+```js
+// Funil orgânico de uma página em uma semana.
+// Cada etapa mostra quanto sobrou da etapa anterior.
+const funil = [
+  { etapa: "impressoes", valor: 12000 }, // ser encontrado
+  { etapa: "cliques", valor: 900 }, // ser escolhido
+  { etapa: "cadastros", valor: 45 }, // ser convertido
+];
+
+// Taxa de passagem de uma etapa para a seguinte.
+for (let i = 1; i < funil.length; i++) {
+  const anterior = funil[i - 1].valor;
+  const atual = funil[i].valor;
+  const taxa = ((atual / anterior) * 100).toFixed(1);
+  console.log(funil[i].etapa + ": " + taxa + "% de " + funil[i - 1].etapa);
+}
+```
+
+O código calcula a taxa de passagem de cada etapa (cliques sobre impressões,
+cadastros sobre cliques) e imprime:
+
+```text
+cliques: 7.5% de impressoes
+cadastros: 5.0% de cliques
+```
+
+Leia os números: 12 mil impressões com 900 cliques significa que você está
+sendo encontrado e não sendo escolhido. O conserto é o título e a promessa da
+página. 900 cliques com 45 cadastros significa o contrário: a página atrai e
+não convence.
+
+<Mermaid
+  chart={`flowchart LR
+    A["Descoberta: ser encontrado"] --> B["Consideração: ser escolhido"] --> C["Conversão: ser convertido"]
+    style A fill:#1f6feb,stroke:#ffffff,color:#ffffff
+    style B fill:#8250df,stroke:#ffffff,color:#ffffff
+    style C fill:#1a7f37,stroke:#ffffff,color:#ffffff`}
+  caption="O tripé da visibilidade orgânica: cada etapa tem um número, um ponto de vazamento e um conserto próprio."
+/>
+
+**O mapa da trilha.** São oito módulos, na ordem em que o problema aparece na
+vida real:
+
+1. **Abrindo o jogo** — enquadrar o problema (este nó).
+2. **Como te encontram** — crawl, leitura por IA, intenção de busca e pesquisa
+   de palavras-chave.
+3. **Técnico: ser encontrado e lido** — renderização, indexação, canonical,
+   sitemap, performance e o que quebra em SPAs.
+4. **On-page e conteúdo** — título, semântica, qualidade, conteúdo que
+   envelhece, resposta direta (AEO) e citação por IA (GEO).
+5. **Dados estruturados** — Schema.org, JSON-LD, rich results e dados legíveis
+   por máquina.
+6. **Fora do site** — autoridade, links, marca como entidade e comunidade.
+7. **Medir e converter** — Search Console, métricas de IA, conversão orgânica,
+   lojas de app e auditoria.
+8. **Fechamento** — um projeto real do começo ao fim e a manutenção depois.
+
+**Como usar.** Todo nó termina com "No seu projeto", duas tarefas curtas para
+aplicar no seu próprio site ou app. O caso da Aurora — um SaaS brasileiro de
+organização de tarefas para equipes remotas, com site e app — aparece de vez
+em quando para mostrar a mecânica funcionando. A tarefa real, sempre, é a
+sua.
+
+## Aprofundamento 🟡
+
+**Por que o orgânico não despenca quando o anúncio para.** O custo do clique
+pago é definido por leilão, não por você: enquanto o orçamento existir, ele
+existe; quando acaba, some no mesmo dia. O orgânico troca esse modelo por
+outro — o custo vira trabalho, feito uma vez e acumulado. Uma página bem
+escrita continua trazendo gente por anos, mesmo sem ninguém tocar nela.
+
+**O atalho que não funciona.** Existe uma versão tentadora de crescimento
+orgânico: comprar tráfego, publicar em qualquer plataforma e chamar o
+resultado de orgânico. Duas coisas quebram. A primeira é que o tráfego comprado
+desaparece quando você para de comprar. A segunda é que a métrica vira
+"quantidade publicada", e publicar dez textos sobre o mesmo assunto sem
+responder pergunta nenhuma só dilui o que já funcionava.
+
+**A métrica que engana.** "Total de visitas" esconde o que interessa. Se as
+visitas cresceram 40% e as conversões ficaram iguais, você ficou melhor em ser
+encontrado e pior em converter — ou trouxe gente errada. Por isso o funil do
+começo deste nó não é decoração: ele diz em qual degrau você está perdendo.
+
+> Dica: quando algo não funciona em orgânico, pergunte em qual degrau do
+> tripé você está perdendo antes de mudar qualquer coisa. A resposta evita
+> semanas refazendo a parte que já estava certa.
+
+## Pra quem quer ir além 🔴
+
+**O custo recorrente do orgânico.** Conteúdo não é projeto, é assinatura.
+Todo post envelhece, todo concorrente publica, todo ano a sua melhor página
+pede revisão. Quem escala volume sem reservar um orçamento mensal de
+manutenção (em horas ou em dinheiro) descobre o decaimento seis meses depois,
+quando o tráfego cai e ninguém sabe explicar.
+
+**Por que a trilha vai de "encontrar" para "converter".** Porque o maior
+gap raramente é técnico. Problema técnico é visível: link quebrado, noindex,
+página lenta. O gap de promessa — a página não entrega o que o título
+prometeu — só aparece quando você mede o clique por etapa, e é justamente o
+que separa 7,5% de clique de 15% de clique na mesma página.
+
+<Quiz
+  question="O que caracteriza crescimento orgânico de verdade?"
+  label="Quiz"
+  options={[
+    {
+      text: "Tráfego que continua chegando sem pagar por clique, conquistado com conteúdo que resolve um problema real e com uma estrutura técnica que deixa esse conteúdo legível.",
+      correct: true,
+      explanation: "É isso: o custo vira trabalho acumulado em vez de orçamento por visita. A parte técnica existe porque conteúdo que o motor não consegue ler não gera visita nenhuma.",
+    },
+    {
+      text: "Qualquer aumento no número de visitas do site, venha ele de onde vier.",
+      correct: false,
+      explanation: "O número bruto esconde a origem. Visitas de uma campanha que você desliga amanhã não são crescimento, são aluguel.",
+    },
+    {
+      text: "Tráfego comprado do Google Ads, porque o anúncio é exibido dentro do site.",
+      correct: false,
+      explanation: "O lugar onde o anúncio aparece não muda a origem do clique. O tráfego pago é comprado por clique e some quando o orçamento acaba.",
+    },
+    {
+      text: "A quantidade de postagens publicadas por semana no seu blog.",
+      correct: false,
+      explanation: "Volume sem intenção definida é só ruído. Dez textos sobre o mesmo tema, sem responder a pergunta de ninguém, diluem o sinal em vez de reforçá-lo.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Na maior parte dos casos, qual alavanca pesa mais no crescimento orgânico?"
+  label="Quiz"
+  options={[
+    {
+      text: "Conteúdo que responde a uma busca real, combinado com uma estrutura técnica que permite ao motor ler e indexar essa página.",
+      correct: true,
+      explanation: "São as duas metades do mesmo problema. Conteúdo sem técnica é invisível; técnica sem conteúdo não tem o que mostrar. Somados, resolvem a maior parte dos casos.",
+    },
+    {
+      text: "Publicar mais postagens por semana, mesmo repetindo os mesmos temas.",
+      correct: false,
+      explanation: "É a distratora clássica. Publicar mais só funciona se cada publicação mirar uma busca específica que você ainda não atende. Repetir o mesmo tema divide o sinal em vez de somá-lo.",
+    },
+    {
+      text: "Comprar links de sites com autoridade alta para acelerar o ranqueamento.",
+      correct: false,
+      explanation: "Link comprado é explicitamente spam nas políticas do Google e o risco passa longe de devolver o investimento. O módulo de autoridade mostra o caminho legítimo.",
+    },
+    {
+      text: "Trocar o framework do site pelo mais rápido do mercado.",
+      correct: false,
+      explanation: "Performance importa, mas é um item do checklist, não a alavanca principal. Se a página não responde a uma busca que existe, acelerar a entrega só faz você chegar mais rápido ao zero.",
+    },
+  ]}
+/>
+
+## No seu projeto
+
+- [ ] Abra as ferramentas de analytics que você já usa (Search Console, GA4,
+  Plausible, o que tiver à mão) e monte uma tabela de três etapas dos últimos
+  30 dias: impressões, cliques orgânicos e conversões. Escreva em uma frase em
+  qual degrau do tripé o seu funil perde mais.
+- [ ] Liste as dez páginas mais importantes do seu site e escreva, ao lado de
+  cada uma, qual é a intenção que elas atendem (a pessoa que chega ali quer
+  entender, comparar, entrar na conta ou contratar). Marque duas páginas que
+  sirvam à mesma intenção.
+
+No próximo nó, você acompanha o caminho de uma página desde o primeiro link
+até o resultado na tela: crawl, renderização, indexação e ranqueamento.

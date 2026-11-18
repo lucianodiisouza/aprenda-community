@@ -87,5 +87,35 @@ se forem correções, **major** se mudar a ordem ou a base conceitual.
 
 ---
 
+## v1.1.0 - Trilha sucessora (avançada)
+
+> Nota de manutenção. **O conteúdo desta trilha não foi alterado** — ela
+> continua exatamente como o Breno escreveu, e segue como a porta de entrada
+> introdutória do assunto.
+
+A trilha [`visibilidade-organica`](../visibilidade-organica) foi criada como a
+**versão avançada** deste mesmo assunto, com 31 nós. A relação é de
+complementaridade, não de substituição:
+
+- **`seo-aeo-geo` (aqui, 13 nós, intermediário)** — o mapa do terreno.
+  Conceito, sem implementação.
+- **`visibilidade-organica` (31 nós, avançado)** — o mesmo mapa com a
+  implementação por trás: o que dá errado em cada etapa, como medir e o que
+  fazer quando dá. Soma 13 nós de temas que não cabiam aqui (renderização,
+  JavaScript em SPA, ASO, conversão, auditoria e plano de 90 dias, projeto
+  final) e aprofunda os 13 que já existiam.
+
+As duas não se contradizem em nenhum ponto. O caminho do aluno é fazer esta
+primeiro e a outra depois; os dois nós de borda já apontam um para o outro
+(o último nó desta trilha e o `introducao` da outra).
+
+Detalhamento nó a nó do que se sobrepõe e do que é novo: em
+`roadmaps/visibilidade-organica/meta/editorial-decisions.md`.
+
+Mudanças de escopo aqui viram bump **minor** se adicionarem nós, **patch**
+se forem correções, **major** se mudar a ordem ou a base conceitual.
+
+---
+
 Aberto a discussão: abra issue ou comente em
 [Issues](https://github.com/lucianodiisouza/aprenda-community/issues).

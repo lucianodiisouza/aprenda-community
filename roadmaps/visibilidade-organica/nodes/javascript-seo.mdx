@@ -1,0 +1,253 @@
+---
+id: javascript-seo
+title: "SEO em Aplicações JavaScript: Onde Quebra"
+resources:
+  - title: "Noções básicas de SEO em JavaScript (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics
+    type: doc
+    lang: en
+    free: true
+  - title: "Erros de rede HTTP e indexação (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/http-network-errors
+    type: doc
+    lang: en
+    free: true
+  - title: "Pedindo um novo rastreamento (Google Search Central, em inglês)"
+    url: https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl
+    type: doc
+    lang: en
+    free: true
+---
+
+SPA não é proibida. Mas cada decisão que você tomou no front tem chance de
+esconder uma página do crawler. Este nó é um checklist: você sai daqui
+sabendo auditar um projeto de JavaScript e apontar onde ele quebra.
+
+## O essencial 🟢
+
+Os problemas de SEO em JavaScript se agrupam em três perguntas:
+
+**1. O que o crawler consegue ler?** Ele lê o HTML e segue `<a href>`. Tudo
+que não está no HTML inicial depende de a etapa de rendering funcionar.
+
+**2. O que o servidor responde?** O status HTTP é a primeira coisa que o
+Google olha, antes de qualquer JavaScript.
+
+**3. Cada rota é uma página diferente?** Title e canonical por rota é o que
+diz ao buscador que `/planos` e `/blog` são coisas distintas.
+
+Os sintomas mais comuns, um por um:
+
+**Soft 404.** A rota devolve `200` com a tela "página não encontrada" para
+qualquer URL inventada. O Google indexa essas páginas vazias como se fossem
+conteúdo real, e o seu índice enche de URLs que não existem. A correção é no
+servidor: rota desconhecida responde `404` de verdade.
+
+**`<title>` fixo no shell.** Se o `<title>` está no `index.html` e nunca muda,
+todas as rotas têm o mesmo título. O buscador não tem como distinguir uma
+página da outra.
+
+**Canonical global.** Se toda rota do app tem
+`<link rel="canonical" href="https://seusite.com/">`, você está dizendo ao
+Google que todas as páginas são a home. Resultado: só a home é indexada.
+
+**Link que não é link.** Navegação por `onclick` sem `href` não é
+rastreável. O crawler segue `<a href>` — nada mais. Se o seu menu inteiro
+funciona assim, o seu site é uma ilha.
+
+**Conteúdo atrás de clique.** Aba, "carregar mais", acordeão. O crawler não
+clica. Se o texto só existe depois de um clique, ele pode não existir para a
+busca.
+
+**Lazy-load abaixo da dobra.** O conteúdo nem chega ao HTML inicial.
+
+Você fixar aqui: as três perguntas acima cobrem quase tudo que quebra, e as
+respostas são sempre as mesmas — HTML com conteúdo, servidor honesto, uma
+identidade por rota.
+
+## Aprofundamento 🟡
+
+Como auditar de verdade, em três olhada:
+
+**O que o servidor mandou?** Abra `view-source:` da URL. Você vê o HTML cru,
+sem executar JavaScript. É o que o crawler recebe na primeira etapa.
+
+**O que ficou depois do JavaScript?** No Search Console, a ferramenta de
+inspeção de URL mostra o HTML antes e depois do rendering, lado a lado. A
+diferença entre as duas colunas é exatamente o que o seu CSR está custando.
+
+**O que o servidor responde?** `curl -I https://seusite.com/rota-que-nao-existe`
+no terminal. Se vier `200`, você tem soft 404.
+
+```bash
+# 404 de verdade: o status diz "nao existe"
+curl -I https://exemplo.com/rota-que-nao-existe
+```
+
+Sobre rotas, uma decisão que costuma ser tomada no automático e custa caro:
+**hash routing**. Em `https://exemplo.com/#/planos`, tudo que vem depois do
+`#` não é enviado ao servidor. O crawler vê uma única URL — a raiz — e nunca
+descobre as outras. Para página pública, use path routing (`/planos`).
+
+E o hydration mismatch (divergência na hidratação), que é o erro mais sutil da
+lista: o HTML inicial diz
+uma coisa e o JavaScript monta outra. Isso acontece quando o servidor
+renderiza a rota `/planos` mas o cliente, ao hidratar, decide que o estado
+é `/blog`. O crawler indexa a versão renderizada — que pode ser a página
+errada. É um bug de aplicação que aparece como bug de SEO, e por isso
+aparece no console do navegador e no relatório de indexação ao mesmo tempo.
+
+> Atenção: `robots.txt` bloqueando `/assets/` quebra o seu JavaScript — e
+> uma página que não roda o JavaScript não tem conteúdo nenhum. Isso aparece
+> como "o site inteiro sumiu do índice" do dia para a noite, sem nenhuma
+> alteração de código.
+
+## Pra quem quer ir além 🔴
+
+O Google oferece o **dynamic rendering**: o servidor entrega uma versão
+renderizada do HTML para o crawler, e o navegador recebe a SPA normal. É a
+saída para casos extremos — um app antigo, com dependência pesada, que não
+tem como ser SSR. Mas ela é complexa de operar, e o Google sinaliza que o
+dynamic rendering deve ser temporário, não uma arquitetura.
+
+Uma decisão mais branda que costuma resolver 80% dos casos: **não renderizar
+no cliente aquilo que precisa ser encontrado**. Dashboards, configurações e
+telas de conta simplesmente não precisam estar no índice — ponha `noindex`
+nelas (você já sabe como funciona) e economize o custo de tracking.
+
+E para auditoria contínua, vale transformar a checagem em código. O padrão é
+simples: para cada rota do seu app, fazer um `fetch`, olhar o status, o
+`<title>` e o canonical, e reportar o que estiver errado. É exatamente o
+exercício a seguir, aplicado às suas rotas.
+
+## Exercício interativo
+
+<Quiz
+  question="Sua SPA responde 200 com a tela de 'pagina nao encontrada' para qualquer URL inventada. O que acontece com o indice do Google?"
+  label="Quiz"
+  options={[
+    {
+      text: "O Google indexa essas paginas vazias como se fossem conteudo real, e o indice enche de URLs sem valor.",
+      correct: true,
+      explanation: "Exato. Isso e soft 404: o status 200 diz que a pagina existe. A correcao e o servidor responder 404 de verdade.",
+    },
+    {
+      text: "O Google detecta a fraude em poucos dias e remove tudo sozinho.",
+      correct: false,
+      explanation: "Ele nao remove na hora. No maximo ele classifica essas URLs como pagina de baixa qualidade, o que ja e um preco alto.",
+    },
+    {
+      text: "Nada, porque o Google sabe que o site e uma SPA.",
+      correct: false,
+      explanation: "O Google renderiza a pagina, mas ele nao sabe o que voce pretendia. Para ele, veio 200 com conteudo, entao indexa.",
+    },
+    {
+      text: "O canonical global resolve, apontando todas as rotas para a home.",
+      correct: false,
+      explanation: "O canonical nao apaga soft 404. Ele apenas escolheria uma URL vencedora, e o problema continua sendo o status 200 errado.",
+    },
+  ]}
+/>
+
+<Quiz
+  question="Seu menu usa <div onclick='irPara(...)'> em vez de <a href='...'>. O que acontece com o rastreamento?"
+  label="Quiz"
+  options={[
+    {
+      text: "O crawler sobe o div e segue, porque ele e clicavel.",
+      correct: false,
+      explanation: "O crawler segue links de verdade: tags <a> com atributo href. Um div clicavel nao e um link para ele.",
+    },
+    {
+      text: "O item de menu nao e descoberto nem repassado: sem href, nao ha link a seguir.",
+      correct: true,
+      explanation: "Exato. A regra do Google e simples: ele segue <a href>. Navegacao por onclick esconde paginas e nao repassa sinal.",
+    },
+    {
+      text: "O crawler executa o onclick e chega na pagina.",
+      correct: false,
+      explanation: "Ele nao executa handlers para descobrir paginas. A renderizacao serve para montar a pagina que ele ja pediu, nao para navegar.",
+    },
+    {
+      text: "O crawler indexa o div como se fosse uma URL.",
+      correct: false,
+      explanation: "Nao ha href, entao nao ha URL. O div vira conteudo de texto, nada mais.",
+    },
+  ]}
+/>
+
+<Checkpoint
+  challenge="Implemente a funcao `auditarHtml(html)`: ela recebe o HTML inicial de uma SPA e devolve quantos problemas de SEO existem. Verifique exatamente tres coisas: falta de title, ancora sem href e canonical apontando para a raiz do site."
+  starterCode={`// O HTML inicial (o "app shell") que o crawler recebe de uma SPA.
+const HTML = [
+  '<!doctype html>',
+  '<html lang="pt-BR">',
+  '<head>',
+  '  <meta charset="utf-8">',
+  '  <link rel="canonical" href="https://exemplo.com/">',
+  '</head>',
+  '<body>',
+  '  <div id="root"></div>',
+  '  <a class="card" data-id="7">Ver detalhes</a>',
+  '</body>',
+  '</html>'
+].join('\\n');
+
+// Devolve o href do <link rel="canonical">, ou null se a pagina nao tiver canonical.
+function canonicalDaPagina(html) {
+  const ini = html.indexOf('rel="canonical"');
+  if (ini === -1) return null;
+  const achouHref = html.slice(ini).indexOf('href="');
+  if (achouHref === -1) return null;
+  return html.slice(ini + achouHref + 'href="'.length).split('"')[0];
+}
+
+// Quantos problemas de SEO existem no HTML inicial?
+// Verifique exatamente estas tres coisas:
+//  1. falta <title> no head
+//  2. existe uma ancora <a> sem atributo href
+//  3. o canonical aponta para a raiz do site
+function auditarHtml(html) {
+  const problemas = [];
+
+  // 1) Title ausente.
+  if (!html.includes('<title>')) problemas.push('title ausente');
+
+  // 2) Ancora sem href.
+  // Dica: html.split('<a').slice(1) devolve um pedaco por ancora.
+  //       Os atributos ficam no comeco do pedaco, ate o primeiro '>'.
+  const ancoras = html.split('<a').slice(1);
+  const semHref = false; // TODO
+  if (semHref) problemas.push('ancora sem href');
+
+  // 3) Canonical apontando para a raiz do site.
+  // Dica: new URL(canonico).pathname devolve o caminho da URL ('/' na raiz).
+  //       Se a pagina nao tiver canonical, a variavel vale null: proteja esse caso.
+  const canonico = canonicalDaPagina(html);
+  const canonicalGlobal = false; // TODO
+  if (canonicalGlobal) problemas.push('canonical global');
+
+  return problemas.length;
+}
+
+console.log(auditarHtml(HTML));
+`}
+  expected="3"
+  slug="visibilidade-organica"
+  nodeId="javascript-seo"
+/>
+
+## No seu projeto
+
+- [ ] Pegue o código do checkpoint e adapte para auditar o `view-source:` das cinco rotas mais importantes do seu app: title presente e diferente por rota, canonical apontando para a própria URL, e links com `href`.
+- [ ] Teste uma URL que não existe no seu site (`curl -I https://seusite.com/rota-que-nao-existe`): se vier `200`, ajuste o servidor para devolver `404` de verdade.
+
+> Dica: faça esse teste para cada rota do seu app. É o mesmo script do
+> checkpoint, com a lista de rotas do seu projeto no lugar do array fixo — e
+> ele vira uma verificação de CI, rodando a cada deploy.
+
+## Fechamento
+
+A parte técnica está no lugar: o que o crawler vê, o que ele indexa e qual URL
+vale. A partir do próximo nó a conversa deixa o servidor e entra no conteúdo:
+o título e o trecho que vão aparecer no resultado da busca.
